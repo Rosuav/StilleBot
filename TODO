@@ -97,11 +97,9 @@
 * Other support platforms? Which ones have integrations available?
   - Throne?
 * Seek verification status.
-  - Get a logo for Mustard Mine, to use as profile pic and favicon; and a banner for the
-    landing page and other splash pages. Ensure that the logo works for the Twitch panel.
-    - Maaya's not open, or she'd have been first choice. What about MoonieRaven (see Discord)?
   - Create a way to permaban a user??? It's sadly likely to become necessary at some point.
   - https://dev.twitch.tv/limit-increase
+    - Applied 20240621.
   - Appeal to Twitch for the name StilleBot? If it can be made available, activate it as
     another voice, available to all. MustardMine will remain the default though.
 * Bot sharding. What would it take?
