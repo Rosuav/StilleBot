@@ -1,5 +1,7 @@
 ## Mustard Mine
 
+!["Mustard Mine" banner](/static/MustardMinePanel.png)
+
 Mustard Mine handles Twitch chat and some other functionality. The name harkens back to a
 conversation between [Alice Liddell](https://en.wikipedia.org/wiki/Alice_Liddell) and the
 [Duchess](https://en.wikipedia.org/wiki/Duchess_(Alice%27s_Adventures_in_Wonderland)) in
