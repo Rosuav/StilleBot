@@ -1,6 +1,6 @@
 ## Mustard Mine
 
-!["Mustard Mine" banner](/static/MustardMinePanel.png)
+!["Mustard Mine" banner](/httpstatic/MustardMinePanel.png)
 
 Mustard Mine handles Twitch chat and some other functionality. The name harkens back to a
 conversation between [Alice Liddell](https://en.wikipedia.org/wiki/Alice_Liddell) and the
