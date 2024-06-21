@@ -1,7 +1,9 @@
 inherit http_endpoint;
 
 //(Or if you don't have enough scopes yet)
-constant not_logged_in = #"# Activate the bot for your channel
+constant not_logged_in = #"![\"Mustard Mine\" banner](/static/MustardMineBanner.png)
+
+# Activate the bot for your channel
 
 Welcome to the Mustard Mine family!
 
@@ -11,7 +13,9 @@ to do this. There is no cost, this just ensures that the bot is only where he is
 [Authenticate!](:.twitchlogin data-scopes=@$$scopes$$@)
 ";
 
-constant logged_in = #"# Activate the bot for your channel
+constant logged_in = #"![\"Mustard Mine\" banner](/static/MustardMineBanner.png)
+
+# Activate the bot for your channel
 
 Welcome to the Mustard Mine family!
 
@@ -21,7 +25,9 @@ be fully operational and available to be configured to your needs.
 <form method=post>[Bot, Activate!](:#activate type=submit)</form>
 ";
 
-constant bot_is_active = #"# Activate the bot for your channel
+constant bot_is_active = #"![\"Mustard Mine\" banner](/static/MustardMineBanner.png)
+
+# Activate the bot for your channel
 
 The Mustard Mine is currently serving your channel! You can [configure the bot here](/c/).
 If you wish to remove the bot, the [Master Control Panel](/c/mastercontrol) has the option to do so.
