@@ -64,8 +64,8 @@ constant markdown_menu = #"# Raid finder modes
 * [Pixel Plush users](raidfinder?categories=pixelplush) - everyone who's currently
   using games from [Pixel Plush](https://pixelplush.dev). The same channels as are
   seen on their homepage carousel. No login required.
-* [The bot's channels](raidfinder?login=demo) - only those channels for which the
-  bot is active. Requires no login. Suitable as a demo but not very useful.
+* [Mustard Mine users](raidfinder?categories=mustardmine) - those channels for which
+  the bot is active. Requires no login.
 * [Summary of everyone you follow](raidfinder?allfollows) for note taking. Includes
   channels not currently online; can be slow to load.
 * [Return the Favour](raidfinder?raiders) - list everyone currently live who has
@@ -113,7 +113,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 					chan->config->login, chan->config->display_name,
 				)});
 			}
-			return (["data": "<style>body{font-size:16pt}</style><ul>" + lines * "\n" + "</ul><p>See tiled: <a href=\"raidfinder?login=demo\">login=demo</a></p>", "type": "text/html"]);
+			return (["data": "<style>body{font-size:16pt}</style><ul>" + lines * "\n" + "</ul><p>See tiled: <a href=\"raidfinder?categories=mustardmine\">categories=mustardmine</a></p>", "type": "text/html"]);
 		}
 		if (chan == (string)(int)chan) userid = (int)chan;
 		else userid = await(get_user_id(chan));
@@ -182,6 +182,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	highlights = users->login * "\n";
 	string title = "Followed streams", auxtitle = "", catfollow = "";
 	//Special searches, which don't use your follow list (and may be possible without logging in)
+	if (req->variables->login == "demo") return redirect("raidfinder?categories=mustardmine");
 	if (req->variables->raiders || req->variables->categories || req->variables->login || req->variables->train || req->variables->highlights || req->variables->team) {
 		mapping args = ([]);
 		if (req->variables->raiders) {
@@ -205,10 +206,10 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			args->user_id = (array(string))highlightids;
 			title = "Highlighted channels";
 		}
-		else if (req->variables->login == "demo") {
+		else if (req->variables->categories == "mustardmine") {
 			//Like specifying login= for each of the channels that I bot for
 			args->user_id = (array(string))(indices(G->G->irc->id) - ({0}));
-			title = "This bot's channels";
+			title = "Mustard Mine users";
 		}
 		else if (req->variables->login) {
 			//TODO: Load up the specified users even if they're not currently online.
