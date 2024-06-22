@@ -233,6 +233,3 @@
 * Make an activatable feature for a Seize Crown redemption?
 * In interactive mode, have an explore(mixed value) that will create a GTK window to
   show the value, same as Internals does
-* CHECK: Do powerups affect the VIP leaderboard?
-* Check regular cheers (in case of regression) and powerups to see that they advance the
-  goal bars
