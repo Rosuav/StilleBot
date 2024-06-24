@@ -749,8 +749,10 @@ __async__ void replication_watchdog() {
 		live[0]->confirmed_flush_lsn,
 		repl[0]->received_lsn, repl[0]->latest_end_lsn,
 	);
+	//I'm not sure what causes the LSN to be null, but I suspect it means replication isn't happening.
+	if (!repl[0]->latest_end_lsn) query_rw("notify \"scream.emergency\", 'REPL WDOG: LSN is null!!'");
 	//If the local LSN hasn't advanced in an entire minute, scream.
-	if (repl[0]->latest_end_lsn == last_desync_lsn) query_rw("notify \"scream.emergency\"");
+	if (repl[0]->latest_end_lsn == last_desync_lsn) query_rw("notify \"scream.emergency\", 'REPL WDOG: LSN has not advanced'");
 	last_desync_lsn = repl[0]->latest_end_lsn;
 }
 
