@@ -751,6 +751,7 @@ __async__ void replication_watchdog() {
 	);
 	//If the local LSN hasn't advanced in an entire minute, scream.
 	if (repl[0]->latest_end_lsn == last_desync_lsn) query_rw("notify \"scream.emergency\"");
+	last_desync_lsn = repl[0]->latest_end_lsn;
 }
 
 //Attempt to create all tables and alter them as needed to have all columns
