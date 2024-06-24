@@ -1447,6 +1447,7 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
 			}
 			break;
 		case "session_reconnect": {
+			if (!is_active_bot()) werror("INACTIVE BOT session_reconnect: %O\n", data); //How did we even get here?
 			Stdio.append_file("conduit_reconnect.log", sprintf("%sRECONNECT: %O\n", ctime(time()), data));
 			setup_conduit(data->payload->?session->?reconnect_url);
 			break;
