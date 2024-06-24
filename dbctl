@@ -25,6 +25,20 @@ EOF
 			select client_addr, application_name, xact_start, state from pg_stat_activity where usename = 'rosuav' and pid != pg_backend_pid();
 		" | pike dbstatus.pike
 	;;
+	repl)
+		# A bit messy, but I want to do *one* database query to the remote server, and
+		# collect two pieces of information, one of which is needed by the script itself.
+		ACTIVE=`psql stillebot -Atc 'select active_bot from stillebot.settings'`
+		echo "Active database: $ACTIVE"
+		INFO=`psql -q "host=$ACTIVE user=rosuav dbname=stillebot sslcert=certificate.pem sslkey=privkey.pem" \
+			-c "select active, confirmed_flush_lsn from pg_replication_slots" \
+			-c "\pset format unaligned" -c "\pset tuples_only" \
+			-c "select client_addr from pg_replication_slots join pg_stat_activity on pid = active_pid"`
+		echo "$INFO" # Show the info to the user.
+		INACTIVE=`echo "$INFO" | tail -n 1` # And grab the last line for ourselves.
+		psql "host=$INACTIVE user=rosuav dbname=stillebot sslcert=certificate.pem sslkey=privkey.pem" \
+			-c "select received_lsn, latest_end_lsn from pg_stat_subscription"
+	;;
 	log|tail|logs)
 		tail -F /var/log/postgresql/postgresql-16-main.log
 	;;
