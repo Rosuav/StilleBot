@@ -722,7 +722,7 @@ void emergency(int pid, string cond, string extra, string host) {
 	if (G->G->emergency) G->G->emergency();
 }
 
-int repl_failures = 0;
+string|zero last_desync_lsn = 0; //Null if the last check showed we were in sync
 __async__ void replication_watchdog() {
 	G->G->repl_wdog_call_out = call_out(replication_watchdog, 60);
 	//Check to see if replication appears stalled.
@@ -736,23 +736,21 @@ __async__ void replication_watchdog() {
 	if (!sizeof(live) || !sizeof(repl)) {
 		//Might be down somewhere. Not sure what to do here.
 		werror("REPL WDOG: %d live %d repl\n", sizeof(live), sizeof(repl));
+		query_rw(sprintf("notify \"scream.emergency\", 'REPL WDOG: %d live %d repl'", sizeof(live), sizeof(repl)));
 		return;
 	}
 	if (live[0]->confirmed_flush_lsn == repl[0]->received_lsn &&
 			repl[0]->received_lsn == repl[0]->latest_end_lsn) {
-		if (repl_failures) werror("REPL WDOG: Back in sync %O %O %O %O\n",
-			live[0]->restart_lsn, live[0]->confirmed_flush_lsn,
-			repl[0]->received_lsn, repl[0]->latest_end_lsn,
-		);
-		repl_failures = 0;
+		if (last_desync_lsn) werror("REPL WDOG: Back in sync %O\n", live[0]->confirmed_flush_lsn);
+		last_desync_lsn = 0;
 		return; //All good, in sync.
 	}
-	werror("REPL WDOG: [%d] live %O %O repl %O %O\n", ++repl_failures,
-		live[0]->restart_lsn, live[0]->confirmed_flush_lsn,
+	werror("REPL WDOG: live %O repl %O %O\n",
+		live[0]->confirmed_flush_lsn,
 		repl[0]->received_lsn, repl[0]->latest_end_lsn,
 	);
-	//If it's been three checks with them not in sync, scream. Don't keep screaming every minute after, though.
-	if (repl_failures == 3) query_rw("notify \"scream.emergency\"");
+	//If the local LSN hasn't advanced in an entire minute, scream.
+	if (repl[0]->latest_end_lsn == last_desync_lsn) query_rw("notify \"scream.emergency\"");
 }
 
 //Attempt to create all tables and alter them as needed to have all columns
