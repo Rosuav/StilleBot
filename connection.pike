@@ -544,7 +544,7 @@ class channel(mapping identity) {
 				if (!G->G->evaluate_expr) msg = "ERROR: Expression evaluator unavailable";
 				else if (mixed ex = catch {
 					int|float|string value = G->G->evaluate_expr(expr(message->expr1), ({this, cfg}));
-					if (value != 0 && value != 0.0 && msg != "") break; //But I didn't fire an arrow...
+					if (value != 0 && value != 0.0 && value != "") break; //But I didn't fire an arrow...
 					//Note that all strings are currently considered true. This MAY change
 					//in the future, with empty strings being considered false.
 					msg = message->otherwise;
