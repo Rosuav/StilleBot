@@ -1,12 +1,12 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {TR, TD, FORM, INPUT, OPTION} = choc;
+const {FORM, INPUT, OPTION, TD, TR} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 let allrewards = { };
 
 export const autorender = {
 	dynreward_parent: DOM("#rewards tbody"),
-	dynreward(r) {return TR({"data-id": r.id}, [
+	dynreward(r) {return TR({"data-id": r.id}, [ //extcall
 		TD(FORM({id: r.id, className: "editreward"}, INPUT({name: "title", value: r.title, "size": 30}))),
 		TD(INPUT({name: "prompt", form: r.id, value: r.prompt, size: 30})),
 		TD(INPUT({name: "basecost", form: r.id, type: "number", value: r.basecost})),
