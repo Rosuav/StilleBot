@@ -179,6 +179,13 @@ void commercial(object channel, string voiceid, string msg, mapping tok) {
 	);
 }
 
+@"channel:manage:ads":
+void snooze(object channel, string voiceid, string msg, mapping tok) {
+	twitch_api_request("https://api.twitch.tv/helix/channels/ads/schedule/snooze?broadcaster_id=" + channel->id,
+		(["Authorization": "Bearer " + tok->token]), (["method": "POST"]),
+	);
+}
+
 @"channel:manage:broadcast":
 void marker(object channel, string voiceid, string msg, mapping tok) {
 	twitch_api_request("https://api.twitch.tv/helix/streams/markers",
