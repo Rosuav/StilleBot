@@ -4,7 +4,7 @@ inherit hook;
 //Keyword checks to see if someone's trying to sell us followers. Will be
 //added to as necessary, and all users of this blacklist will automatically
 //start noticing the new ones.
-constant buyfollows = ({"dogehype dot com", "Go to streamrise", "StreamBoo", "Cheap viewers on"});
+constant buyfollows = ({"dogehype dot com", "Go to streamrise", "StreamBoo", "Cheap viewers on", "Best viewers on"});
 
 @hook_allmsgs:
 int message(object channel, mapping person, string msg)
