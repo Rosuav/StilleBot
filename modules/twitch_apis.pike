@@ -181,9 +181,9 @@ void commercial(object channel, string voiceid, string msg, mapping tok) {
 
 @"channel:manage:ads":
 void snooze(object channel, string voiceid, string msg, mapping tok) {
-	twitch_api_request("https://api.twitch.tv/helix/channels/ads/schedule/snooze?broadcaster_id=" + channel->id,
+	twitch_api_request("https://api.twitch.tv/helix/channels/ads/schedule/snooze?broadcaster_id=" + channel->userid,
 		(["Authorization": "Bearer " + tok->token]), (["method": "POST"]),
-	);
+	)->then() {G->G->recheck_ad_status(channel);};
 }
 
 @"channel:manage:broadcast":

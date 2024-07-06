@@ -164,4 +164,4 @@ void wscmd_advance_warning(object channel, mapping(string:mixed) conn, mapping(s
 	check_stats(channel); //Will send_updates_all when it has all the stats
 }
 
-protected void create(string name) {::create(name);}
+protected void create(string name) {::create(name); G->G->recheck_ad_status = check_stats;}
