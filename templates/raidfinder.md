@@ -37,7 +37,7 @@ $$ccl_options||> - | - | - | - | (not available)$$
 {: tag=dialog #editnotes}
 
 <a id=yourcat href="#" target="_blank">Current category: ??</a><br>$$catfollow||$$
-<a href="raidfinder?allfollows" target="_blank">All channels you follow</a>
+[Channels you follow](raidfinder)
 
 > ### Raids to or from this channel:
 > <label><input type=checkbox checked id=show-outgoing> Outgoing</label> <label><input type=checkbox checked id=show-incoming> Incoming</label>
