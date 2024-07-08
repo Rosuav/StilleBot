@@ -977,7 +977,7 @@ function repaint() {
 	ctx.restore();
 	specials.forEach(el => draw_at(ctx, el));
 
-	const focus = document.activeElement.getAttribute("key");
+	const focus = document.activeElement?.getAttribute("key");
 	if (next_key_idx > 0) replace_content(canvas, actives.map((el, idx) => {
 		if (!el.key) el.key = next_key_idx++;
 		return lindt.DIV({key: el.key, tabindex: idx}, types[el.type].label(el));
