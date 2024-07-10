@@ -11,6 +11,7 @@
 mapping need_scope = ([]); //Filled in by create()
 
 @"moderator:manage:announcements":
+@"Send an announcement (also /announceblue, /announcegreen, /announceorange, /announcepurple)":
 void announce(object channel, string voiceid, string msg, mapping tok, string|void color) {
 	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/announcements?broadcaster_id=%d&moderator_id=%s",
@@ -45,27 +46,33 @@ void chat_settings(object channel, string voiceid, string msg, mapping tok, stri
 }
 
 @"moderator:manage:chat_settings":
+@"Enable emote-only mode until /emoteonlyoff":
 void emoteonly(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "emote_mode", Val.true);}
 @"moderator:manage:chat_settings":
 void emoteonlyoff(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "emote_mode", Val.false);}
 @"moderator:manage:chat_settings":
+@"Enable follower-only mode until /followersoff; can include a time in seconds eg /followers 600":
 void followers(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "follower_mode", Val.true, "follower_mode_duration");}
 @"moderator:manage:chat_settings":
 void followersoff(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "follower_mode", Val.false);}
 @"moderator:manage:chat_settings":
+@"Enable slow mode (eg /slow 3) until /slowoff":
 void slow(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "slow_mode", Val.true, "slow_mode_wait_time");}
 @"moderator:manage:chat_settings":
 void slowoff(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "slow_mode", Val.false);}
 @"moderator:manage:chat_settings":
+@"Enable sub-only mode until /subscribersoff":
 void subscribers(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "subscriber_mode", Val.true);}
 @"moderator:manage:chat_settings":
 void subscribersoff(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "subscriber_mode", Val.false);}
 @"moderator:manage:chat_settings":
+@"Enable unique chat mode (R9K) until /uniquechatoff":
 void uniquechat(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "unique_chat_mode", Val.true);}
 @"moderator:manage:chat_settings":
 void uniquechatoff(object c, string v, string m, mapping t) {chat_settings(c, v, m, t, "unique_chat_mode", Val.false);}
 
 @"moderator:manage:chat_messages":
+@"Clear all chat (not commonly necessary)":
 void clear(object channel, string voiceid, string msg, mapping tok, string|void msgid) {
 	//Pass a msgid to delete an individual message, else clears all chat
 	twitch_api_request(sprintf(
@@ -76,12 +83,12 @@ void clear(object channel, string voiceid, string msg, mapping tok, string|void 
 	);
 }
 @"moderator:manage:chat_messages":
+@"Delete a single message by its ID":
 void deletemsg(object c, string v, string m, mapping t) {clear(c, v, "", t, m);}
 
 @"moderator:manage:banned_users":
-void ban(object channel, string voiceid, string msg, mapping tok, int|void timeout) {asyncban(channel, voiceid, msg, tok, timeout);}
-//Can't annotate async functions?
-__async__ void asyncban(object channel, string voiceid, string msg, mapping tok, int|void timeout) {
+@"Ban a user":
+__async__ void ban(object channel, string voiceid, string msg, mapping tok, int|void timeout) {
 	sscanf(msg, "%s %s", string username, string reason);
 	int uid = await(get_user_id(username || msg));
 	mapping params = (["user_id": uid]);
@@ -100,11 +107,13 @@ __async__ void asyncban(object channel, string voiceid, string msg, mapping tok,
 	);
 }
 @"moderator:manage:banned_users":
+@"Time out a user - also '/t username time'":
 void timeout(object c, string v, string m, mapping t) {ban(c, v, m, t, 1);}
 @"moderator:manage:banned_users":
 void t(object c, string v, string m, mapping t) {ban(c, v, m, t, 1);}
 
 @"moderator:manage:banned_users":
+@"Cancel a ban or timeout (also /untimeout)":
 void unban(object channel, string voiceid, string msg, mapping tok) {
 	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/bans?broadcaster_id=%d&moderator_id=%s&user_id={{USER}}",
@@ -118,8 +127,8 @@ void untimeout(object c, string v, string m, mapping t) {unban(c, v, m, t);}
 
 mapping(int:int) qso = ([]); //Not retained, will be purged on code reload
 @"moderator:manage:shoutouts":
-void shoutout(object channel, string voiceid, string msg, mapping tok, int|void queue) {asyncso(channel, voiceid, msg, tok, queue);}
-__async__ void asyncso(object channel, string voiceid, string msg, mapping tok, int|void queue) {
+@"Send an on-platform shoutout immediately, or fail if it can't be done":
+__async__ void shoutout(object channel, string voiceid, string msg, mapping tok, int|void queue) {
 	if (queue) {
 		int delay = qso[channel->userid] - time();
 		qso[channel->userid] = max(qso[channel->userid], time()) + 121; //Update the queue time before sleeping
@@ -147,9 +156,11 @@ __async__ void asyncso(object channel, string voiceid, string msg, mapping tok, 
 	}
 }
 @"moderator:manage:shoutouts":
+@"Send an on-platform shoutout, delaying it until the previous /qshoutout is done":
 void qshoutout(object c, string v, string m, mapping t) {shoutout(c, v, m, t, 1);}
 
 @"user:manage:whispers":
+@"Whisper a message to a user (also /w)":
 void w(object channel, string voiceid, string msg, mapping tok) {
 	sscanf(String.trim(msg), "%s %s", string user, string message);
 	if (!message) return 0;
@@ -167,6 +178,7 @@ void w(object channel, string voiceid, string msg, mapping tok) {
 void whisper(object c, string v, string m, mapping t) {w(c, v, m, t);}
 
 @"channel:edit:commercial":
+@"Start an ad break":
 void commercial(object channel, string voiceid, string msg, mapping tok) {
 	twitch_api_request("https://api.twitch.tv/helix/channels/commercial",
 		(["Authorization": "Bearer " + tok->token]), ([
@@ -180,6 +192,7 @@ void commercial(object channel, string voiceid, string msg, mapping tok) {
 }
 
 @"channel:manage:ads":
+@"Delay the next scheduled ad break by 5 minutes":
 void snooze(object channel, string voiceid, string msg, mapping tok) {
 	twitch_api_request("https://api.twitch.tv/helix/channels/ads/schedule/snooze?broadcaster_id=" + channel->userid,
 		(["Authorization": "Bearer " + tok->token]), (["method": "POST"]),
@@ -187,6 +200,7 @@ void snooze(object channel, string voiceid, string msg, mapping tok) {
 }
 
 @"channel:manage:broadcast":
+@"Add a VOD marker so you can find back this point for highlighting":
 void marker(object channel, string voiceid, string msg, mapping tok) {
 	twitch_api_request("https://api.twitch.tv/helix/streams/markers",
 		(["Authorization": "Bearer " + tok->token]), ([
@@ -200,6 +214,7 @@ void marker(object channel, string voiceid, string msg, mapping tok) {
 }
 
 @"channel:manage:raids":
+@"Raid someone!":
 void raid(object channel, string voiceid, string msg, mapping tok) {
 	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/raids?from_broadcaster_id=%d&to_broadcaster_id={{USER}}",
@@ -212,6 +227,7 @@ void raid(object channel, string voiceid, string msg, mapping tok) {
 }
 
 @"channel:manage:raids":
+@"Cancel a raid that's been started but hasn't gone through yet":
 void unraid(object channel, string voiceid, string msg, mapping tok) {
 	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/raids?broadcaster_id=%d",
@@ -223,6 +239,7 @@ void unraid(object channel, string voiceid, string msg, mapping tok) {
 }
 
 @"channel:manage:vips":
+@"Give someone a VIP badge - also /unvip to remove":
 void vip(object channel, string voiceid, string msg, mapping tok, int|void remove) {
 	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/channels/vips?broadcaster_id=%d&user_id={{USER}}",
@@ -237,6 +254,7 @@ void vip(object channel, string voiceid, string msg, mapping tok, int|void remov
 void unvip(object c, string v, string m, mapping t) {vip(c, v, m, t, 1);}
 
 @"channel:manage:moderators":
+@"Give someone a mod sword - also /unmod to remove":
 void mod(object channel, string voiceid, string msg, mapping tok, int|void remove) {
 	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=%d&user_id={{USER}}",
@@ -253,6 +271,7 @@ void unmod(object c, string v, string m, mapping t) {mod(c, v, m, t, 1);}
 Regexp.SimpleRegexp bicap = Regexp.SimpleRegexp("[a-z][A-Z]");
 string bicap_to_snake(string pair) {return pair / 1 * "_";}
 @"user:manage:chat_color":
+@"Set your chat color. Use a word eg GoldenRod, or if you have Turbo, a hex color like #663399":
 void color(object channel, string voiceid, string msg, mapping tok) {
 	if (msg == "") return 0; //No error return here for simplicity (we can't send to just the user anyway)
 	//Twitch expects users to write BiCapitalized colour names eg "GoldenRod", but
@@ -269,6 +288,7 @@ void color(object channel, string voiceid, string msg, mapping tok) {
 }
 
 @"moderator:manage:shield_mode":
+@"Engage shield mode immediately; disengage with /shieldoff":
 void shield(object channel, string voiceid, string msg, mapping tok, int|void remove) {
 	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/shield_mode?broadcaster_id=%d&moderator_id=%s",
@@ -284,6 +304,7 @@ void shieldoff(object c, string v, string m, mapping t) {shield(c, v, m, t, 1);}
 
 //TODO: Should there be a corresponding special trigger when the user acknowledges it?
 @"moderator:manage:warnings":
+@"Give a moderatorial warning to a user - they must acknowledge it to continue chatting":
 __async__ void warn(object channel, string voiceid, string msg, mapping tok) {
 	sscanf(msg, "%s %s", string user, string reason);
 	if (!user) user = msg;
@@ -321,9 +342,14 @@ protected void create(string name) {
 	mapping voice_scopes = ([]), scope_commands = ([]);
 	foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
 		if (ann) foreach (indices(ann), mixed anno) {
-			need_scope[key] = anno;
-			voice_scopes[anno] = all_twitch_scopes[anno] || anno; //If there's a function that uses it, the voices subsystem can grant it.
-			scope_commands[anno] += ({"/" + key});
+			if (has_value(anno, ' ')) {
+				//TODO: Provide this information to the user somewhere
+				werror("* /%s: %s\n", key, anno);
+			} else {
+				need_scope[key] = anno;
+				voice_scopes[anno] = all_twitch_scopes[anno] || anno; //If there's a function that uses it, the voices subsystem can grant it.
+				scope_commands[anno] += ({"/" + key});
+			}
 		}
 	}
 	//There are additional scopes that don't correspond to any slash command, but might be granted
