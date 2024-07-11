@@ -234,3 +234,4 @@
 * In interactive mode, have an explore(mixed value) that will create a GTK window to
   show the value, same as Internals does
 * Add a Test button to every row in GIF alerts' manage keywords dialog
+* Volume control in "Manage images and sounds" is utterly broken
