@@ -13,6 +13,8 @@ AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat<br>
 MegaMlep RawkOut FallDamage RedCard ApplauseBreak TouchOfSalt<br>
 KittyLove TurnUp CatScare LateSave NoTheyDidNot BeholdThis<br>
 RaccoonPop GoblinJam YouMissed GriddyGoose CheersToThat StirThePot<br>
+(10) BleedPurpleHD (25) HeyHeyGuys (50) PogChomp (100) KappaInfinite<br>
+(max) DidIBreakIt<br>
 
 ## Hype Train set seven
 ### Unlockable Jan 2024 to Apr 2024
@@ -23,8 +25,6 @@ HahaBall 2020Rivalry 2020Wish 2020ByeGuys 2020Celebrate<br>
 RPGAyaya HahaCat RPGGhosto PrideWingR PrideWingL<br>
 2020Party 2020Pajamas 2020Shred 2020Snacking 2020Glitchy<br>
 PrideUwu PrideLaugh PrideCute PridePog PrideFloat<br>
-(10) BleedPurpleHD (25) HeyHeyGuys (50) PogChomp (100) KappaInfinite<br>
-(106) DidIBreakIt (uncertain)<br>
 
 ## Hype Train set six
 ### Unlockable Dec 2023 to Jan 2024
