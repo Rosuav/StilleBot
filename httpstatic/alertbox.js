@@ -8,7 +8,7 @@ const EMPTY_AUDIO = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAA
 function img_or_video(data) {
 	if (!data.image_is_video) return IMG({class: "mainimg", src: data.image || TRANSPARENT_IMAGE});
 	const el = VIDEO({class: "mainimg", src: data.image, preload: "auto", loop: true});
-	el.muted = true;
+	//el.muted = true; //Is this necessary?
 	return el;
 }
 
