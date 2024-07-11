@@ -1078,7 +1078,10 @@ void copy_stock(mapping alertconfigs, string basetype) {
 	//want to have a variant with "same audio but a little louder"; but since there
 	//is no way to express "a little louder" without setting an exact volume, I'm OK
 	//with not being able to express "same audio" without explicitly picking the file.
-	if (!data->sound) m_delete(data, "volume");
+	//TODO: Allow volume to be set when audio is set, or when video is set and contains
+	//audio data. For now, just allowing it always (that's what happens when you're on
+	//time pressure and debugging stuff).
+	//if (!data->sound) m_delete(data, "volume");
 	if (data->format && !has_value(VALID_FORMATS, data->format)) m_delete(data, "format");
 	//Similarly, colors can only be set when there's a thing to set the color on. That's
 	//governed by either the width or alpha of the corresponding 'thing'. If you don't
