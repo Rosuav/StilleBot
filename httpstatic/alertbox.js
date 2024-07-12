@@ -7,7 +7,8 @@ const EMPTY_AUDIO = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAA
 
 function img_or_video(data) {
 	if (!data.image_is_video) return IMG({class: "mainimg", src: data.image || TRANSPARENT_IMAGE});
-	const el = VIDEO({class: "mainimg", src: data.image, preload: "auto", loop: true, volume: data.volume ** 2});
+	const el = VIDEO({class: "mainimg", src: data.image, preload: "auto", volume: data.volume ** 2});
+	if (!data.oneshot) el.loop = true;
 	//el.muted = true; //Is this necessary?
 	return el;
 }
@@ -52,7 +53,7 @@ const alert_formats = {
 //   short alert_gap will have alerts coming hard on each other's heels.
 
 const alert_active = { };
-const retainme = ["alertlength", "alertgap", "tts_dwell", "tts_volume"];
+const retainme = ["alertlength", "alertgap", "tts_dwell", "tts_volume", "oneshot"];
 export function render(data) {
 	if (data.version > alertbox_version) {location.reload(); return;}
 	if (data.alertconfigs) {
@@ -67,7 +68,7 @@ export function render(data) {
 			else set_content(elem, P("Unrecognized alert format '" + cfg.format + "', check editor or refresh page"));
 			alert_active["#" + kwd] = cfg.active;
 			for (let attr of retainme)
-				elem.dataset[attr] = cfg[attr];
+				if (cfg[attr]) elem.dataset[attr] = cfg[attr];
 			ensure_font(cfg.font);
 		}
 		const removeme = [];
@@ -128,8 +129,10 @@ function do_alert(alert, replacements) {
 	);
 	//Force animations and videos to restart
 	elem.querySelectorAll("img").forEach(el => el.src = el.src);
-	elem.querySelectorAll("video").forEach(el => {el.currentTime = 0; el.play();});
-	const alertlength = +elem.dataset.alertlength;
+	let animlength = 0;
+	elem.querySelectorAll("video").forEach(el => {el.currentTime = 0; el.play(); animlength = el.duration;});
+	let alertlength = +elem.dataset.alertlength;
+	if (elem.dataset.oneshot === "true" && animlength > alertlength) alertlength = animlength;
 	let alerttimeout = null;
 	if (replacements.tts) {
 		const maxlength = alertlength + +elem.dataset.tts_dwell;

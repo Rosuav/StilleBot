@@ -250,6 +250,7 @@ function update_gif_variants() {
 					]),
 				])),
 				TD(INPUT({type: "checkbox", class: "ishidden", checked: attrs["condval-is_hidden"]})),
+				TD(INPUT({type: "checkbox", class: "oneshot", checked: attrs["oneshot"]})),
 				TD(BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑")),
 				TD(BUTTON({type: "button", class: "testalert", title: "Send test alert", "data-type": id}, "▶")),
 			]);
@@ -408,7 +409,7 @@ export function render(data) {
 				SELECT({name: "layout"}, [OPTION({value: "image_above"}, "Image above"), OPTION({value: "image_below"}, "Image below")]),
 			])),
 			P([
-				LABEL(["Alert length: ", INPUT({name: "alertlength", type: "number", step: "0.5"}), " seconds; "]),
+				LABEL(["Min alert length: ", INPUT({name: "alertlength", type: "number", step: "0.5"}), " seconds; "]),
 				LABEL(["gap before next alert: ", INPUT({name: "alertgap", type: "number", step: "0.25"}), " seconds"]),
 			]),
 			nondef && type !== "gif" && P({class: "not-alertset inheritblock"}, [
@@ -416,6 +417,11 @@ export function render(data) {
 				IMG({className: "preview", "data-library": "image"}), //Will be replaced with a VIDEO element as needed
 				" ",
 				BUTTON({type: "button", className: "showlibrary", "data-target": "image", "data-type": "image,video"}, "Choose"),
+				" ",
+				LABEL([
+					INPUT({type: "checkbox", name: "oneshot"}),
+					" One-shot (animation will not loop) where possible",
+				]),
 			]),
 			nondef && type !== "gif" && P({class: "not-alertset inheritblock"}, [
 				"Sound: ",
@@ -1097,6 +1103,10 @@ on("change", ".text", e => ws_sync.send({
 on("change", ".ishidden", e => ws_sync.send({
 	cmd: "alertcfg", type: e.match.closest("tr").dataset.type,
 	set: {"condval-is_hidden": e.match.checked, "condoper-is_hidden": "=="},
+}));
+on("change", ".oneshot", e => ws_sync.send({
+	cmd: "alertcfg", type: e.match.closest("tr").dataset.type,
+	set: {"oneshot": e.match.checked},
 }));
 on("change", "#gif-variants input[type=range]", e => ws_sync.send({
 	cmd: "alertcfg", type: e.match.closest("tr").dataset.type,

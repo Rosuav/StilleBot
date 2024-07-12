@@ -342,9 +342,9 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 >
 > Select sounds and/or images to be triggered here. These become alert variants.
 >
-> Keyword | Image | Sound | Hide? | Del? | Test
-> --------|-------|-------|-------|------|------
-> loading... | - | - | - | - | -
+> Keyword | Image | Sound | Hide? | One-shot | Del? | Test
+> --------|-------|-------|-------|----------|------|------
+> loading... | - | - | - | - | - | -
 >
 > For these to be functional, you will need a !redeem command and optionally a<br>
 > channel point redemption. [Create them!](:#enable_redeem_cmd)
@@ -486,7 +486,7 @@ constant SINGLE_EDIT_ATTRS = ({"image", "sound", "muted"}); //Attributes that ca
 constant RETAINED_ATTRS = SINGLE_EDIT_ATTRS + ({"version", "variants", "image_is_video"}); //Attributes that are not cleared when a full edit is done (changing the format)
 constant FORMAT_ATTRS = ("format name description active alertlength alertgap cond-label cond-disableautogen "
 			"tts_text tts_dwell tts_volume tts_filter_emotes tts_filter_badwords tts_filter_words tts_voice tts_min_bits "
-			"layout alertwidth alertheight textformat volume") / " " + TEXTFORMATTING_ATTRS;
+			"layout alertwidth alertheight textformat volume oneshot") / " " + TEXTFORMATTING_ATTRS;
 constant VALID_FORMATS = "text_image_stacked text_image_overlaid" / " ";
 //List all defaults here. They will be applied to everything that isn't explicitly configured.
 constant NULL_ALERT = ([
@@ -502,10 +502,11 @@ constant NULL_ALERT = ([
 	"tts_text": "", "tts_dwell": "0", "tts_volume": 0, "tts_filter_emotes": "cheers",
 	"tts_filter_badwords": "none", "tts_min_bits": "0",
 ]);
-constant LATEST_VERSION = 4; //Bump this every time a change might require the client to refresh.
+constant LATEST_VERSION = 5; //Bump this every time a change might require the client to refresh.
 constant COMPAT_VERSION = 1; //If the change definitely requires a refresh, bump this too.
 //Version 3 supports <video> tags for images.
 //Version 4 supports TTS.
+//Version 5 adds one-shot animations, lengthening alerts to fit.
 @retain: mapping tts_config = ([]);
 mapping stock_alerts; // == DB->load_config(0, "alertbox")->alertconfigs; cached, fetched on code reload only.
 
@@ -611,6 +612,7 @@ void resolve_all_inherits(mapping cfg, string userid) {
 		resolved->text_css = textformatting_css(resolved);
 		if (resolved->image_is_video && COMPAT_VERSION < 3) resolved->version = 3;
 		if (resolved->tts_text && COMPAT_VERSION < 4) resolved->version = 4;
+		if (resolved->oneshot && COMPAT_VERSION < 5) resolved->version = 5;
 		foreach (({"image", "sound"}), string url) {
 			if (sscanf(resolved[url] || "f", "freemedia://%s", string fn) && fn) {
 				mapping media = G->G->freemedia_filelist->_lookup[fn] || ([]);
