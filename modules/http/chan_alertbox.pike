@@ -1012,7 +1012,7 @@ void copy_stock(mapping alertconfigs, string basetype) {
 
 	mapping data = cfg->alertconfigs[msg->type];
 	if (!data) data = cfg->alertconfigs[msg->type] = ([]);
-	if (!msg->format) {
+	if (!msg->format && !msg->set && !msg->unset) {
 		//If the format is not specified, this is a partial update, which can
 		//change only the SINGLE_EDIT_ATTRS - all others are left untouched.
 		if (msg->image) {
@@ -1039,15 +1039,35 @@ void copy_stock(mapping alertconfigs, string basetype) {
 		if (sock_reply) conn->sock->send_text(Standards.JSON.encode(sock_reply, 4));
 		return;
 	}
-	//If the format *is* specified, this is a full update, *except* for the retained
-	//attributes. Any unspecified attribute will be deleted, setting it to inherit.
+	//If the format *is* specified, and set/unset are not, this is a full update,
+	//*except* for the retained attributes. Any unspecified attribute will be
+	//deleted, setting it to inherit. (set/unset handling is done below.)
+
 	int hosts_were_active = cfg->alertconfigs->?hostalert->?active;
 	//If you've added or removed TTS, make sure that the uses_tts flag is accurate.
 	string tts_was = cfg->alertconfigs[msg->type]->tts_text || "";
 	string tts_now = msg->tts_text || "";
 	if (tts_was == "" && tts_now != "") cfg->uses_tts = 1;
 	if (tts_was != "" && tts_now == "") {m_delete(cfg, "uses_tts"); call_out(check_tts_usage, 0.25, channel->userid, cfg);}
-	data = cfg->alertconfigs[msg->type] = filter(
+	if (msg->set || msg->unset) {
+		//Set the given mapping of attributes, and unset the given names.
+		//Otherwise, retain existing values.
+		//TODO: Merge single-item updates into this?
+		foreach (msg->set || ([]); string kwd; mixed val) {
+			if (!val || val == "") msg->unset += ({kwd}); //Actually an unset operation, like a MIDI Note-On with velocity zero
+			else if (has_value(FORMAT_ATTRS, kwd)) data[kwd] = val;
+			else if (has_prefix(kwd, "condoper-") || has_prefix(kwd, "condval-")) msg[kwd] = val; //Technically you could put these into the body of the message, but that's not the official API.
+		}
+		foreach (msg->unset || ({ }), string kwd) {
+			if (has_value(FORMAT_ATTRS, kwd)) m_delete(data, kwd);
+			//You may delete a conditional with any of these prefixes and it'll delete both parts.
+			sscanf(kwd, "cond-%s", string cond);
+			if (!cond) sscanf(kwd, "condoper-%s", cond);
+			if (!cond) sscanf(kwd, "condval-%s", cond);
+			if (cond) {m_delete(data, "condoper-" + cond); m_delete(data, "condval-" + cond);}
+		}
+	}
+	else data = cfg->alertconfigs[msg->type] = filter(
 		mkmapping(RETAINED_ATTRS, data[RETAINED_ATTRS[*]])
 		| mkmapping(FORMAT_ATTRS, msg[FORMAT_ATTRS[*]]))
 			{return __ARGS__[0] && __ARGS__[0] != "";}; //Any blank values get removed and will be inherited.
