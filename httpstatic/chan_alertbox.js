@@ -246,7 +246,7 @@ function update_gif_variants() {
 					LABEL([
 						" Volume: ",
 						INPUT({name: "volume", type: "range", step: 0.05, min: 0, max: 1, value: attrs.volume}),
-						SPAN({className: "rangedisplay"}, typeof attrs.volume === "number" ? Math.floor(attrs.volume * 100) + "%" : "50%"),
+						SPAN({className: "rangedisplay"}, typeof attrs.volume !== "undefined" ? Math.floor(attrs.volume * 100) + "%" : "50%"),
 					]),
 				])),
 				TD(INPUT({type: "checkbox", class: "ishidden", checked: attrs["condval-is_hidden"]})),
