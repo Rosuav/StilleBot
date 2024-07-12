@@ -233,3 +233,6 @@
 * Make an activatable feature for a Seize Crown redemption?
 * In interactive mode, have an explore(mixed value) that will create a GTK window to
   show the value, same as Internals does
+* GIF alerts: Add a "Loop" check box (default checked) or a "One-shot" (default unchecked)
+  - Allow the length to be extended for a non-looping image??? Up to the max length
+    same as TTS uses.
