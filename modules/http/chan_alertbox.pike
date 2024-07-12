@@ -1155,6 +1155,14 @@ void copy_stock(mapping alertconfigs, string basetype) {
 		}
 		data->specificity = specificity;
 	}
+	//Check for legacy URLs and update them.
+	foreach (({"image", "sound"}), string url) if (data[url] && sscanf(data[url], "uploads://%s", string fn) && fn && !has_value(fn, '-')) {
+		string|zero redir = await(G->G->DB->load_config(0, "upload_redirect"))[fn];
+		if (redir && sscanf(redir, "https://sikorsky.rosuav.com/upload/%s", string dest)) {
+			werror("Legacy URL: %s %s\nResolves to: %O\n", url, data[url], redir);
+			data[url] = "uploads://" + dest;
+		}
+	}
 	resolve_affected_inherits(cfg, (string)channel->userid, msg->type);
 	if (variation) {
 		//For convenience, every time a change is made, we update an array of
