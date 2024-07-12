@@ -255,7 +255,7 @@ function update_gif_variants() {
 			]);
 		}),
 		TR({"data-type": "gif-"}, [
-			TD(INPUT({class: "text"})),
+			TD(INPUT({class: "newgiftext"})),
 			TD({colspan: 4}, "Enter a keyword to add one!"),
 		]),
 	]);
@@ -1083,15 +1083,24 @@ on("submit", "#renameform", e => {
 //GIF alerts have a cut-down form of variant management. You can still use the full one if you need to tweak.
 on("click", ".gif-variants", e => {update_gif_variants(); DOM("#gif-variants").showModal();});
 
-on("change", ".text,.ishidden", e => {
-	const tr = e.match.closest("tr");
-	const text = tr.querySelector(".text"), ishidden = tr.querySelector(".ishidden");
-	ws_sync.send({
-		cmd: "alertcfg", type: tr.dataset.type, parent: "gif",
-		active: true, format: "", "cond-label": text.value + " text",
-		"condval-text": text.value, "condoper-text": "==",
-		"condval-is_hidden": ishidden?.checked, "condoper-is_hidden": "==",
-	});
-});
+//Create a new variant
+on("change", ".newgiftext", e => ws_sync.send({
+	cmd: "alertcfg", type: "gif-", parent: "gif",
+	active: true, format: "", "cond-label": e.match.value + " text",
+	"condval-text": e.match.value, "condoper-text": "==",
+}));
+//Update individual aspects of a specific variant
+on("change", ".text", e => ws_sync.send({
+	cmd: "alertcfg", type: e.match.closest("tr").dataset.type,
+	set: {"condval-text": e.match.value, "condoper-text": "==", "cond-label": e.match.value + " text"},
+}));
+on("change", ".ishidden", e => ws_sync.send({
+	cmd: "alertcfg", type: e.match.closest("tr").dataset.type,
+	set: {"condval-is_hidden": e.match.checked, "condoper-is_hidden": "=="},
+}));
+on("change", "#gif-variants input[type=range]", e => ws_sync.send({
+	cmd: "alertcfg", type: e.match.closest("tr").dataset.type,
+	set: {volume: e.match.value},
+}));
 
 on("click", "#enable_redeem_cmd", e => ws_sync.send({cmd: "enable_redeem_cmd"}));
