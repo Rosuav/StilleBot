@@ -251,6 +251,7 @@ function update_gif_variants() {
 				])),
 				TD(INPUT({type: "checkbox", class: "ishidden", checked: attrs["condval-is_hidden"]})),
 				TD(BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑")),
+				TD(BUTTON({type: "button", class: "testalert", title: "Send test alert", "data-type": id}, "▶")),
 			]);
 		}),
 		TR({"data-type": "gif-"}, [

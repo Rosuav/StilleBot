@@ -342,9 +342,9 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 >
 > Select sounds and/or images to be triggered here. These become alert variants.
 >
-> Keyword | Image | Sound | Hide? | Del?
-> --------|-------|-------|-------|-----
-> loading... | - | - | - | -
+> Keyword | Image | Sound | Hide? | Del? | Test
+> --------|-------|-------|-------|------|------
+> loading... | - | - | - | - | -
 >
 > For these to be functional, you will need a !redeem command and optionally a<br>
 > channel point redemption. [Create them!](:#enable_redeem_cmd)
