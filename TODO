@@ -233,4 +233,3 @@
 * Make an activatable feature for a Seize Crown redemption?
 * In interactive mode, have an explore(mixed value) that will create a GTK window to
   show the value, same as Internals does
-* Volume control in "Manage images and sounds" is utterly broken
