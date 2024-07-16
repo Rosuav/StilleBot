@@ -253,7 +253,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			//The Karaoke engine may or may not have provided audio data. If it hasn't,
 			//and it is still connected, ask for it (and make the client wait).
 			if (status->audiodata) return (["data": status->audiodata, "type": status->audiotype]);
-			array engines = websocket_groups[channel->config->vlcauthtoken + channel->name] || ({ });
+			array engines = websocket_groups[channel->config->vlcauthtoken + "#" + channel->userid] || ({ });
 			if (!sizeof(engines)) return 0; //No karaoke engine connected? No audio available.
 			Concurrent.Promise p = Concurrent.Promise();
 			if (arrayp(status->audiodata)) status->audiodata += ({p});
