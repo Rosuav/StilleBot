@@ -21,7 +21,7 @@ and is everything that isn't in the Favs/Trays/Specials.
   - The primary anchor point may belong in Actives or may belong in Specials. Uncertain.
 */
 import {set_content, choc, replace_content, lindt, DOM, on, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, CODE, DIALOG, DIV, FORM, H3, H5, HEADER, IMG, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SECTION, SELECT, SPAN, TABLE, TD, TEXTAREA, TR, U, UL} = choc; //autoimport
+const {A, BR, BUTTON, CODE, DIALOG, DIV, FORM, H3, H5, HEADER, IMG, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SECTION, SELECT, TABLE, TD, TEXTAREA, TR, U, UL} = choc; //autoimport
 
 const SNAP_RANGE = 100; //Distance-squared to permit snapping (eg 25 = 5px radius)
 const canvas = DOM("#command_gui");
@@ -1624,21 +1624,31 @@ function slashcommands(e) {
 		}
 	}
 	if (typeof e === "string") return desc;
+	//So, which word are we in? Grab the line up to the cursor, and count words in it.
+	//1 word means we're in the command itself; 2 means the first parameter, etc. Offset to 0-based.
+	const param = content.slice(linestart === -1 ? 0 : linestart + 1, cursor).split(" ").length - 1;
 	mle.closest(".msgedit").querySelectorAll(".slashcommands").forEach(el => set_content(el,
 		desc.split("\n").map(l => {
 			//If there's a usage arrow, render the parameters atomically.
 			const parts = l.split(" -> ");
-			const content = parts.length < 2 ? l : [
-				parts[0], " ->",
-				parts[1].split(" ").map(p => [" ", SPAN(p)]),
-			];
-			if (el.classList.contains("full")) return P(content);
-			return content;
+			if (parts.length >= 2) {
+				const params = parts[1].split(" ");
+				//If there are more words than parameter markers, assume the last parameter
+				//continues onwards (eg "message" or "reason").
+				const hlparam = param >= params.length ? params.length - 1 : param;
+				l = [
+					parts[0], " ->",
+					params.map((p, i) => [" ", CODE({class: i === hlparam ? "curparam": ""}, p)]),
+				];
+			}
+			if (el.classList.contains("full")) return P(l);
+			return l;
 		}),
 	));
 }
 on("change", ".msgedit textarea", slashcommands);
 on("input", ".msgedit textarea", slashcommands);
+on("keyup", ".msgedit textarea", slashcommands); //What I *really* want is a "cursor position changed" event (selectionchanged maybe, if it were supported).
 
 on("submit", "#setprops", e => {
 	//Hack: This actually changes the type of the element.

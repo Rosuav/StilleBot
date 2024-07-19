@@ -229,8 +229,11 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 	padding-left: 2em;
 	text-indent: -2em;
 }
-.slashcommands p span {
+.slashcommands p code {
 	white-space: nowrap;
+}
+.slashcommands .curparam {
+	background: #66339944;
 }
 
 #emotelist {
