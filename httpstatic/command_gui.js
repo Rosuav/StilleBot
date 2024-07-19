@@ -1624,17 +1624,18 @@ function slashcommands(e) {
 		}
 	}
 	if (typeof e === "string") return desc;
-	set_content(mle.closest(".msgedit").querySelector(".slashcommands.short"), desc);
-	//For the expanded (hover) version, render separate lines with nicer wrapping,
-	//including not breaking a parameter token across lines.
-	set_content(mle.closest(".msgedit").querySelector(".slashcommands.full"), desc.split("\n").map(l => {
-		const parts = l.split(" -> ");
-		if (parts.length < 2) return P(l);
-		return P([
-			parts[0], " ->",
-			parts[1].split(" ").map(p => [" ", SPAN(p)]),
-		]);
-	}));
+	mle.closest(".msgedit").querySelectorAll(".slashcommands").forEach(el => set_content(el,
+		desc.split("\n").map(l => {
+			//If there's a usage arrow, render the parameters atomically.
+			const parts = l.split(" -> ");
+			const content = parts.length < 2 ? l : [
+				parts[0], " ->",
+				parts[1].split(" ").map(p => [" ", SPAN(p)]),
+			];
+			if (el.classList.contains("full")) return P(content);
+			return content;
+		}),
+	));
 }
 on("change", ".msgedit textarea", slashcommands);
 on("input", ".msgedit textarea", slashcommands);
