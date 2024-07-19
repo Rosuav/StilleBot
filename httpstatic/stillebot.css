@@ -188,9 +188,35 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 .msgedit .emotepicker {
 	position: absolute;
 	right: 0.2em;
-	bottom: 0.5em;
+	bottom: 1.7em;
 	cursor: pointer;
 }
+.msgedit textarea {
+	height: 14em;
+	width: 560px;
+}
+.slashcommands.short {
+	height: 1.2em;
+	width: 560px;
+	overflow: hidden;
+	border: 1px solid transparent;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	/* Hiding overflow can cause us to lose descenders. Setting line-height to 1 stops
+	this, but we need to adjust other positioning to compensate. */
+	line-height: 1;
+	position: relative;
+	top: 0.2em;
+}
+.slashcommands.full {
+	position: absolute;
+	visibility: hidden;
+	border: 1px solid black;
+	margin-top: -1.2em;
+	background: white;
+}
+.slashcommands.full:hover {visibility: visible;}
+.slashcommands.short:hover ~ .slashcommands.full {visibility: visible;}
 
 #emotelist {
 	max-width: 40em;

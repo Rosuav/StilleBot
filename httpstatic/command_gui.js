@@ -116,8 +116,10 @@ const text_message = {...default_handlers,
 		const allvars = Object.assign({}, ...vars_avail);
 		return DIV({className: "msgedit"}, [
 			DIV({className: "buttonbox attached"}, Object.entries(allvars).map(([v, d]) => BUTTON({type: "button", title: d, className: "insertvar", "data-insertme": v}, v))),
-			TEXTAREA({...id, rows: 10, cols: 60, "data-editme": 1}, el.message || ""),
+			TEXTAREA({...id, "data-editme": 1}, el.message || ""),
 			DIV({class: "emotepicker"}, "☺"),
+			DIV({class: "slashcommands short"}, slashcommands(el.message || "")),
+			DIV({class: "slashcommands full"}, slashcommands(el.message || "")),
 		]);
 	},
 	retrieve_value: (el, msg) => {
@@ -565,7 +567,7 @@ const types = {
 	text: {
 		color: "#77eeee", width: 400, label: el => el.message,
 		params: [{attr: "message", label: "Text", values: text_message}],
-		typedesc: "Send a message in the channel. Commands like /announce, /me, /ban, etc all work as normal.",
+		typedesc: "Send a message in the channel or execute a slash command.",
 	},
 	group: {
 		color: "#66dddd", children: ["message"], label: el => "Group",
@@ -1589,6 +1591,29 @@ on("click", ".emoteset img", e => {
 	textarea.setRangeText(e.match.title + " ", textarea.selectionEnd, textarea.selectionEnd, "end");
 	if (!e.ctrlKey) {DOM("#emotepicker").close(); textarea.focus();}
 });
+
+function slashcommands(e) {
+	//Note that e is either an event or the input string - in the latter case, we're not in the DOM yet
+	const mle = e.match;
+	const content = typeof e === "string" ? e : mle.value;
+	//Find the cursor. If it's following a slash at the start of a line, grab the first word of that
+	//line, and use that as our lookup. Otherwise, show the generic info.
+	let desc = "Slash commands are available - type / at start of line";
+	const cursor = typeof e === "string" ? e.length : mle[mle.selectionDirection === "backward" ? "selectionStart" : "selectionEnd"];
+	const linestart = content.lastIndexOf("\n", cursor - 1);
+	const lineend = content.indexOf("\n", cursor);
+	const line = content.slice(linestart === -1 ? 0 : linestart + 1, lineend === -1 ? undefined : lineend);
+	if (line[0] === "/") {
+		//We're on a line that starts with a slash. Does it have a word after it?
+		const cmd = /\/([a-z]+)/.exec(line);
+		if (cmd) desc = "Command: " + cmd[1];
+		else desc = "Commands are available";
+	}
+	if (typeof e === "string") return desc;
+	mle.closest(".msgedit").querySelectorAll(".slashcommands").forEach(el => set_content(el, desc));
+}
+on("change", ".msgedit textarea", slashcommands);
+on("input", ".msgedit textarea", slashcommands);
 
 on("submit", "#setprops", e => {
 	//Hack: This actually changes the type of the element.
