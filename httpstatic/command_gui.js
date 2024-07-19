@@ -1623,7 +1623,12 @@ function slashcommands(e) {
 				+ "\n" + cmds.map(e => "/" + e[0] + ": " + e[1].replace(" ->", " -> /" + e[0])).join("\n");
 		}
 	}
-	if (typeof e === "string") return desc;
+	if (typeof e === "string") return desc.split("\n").map(l => {
+		//No highlighting of the "current" parameter here, but still show params as code.
+		const parts = l.split(" -> ");
+		if (parts.length < 2) return l;
+		return [parts[0], " ->", parts[1].split(" ").map(p => [" ", CODE(p)])];
+	});
 	//So, which word are we in? Grab the line up to the cursor, and count words in it.
 	//1 word means we're in the command itself; 2 means the first parameter, etc. Offset to 0-based.
 	const param = content.slice(linestart === -1 ? 0 : linestart + 1, cursor).split(" ").length - 1;
@@ -1648,7 +1653,10 @@ function slashcommands(e) {
 }
 on("change", ".msgedit textarea", slashcommands);
 on("input", ".msgedit textarea", slashcommands);
-on("keyup", ".msgedit textarea", slashcommands); //What I *really* want is a "cursor position changed" event (selectionchanged maybe, if it were supported).
+//What I *really* want instead of these two is a "cursor position changed" event (selectionchanged
+//maybe, if it were supported).
+on("keyup", ".msgedit textarea", slashcommands);
+on("click", ".msgedit textarea", slashcommands);
 
 on("submit", "#setprops", e => {
 	//Hack: This actually changes the type of the element.
