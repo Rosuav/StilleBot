@@ -81,6 +81,7 @@ mapping(string:mixed) command_editor_vars(object channel) {
 		"pointsrewards": G->G->pointsrewards[channel->userid] || ({ }),
 		"voices": voices,
 		"monitors": G->G->DB->load_cached_config(channel->userid, "monitors"),
+		"slash_commands": G->G->slash_commands,
 	]);
 }
 
