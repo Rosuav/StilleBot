@@ -161,7 +161,7 @@ void qshoutout(object c, string v, string m, mapping t) {shoutout(c, v, m, t, 1)
 
 @"user:manage:whispers":
 @"Whisper a message to a user (also /w)":
-void w(object channel, string voiceid, string msg, mapping tok) {
+void whisper(object channel, string voiceid, string msg, mapping tok) {
 	sscanf(String.trim(msg), "%s %s", string user, string message);
 	if (!message) return 0;
 	twitch_api_request(sprintf(
@@ -175,7 +175,7 @@ void w(object channel, string voiceid, string msg, mapping tok) {
 	);
 }
 @"user:manage:whispers":
-void whisper(object c, string v, string m, mapping t) {w(c, v, m, t);}
+void w(object c, string v, string m, mapping t) {w(c, v, m, t);}
 
 @"channel:edit:commercial":
 @"Start an ad break":
