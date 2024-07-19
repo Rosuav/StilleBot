@@ -21,7 +21,7 @@ and is everything that isn't in the Favs/Trays/Specials.
   - The primary anchor point may belong in Actives or may belong in Specials. Uncertain.
 */
 import {set_content, choc, replace_content, lindt, DOM, on, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, CODE, DIALOG, DIV, FIGCAPTION, FIGURE, FORM, H3, H5, HEADER, IMG, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SECTION, SELECT, TABLE, TD, TEXTAREA, TR, U, UL} = choc; //autoimport
+const {A, BR, BUTTON, CODE, DIALOG, DIV, FORM, H3, H5, HEADER, IMG, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SECTION, SELECT, SPAN, TABLE, TD, TEXTAREA, TR, U, UL} = choc; //autoimport
 
 const SNAP_RANGE = 100; //Distance-squared to permit snapping (eg 25 = 5px radius)
 const canvas = DOM("#command_gui");
@@ -1605,12 +1605,36 @@ function slashcommands(e) {
 	const line = content.slice(linestart === -1 ? 0 : linestart + 1, lineend === -1 ? undefined : lineend);
 	if (line[0] === "/") {
 		//We're on a line that starts with a slash. Does it have a word after it?
-		const cmd = /\/([a-z]+)/.exec(line);
-		if (cmd) desc = "Command: " + cmd[1];
-		else desc = "Commands are available";
+		const cmd = /\/([a-z]*)/.exec(line)[1];
+		//Is there a command with this exact name? Show its usage info.
+		if (slash_commands[cmd]) {
+			//TODO: Align the parameter list with the cursor position,
+			//highlighting the exact argument the cursor is currently inside.
+			//Note that the last parameter may have multiple words in it, so
+			//if there aren't enough params, just select the last.
+			desc = slash_commands[cmd].replace(" ->", " -> /" + cmd);
+		} else {
+			//Are there any commands that start with this? (Including "/" on its own to list all.)
+			//TODO: If there's just one, save the command name for tab completion.
+			const cmds = Object.entries(slash_commands).filter(e => e[0].startsWith(cmd));
+			if (!cmds.length) desc = "No such command /" + cmd;
+			else if (cmds.length === 1) desc = "/" + cmds[0][0] + ": " + cmds[0][1].replace(" ->", " -> /" + cmds[0][0]);
+			else desc = "Commands: " + cmds.map(e => "/" + e[0]).join(", ")
+				+ "\n" + cmds.map(e => "/" + e[0] + ": " + e[1].replace(" ->", " -> /" + e[0])).join("\n");
+		}
 	}
 	if (typeof e === "string") return desc;
-	mle.closest(".msgedit").querySelectorAll(".slashcommands").forEach(el => set_content(el, desc));
+	set_content(mle.closest(".msgedit").querySelector(".slashcommands.short"), desc);
+	//For the expanded (hover) version, render separate lines with nicer wrapping,
+	//including not breaking a parameter token across lines.
+	set_content(mle.closest(".msgedit").querySelector(".slashcommands.full"), desc.split("\n").map(l => {
+		const parts = l.split(" -> ");
+		if (parts.length < 2) return P(l);
+		return P([
+			parts[0], " ->",
+			parts[1].split(" ").map(p => [" ", SPAN(p)]),
+		]);
+	}));
 }
 on("change", ".msgedit textarea", slashcommands);
 on("input", ".msgedit textarea", slashcommands);

@@ -207,16 +207,31 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 	line-height: 1;
 	position: relative;
 	top: 0.2em;
+	padding-left: 3px;
+	padding-right: 3px;
 }
 .slashcommands.full {
-	position: absolute;
+	position: fixed;
 	visibility: hidden;
 	border: 1px solid black;
 	margin-top: -1.2em;
 	background: white;
+	width: 560px;
+	max-height: 15em;
+	overflow-y: auto;
+	padding-left: 3px;
+	padding-right: 3px;
 }
 .slashcommands.full:hover {visibility: visible;}
 .slashcommands.short:hover ~ .slashcommands.full {visibility: visible;}
+.slashcommands p {
+	margin: 0;
+	padding-left: 2em;
+	text-indent: -2em;
+}
+.slashcommands p span {
+	white-space: nowrap;
+}
 
 #emotelist {
 	max-width: 40em;
