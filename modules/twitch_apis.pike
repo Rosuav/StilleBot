@@ -354,7 +354,8 @@ string|zero send_chat_command(string msg, object channel, string voiceid) {
 
 protected void create(string name) {
 	G->G->send_chat_command = send_chat_command;
-	mapping voice_scopes = ([]), scope_commands = ([]), slashcommands = ([]);
+	mapping voice_scopes = ([]), scope_commands = ([]);
+	mapping slashcommands = (["me": "Describe an action -> msg"]);
 	foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
 		if (ann) foreach (indices(ann), mixed anno) {
 			if (has_value(anno, " ->")) slashcommands[key] = anno;
