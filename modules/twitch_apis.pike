@@ -187,7 +187,7 @@ void whisper(object channel, string voiceid, string msg, mapping tok) {
 }
 @"user:manage:whispers":
 @"Whisper a message to a user -> username message":
-void w(object c, string v, string m, mapping t) {w(c, v, m, t);}
+void w(object c, string v, string m, mapping t) {whisper(c, v, m, t);}
 
 @"channel:edit:commercial":
 @"Start an ad break -> [length]":
