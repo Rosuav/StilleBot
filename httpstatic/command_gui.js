@@ -1684,17 +1684,8 @@ function find_tab_completion(mle) {
 	const linestart = content.lastIndexOf("\n", cursor - 1);
 	const line = content.slice(linestart === -1 ? 0 : linestart + 1, cursor); //just what's behind the cursor, not anything after it
 	if (line[0] === "/" && !line.includes(' ')) {
-		const cmds = Object.keys(slash_commands).filter(c => c.startsWith(line.slice(1)));
-		if (!cmds.length) return null;
-		if (cmds.length === 1) {
-			//If the command has parameters, insert a space after the command name.
-			//This can be recognized by having " -> " (with the trailing space) in
-			//the command description; with no parameters, it's just " ->" at the
-			//very end of the description.
-			const space = slash_commands[cmds[0]].includes(" -> ") ? " " : "";
-			return cmds[0].slice(line.length - 1) + space;
-		}
-		return cmds.map(c => c.slice(line.length - 1)).filter(Boolean);
+		return Object.keys(slash_commands).filter(c => c.startsWith(line.slice(1)))
+			.map(c => c.slice(line.length - 1) + " ");
 	}
 }
 
