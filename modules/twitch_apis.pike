@@ -11,7 +11,7 @@
 mapping need_scope = ([]); //Filled in by create()
 
 @"moderator:manage:announcements":
-@"Send an announcement -> message":
+@"Send an announcement (add suffix for color) -> message":
 void announce(object channel, string voiceid, string msg, mapping tok, string|void color) {
 	twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/announcements?broadcaster_id=%d&moderator_id=%s",
