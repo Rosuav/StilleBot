@@ -139,6 +139,7 @@ class channel(mapping identity) {
 	//Map a reward ID to the redemption triggers for that reward. Empty arrays should be expunged.
 	mapping(string:array(string)) redemption_commands = ([]);
 	mapping botconfig, config;
+	mapping(int:array) lastmsg = ([]); //The single most recent message from any particular user
 
 	protected void create(multiset|void loading, array|void commands) {
 		botconfig = m_delete(identity, "data") || ([]);
@@ -848,6 +849,7 @@ class channel(mapping identity) {
 	void irc_message(string type, string chan, string msg, mapping params) {
 		mapping(string:mixed) person = gather_person_info(params, msg);
 		if (person->uid && person->badges) user_badges[person->uid] = person->badges;
+		lastmsg[(int)person->uid] = ({msg, params});
 		if (!is_active) return;
 		mapping responsedefaults;
 		//For some unknown reason, certain types of notification come through
@@ -1065,6 +1067,11 @@ class channel(mapping identity) {
 				G_G_("banned_list", (string)userid)->stale = 1; //When anyone's banned/timed out, drop the banned users cache
 				event_notify("deletemsgs", this, person, params->target_user_id);
 				if (params->target_user_id) get_user_info(params->target_user_id)->then() {
+					if (array m = lastmsg[(int)params->target_user_id]) {
+						//Log the last message of timed-out/banned users for reference.
+						//Might help with updating autoban.
+						Stdio.append_file("timeouts.log", sprintf("====== %sTimed out: %O\nLast message: %O\n", ctime(time()), params, m));
+					}
 					mapping user = __ARGS__[0];
 					G_G_("participants", name[1..], user->login)->lastnotice = 0;
 					trigger_special("!timeout", ([
