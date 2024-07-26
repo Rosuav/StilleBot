@@ -1656,20 +1656,36 @@ on("click", ".msgedit textarea", slashcommands);
 on("keydown", ".msgedit textarea", e => {
 	if (e.key === "Tab") {
 		if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
-		const insertme = find_tab_completion(e.match);
-		if (insertme) e.match.setRangeText(insertme, e.match.selectionStart, e.match.selectionEnd, "end");
 		e.preventDefault();
+		const insertme = find_tab_completion(e.match);
+		console.log(insertme)
+		if (typeof insertme === "string") e.match.setRangeText(insertme, e.match.selectionStart, e.match.selectionEnd, "end");
+		else if (Array.isArray(insertme) && insertme.length) {
+			//If there's a common prefix, tab-complete that.
+			for (let len = insertme[0].length; len > 0; --len) {
+				let pfx = insertme[0].slice(0, len);
+				for (let i = 1; i < insertme.length; ++i)
+					if (insertme[i].slice(0, len) !== pfx) {pfx = null; break;}
+				//Found a common prefix! Use it and stop.
+				if (pfx) {e.match.setRangeText(pfx, e.match.selectionStart, e.match.selectionEnd, "end"); return;}
+			}
+			//No common prefix. If there's selected text and it matches one option, fill in the
+			//next; otherwise fill in the first. This allows you to cycle options.
+			const sel = e.match.value.slice(e.match.selectionStart, e.match.selectionEnd);
+			const idx = insertme.indexOf(sel); //Returns -1 if not found, which is actually perfect for us. But we want to skip the last slot, so, not quite perfect.
+			e.match.setRangeText(insertme[idx !== insertme.length - 1 ? idx + 1 : 0], e.match.selectionStart, e.match.selectionEnd, "select");
+		}
 	}
 });
 
 function find_tab_completion(mle) {
 	const content = mle.value;
-	const cursor = mle[mle.selectionDirection === "backward" ? "selectionStart" : "selectionEnd"];
+	const cursor = mle.selectionStart;
 	const linestart = content.lastIndexOf("\n", cursor - 1);
 	const line = content.slice(linestart === -1 ? 0 : linestart + 1, cursor); //just what's behind the cursor, not anything after it
 	if (line[0] === "/" && !line.includes(' ')) {
 		const cmds = Object.keys(slash_commands).filter(c => c.startsWith(line.slice(1)));
-		if (!cmds.length) return "";
+		if (!cmds.length) return null;
 		if (cmds.length === 1) {
 			//If the command has parameters, insert a space after the command name.
 			//This can be recognized by having " -> " (with the trailing space) in
@@ -1678,13 +1694,7 @@ function find_tab_completion(mle) {
 			const space = slash_commands[cmds[0]].includes(" -> ") ? " " : "";
 			return cmds[0].slice(line.length - 1) + space;
 		}
-		//If there's a common prefix, tab-complete that.
-		for (let len = cmds[0].length; len > 0; --len) {
-			let pfx = cmds[0].slice(0, len);
-			for (let i = 1; i < cmds.length; ++i)
-				if (cmds[i].slice(0, len) !== pfx) {pfx = null; break;}
-			if (pfx) return pfx.slice(line.length - 1);
-		}
+		return cmds.map(c => c.slice(line.length - 1)).filter(Boolean);
 	}
 }
 
