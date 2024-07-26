@@ -116,7 +116,7 @@ const text_message = {...default_handlers,
 		const allvars = Object.assign({}, ...vars_avail);
 		return DIV({className: "msgedit"}, [
 			DIV({className: "buttonbox attached"}, Object.entries(allvars).map(([v, d]) => BUTTON({type: "button", title: d, className: "insertvar", "data-insertme": v}, v))),
-			TEXTAREA({...id, "data-editme": 1}, el.message || ""),
+			TEXTAREA({...id, "data-editme": 1, "data-vars": Object.keys(allvars).join(" ")}, el.message || ""),
 			DIV({class: "emotepicker"}, "☺"),
 			DIV({class: "slashcommands short"}, slashcommands(el.message || "")),
 			DIV({class: "slashcommands full"}, slashcommands(el.message || "")),
@@ -1658,7 +1658,6 @@ on("keydown", ".msgedit textarea", e => {
 		if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
 		e.preventDefault();
 		const insertme = find_tab_completion(e.match);
-		console.log(insertme)
 		if (typeof insertme === "string") e.match.setRangeText(insertme, e.match.selectionStart, e.match.selectionEnd, "end");
 		else if (Array.isArray(insertme) && insertme.length) {
 			//If there's a common prefix, tab-complete that.
@@ -1687,6 +1686,11 @@ function find_tab_completion(mle) {
 		return Object.keys(slash_commands).filter(c => c.startsWith(line.slice(1)))
 			.map(c => c.slice(line.length - 1) + " ");
 	}
+	const m = /\S+$/.exec(line); const word = m && m[0];
+	if (word && word[0] === '{') return mle.dataset.vars.split(" ")
+		.filter(v => v.startsWith(word))
+		.map(v => v.slice(word.length));
+	//TODO: Also support $varname$ which will require having a list of known variables
 }
 
 on("submit", "#setprops", e => {
