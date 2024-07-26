@@ -5,10 +5,12 @@ constant markdown = #"# Twitch Login
 
 Log in to Mustard Mine to grant the bot permission to do what it needs.
 
+[Grant permissions](:.twitchlogin #addscopes1)
+
 Grant the following permissions:
 $$scopelist$$
 
-[Grant permissions](:.twitchlogin #addscopes)
+[Grant permissions](:.twitchlogin #addscopes2)
 ";
 
 //Give additional explanatory notes for a few scopes
