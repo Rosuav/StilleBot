@@ -1608,14 +1608,9 @@ function slashcommands(e) {
 		const cmd = /\/([a-z]*)/.exec(line)[1];
 		//Is there a command with this exact name? Show its usage info.
 		if (slash_commands[cmd]) {
-			//TODO: Align the parameter list with the cursor position,
-			//highlighting the exact argument the cursor is currently inside.
-			//Note that the last parameter may have multiple words in it, so
-			//if there aren't enough params, just select the last.
 			desc = slash_commands[cmd].replace(" ->", " -> /" + cmd);
 		} else {
 			//Are there any commands that start with this? (Including "/" on its own to list all.)
-			//TODO: If there's just one, save the command name for tab completion.
 			const cmds = Object.entries(slash_commands).filter(e => e[0].startsWith(cmd));
 			if (!cmds.length) desc = "No such command /" + cmd;
 			else if (cmds.length === 1) desc = "/" + cmds[0][0] + ": " + cmds[0][1].replace(" ->", " -> /" + cmds[0][0]);
@@ -1657,6 +1652,35 @@ on("input", ".msgedit textarea", slashcommands);
 //maybe, if it were supported).
 on("keyup", ".msgedit textarea", slashcommands);
 on("click", ".msgedit textarea", slashcommands);
+//Respond to tab presses. If there's a tab completion to be done, don't leave the textarea.
+on("keydown", ".msgedit textarea", e => {
+	if (e.key === "Tab") {
+		if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
+		const insertme = find_tab_completion(e.match);
+		if (insertme) {
+			e.match.setRangeText(insertme, e.match.selectionStart, e.match.selectionEnd, "end");
+			e.preventDefault();
+		}
+	}
+});
+
+function find_tab_completion(mle) {
+	const content = mle.value;
+	const cursor = mle[mle.selectionDirection === "backward" ? "selectionStart" : "selectionEnd"];
+	const linestart = content.lastIndexOf("\n", cursor - 1);
+	const line = content.slice(linestart === -1 ? 0 : linestart + 1, cursor); //just what's behind the cursor, not anything after it
+	if (line[0] === "/" && !line.includes(' ')) {
+		const cmds = Object.keys(slash_commands).filter(c => c.startsWith(line.slice(1)));
+		if (cmds.length === 1) {
+			//If the command has parameters, insert a space after the command name.
+			//This can be recognized by having " -> " (with the trailing space) in
+			//the command description; with no parameters, it's just " ->" at the
+			//very end of the description.
+			const space = slash_commands[cmds[0]].includes(" -> ") ? " " : "";
+			return cmds[0].slice(line.length - 1) + space;
+		}
+	}
+}
 
 on("submit", "#setprops", e => {
 	//Hack: This actually changes the type of the element.
