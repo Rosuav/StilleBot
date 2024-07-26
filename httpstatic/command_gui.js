@@ -1657,10 +1657,8 @@ on("keydown", ".msgedit textarea", e => {
 	if (e.key === "Tab") {
 		if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
 		const insertme = find_tab_completion(e.match);
-		if (insertme) {
-			e.match.setRangeText(insertme, e.match.selectionStart, e.match.selectionEnd, "end");
-			e.preventDefault();
-		}
+		if (insertme) e.match.setRangeText(insertme, e.match.selectionStart, e.match.selectionEnd, "end");
+		e.preventDefault();
 	}
 });
 
@@ -1671,6 +1669,7 @@ function find_tab_completion(mle) {
 	const line = content.slice(linestart === -1 ? 0 : linestart + 1, cursor); //just what's behind the cursor, not anything after it
 	if (line[0] === "/" && !line.includes(' ')) {
 		const cmds = Object.keys(slash_commands).filter(c => c.startsWith(line.slice(1)));
+		if (!cmds.length) return "";
 		if (cmds.length === 1) {
 			//If the command has parameters, insert a space after the command name.
 			//This can be recognized by having " -> " (with the trailing space) in
@@ -1678,6 +1677,13 @@ function find_tab_completion(mle) {
 			//very end of the description.
 			const space = slash_commands[cmds[0]].includes(" -> ") ? " " : "";
 			return cmds[0].slice(line.length - 1) + space;
+		}
+		//If there's a common prefix, tab-complete that.
+		for (let len = cmds[0].length; len > 0; --len) {
+			let pfx = cmds[0].slice(0, len);
+			for (let i = 1; i < cmds.length; ++i)
+				if (cmds[i].slice(0, len) !== pfx) {pfx = null; break;}
+			if (pfx) return pfx.slice(line.length - 1);
 		}
 	}
 }
