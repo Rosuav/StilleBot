@@ -465,7 +465,7 @@ array validate_command(object channel, string|zero mode, string cmdname, echoabl
 				string orig = "";
 				if (options->original) sscanf(options->original, "%*[!]%s%*[#]", orig);
 				orig = String.trim(lower_case(orig));
-				if (orig != "") state->original = orig + channel->name;
+				if (orig != "") state->original = orig;
 			}
 			//Validate the message. Note that there will be some things not caught by this
 			//(eg trying to set access or visibility deep within the response), but they
@@ -530,14 +530,14 @@ void scan_for_permissions(echoable_message response, mapping state) {
 //Update (or delete) a per-channel echo command and save to disk
 void _save_command(object channel, string cmd, echoable_message response, mapping|void extra)
 {
-	sscanf(cmd, "%[!]%s#", string pfx, string basename);
+	sscanf(cmd, "%[!]%s", string pfx, string basename);
 	if (basename == "") error("Requires a command name.\n");
 	multiset updates = (<cmd>);
 	purge(channel, cmd, updates);
-	if (extra->?original && sscanf(extra->original, "%s#", string oldname)) {
+	if (extra->?original) {
 		//Renaming a command requires removal of what used to be.
-		purge(channel, oldname, updates);
-		if (!extra->?nosave) G->G->DB->save_command(channel->userid, oldname, 0);
+		purge(channel, extra->original, updates);
+		if (!extra->?nosave) G->G->DB->save_command(channel->userid, extra->original, 0);
 	}
 	//Purge any iteration variables that begin with ".basename:" - anonymous rotations restart on
 	//any edit. This ensures that none of the anonymous ones hang around. Named ones are regular
@@ -618,7 +618,10 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 	//and remove those (if not also being readded).
 	mapping state = (["broadcasterid": channel->userid, "defvoice": channel->config->defvoice, "needperms": ([])]);
 	scan_for_permissions(response, state);
-	update_user_need_permissions(state->needperms, "cmd:" + basename, "Command - !" + basename); //TODO: Say "Special" or "Trigger" as needed
+	string label = pfx == "" ? "Command - !" + basename
+		: basename == "trigger" ? "Trigger"
+		: "Special - !" + basename;
+	update_user_need_permissions(state->needperms, "cmd:" + basename, label);
 }
 
 void update_user_need_permissions(mapping needperms, string reason, string desc) {
@@ -635,8 +638,12 @@ void update_user_need_permissions(mapping needperms, string reason, string desc)
 			foreach (needperms[channelid]; string perm;) {
 				if (!scopes[perm]) {
 					if (!prefs->notif_perms) prefs->notif_perms = ([]);
-					prefs->notif_perms[perm] += ({(["desc": desc, "reason": reason])});
-					changed = 1;
+					int have = 0;
+					foreach (prefs->notif_perms[perm] || ({ }), mapping need) if (need->reason == reason) have = 1;
+					if (!have) {
+						prefs->notif_perms[perm] += ({(["desc": desc, "reason": reason])});
+						changed = 1;
+					}
 				}
 			}
 			if (changed) G->G->update_user_prefs(channelid, (["notif_perms": prefs->notif_perms]));
@@ -770,11 +777,14 @@ __async__ void recalculate_perms_prefs() {
 		if (!sizeof(np)) {m_delete(prefs, "notif_perms"); changed = 1;}
 		if (changed) await(G->G->DB->save_config(id, "userprefs", prefs));
 	}
-	foreach (G->G->irc->id; int id; object channel) {
+	foreach (G->G->irc->id; int id; object channel) { if (id != 49497888) continue;
 		foreach (channel->commands; string cmdname; mixed response) {
 			mapping state = (["broadcasterid": id, "defvoice": channel->config->defvoice, "needperms": ([])]);
 			scan_for_permissions(response, state);
-			update_user_need_permissions(state->needperms, "cmd:" + cmdname, "Command - !" + cmdname);
+			string label = cmdname == "!trigger" ? "Trigger"
+				: cmdname[0] == '!' ? "Special - !" + cmdname
+				: "Command - !" + cmdname;
+			update_user_need_permissions(state->needperms, "cmd:" + cmdname, label);
 			/* Dump the needed perms to the console for a quick check
 			foreach (state->needperms; int voice; multiset perms) {
 				perms -= (multiset)(G->G->user_credentials[voice]->?scopes || (<>));
