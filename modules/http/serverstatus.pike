@@ -89,8 +89,9 @@ void update() {
 	state->cpu = 100 - 100 * (idle - lastidle) / (tot - lasttot);
 	state->spinner = (string)({spinner[spinnerpos % sizeof(spinner)]});
 	G->G->serverstatus_cputime = ({tot, idle, spinnerpos + 1});
-	sscanf(Stdio.read_file("/proc/meminfo"), "MemTotal: %d kB\nMemFree: %d kB", int memtotal, int memfree); //Or would MemAvailable be more useful?
-	state->ram = memfree * 100 / memtotal;
+	sscanf(Stdio.read_file("/proc/meminfo"), "MemTotal: %d kB\nMemFree: %d kB\nMemAvailable: %d B", int memtotal, int memfree, int memavail);
+	//Unsure whether it's better to report memfree or memavail
+	state->ram = 100 - memavail * 100 / memtotal;
 	state->ramtotal = memtotal / 1048576;
 	//Check database timings periodically
 	if (time() - lastdbcheck > 30) {
