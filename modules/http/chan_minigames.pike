@@ -128,4 +128,12 @@ __async__ void update_crown(object channel, mapping game) {
 	await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + game->rewardid,
 		(["Authorization": channel->userid]),
 		(["method": "PATCH", "json": changes])));
+	await(G->G->DB->mutate_config(channel->userid, "dynamic_rewards") {
+		mapping rwd = __ARGS__[0][game->rewardid];
+		if (!rwd) rwd = __ARGS__[0][game->rewardid] = ([
+			"basecost": 0, "availability": "{online}",
+			"prompt": "Seize the crown for yourself! The crown is currently held by $crownholder$, who was the last person to take it.",
+		]);
+		rwd->formula = "PREV + " + game->increase;
+	});
 }
