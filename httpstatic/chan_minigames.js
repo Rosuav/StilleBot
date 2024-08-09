@@ -4,6 +4,14 @@ const {INPUT, LI, OPTION, SELECT, UL} = lindt; //autoimport
 export function render(data) {
 	const crown = {...sections.crown, ...(data.crown || { })};
 	replace_content("#seizecrown", UL({"data-section": "crown"}, [
+		LI([
+			"Enabled? ",
+			SELECT({name: "enabled", value: crown.enabled}, [
+				OPTION({value: "0"}, "No"),
+				OPTION({value: "1"}, "Yes"),
+			]),
+			" Set to Yes to make the magic happen!",
+		]),
 		LI(["Initial price ", INPUT({type: "number", name: "initialprice", value: crown.initialprice})]),
 		LI(["Increase per movement ", INPUT({type: "number", name: "increase", value: crown.increase})]),
 		LI([

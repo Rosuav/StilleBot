@@ -50,6 +50,7 @@ First, and optionally Second, Third, and Last
 //Note that the default value also governs the stored data type.
 constant sections = ([
 	"crown": ([
+		"enabled": 0,
 		"initialprice": 5000,
 		"increase": 1000,
 		"gracetime": 60,
@@ -82,4 +83,49 @@ __async__ void wscmd_configure(object channel, mapping(string:mixed) conn, mappi
 		}
 	});
 	send_updates_all(channel, "");
+	//Now to perform the updates at Twitch's end and in other bot features.
+	//Note that, if anything gets desynchronized, just make any trivial edit and this will update everything.
+	this["update_" + msg->section](channel, game);
+}
+
+//Boolify for JSON purposes
+object bool(mixed val) {return val ? Val.true : Val.false;}
+
+__async__ void update_crown(object channel, mapping game) {
+	if (!game->enabled && game->rewardid) {
+		await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + game->rewardid,
+			(["Authorization": channel->userid]),
+			(["method": "DELETE"])));
+		m_delete(game, "rewardid");
+		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->crown = game;});
+		//No other config changes are done. The deletion of the reward will (asynchronously)
+		//result in other info getting cleaned up, but we broadly don't need to take action.
+		return;
+	}
+	if (!game->enabled) return;
+	mapping cfg = sections->crown | game;
+	if (!game->rewardid) {
+		//TODO: Should this disambiguation be in pointsrewards more generally?
+		string basetitle = "Seize the Crown";
+		array rewards = G->G->pointsrewards[channel->userid] || ({ });
+		multiset have_titles = (multiset)rewards->title;
+		string title = basetitle; int idx = 1; //First one doesn't get the number appended
+		while (have_titles[title]) title = sprintf("%s #%d", basetitle, ++idx);
+		mapping resp = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid,
+			(["Authorization": channel->userid]),
+			(["json": ([
+				"title": title,
+				"cost": cfg->initialprice,
+			])])));
+		game->rewardid = resp->data[0]->id;
+		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->crown = game;});
+	}
+	mapping changes = ([
+		"is_global_cooldown_enabled": bool(cfg->gracetime), "global_cooldown_seconds": cfg->gracetime,
+		"is_max_per_stream_enabled": bool(!cfg->gracetime), "max_per_stream": !cfg->gracetime,
+		"is_max_per_user_per_stream_enabled": bool(cfg->perpersonperstream), "max_per_user_per_stream": cfg->perpersonperstream,
+	]);
+	await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + game->rewardid,
+		(["Authorization": channel->userid]),
+		(["method": "PATCH", "json": changes])));
 }
