@@ -3,7 +3,7 @@ const {INPUT, LI, OPTION, SELECT, UL} = lindt; //autoimport
 
 export function render(data) {
 	const crown = {...sections.crown, ...(data.crown || { })};
-	replace_content("#seizecrown", UL({"data-section": "crown"}, [
+	replace_content("#crown", UL([
 		LI([
 			"Enabled? ",
 			SELECT({name: "enabled", value: crown.enabled}, [
@@ -34,9 +34,9 @@ export function render(data) {
 }
 
 on("change", "input,select", e => {
-	const sec = e.match.closest("[data-section]");
+	const sec = e.match.closest(".game");
 	if (!sec) return;
 	const params = { };
 	sec.querySelectorAll("input,select").forEach(el => params[el.name] = el.type === "checkbox" ? el.checked : el.value);
-	ws_sync.send({cmd: "configure", section: sec.dataset.section, params});
+	ws_sync.send({cmd: "configure", section: sec.id, params});
 });

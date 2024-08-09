@@ -8,7 +8,7 @@ the channel be affiliated/partnered in order to use channel points.
 Bit Boss
 --------
 
-Not yet implemented.
+Not yet implemented - coming soon!
 
 Seize the Crown
 ---------------
@@ -17,7 +17,7 @@ There is only one crown, and everyone wants it. The cost to claim the crown goes
 up every time the crown moves!
 
 loading...
-{:#seizecrown}
+{:#crown .game}
 
 First!
 ------
