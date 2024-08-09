@@ -22,7 +22,15 @@ loading...
 First!
 ------
 
-This might be the last thing I implement.
+Let your viewers compete to see who's first! The rewards are not available until the
+stream goes online, and if you have Second/Third/Last, they will not become available
+until the preceding reward(s) get claimed.
+
+Whoever claims the reward will be celebrated in the reward's description until the end
+of the stream.
+
+loading...
+{:#first .game}
 ";
 
 /*
@@ -55,6 +63,12 @@ constant sections = ([
 		"increase": 1000,
 		"gracetime": 60,
 		"perpersonperstream": 0,
+	]),
+	"first": ([
+		"first": 0,
+		"second": 0,
+		"third": 0,
+		"last": 0,
 	]),
 ]);
 
@@ -154,4 +168,82 @@ __async__ void update_crown(object channel, mapping game) {
 			$crownholder$ = \"{username}\"
 		}
 		", (["language": "mustard"]));
+}
+
+constant firsts = ([
+	"first": ([
+		"title": "First!", "cost": 1,
+		"unclaimed": "Claim this reward to let everyone know that you are the first one here!",
+		"claimed": "Congratulations to {username} for being first to claim the reward this stream! Will it be you next time?",
+		"response": "Congrats to @{username} for being first!",
+	]),
+	"second": ([
+		"title": "Second!", "cost": 2,
+		"unclaimed": "Missed out on being first? Claim this reward to let everyone know that you came second!",
+		"claimed": "Congratulations to {username} for managing to claim the reward this stream! Will it be you next time?",
+		"response": "And congrats to @{username} for being second!",
+	]),
+	"third": ([
+		"title": "Third...", "cost": 3,
+		"unclaimed": "Look, we know it's hard to be the best. But you can at least come in third...",
+		"claimed": "Well done, well done. It was {username} who managed to be the oh so amazing third place winner.",
+		"response": "Good job, @{username}. Third place. We are proud of you.",
+	]),
+	"last": ([
+		"title": "Last?", "cost": 10,
+		"unclaimed": "You're not first, but maybe you can be last?",
+		"claimed": "Congratulations to {username} for being last (???) to claim the reward this stream!",
+		"response": "Congrats to @{username} for being ... last??",
+	]),
+]);
+
+__async__ void update_first(object channel, mapping game) {
+	//First (pun intended), some validation. Sequential rewards depend on each other.
+	int changed = 0;
+	if (!game->first && (game->second || game->last)) {
+		game->second = game->last = 0;
+		changed = 1;
+	}
+	if (!game->second && game->third) {
+		game->third = 0;
+		changed = 1;
+	}
+	//Okay. Now let's see which rewards need to be created or destroyed.
+	//Fortunately the universe doesn't have a Law of Conservation of Channel Point Rewards,
+	//or I'd be breaking the law right now!
+	foreach (firsts; string which; mapping desc) {
+		if (game[which]) {
+			if (!game[which + "rwd"]) {
+				mapping resp = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid,
+					(["Authorization": channel->userid]),
+					(["json": ([
+						"title": desc->title,
+						"cost": desc->cost,
+						"prompt": desc->unclaimed,
+						"is_max_per_stream_enabled": Val.true, "max_per_stream": 1,
+					]), "return_errors": 1])));
+				if (resp->data && sizeof(resp->data)) game[which + "rwd"] = resp->data[0]->id; //Otherwise what? Try again next time?
+				changed = 1;
+			}
+			if (!channel->commands["rwd" + which]) {
+				//Create the command
+			}
+		} else {
+			if (string id = m_delete(game, which + "rwd")) {
+				await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + id,
+					(["Authorization": channel->userid]),
+					(["method": "DELETE"])));
+				changed = 1;
+			}
+			if (channel->commands["rwd" + which]) {
+				//Delete the command
+			}
+		}
+		//In chat: "Hey, hey, no fair! You already claimed a reward this stream. Shame is yours...",
+		//In reward prompt: "Shame is upon {username} for being greedy and claiming more than one reward. Let's play nicely next time.",
+	}
+	if (changed) {
+		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->first = game;});
+		send_updates_all(channel, "");
+	}
 }

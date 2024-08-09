@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {INPUT, LI, OPTION, SELECT, UL} = lindt; //autoimport
+const {INPUT, LABEL, LI, OPTION, SELECT, UL} = lindt; //autoimport
 
 export function render(data) {
 	const crown = {...sections.crown, ...(data.crown || { })};
@@ -30,6 +30,14 @@ export function render(data) {
 			]),
 			" If disallowed, each person may only claim the crown once per stream.",
 		]),
+	]));
+	const first = {...sections.first, ...(data.first || { })};
+	replace_content("#first", UL([
+		LI("Select which rewards you want active."),
+		LI(LABEL([INPUT({type: "checkbox", name: "first", checked: Boolean(first.first)}), " First"])),
+		LI(LABEL([INPUT({type: "checkbox", name: "second", checked: Boolean(first.second)}), " Second"])),
+		LI(LABEL([INPUT({type: "checkbox", name: "third", checked: Boolean(first.third)}), " Third"])),
+		LI(LABEL([INPUT({type: "checkbox", name: "last", checked: Boolean(first.last)}), " Last"])),
 	]));
 }
 
