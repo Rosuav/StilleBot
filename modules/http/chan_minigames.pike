@@ -13,7 +13,11 @@ Not yet implemented.
 Seize the Crown
 ---------------
 
-Coming soon!
+There is only one crown, and everyone wants it. The cost to claim the crown goes
+up every time the crown moves!
+
+loading...
+{:#seizecrown}
 
 First!
 ------
@@ -47,6 +51,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	return render(req, (["vars": (["ws_group": ""])]) | req->misc->chaninfo);
 }
 
-mapping get_chan_state(object channel, string grp, string|void id) {
-	return ([]);
+Concurrent.Future get_chan_state(object channel, string grp, string|void id) {
+	return G->G->DB->load_config(channel->userid, "minigames");
 }
