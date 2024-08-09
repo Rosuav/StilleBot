@@ -2,13 +2,13 @@ import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/fac
 const {INPUT, LI, OPTION, SELECT, UL} = lindt; //autoimport
 
 export function render(data) {
-	const crown = data.crown || { };
+	const crown = {...sections.crown, ...(data.crown || { })};
 	replace_content("#seizecrown", UL({"data-section": "crown"}, [
-		LI(["Initial price ", INPUT({type: "number", name: "initialprice", value: crown.initialprice || 5000})]),
-		LI(["Increase per movement ", INPUT({type: "number", name: "increase", value: crown.increase || 1000})]),
+		LI(["Initial price ", INPUT({type: "number", name: "initialprice", value: crown.initialprice})]),
+		LI(["Increase per movement ", INPUT({type: "number", name: "increase", value: crown.increase})]),
 		LI([
 			"Grace time after gaining the crown ",
-			SELECT({name: "gracetime", value: crown.gracetime || 60}, [
+			SELECT({name: "gracetime", value: crown.gracetime}, [
 				OPTION({value: "60"}, "One minute"),
 				OPTION({value: "600"}, "Ten minutes"),
 				OPTION({value: "0"}, "Rest of stream"),
@@ -16,7 +16,7 @@ export function render(data) {
 		]),
 		LI([
 			"Rapid reclamation ",
-			SELECT({name: "perpersonperstream", value: crown.perpersonperstream || "0"}, [
+			SELECT({name: "perpersonperstream", value: crown.perpersonperstream}, [
 				OPTION({value: "0"}, "Permitted"),
 				OPTION({value: "1"}, "Disallowed"),
 			]),

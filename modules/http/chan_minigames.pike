@@ -46,11 +46,40 @@ First, and optionally Second, Third, and Last
 - You're not allowed to claim more than one. If you do, the message shames you.
 */
 
+//Valid sections, valid attributes, and their default values
+//Note that the default value also governs the stored data type.
+constant sections = ([
+	"crown": ([
+		"initialprice": 5000,
+		"increase": 1000,
+		"gracetime": 60,
+		"perpersonperstream": 0,
+	]),
+]);
+
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo); //Should there be non-privileged info shown?
-	return render(req, (["vars": (["ws_group": ""])]) | req->misc->chaninfo);
+	return render(req, (["vars": (["ws_group": "", "sections": sections])]) | req->misc->chaninfo);
 }
 
 Concurrent.Future get_chan_state(object channel, string grp, string|void id) {
 	return G->G->DB->load_config(channel->userid, "minigames");
+}
+
+__async__ void wscmd_configure(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping sec = sections[msg->section]; if (!sec) return;
+	mapping params = msg->params; if (!mappingp(params)) return;
+	mapping game;
+	await(G->G->DB->mutate_config(channel->userid, "minigames") {
+		game = __ARGS__[0][msg->section];
+		if (!game) game = __ARGS__[0][msg->section] = ([]);
+		foreach (sec; string key; mixed dflt) {
+			mixed val = params[key]; if (undefinedp(val)) continue;
+			if (intp(dflt)) val = (int)val;
+			else if (floatp(dflt)) val = (float)val;
+			else val = (string)val;
+			game[key] = val;
+		}
+	});
+	send_updates_all(channel, "");
 }
