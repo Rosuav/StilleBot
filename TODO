@@ -230,6 +230,13 @@
   - Watch for song changes. Also support a volume control?? Wouldn't work for VLC as the
     Lua extension doesn't establish a bidirectional connection.
   - Try to get both the URL and the song title (as Unicode, no mojibake thanks)
-* Make an activatable feature for a Seize Crown redemption?
 * In interactive mode, have an explore(mixed value) that will create a GTK window to
   show the value, same as Internals does
+* Stream minigames
+  - Bit Boss (see above)
+  - Seize the Crown
+  - First, and optionally Second, Third, and Last
+    - Second/Third/Last are enabled by First/Second/Third
+    - Last can be had w/o Second/Third, so you can have anywhere from 1 to 4 redemptions
+    - Each one puts the person's name into the description and puts a message in chat
+    - You're not allowed to claim more than one. If you do, the message shames you.
