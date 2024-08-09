@@ -48,10 +48,8 @@ Bit Boss
     effective monitors in the same page?
 
 First, and optionally Second, Third, and Last
-- Second/Third/Last are enabled by First/Second/Third
-- Last can be had w/o Second/Third, so you can have anywhere from 1 to 4 redemptions
-- Each one puts the person's name into the description and puts a message in chat
-- You're not allowed to claim more than one. If you do, the message shames you.
+- TODO: On channel offline (dedicated hook, don't do it in the special trigger), update all the
+  descriptions and clear the variables with userids. How do we let the user customize the rewards?
 */
 
 //Valid sections, valid attributes, and their default values
@@ -197,6 +195,24 @@ constant firsts = ([
 	]),
 ]);
 
+constant first_code = #"
+	#access \"none\"
+	#visibility \"hidden\"
+	#redemption \"%s\"
+	try {
+		chan_pointsrewards(\"{rewardid}\", \"fulfil\", \"{redemptionid}\") \"\"
+	}
+	catch \"Unexpected error: {error}\"
+	//TODO: If you have claimed any prior reward, give the shame response.
+	//TODO: Update this block if more rewards get added or some get removed,
+	//without breaking if the streamer has customized the wording.
+	%q
+	try {
+		chan_pointsrewards(\"{rewardid}\", \"desc\", %q) \"\"
+	}
+	catch \"Unexpected error: {error}\"
+";
+
 __async__ void update_first(object channel, mapping game) {
 	//First (pun intended), some validation. Sequential rewards depend on each other.
 	int changed = 0;
@@ -226,7 +242,10 @@ __async__ void update_first(object channel, mapping game) {
 				changed = 1;
 			}
 			if (!channel->commands["rwd" + which]) {
-				//Create the command
+				string code = sprintf(first_code, game[which + "rwd"], desc->response, desc->claimed);
+				string|zero nextid; //TODO: Locate the next active reward (ID), or 0 if there's none. Gotta get all reward IDs before fixing up the commands. Or? Use variables?
+				if (nextid) code += "chan_pointsrewards(\"" + nextid + "\", \"enable\") \"\"";
+				G->G->cmdmgr->update_command(channel, "", "rwd" + which, code, (["language": "mustard"]));
 			}
 		} else {
 			if (string id = m_delete(game, which + "rwd")) {
@@ -235,10 +254,9 @@ __async__ void update_first(object channel, mapping game) {
 					(["method": "DELETE"])));
 				changed = 1;
 			}
-			if (channel->commands["rwd" + which]) {
-				//Delete the command
-			}
+			if (channel->commands["rwd" + which]) G->G->cmdmgr->update_command(channel, "", "rwd" + which, "");
 		}
+		//If duplicate claim:
 		//In chat: "Hey, hey, no fair! You already claimed a reward this stream. Shame is yours...",
 		//In reward prompt: "Shame is upon {username} for being greedy and claiming more than one reward. Let's play nicely next time.",
 	}
