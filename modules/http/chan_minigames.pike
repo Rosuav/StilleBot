@@ -92,17 +92,19 @@ __async__ void wscmd_configure(object channel, mapping(string:mixed) conn, mappi
 object bool(mixed val) {return val ? Val.true : Val.false;}
 
 __async__ void update_crown(object channel, mapping game) {
-	if (!game->enabled && game->rewardid) {
-		await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + game->rewardid,
-			(["Authorization": channel->userid]),
-			(["method": "DELETE"])));
-		m_delete(game, "rewardid");
-		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->crown = game;});
+	if (!game->enabled) {
+		if (game->rewardid) {
+			await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + game->rewardid,
+				(["Authorization": channel->userid]),
+				(["method": "DELETE"])));
+			m_delete(game, "rewardid");
+			await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->crown = game;});
+		}
+		if (channel->commands->seizecrown) G->G->cmdmgr->update_command(channel, "", "seizecrown", "");
 		//No other config changes are done. The deletion of the reward will (asynchronously)
 		//result in other info getting cleaned up, but we broadly don't need to take action.
 		return;
 	}
-	if (!game->enabled) return;
 	mapping cfg = sections->crown | game;
 	if (!game->rewardid) {
 		//TODO: Should this disambiguation be in pointsrewards more generally?
@@ -136,4 +138,20 @@ __async__ void update_crown(object channel, mapping game) {
 		]);
 		rwd->formula = "PREV + " + game->increase;
 	});
+	if (!channel->commands->seizecrown) G->G->cmdmgr->update_command(channel, "", "seizecrown", #"
+		#access \"none\"
+		#visibility \"hidden\"
+		#redemption \"" + game->rewardid + #"\"
+		try {
+			chan_pointsrewards(\"{rewardid}\", \"fulfil\", \"{redemptionid}\") \"\"
+		}
+		catch \"\"
+		if (\"{username}\" == \"$crownholder$\") {
+			\"You already hold the crown, {username} - good job wasting your points.\"
+		}
+		else {
+			\"Congratulations to {username} for successfully claiming the crown from $crownholder$! You will retain this title until someone else seizes it from you...\"
+			$crownholder$ = \"{username}\"
+		}
+		", (["language": "mustard"]));
 }
