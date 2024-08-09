@@ -242,7 +242,7 @@ __async__ void update_first(object channel, mapping game) {
 				changed = 1;
 			}
 			if (!channel->commands["rwd" + which]) {
-				string code = sprintf(first_code, game[which + "rwd"], desc->response, desc->claimed);
+				string code = sprintf(first_code, game[which + "rwd"] || "", desc->response, desc->claimed);
 				string|zero nextid; //TODO: Locate the next active reward (ID), or 0 if there's none. Gotta get all reward IDs before fixing up the commands. Or? Use variables?
 				if (nextid) code += "chan_pointsrewards(\"" + nextid + "\", \"enable\") \"\"";
 				G->G->cmdmgr->update_command(channel, "", "rwd" + which, code, (["language": "mustard"]));
