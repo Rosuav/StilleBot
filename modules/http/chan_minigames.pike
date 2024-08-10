@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit builtin_command;
 constant markdown = #"# Minigames for $$channel$$
 
 Want to add some fun minigames to your channel? These are all built using Twitch
@@ -203,14 +204,15 @@ constant first_code = #"
 		chan_pointsrewards(\"{rewardid}\", \"fulfil\", \"{redemptionid}\") \"\"
 	}
 	catch \"Unexpected error: {error}\"
-	//TODO: If you have claimed any prior reward, give the shame response.
-	//TODO: Update this block if more rewards get added or some get removed,
-	//without breaking if the streamer has customized the wording.
-	%q
-	try {
-		chan_pointsrewards(\"{rewardid}\", \"desc\", %q) \"\"
+	chan_minigames(\"first\", %q) {
+		if (\"{shame}\" == \"1\") {
+			%q
+			chan_pointsrewards(\"{rewardid}\", \"desc\", %q) \"\"
+		} else {
+			%q
+			chan_pointsrewards(\"{rewardid}\", \"desc\", %q) \"\"
+		}
 	}
-	catch \"Unexpected error: {error}\"
 ";
 
 __async__ void update_first(object channel, mapping game) {
@@ -237,14 +239,18 @@ __async__ void update_first(object channel, mapping game) {
 						"cost": desc->cost,
 						"prompt": desc->unclaimed,
 						"is_max_per_stream_enabled": Val.true, "max_per_stream": 1,
+						"is_enabled": which == "first" ? Val.true : Val.false,
 					]), "return_errors": 1])));
+				werror("RESP %O\n", resp);
 				if (resp->data && sizeof(resp->data)) game[which + "rwd"] = resp->data[0]->id; //Otherwise what? Try again next time?
 				changed = 1;
 			}
 			if (!channel->commands["rwd" + which]) {
-				string code = sprintf(first_code, game[which + "rwd"] || "", desc->response, desc->claimed);
-				string|zero nextid; //TODO: Locate the next active reward (ID), or 0 if there's none. Gotta get all reward IDs before fixing up the commands. Or? Use variables?
-				if (nextid) code += "chan_pointsrewards(\"" + nextid + "\", \"enable\") \"\"";
+				string code = sprintf(first_code, game[which + "rwd"] || "", which,
+					"Hey, hey, no fair, {username}! You already claimed a reward this stream. Shame is yours...",
+					"Shame is upon {username} for being greedy and claiming more than one reward. Let's play nicely next time.",
+					desc->response, desc->claimed);
+				werror("CODE:\n%s\n", code);
 				G->G->cmdmgr->update_command(channel, "", "rwd" + which, code, (["language": "mustard"]));
 			}
 		} else {
@@ -256,12 +262,60 @@ __async__ void update_first(object channel, mapping game) {
 			}
 			if (channel->commands["rwd" + which]) G->G->cmdmgr->update_command(channel, "", "rwd" + which, "");
 		}
-		//If duplicate claim:
-		//In chat: "Hey, hey, no fair! You already claimed a reward this stream. Shame is yours...",
-		//In reward prompt: "Shame is upon {username} for being greedy and claiming more than one reward. Let's play nicely next time.",
 	}
 	if (changed) {
 		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->first = game;});
 		send_updates_all(channel, "");
 	}
 }
+
+constant command_description = "Manage stream minigames";
+constant builtin_name = "Minigame";
+constant builtin_param = ({"/Game/first", "Extra info"});
+constant vars_provided = ([
+	"{shame}": "1 if user should be shamed for duplicate claiming",
+]);
+
+//Should this be stored somewhere other than ephemeral memory? If the bot hops, this gets lost, with the (tragic) result
+//that people can claim an additional reward that stream without getting shamed for it.
+@retain: mapping already_claimed = ([]);
+__async__ mapping message_params(object channel, mapping person, array param) {
+	if (param[0] == "first") {
+		int seen = 0;
+		mapping game = await(G->G->DB->load_config(channel->userid, "minigames"))->first;
+		if (!game) return ([]);
+		foreach ("first second third last" / " ", string which) {
+			if (which == param[1]) seen = 1;
+			else if (string id = seen && game[which + "rwd"]) {
+				//Okay. We've found the next active reward. Enable it!
+				mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+					+ channel->userid + "&id=" + id,
+					(["Authorization": channel->userid]),
+					(["method": "PATCH", "json": (["is_enabled": Val.true]), "return_errors": 1])));
+				break;
+			}
+		}
+		if (!already_claimed[channel->userid]) already_claimed[channel->userid] = ([]);
+		if (already_claimed[person->userid]) return (["{shame}": "1"]);
+		already_claimed[person->userids] = time();
+		return (["{shame}": "0"]);
+	}
+	return ([]);
+}
+
+@hook_channel_offline: __async__ void disconnected(string channel, int uptime, int userid) {
+	m_delete(already_claimed, userid);
+	mapping game = await(G->G->DB->load_config(userid, "minigames"))->first;
+	if (!game) return;
+	//Disable the second and subsequent rewards until First gets claimed
+	foreach ("secondrwd thirdrwd lastrwd" / " ", string which) {
+		if (string id = game[which]) {
+			await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+				+ userid + "&id=" + id,
+				(["Authorization": userid]),
+				(["method": "PATCH", "json": (["is_enabled": Val.false]), "return_errors": 1])));
+		}
+	}
+}
+
+protected void create(string name) {::create(name);}
