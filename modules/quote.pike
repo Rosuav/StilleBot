@@ -22,6 +22,7 @@ constant command_suggestions = ([
 	]),
 	"!delquote": ([
 		"_description": "Quotes - Delete a channel quote",
+		"access": "mod",
 		"conditional": "catch",
 		"message": ([
 			"builtin": "quote", "builtin_param": ({"Delete", "%s"}),
@@ -31,6 +32,7 @@ constant command_suggestions = ([
 	]),
 	"!addquote": ([
 		"_description": "Quotes - Add a channel quote",
+		"access": "mod",
 		"conditional": "catch",
 		"message": ([
 			"builtin": "quote", "builtin_param": ({"Add", "", "{@emoted}"}),
