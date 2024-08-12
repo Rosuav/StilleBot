@@ -85,13 +85,14 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			const maxhp = t.t[0];
 			const curhp = maxhp - m[1], avatar = m[2], name = m[3];
 			const pos = curhp/maxhp * 100;
-			elem.style.background = `linear-gradient(.25turn, ${t.fillcolor} ${pos}%, ${t.barcolor} ${pos}%, ${t.barcolor})`;
 			elem.style.display = "flex";
-			const img = elem.querySelector("img") || IMG({src: avatar});
+			const img = elem.querySelector("img") || IMG({class: "avatar", src: avatar});
 			if (img.src !== avatar) img.src = avatar; //Avoid flicker
 			set_content(elem, [
 				img,
-				DIV(name), DIV(curhp + "/" + maxhp), DIV()
+				DIV({style: `flex-grow: 1; display: flex; background: linear-gradient(.25turn, ${t.fillcolor} ${pos}%, ${t.barcolor} ${pos}%, ${t.barcolor})`}, [
+					DIV(name), DIV(curhp + "/" + maxhp), DIV(),
+				]),
 			]);
 			return;
 		}
