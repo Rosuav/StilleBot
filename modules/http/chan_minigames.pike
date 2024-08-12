@@ -9,7 +9,11 @@ the channel be affiliated/partnered in order to use channel points.
 Bit Boss
 --------
 
-Not yet implemented - coming soon!
+Win the boss battle, become the new boss. Deal damage with all forms of financial
+support (configurable); whoever deals the final blow becomes the new boss.
+
+loading...
+{:#boss .game}
 
 Seize the Crown
 ---------------
@@ -36,7 +40,7 @@ loading...
 
 /*
 Bit Boss
-- Alternate display mode for a goal bar: "Hitpoints".
+- Alternate display format for a goal bar: "Hitpoints".
 - As the value advances toward the goal, the display reduces, ie it is inverted
 - Use the "level up command" to advance to a new person
 - Have an enableable feature that gives:
@@ -45,8 +49,26 @@ Bit Boss
     and maybe changes bitbossmaxhp in some way
     - Note that "overkill" mode can be done by querying the goal bar before making changes
   - Stream online special that initializes everything
-  - Secondary monitor that shows the user's name and avatar??? Or should there be two
-    effective monitors in the same page?
+- Available options:
+  - Initial HP and user
+  - HP growth method: static, fixed increase, overkill, others?
+  - Reset method: end of stream, mod command, never?
+- Still to do:
+  - Display format (in monitor.js)
+    - Parse out display -> "damage:avatar username"
+    - Parse out thresholds_rendered -> "maxhp 1"
+    - Display hitpoints bar showing (maxhp-damage) out of maxhp
+    - Display avatar as image. Always to left? Allow left/right to be configured?
+  - "Last damage dealt" and animation?? Maybe??
+  - Level up command
+    - If hpgrowth < 0, calculate overkill and use as hpgrowth
+    - Reset damage to zero
+    - Increase bossmaxhp by hpgrowth
+    - Put congratulatory message in chat (naming the previous boss)
+    - Use uservars to query user details
+    - Set boss UID, name, and avatar
+  - Autoreset on stream offline
+  - Reset command
 
 First, and optionally Second, Third, and Last
 - TODO: On channel offline (dedicated hook, don't do it in the special trigger), update all the
@@ -59,6 +81,13 @@ First, and optionally Second, Third, and Last
 //Valid sections, valid attributes, and their default values
 //Note that the default value also governs the stored data type.
 constant sections = ([
+	"boss": ([
+		"enabled": 0,
+		"initialhp": 1000,
+		"initialboss": 279141671, //Mustard Mine himself
+		"hpgrowth": 0, //0 for static, positive numbers for fixed growth, -1 for overkill
+		"autoreset": 1, //Reset at end of stream automatically. There'll be a mod command to reset regardless.
+	]),
 	"crown": ([
 		"enabled": 0,
 		"initialprice": 5000,
@@ -107,6 +136,51 @@ __async__ void wscmd_configure(object channel, mapping(string:mixed) conn, mappi
 
 //Boolify for JSON purposes
 object bool(mixed val) {return val ? Val.true : Val.false;}
+
+__async__ void update_boss(object channel, mapping game) {
+	if (!game->enabled) {
+		if (string nonce = m_delete(game, "monitorid")) {
+			G->G->websocket_types->chan_monitors->delete_monitor(channel, nonce);
+			await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->boss = game;});
+		}
+		if (channel->commands->slayboss) G->G->cmdmgr->update_command(channel, "", "slayboss", "");
+		return;
+	}
+	mapping cfg = sections->boss | game;
+	if (!game->monitorid) {
+		//Note that the boss's current HP is max HP minus damage, and is not directly tracked.
+		channel->set_variable("bossdmg", "0", "set");
+		channel->set_variable("bossmaxhp", (string)cfg->initialhp, "set");
+		mapping user = await(get_user_info(cfg->initialboss));
+		channel->set_variable("bossuid", user->id, "set");
+		channel->set_variable("bossname", user->display_name, "set");
+		channel->set_variable("bossavatar", user->profile_image_url, "set");
+		[game->monitorid, mapping info] = G->G->websocket_types->chan_monitors->create_monitor(channel, ([
+			"type": "goalbar", "varname": "bossdmg",
+			"format": "hitpoints",
+			"lvlupcmd": "slayboss",
+			"bit": 1, "tip": 1,
+			"sub_t1": 500, "sub_t2": 1000, "sub_t3": 2500,
+			"kofi_dono": 1, "kofi_member": 1, "kofi_shop": 1,
+			"fw_dono": 1, "fw_member": 1, "fw_shop": 1, "fw_gift": 1,
+			"thresholds": "$bossmaxhp$ 1",
+			"text": "$bossavatar$ $bossname$",
+		]));
+		werror("GOT INFO %O\n", info);
+		werror("ID: %O\n", game->monitorid);
+		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->boss = game;});
+	}
+	if (!channel->commands->slayboss) G->G->cmdmgr->update_command(channel, "", "slayboss", #"
+		#access \"none\"
+		#visibility \"hidden\"
+		\"BOSS SLAIN by {username}\"
+		", (["language": "mustard"]));
+	if (!channel->commands->resetboss) G->G->cmdmgr->update_command(channel, "", "resetboss", #"
+		#access \"mod\"
+		#visibility \"hidden\"
+		\"Reset boss to default (TODO)\"
+		", (["language": "mustard"]));
+}
 
 __async__ void update_crown(object channel, mapping game) {
 	if (!game->enabled) {

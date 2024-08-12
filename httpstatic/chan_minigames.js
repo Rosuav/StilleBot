@@ -2,6 +2,28 @@ import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/fac
 const {INPUT, LABEL, LI, OPTION, SELECT, UL} = lindt; //autoimport
 
 export function render(data) {
+	const boss = {...sections.boss, ...(data.boss || { })};
+	replace_content("#boss", UL([
+		LI([
+			"Enabled? ",
+			SELECT({name: "enabled", value: boss.enabled}, [
+				OPTION({value: "0"}, "No"),
+				OPTION({value: "1"}, "Yes"),
+			]),
+			" Set to Yes to have a boss to fight!",
+		]),
+		LI([
+			"Initial boss ",
+			SELECT({name: "initialboss", value: boss.initialboss}, [
+				OPTION({value: "279141671"}, "Mustard Mine"),
+				OPTION({value: "274598607"}, "AnAnonymousGifter"),
+				//TODO: Broadcaster, and all registered channel voices
+			]),
+		]),
+		LI(["Initial HP ", INPUT({type: "number", name: "initialhp", value: boss.initialhp})]),
+		LI(["Increase per victory ", INPUT({type: "number", name: "hpgrowth", value: boss.hpgrowth})]),
+		//TODO: Overkill mode (hpgrowth == -1)
+	]));
 	const crown = {...sections.crown, ...(data.crown || { })};
 	replace_content("#crown", UL([
 		LI([
