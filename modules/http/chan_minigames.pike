@@ -239,10 +239,16 @@ __async__ void update_first(object channel, mapping game) {
 						"cost": desc->cost,
 						"prompt": desc->unclaimed,
 						"is_max_per_stream_enabled": Val.true, "max_per_stream": 1,
-						"is_enabled": which == "first" ? Val.true : Val.false,
+						//Note that you can't actually create a paused reward; instead, we create
+						//the reward and then immediately pause it.
+						//"is_paused": which == "first" ? Val.false : Val.true,
 					]), "return_errors": 1])));
 				werror("RESP %O\n", resp);
 				if (resp->data && sizeof(resp->data)) game[which + "rwd"] = resp->data[0]->id; //Otherwise what? Try again next time?
+				if (which != "first") await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+					+ channel->userid + "&id=" + game[which + "rwd"],
+					(["Authorization": channel->userid]),
+					(["method": "PATCH", "json": (["is_paused": Val.true]), "return_errors": 1])));
 				changed = 1;
 			}
 			if (!channel->commands["rwd" + which]) {
@@ -288,10 +294,10 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 			if (which == param[1]) seen = 1;
 			else if (string id = seen && game[which + "rwd"]) {
 				//Okay. We've found the next active reward. Enable it!
-				mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+				await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 					+ channel->userid + "&id=" + id,
 					(["Authorization": channel->userid]),
-					(["method": "PATCH", "json": (["is_enabled": Val.true]), "return_errors": 1])));
+					(["method": "PATCH", "json": (["is_paused": Val.false]), "return_errors": 1])));
 				break;
 			}
 		}
@@ -313,7 +319,7 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 			await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 				+ userid + "&id=" + id,
 				(["Authorization": userid]),
-				(["method": "PATCH", "json": (["is_enabled": Val.false]), "return_errors": 1])));
+				(["method": "PATCH", "json": (["is_paused": Val.true]), "return_errors": 1])));
 		}
 	}
 }
