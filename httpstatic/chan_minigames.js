@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, CODE, INPUT, LABEL, LI, OPTION, SELECT, UL} = lindt; //autoimport
+const {A, BR, BUTTON, CODE, INPUT, LABEL, LI, OPTION, SELECT, UL} = lindt; //autoimport
 
 export function render(data) {
 	const boss = {...sections.boss, ...(data.boss || { })};
@@ -39,6 +39,7 @@ export function render(data) {
 		]),
 		LI(["Initial HP ", INPUT({type: "number", name: "initialhp", value: boss.initialhp})]),
 		LI(["Increase per victory ", INPUT({type: "number", name: "hpgrowth", value: boss.hpgrowth}), " or -1 for overkill mode"]),
+		boss.monitorid && LI(["Further configuration (colour, font, etc) can be done ", A({href: "monitors"}, "by editing the bar itself"), "."]),
 	]));
 	const crown = {...sections.crown, ...(data.crown || { })};
 	replace_content("#crown", UL([
