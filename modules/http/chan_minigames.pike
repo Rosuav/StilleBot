@@ -50,13 +50,6 @@ Bit Boss
     - Display hitpoints bar showing (maxhp-damage) out of maxhp
     - Display avatar as image. Always to left? Allow left/right to be configured?
   - "Last damage dealt" and animation?? Maybe??
-  - Level up command
-    - If hpgrowth < 0, calculate overkill and use as hpgrowth
-    - Reset damage to zero
-    - Increase bossmaxhp by hpgrowth
-    - Put congratulatory message in chat (naming the previous boss)
-    - Use uservars to query user details
-    - Set boss UID, name, and avatar
   - Autoreset on stream offline
   - Reset command
   - Gift subs go to recipient option
@@ -170,7 +163,7 @@ __async__ void update_boss(object channel, mapping game) {
 	if (!channel->commands->slayboss) G->G->cmdmgr->update_command(channel, "", "slayboss", #"
 		#access \"none\"
 		#visibility \"hidden\"
-		\"BOSS SLAIN by {username}\"
+		\"Congratulations to {username} for defeating Boss $bossname$!!\"
 		chan_minigames(\"boss\", \"slay\") $bossmaxhp$ = \"{newhp}\"
 		$bossdmg$ = \"0\"
 		$bossuid$ = \"{uid}\"
