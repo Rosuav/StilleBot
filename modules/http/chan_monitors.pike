@@ -254,7 +254,7 @@ mapping message_params(object channel, mapping person, array param) {
 			if (advance) autoadvance(channel, person, "", advance); //FIXME: Is this really advancing ALL goal bars?? That has to be a bug right?
 			int pos = (int)channel->expand_variables(info->text); //The text starts with the variable, then a colon, so this will give us the current (raw) value.
 			int tier, goal, found;
-			foreach (info->thresholds / " "; tier; string th) {
+			foreach (channel->expand_variables(info->thresholds) / " "; tier; string th) {
 				goal = (int)th;
 				if (pos < goal) {
 					found = 1;
