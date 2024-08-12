@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {INPUT, LABEL, LI, OPTION, SELECT, UL} = lindt; //autoimport
+const {BR, BUTTON, CODE, INPUT, LABEL, LI, OPTION, SELECT, UL} = lindt; //autoimport
 
 export function render(data) {
 	const boss = {...sections.boss, ...(data.boss || { })};
@@ -20,9 +20,25 @@ export function render(data) {
 				//TODO: Broadcaster, and all registered channel voices
 			]),
 		]),
+		LI([
+			"Gift subs ",
+			SELECT({name: "giftrecipient", value: boss.giftrecipient}, [
+				OPTION({value: "0"}, "Credit the giver"),
+				OPTION({value: "1"}, "Credit the recipient"),
+			]),
+		]),
+		LI([
+			"Reset boss each stream ",
+			SELECT({name: "autoreset", value: boss.autoreset}, [
+				OPTION({value: "0"}, "No"),
+				OPTION({value: "1"}, "Yes"),
+			]),
+			BR(),
+			"Boss can be reset any time with the ", CODE("!resetboss"), " command, or here: ",
+			BUTTON({".onclick": () => ws_sync.send({cmd: "resetboss"})}, "Reset boss"),
+		]),
 		LI(["Initial HP ", INPUT({type: "number", name: "initialhp", value: boss.initialhp})]),
-		LI(["Increase per victory ", INPUT({type: "number", name: "hpgrowth", value: boss.hpgrowth})]),
-		//TODO: Overkill mode (hpgrowth == -1)
+		LI(["Increase per victory ", INPUT({type: "number", name: "hpgrowth", value: boss.hpgrowth}), " or -1 for overkill mode"]),
 	]));
 	const crown = {...sections.crown, ...(data.crown || { })};
 	replace_content("#crown", UL([

@@ -43,16 +43,6 @@ Bit Boss
 - Alternate display format for a goal bar: "Hitpoints".
 - As the value advances toward the goal, the display reduces, ie it is inverted
 - Use the "level up command" to advance to a new person
-- Have an enableable feature that gives:
-  - Goal bar, with variable "bitbosshp" and goal "bitbossmaxhp"
-  - Level up command that sets "bitbossuser" to $$, resets bitbosshp to bitbossmaxhp,
-    and maybe changes bitbossmaxhp in some way
-    - Note that "overkill" mode can be done by querying the goal bar before making changes
-  - Stream online special that initializes everything
-- Available options:
-  - Initial HP and user
-  - HP growth method: static, fixed increase, overkill, others?
-  - Reset method: end of stream, mod command, never?
 - Still to do:
   - Display format (in monitor.js)
     - Parse out display -> "damage:avatar username"
@@ -69,6 +59,7 @@ Bit Boss
     - Set boss UID, name, and avatar
   - Autoreset on stream offline
   - Reset command
+  - Gift subs go to recipient option
 
 First, and optionally Second, Third, and Last
 - TODO: On channel offline (dedicated hook, don't do it in the special trigger), update all the
@@ -87,6 +78,7 @@ constant sections = ([
 		"initialboss": 279141671, //Mustard Mine himself
 		"hpgrowth": 0, //0 for static, positive numbers for fixed growth, -1 for overkill
 		"autoreset": 1, //Reset at end of stream automatically. There'll be a mod command to reset regardless.
+		"giftrecipient": 0,
 	]),
 	"crown": ([
 		"enabled": 0,
@@ -137,6 +129,16 @@ __async__ void wscmd_configure(object channel, mapping(string:mixed) conn, mappi
 //Boolify for JSON purposes
 object bool(mixed val) {return val ? Val.true : Val.false;}
 
+__async__ void reset_boss(object channel, mapping|void cfg) {
+	if (!cfg) cfg = sections->boss | await(G->G->DB->load_config(channel->userid, "minigames"))->boss;
+	channel->set_variable("bossdmg", "0", "set");
+	channel->set_variable("bossmaxhp", (string)cfg->initialhp, "set");
+	mapping user = await(get_user_info(cfg->initialboss));
+	channel->set_variable("bossuid", user->id, "set");
+	channel->set_variable("bossname", user->display_name, "set");
+	channel->set_variable("bossavatar", user->profile_image_url, "set");
+}
+
 __async__ void update_boss(object channel, mapping game) {
 	if (!game->enabled) {
 		if (string nonce = m_delete(game, "monitorid")) {
@@ -149,12 +151,7 @@ __async__ void update_boss(object channel, mapping game) {
 	mapping cfg = sections->boss | game;
 	if (!game->monitorid) {
 		//Note that the boss's current HP is max HP minus damage, and is not directly tracked.
-		channel->set_variable("bossdmg", "0", "set");
-		channel->set_variable("bossmaxhp", (string)cfg->initialhp, "set");
-		mapping user = await(get_user_info(cfg->initialboss));
-		channel->set_variable("bossuid", user->id, "set");
-		channel->set_variable("bossname", user->display_name, "set");
-		channel->set_variable("bossavatar", user->profile_image_url, "set");
+		await(reset_boss(channel, cfg));
 		[game->monitorid, mapping info] = G->G->websocket_types->chan_monitors->create_monitor(channel, ([
 			"type": "goalbar", "varname": "bossdmg",
 			"format": "hitpoints",
@@ -174,12 +171,23 @@ __async__ void update_boss(object channel, mapping game) {
 		#access \"none\"
 		#visibility \"hidden\"
 		\"BOSS SLAIN by {username}\"
+		chan_minigames(\"boss\", \"slay\") $bossmaxhp$ = \"{newhp}\"
+		$bossdmg$ = \"0\"
+		$bossuid$ = \"{uid}\"
+		$bossname$ = \"{username}\"
+		uservars(\"\", \"{uid}\") $bossavatar$ = \"{avatar}\"
 		", (["language": "mustard"]));
+	//Or should this be flipped on its head - the reset command does all the work, and other
+	//ways to reset just trigger the command?
 	if (!channel->commands->resetboss) G->G->cmdmgr->update_command(channel, "", "resetboss", #"
 		#access \"mod\"
 		#visibility \"hidden\"
-		\"Reset boss to default (TODO)\"
+		chan_minigames(\"boss\", \"reset\") \"Boss has been reset.\"
 		", (["language": "mustard"]));
+}
+
+void wscmd_resetboss(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	reset_boss(channel);
 }
 
 __async__ void update_crown(object channel, mapping game) {
@@ -394,20 +402,21 @@ __async__ void update_first(object channel, mapping game) {
 
 constant command_description = "Manage stream minigames";
 constant builtin_name = "Minigame";
-constant builtin_param = ({"/Game/first", "Extra info"});
+constant builtin_param = ({"/Game/first/boss", "Extra info"});
 constant vars_provided = ([
 	"{shame}": "1 if user should be shamed for duplicate claiming",
 	"{count}": "Number of times the user has checked in (once per stream)",
+	"{newhp}": "New boss HP if one just got slain",
 ]);
 
 //Should this be stored somewhere other than ephemeral memory? If the bot hops, this gets lost, with the (tragic) result
 //that people can claim an additional reward that stream without getting shamed for it.
 @retain: mapping already_claimed = ([]);
 __async__ mapping message_params(object channel, mapping person, array param) {
+	mapping game = await(G->G->DB->load_config(channel->userid, "minigames"))[param[0]];
+	if (!game) return ([]); //Including if you mess up the keyword
 	if (param[0] == "first") {
 		int seen = 0;
-		mapping game = await(G->G->DB->load_config(channel->userid, "minigames"))->first;
-		if (!game) return ([]);
 		foreach ("first second third last" / " ", string which) {
 			if (which == param[1]) seen = 1;
 			else if (string id = seen && game[which + "rwd"]) {
@@ -423,6 +432,21 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 		if (already_claimed[channel->userid][person->userid]) return (["{shame}": "1"]);
 		already_claimed[channel->userid][person->userids] = time();
 		return (["{shame}": "0"]);
+	} else if (param[0] == "boss") {
+		mapping cfg = sections->boss | game;
+		if (param[1] == "reset") {
+			await(reset_boss(channel, cfg));
+			return ([]);
+		} else if (param[1] == "slay") {
+			int hpgrowth = cfg->hpgrowth;
+			if (hpgrowth < 0) {
+				//Overkill. The growth is the excess damage. Unfortunately we're called
+				//asynchronously so we actually have lost the damage at this point, so
+				//this doesn't work. Will need to carry that info around somewhere.
+				hpgrowth = (int)channel->expand_variables("$bossdmg$") - (int)channel->expand_variables("$bossmaxhp$");
+			}
+			return (["{newhp}": (string)((int)channel->expand_variables("$bossmaxhp$") + hpgrowth)]);
+		}
 	}
 	return ([]);
 }
