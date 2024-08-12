@@ -302,8 +302,8 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 			}
 		}
 		if (!already_claimed[channel->userid]) already_claimed[channel->userid] = ([]);
-		if (already_claimed[person->userid]) return (["{shame}": "1"]);
-		already_claimed[person->userids] = time();
+		if (already_claimed[channel->userid][person->userid]) return (["{shame}": "1"]);
+		already_claimed[channel->userid][person->userids] = time();
 		return (["{shame}": "0"]);
 	}
 	return ([]);
