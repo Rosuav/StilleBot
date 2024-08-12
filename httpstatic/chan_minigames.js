@@ -38,6 +38,7 @@ export function render(data) {
 		LI(LABEL([INPUT({type: "checkbox", name: "second", checked: Boolean(first.second)}), " Second"])),
 		LI(LABEL([INPUT({type: "checkbox", name: "third", checked: Boolean(first.third)}), " Third"])),
 		LI(LABEL([INPUT({type: "checkbox", name: "last", checked: Boolean(first.last)}), " Last"])),
+		LI(LABEL([INPUT({type: "checkbox", name: "checkin", checked: Boolean(first.checkin)}), " Check-in (may be redeemed once each by all users)"])),
 	]));
 }
 

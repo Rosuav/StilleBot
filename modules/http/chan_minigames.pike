@@ -71,6 +71,7 @@ constant sections = ([
 		"second": 0,
 		"third": 0,
 		"last": 0,
+		"checkin": 0,
 	]),
 ]);
 
@@ -217,9 +218,21 @@ constant first_code = #"
 		}
 	}
 ";
+constant checkin_code = #"
+	#access \"none\"
+	#visibility \"hidden\"
+	#redemption \"%s\"
+	try {
+		chan_pointsrewards(\"{rewardid}\", \"fulfil\", \"{redemptionid}\") \"\"
+	}
+	catch \"Unexpected error: {error}\"
+	$*checkins$ += \"1\"
+	\"Thank you for signing the guest book for today, {username}! You have signed it $*checkins$ times.\"
+";
 
 __async__ void update_first(object channel, mapping game) {
 	//First (pun intended), some validation. Sequential rewards depend on each other.
+	//(Note that "checkin" doesn't require "first" or any others.)
 	int changed = 0;
 	if (!game->first && (game->second || game->last)) {
 		game->second = game->last = 0;
@@ -272,6 +285,33 @@ __async__ void update_first(object channel, mapping game) {
 			if (channel->commands["rwd" + which]) G->G->cmdmgr->update_command(channel, "", "rwd" + which, "");
 		}
 	}
+	if (game->checkin) {
+		if (!game->checkinrwd) {
+			mapping resp = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid,
+				(["Authorization": channel->userid]),
+				(["json": ([
+					"title": "Check-in!",
+					"cost": 1,
+					"prompt": "Daily check-in! Non-competitive.",
+					"is_max_per_user_per_stream_enabled": Val.true, "max_per_user_per_stream": 1,
+				]), "return_errors": 1])));
+			if (resp->data && sizeof(resp->data)) game->checkinrwd = resp->data[0]->id; //As above, otherwise what?
+			changed = 1;
+		}
+		if (!channel->commands->rwdcheckin) {
+			string code = sprintf(checkin_code, game->checkinrwd || "");
+			werror("CODE:\n%s\n", code);
+			G->G->cmdmgr->update_command(channel, "", "rwdcheckin", code, (["language": "mustard"]));
+		}
+	} else {
+		if (string id = m_delete(game, "checkinrwd")) {
+			await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + id,
+				(["Authorization": channel->userid]),
+				(["method": "DELETE"])));
+			changed = 1;
+		}
+		if (channel->commands["rwdcheckin"]) G->G->cmdmgr->update_command(channel, "", "rwdcheckin", "");
+	}
 	if (changed) {
 		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->first = game;});
 		send_updates_all(channel, "");
@@ -283,6 +323,7 @@ constant builtin_name = "Minigame";
 constant builtin_param = ({"/Game/first", "Extra info"});
 constant vars_provided = ([
 	"{shame}": "1 if user should be shamed for duplicate claiming",
+	"{count}": "Number of times the user has checked in (once per stream)",
 ]);
 
 //Should this be stored somewhere other than ephemeral memory? If the bot hops, this gets lost, with the (tragic) result
