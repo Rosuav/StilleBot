@@ -167,9 +167,13 @@ __async__ void update_boss(object channel, mapping game) {
 		\"Congratulations to {username} for defeating Boss $bossname$!!\"
 		chan_minigames(\"boss\", \"slay\") $bossmaxhp$ = \"{newhp}\"
 		$bossdmg$ = \"0\"
-		$bossuid$ = \"{uid}\"
-		$bossname$ = \"{username}\"
-		uservars(\"\", \"{uid}\") $bossavatar$ = \"{avatar}\"
+		uservars(\"\", \"{from_name}\") {
+			$bossavatar$ = \"{avatar}\"
+			$bossname$ = \"{name}\"
+			if (\"{uid}\" == \"0\") $bossname$ = \"{from_name}\"
+			else $bossname$ = \"{name}\"
+			$bossuid$ = \"{uid}\"
+		}
 		", (["language": "mustard"]));
 	//Or should this be flipped on its head - the reset command does all the work, and other
 	//ways to reset just trigger the command?

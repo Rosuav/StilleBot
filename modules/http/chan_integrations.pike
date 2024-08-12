@@ -124,7 +124,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			G->G->send_alert(req->misc->channel, "kofi", alertparams);
 			req->misc->channel->trigger_special(special, (["user": chan]), params);
 		} else special = "!kofi_renew"; //Hack: Goal bars (might) advance on renewals even though nothing else does.
-		G->G->goal_bar_autoadvance(req->misc->channel, (["user": chan]), special[1..], cents);
+		G->G->goal_bar_autoadvance(req->misc->channel, (["user": chan, "from_name": data->from_name || "Anonymous"]), special[1..], cents);
 		return "Cool thanks!";
 	}
 	if (string sig = req->request_type == "POST" && req->request_headers["x-fourthwall-hmac-sha256"]) {
@@ -186,7 +186,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		req->misc->channel->trigger_special(special, (["user": req->misc->channel->login]), params);
 		int|float amount = data->amounts->?total->?value;
 		if (floatp(amount)) amount = (int)(amount * 100 + 0.5); else amount *= 100;
-		if (amount) G->G->goal_bar_autoadvance(req->misc->channel, (["user": req->misc->channel->login]), special[1..], amount);
+		if (amount) G->G->goal_bar_autoadvance(req->misc->channel, (["user": req->misc->channel->login, "from_name": data->username || "Anonymous"]), special[1..], amount);
 		return "Awesome, thanks!";
 	}
 	if (req->misc->is_mod) {

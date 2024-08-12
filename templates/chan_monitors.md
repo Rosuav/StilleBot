@@ -14,7 +14,7 @@ input[type=number] {width: 4em;}
 .preview div:nth-of-type(3) {text-align: right;}
 .optionset {display: flex; padding: 0.125em 0;}
 .optionset fieldset {padding: 0.25em; margin-left: 1em;}
-.preview .avatar {max-width: 40px; padding-right: 2px;}
+.preview .avatar {width: 40px; padding-right: 2px;}
 </style>
 
 Preview | Actions | Link

@@ -27,9 +27,9 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 	//with that keyword, preventing accidental access to the wrong variables.
 	return ([
 		"cfg": (["users": cfg->users | ([param[0]: (string)info->id])]),
-		"{login}": info->login,
-		"{name}": info->display_name,
-		"{avatar}": info->profile_image_url,
-		"{uid}": info->id,
+		"{login}": info->login || "",
+		"{name}": info->display_name || "",
+		"{avatar}": info->profile_image_url || "",
+		"{uid}": info->id || "0",
 	]);
 }

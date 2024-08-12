@@ -80,7 +80,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 	if (type === "goalbar") {
 		const t = styleinfo[data.id];
 		if (t.format === "hitpoints") {
-			const m = /^([0-9]+):([^ ]+) (.*)$/.exec(data.display);
+			const m = /^([0-9]+):([^ ]*) (.*)$/.exec(data.display);
 			if (!m) {console.error("Something's misconfigured (see monitor.js goalbar regex) -- display", data.display); return;}
 			const maxhp = t.t[0];
 			const curhp = maxhp - m[1], avatar = m[2], name = m[3];

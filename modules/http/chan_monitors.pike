@@ -245,7 +245,7 @@ void autoadvance(object channel, mapping person, string key, int weight, int|voi
 		Stdio.append_file("subs.log", sprintf("[%s] Advancing %s goal bar by %O*%O = %d - now %d\n", channel->name, varname, key, weight, advance, total));
 		if (advance > 0 && lvlup) {
 			int newtier = (int)message_params(channel, person, ({id}))["{tier}"];
-			while (prevtier++ < newtier) channel->send(person, lvlup, (["%s": (string)prevtier]));
+			while (prevtier++ < newtier) channel->send(person, lvlup, (["%s": (string)prevtier, "{from_name}": person->from_name || person->user]));
 		}
 	}
 }
