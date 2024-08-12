@@ -182,7 +182,8 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 		SELECT({name: "format"}, [
 			OPTION({value: "plain"}, "plain - ordinary numbers"),
 			OPTION({value: "currency"}, "currency - cents eg 2718 is $27.18"),
-			OPTION({value: "subscriptions"}, "subs or sub points - 500 each (roughly USD cents)")]),
+			OPTION({value: "subscriptions"}, "subs or sub points - 500 each (roughly USD cents)"),
+			OPTION({value: "hitpoints"}, "Bit Boss hitpoints (complex, use as directed)")]),
 		BR(), "Select the desired display format; note that everything is managed in cents still.",
 	])]),
 	TR([TH("Auto-count"), TD([
