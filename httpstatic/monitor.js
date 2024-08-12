@@ -1,5 +1,5 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {DIV} = choc;
+const {DIV, IMG} = choc; //autoimport
 import {ensure_font} from "$$static||utils.js$$";
 
 const currency_formatter = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
@@ -79,6 +79,22 @@ export function update_display(elem, data) { //Used for the preview as well as t
 	}
 	if (type === "goalbar") {
 		const t = styleinfo[data.id];
+		if (t.format === "hitpoints") {
+			const m = /^([0-9]+):([^ ]+) (.*)$/.exec(data.display);
+			if (!m) {console.error("Something's misconfigured (see monitor.js goalbar regex) -- display", data.display); return;}
+			const maxhp = t.t[0];
+			const curhp = maxhp - m[1], avatar = m[2], name = m[3];
+			const pos = curhp/maxhp * 100;
+			elem.style.background = `linear-gradient(.25turn, ${t.fillcolor} ${pos}%, ${t.barcolor} ${pos}%, ${t.barcolor})`;
+			elem.style.display = "flex";
+			const img = elem.querySelector("img") || IMG({src: avatar});
+			if (img.src !== avatar) img.src = avatar; //Avoid flicker
+			set_content(elem, [
+				img,
+				DIV(name), DIV(curhp + "/" + maxhp), DIV()
+			]);
+			return;
+		}
 		const thresholds = t.t;
 		const m = /^([0-9]+):(.*)$/.exec(data.display);
 		if (!m) {console.error("Something's misconfigured (see monitor.js goalbar regex) -- display", data.display); return;}

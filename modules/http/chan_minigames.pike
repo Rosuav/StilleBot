@@ -155,9 +155,10 @@ __async__ void update_boss(object channel, mapping game) {
 			"fw_dono": 1, "fw_member": 1, "fw_shop": 1, "fw_gift": 1,
 			"thresholds": "$bossmaxhp$ 1",
 			"text": "$bossavatar$ $bossname$",
+			"font": "Lexend", "fontsize": "30",
+			"fillcolor": "#ff0000", "barcolor": "#ffffdd", "color": "#000000",
+			"borderwidth": "4", "bordercolor": "#00ffff",
 		]));
-		werror("GOT INFO %O\n", info);
-		werror("ID: %O\n", game->monitorid);
 		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->boss = game;});
 	}
 	if (!channel->commands->slayboss) G->G->cmdmgr->update_command(channel, "", "slayboss", #"
