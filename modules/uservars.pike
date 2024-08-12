@@ -6,6 +6,7 @@ constant builtin_param = ({"Keyword (optional)", "User name/ID"});
 constant vars_provided = ([
 	"{login}": "Twitch login of the user (usually the same as the display name but lowercased)",
 	"{name}": "Display name of the user",
+	"{avatar}": "User's avatar/profile pic",
 	"{uid}": "User's Twitch ID",
 ]);
 
@@ -28,6 +29,7 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 		"cfg": (["users": cfg->users | ([param[0]: (string)info->id])]),
 		"{login}": info->login,
 		"{name}": info->display_name,
+		"{avatar}": info->profile_image_url,
 		"{uid}": info->id,
 	]);
 }
