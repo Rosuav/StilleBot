@@ -120,30 +120,21 @@ void websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	channel->set_variable(msg->varname, (string)(int)msg->val, "set");
 }
 
-@"is_mod": __async__ void wscmd_addmonitor(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!valid_types[msg->type]) return;
+//Create a new monitor. Must have a type; may have other attributes. If all goes well, returns ({nonce, cfg});
+//otherwise returns 0 and doesn't create anything.
+array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) msg) {
+	if (!valid_types[msg->type]) return 0;
 	//Note that this is deliberately slightly shorter than the subpoints nonce
 	//(by 4 base64 characters), to allow them to be distinguished for debugging.
 	string nonce = replace(MIME.encode_base64(random_string(27)), (["/": "1", "+": "0"]));
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
-	mapping info = monitors[nonce] = ([
+	monitors[nonce] = ([
 		"type": msg->type,
-		"text": ([
+		"text": msg->text || ([
 			"goalbar": "Achieve a goal!",
 			"countdown": "#:##",
 		])[msg->type] || "",
 	]);
-	//Hack: Create a new variable for a new goal bar/countdown.
-	if ((<"countdown", "goalbar">)[msg->type]) {
-		mapping vars = G->G->DB->load_cached_config(channel->userid, "variables");
-		void tryvar(string v) {if (!vars["$"+v+"$"]) info->varname = v;}
-		for (int i = 0; i < 26 && !info->varname; ++i) tryvar(sprintf("%s%c", info->type, 'A' + i));
-		for (int i = 0; i < 26*26 && !info->varname; ++i) tryvar(sprintf("%s%c%c", info->type, 'A' + i / 26, 'A' + i % 26));
-		//Do I need to attempt goalbarAAA ? We get 700 options without, or 18K with.
-		channel->set_variable(info->varname, "0", "set");
-	}
-	if (info->varname) info->text = sprintf("$%s$:%s", info->varname, info->text);
-	textformatting_validate(info);
 	if (msg->type == "goalbar") monitors[nonce] |= ([
 		"thresholds": "100",
 		"color": "#005500",
@@ -153,9 +144,32 @@ void websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		"needlesize": "0.375",
 		"active": 1,
 	]);
-	await(G->G->DB->save_config(channel->userid, "monitors", monitors));
-	send_updates_all(channel, nonce);
-	update_one(channel, "", nonce);
+	mapping info = monitors[nonce];
+	//Hack: Create a new variable for a new goal bar/countdown.
+	if ((<"countdown", "goalbar">)[msg->type]) {
+		if (msg->varname) info->varname = msg->varname; //TODO: Check that it exists too?
+		else {
+			mapping vars = G->G->DB->load_cached_config(channel->userid, "variables");
+			void tryvar(string v) {if (!vars["$"+v+"$"]) info->varname = v;}
+			for (int i = 0; i < 26 && !info->varname; ++i) tryvar(sprintf("%s%c", info->type, 'A' + i));
+			for (int i = 0; i < 26*26 && !info->varname; ++i) tryvar(sprintf("%s%c%c", info->type, 'A' + i / 26, 'A' + i % 26));
+			//Do I need to attempt goalbarAAA ? We get 700 options without, or 18K with.
+			channel->set_variable(info->varname, "0", "set");
+		}
+	}
+	foreach (saveable_attributes, string key) if (msg[key]) info[key] = msg[key];
+	if (info->needlesize == "") info->needlesize = "0";
+	if (info->varname) info->text = sprintf("$%s$:%s", info->varname, info->text);
+	textformatting_validate(info);
+	G->G->DB->save_config(channel->userid, "monitors", monitors)->then() {
+		send_updates_all(channel, nonce);
+		update_one(channel, "", nonce);
+	};
+	return ({nonce, info});
+}
+
+@"is_mod": __async__ void wscmd_addmonitor(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	create_monitor(channel, (["type": msg->type])); //Very restrictive. The create_monitor function trusts its args, but we don't trust the client.
 }
 
 @"is_mod": __async__ void wscmd_updatemonitor(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -172,13 +186,16 @@ void websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	update_one(channel, "", nonce);
 }
 
-@"is_mod": __async__ void wscmd_deletemonitor(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+//Delete the given monitor and return its previous config. If it didn't exist, returns 0.
+mapping|zero delete_monitor(object channel, string nonce) {
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
-	string nonce = msg->nonce;
-	if (!monitors[nonce]) return;
+	if (!monitors[nonce]) return 0;
 	m_delete(monitors, nonce);
-	await(G->G->DB->save_config(channel->userid, "monitors", monitors));
-	send_updates_all(channel, "");
+	G->G->DB->save_config(channel->userid, "monitors", monitors)->then() {send_updates_all(channel, "");};
+}
+
+@"is_mod": __async__ void wscmd_deletemonitor(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	delete_monitor(channel, msg->nonce);
 }
 
 //NOTE: This is a very rare message - a mutator that does not require mod powers or even a login.
