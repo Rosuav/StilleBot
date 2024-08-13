@@ -91,7 +91,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			set_content(elem, [
 				img,
 				DIV({style: `flex-grow: 1; display: flex; background: linear-gradient(.25turn, ${t.fillcolor} ${pos}%, ${t.barcolor} ${pos}%, ${t.barcolor})`}, [
-					DIV(name), DIV(curhp + "/" + maxhp), DIV(),
+					DIV(name), DIV(), DIV(curhp + "/" + maxhp),
 				]),
 			]);
 			return;
