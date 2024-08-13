@@ -88,11 +88,21 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			elem.style.display = "flex";
 			const img = elem.querySelector("img") || IMG({class: "avatar", src: avatar});
 			if (img.src !== avatar) img.src = avatar; //Avoid flicker
+			/* Wide format
 			set_content(elem, [
 				img,
 				DIV({style: `flex-grow: 1; display: flex; background: linear-gradient(.25turn, ${t.fillcolor} ${pos}%, ${t.barcolor} ${pos}%, ${t.barcolor})`}, [
 					DIV(name), DIV(), DIV(curhp + "/" + maxhp),
 				]),
+			]);
+			*/
+			//Stacked format
+			elem.style.flexDirection = "column";
+			set_content(elem, [
+				DIV({style: `flex-grow: 1; width: 100%; background: linear-gradient(.25turn, ${t.fillcolor} ${pos}%, ${t.barcolor} ${pos}%, ${t.barcolor})`}, [
+					DIV(curhp + "/" + maxhp),
+				]),
+				DIV({style: "text-wrap: nowrap"}, [img, name]),
 			]);
 			return;
 		}
