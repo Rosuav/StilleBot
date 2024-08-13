@@ -44,14 +44,9 @@ Bit Boss
 - As the value advances toward the goal, the display reduces, ie it is inverted
 - Use the "level up command" to advance to a new person
 - Still to do:
-  - Display format (in monitor.js)
-    - Parse out display -> "damage:avatar username"
-    - Parse out thresholds_rendered -> "maxhp 1"
-    - Display hitpoints bar showing (maxhp-damage) out of maxhp
-    - Display avatar as image. Always to left? Allow left/right to be configured?
   - "Last damage dealt" and animation?? Maybe??
-  - Autoreset on stream offline
-  - Reset command
+  - Autoreset on stream offline (implemented, untested)
+  - Heal self. Use uid? use name? If use name, dispose of all uid saving.
   - Gift subs go to recipient option
 
 First, and optionally Second, Third, and Last
@@ -451,16 +446,18 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 
 @hook_channel_offline: __async__ void disconnected(string channel, int uptime, int userid) {
 	m_delete(already_claimed, userid);
-	mapping game = await(G->G->DB->load_config(userid, "minigames"))->first;
-	if (!game) return;
+	mapping games = await(G->G->DB->load_config(userid, "minigames"));
 	//Disable the second and subsequent rewards until First gets claimed
-	foreach ("secondrwd thirdrwd lastrwd" / " ", string which) {
+	if (mapping game = games->first) foreach ("secondrwd thirdrwd lastrwd" / " ", string which) {
 		if (string id = game[which]) {
 			await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 				+ userid + "&id=" + id,
 				(["Authorization": userid]),
 				(["method": "PATCH", "json": (["is_paused": Val.true]), "return_errors": 1])));
 		}
+	}
+	if (mapping game = games->boss) {
+		if (game->autoreset) reset_boss(G->G->irc->by_id[userid], sections->boss | game);
 	}
 }
 
