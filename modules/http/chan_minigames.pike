@@ -457,7 +457,7 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 		}
 	}
 	if (mapping game = games->boss) {
-		if (game->autoreset) reset_boss(G->G->irc->by_id[userid], sections->boss | game);
+		if (game->autoreset) reset_boss(G->G->irc->id[userid], sections->boss | game);
 	}
 }
 
