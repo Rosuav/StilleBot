@@ -221,3 +221,4 @@
 * In interactive mode, have an explore(mixed value) that will create a GTK window to
   show the value, same as Internals does
 * Test out Fourth Wall with goal bars, might not be working. Add a ton of tracing.
+* Possible bug with enable/disable of special triggers?
