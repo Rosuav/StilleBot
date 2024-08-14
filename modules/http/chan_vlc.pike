@@ -149,7 +149,7 @@ void sendstatus(object channel) {
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	object channel = req->misc->channel;
-	if (req->misc->is_mod && req->variables->makespecial) {
+	if (req->misc->is_mod && !req->misc->session->fake && req->variables->makespecial) {
 		//Note that this option isn't made obvious if you already have the command,
 		//but we won't stop you from using it if you do so manually. It'll overwrite.
 		G->G->enableable_modules->chan_specials->enable_feature(channel, "songannounce", 1);
