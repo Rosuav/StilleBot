@@ -25,7 +25,7 @@ constant COMPLEX_TEMPLATES = ([
 	"buy-follows": ([
 		"conditional": "number",
 		"expr1": "{@buyfollows} && {@mod} == 0",
-		"message": "/ban $$",
+		"message": "/ban $$ Atttempting to sell followers.",
 	]),
 	"Reward lister": ([
 		"conditional": "contains",
@@ -60,14 +60,7 @@ int can_manage_feature(object channel, string kwd) {return get_trig_id(channel, 
 
 void enable_feature(object channel, string kwd, int state) {
 	mapping info = ENABLEABLE_FEATURES[kwd]; if (!info) return;
-	//Hack: Call on the normal commands updater to add a trigger
-	G->G->websocket_types->chan_commands[state ? "websocket_cmd_update" : "websocket_cmd_delete"](([
-		"group": "!!trigger" + channel->name,
-		"sock": (["send_text": lambda(mixed msg) { }]), //Ignore a response being sent back
-	]), ([
-		"cmdname": get_trig_id(channel, kwd) || "",
-		"response": info->response,
-	]));
+	G->G->update_command(channel, "!!trigger", get_trig_id(channel, kwd) || "", state ? info->response : "");
 }
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)

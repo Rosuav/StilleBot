@@ -79,23 +79,13 @@ int can_manage_feature(object channel, string kwd) {return get_trig_index(channe
 
 void enable_feature(object channel, string kwd, int state) {
 	mapping info = ENABLEABLE_FEATURES[kwd]; if (!info) return;
-	//Hack: Call on the normal commands updater to add a trigger
 	array response = Array.arrayify(channel->commands[info->special]) + ({ });
 	int idx = get_trig_index(channel, kwd);
 	if (idx == -1 && !state) return; //Not present, not wanted, nothing to do
 	if (idx == -1) response += ({info->response});
 	else response[idx] = state ? info->response : "";
 	response -= ({""});
-	if (!sizeof(response)) //Nothing left? Delete the trigger altogether.
-		G->G->websocket_types->chan_commands->websocket_cmd_delete(
-			(["group": "!!" + channel->name, "session": ([])]),
-			(["cmdname": info->special])
-		);
-	else
-		G->G->websocket_types->chan_commands->websocket_cmd_update(
-			(["group": "!!" + channel->name, "session": ([])]),
-			(["cmdname": info->special, "response": response])
-		);
+	G->G->update_command(channel, "!!", info->special, response);
 }
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
