@@ -41,8 +41,9 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (dir == "httpstatic" && has_suffix(filename, ".js")) {
 		//See if the file has any import markers.
 		string data = Stdio.read_file("httpstatic/" + filename);
-		//HACK: Dodge a GitHub outage
-		data = replace(data, "https://rosuav.github.io/choc/factory.js", "$$static||factory.js$$");
+		//HACK: Dodge a GitHub outage. Kept in case it's needed again in the future.
+		//Take a copy of factory.js into httpstatic and then we become independent of GitHub Pages.
+		//data = replace(data, "https://rosuav.github.io/choc/factory.js", "$$static||factory.js$$");
 		multiset deps = (<>);
 		while (sscanf(data, "%s$$static||%[a-zA-Z_.]$$%s", string before, string fn, string after) == 3) {
 			deps[fn] = 1;
