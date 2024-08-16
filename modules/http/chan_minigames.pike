@@ -1,3 +1,5 @@
+inherit annotated;
+inherit hook;
 inherit http_websocket;
 inherit builtin_command;
 constant markdown = #"# Minigames for $$channel$$
@@ -334,7 +336,6 @@ __async__ void update_first(object channel, mapping game) {
 						//the reward and then immediately pause it.
 						//"is_paused": which == "first" ? Val.false : Val.true,
 					]), "return_errors": 1])));
-				werror("RESP %O\n", resp);
 				if (resp->data && sizeof(resp->data)) game[which + "rwd"] = resp->data[0]->id; //Otherwise what? Try again next time?
 				if (which != "first") await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 					+ channel->userid + "&id=" + game[which + "rwd"],
@@ -375,7 +376,6 @@ __async__ void update_first(object channel, mapping game) {
 		}
 		if (!channel->commands->rwdcheckin) {
 			string code = sprintf(checkin_code, game->checkinrwd || "");
-			werror("CODE:\n%s\n", code);
 			G->G->cmdmgr->update_command(channel, "", "rwdcheckin", code, (["language": "mustard"]));
 		}
 	} else {
@@ -422,8 +422,8 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 			}
 		}
 		if (!already_claimed[channel->userid]) already_claimed[channel->userid] = ([]);
-		if (already_claimed[channel->userid][person->userid]) return (["{shame}": "1"]);
-		already_claimed[channel->userid][person->userids] = time();
+		if (already_claimed[channel->userid][(int)person->uid]) return (["{shame}": "1"]);
+		already_claimed[channel->userid][(int)person->uid] = time();
 		return (["{shame}": "0"]);
 	} else if (param[0] == "boss") {
 		mapping cfg = sections->boss | game;
