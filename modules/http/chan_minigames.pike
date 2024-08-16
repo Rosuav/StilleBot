@@ -46,9 +46,7 @@ Bit Boss
   - Autoreset on stream offline (implemented, untested)
 
 First, and optionally Second, Third, and Last
-- TODO: On channel offline (dedicated hook, don't do it in the special trigger), update all the
-  descriptions and clear the variables with userids. How do we let the user customize the rewards?
-  - Done but not tested.
+- Untested: Resetting of descriptions on channel-offline
 - Count how many times a user has claimed a reward? ("You have been first N times")
   - What if you have multiple? Independently count? Count how many times you got ANY reward?
 */
