@@ -28,6 +28,13 @@ export function render(data) {
 			]),
 		]),
 		LI([
+			"Support from current boss ",
+			SELECT({name: "selfheal", value: boss.selfheal}, [
+				OPTION({value: "0"}, "Deals damage as normal"),
+				OPTION({value: "1"}, "Heals the boss"),
+			]),
+		]),
+		LI([
 			"Reset boss each stream ",
 			SELECT({name: "autoreset", value: boss.autoreset}, [
 				OPTION({value: "0"}, "No"),
