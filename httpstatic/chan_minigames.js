@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, CODE, INPUT, LABEL, LI, OPTION, SELECT, UL} = lindt; //autoimport
+const {A, BR, BUTTON, CODE, INPUT, LABEL, LI, OPTION, SELECT, SPAN, UL} = lindt; //autoimport
 
 export function render(data) {
 	const boss = {...sections.boss, ...(data.boss || { })};
@@ -80,9 +80,14 @@ export function render(data) {
 	const first = {...sections.first, ...(data.first || { })};
 	replace_content("#first", UL([
 		LI("Select which rewards you want active."),
-		["First", "Second", "Third", "Last"].map(which => LI(LABEL([
-			INPUT({type: "checkbox", name: which.toLowerCase(), checked: Boolean(first[which.toLowerCase()])}), " " + which,
-		]))),
+		["First", "Second", "Third", "Last"].map(which => LI([
+			LABEL([
+				INPUT({type: "checkbox", name: which.toLowerCase(), checked: Boolean(first[which.toLowerCase()])}),
+				SPAN({style: "display: inline-block; width: 4em; padding-left: 0.25em;"}, which),
+			]),
+			" ",
+			INPUT({name: which.toLowerCase() + "desc", value: first[which.toLowerCase() + "desc"] || "", size: 80}),
+		])),
 		LI(LABEL([INPUT({type: "checkbox", name: "checkin", checked: Boolean(first.checkin)}), " Check-in (may be redeemed once each by all users)"])),
 	]));
 }

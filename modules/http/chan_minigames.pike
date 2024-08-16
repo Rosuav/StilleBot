@@ -77,6 +77,10 @@ constant sections = ([
 		"second": 0,
 		"third": 0,
 		"last": 0,
+		"firstdesc": "Claim this reward to let everyone know that you are the first one here!",
+		"seconddesc": "Missed out on being first? Claim this reward to let everyone know that you came second!",
+		"thirddesc": "Look, we know it's hard to be the best. But you can at least come in third...",
+		"lastdesc": "You're not first, but maybe you can be last?",
 		"checkin": 0,
 	]),
 ]);
@@ -251,25 +255,21 @@ __async__ void update_crown(object channel, mapping game) {
 constant firsts = ([
 	"first": ([
 		"title": "First!", "cost": 1,
-		"unclaimed": "Claim this reward to let everyone know that you are the first one here!",
 		"claimed": "Congratulations to {username} for being first to claim the reward this stream! Will it be you next time?",
 		"response": "Congrats to @{username} for being first!",
 	]),
 	"second": ([
 		"title": "Second!", "cost": 2,
-		"unclaimed": "Missed out on being first? Claim this reward to let everyone know that you came second!",
 		"claimed": "Congratulations to {username} for managing to claim the reward this stream! Will it be you next time?",
 		"response": "And congrats to @{username} for being second!",
 	]),
 	"third": ([
 		"title": "Third...", "cost": 3,
-		"unclaimed": "Look, we know it's hard to be the best. But you can at least come in third...",
 		"claimed": "Well done, well done. It was {username} who managed to be the oh so amazing third place winner.",
 		"response": "Good job, @{username}. Third place. We are proud of you.",
 	]),
 	"last": ([
 		"title": "Last?", "cost": 10,
-		"unclaimed": "You're not first, but maybe you can be last?",
 		"claimed": "Congratulations to {username} for being last (???) to claim the reward this stream!",
 		"response": "Congrats to @{username} for being ... last??",
 	]),
@@ -452,7 +452,7 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 				+ userid + "&id=" + id,
 				(["Authorization": userid]),
 				(["method": "PATCH", "json": ([
-					"prompt": firsts[which]->unclaimed,
+					"prompt": game[which + "desc"] || sections->first[which + "desc"],
 					"is_paused": which == "first" ? Val.false : Val.true,
 				]), "return_errors": 1])));
 		}
