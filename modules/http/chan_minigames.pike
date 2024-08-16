@@ -448,12 +448,15 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 	m_delete(already_claimed, userid);
 	mapping games = await(G->G->DB->load_config(userid, "minigames"));
 	//Disable the second and subsequent rewards until First gets claimed
-	if (mapping game = games->first) foreach ("secondrwd thirdrwd lastrwd" / " ", string which) {
-		if (string id = game[which]) {
+	if (mapping game = games->first) foreach ("first second third last" / " ", string which) {
+		if (string id = game[which + "rwd"]) {
 			await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 				+ userid + "&id=" + id,
 				(["Authorization": userid]),
-				(["method": "PATCH", "json": (["is_paused": Val.true]), "return_errors": 1])));
+				(["method": "PATCH", "json": ([
+					"prompt": firsts[which]->unclaimed,
+					"is_paused": which == "first" ? Val.false : Val.true,
+				]), "return_errors": 1])));
 		}
 	}
 	if (mapping game = games->boss) {
