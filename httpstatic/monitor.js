@@ -100,9 +100,9 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			elem.style.flexDirection = "column";
 			set_content(elem, [
 				DIV({style: `flex-grow: 1; width: 100%; background: linear-gradient(.25turn, ${t.fillcolor} ${pos}%, ${t.barcolor} ${pos}%, ${t.barcolor})`}, [
-					DIV(curhp + "/" + maxhp),
+					DIV({style: "padding: 2px 6px"}, curhp + "/" + maxhp),
 				]),
-				DIV({style: "text-wrap: nowrap"}, [img, name]),
+				DIV({style: "text-wrap: nowrap; width: 100%; text-align: left"}, [img, name]),
 			]);
 			return;
 		}

@@ -49,7 +49,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		return render_template("monitor.html", ([
 			"vars": (["ws_type": ws_type, "ws_group": nonce + "#" + req->misc->channel->userid, "ws_code": "monitor"]),
 			//Note that $$styles$$ is used differently in chan_subpoints which reuses monitor.html.
-			"styles": "#display div {width: 33%;}#display div:nth-of-type(2) {text-align: center;}#display div:nth-of-type(3) {text-align: right;}.avatar {width: 40px; padding-right: 2px;}",
+			"styles": "#display div {width: 33%;}#display div:nth-of-type(2) {text-align: center;}#display div:nth-of-type(3) {text-align: right;}.avatar {width: 40px; padding-right: 2px; vertical-align: top;}",
 
 		]));
 	}
