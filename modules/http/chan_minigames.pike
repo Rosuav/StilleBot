@@ -42,14 +42,8 @@ loading...
 
 /*
 Bit Boss
-- Alternate display format for a goal bar: "Hitpoints".
-- As the value advances toward the goal, the display reduces, ie it is inverted
-- Use the "level up command" to advance to a new person
-- Still to do:
   - "Last damage dealt" and animation?? Maybe??
   - Autoreset on stream offline (implemented, untested)
-  - Heal self. Use uid? use name? If use name, dispose of all uid saving.
-  - Gift subs go to recipient option
 
 First, and optionally Second, Third, and Last
 - TODO: On channel offline (dedicated hook, don't do it in the special trigger), update all the
@@ -125,7 +119,6 @@ __async__ void reset_boss(object channel, mapping|void cfg) {
 	channel->set_variable("bossdmg", "0", "set");
 	channel->set_variable("bossmaxhp", (string)cfg->initialhp, "set");
 	mapping user = await(get_user_info(cfg->initialboss));
-	channel->set_variable("bossuid", user->id, "set");
 	channel->set_variable("bossname", user->display_name, "set");
 	channel->set_variable("bossavatar", user->profile_image_url, "set");
 }
@@ -175,7 +168,6 @@ __async__ void update_boss(object channel, mapping game) {
 			$bossname$ = \"{name}\"
 			if (\"{uid}\" == \"0\") $bossname$ = \"{from_name}\"
 			else $bossname$ = \"{name}\"
-			$bossuid$ = \"{uid}\"
 		}
 		", (["language": "mustard"]));
 	//Or should this be flipped on its head - the reset command does all the work, and other
