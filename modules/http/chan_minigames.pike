@@ -161,7 +161,7 @@ __async__ void update_boss(object channel, mapping game) {
 	if (!channel->commands->slayboss) G->G->cmdmgr->update_command(channel, "", "slayboss", #"
 		#access \"none\"
 		#visibility \"hidden\"
-		\"Congratulations to {username} for defeating Boss $bossname$!!\"
+		\"Congratulations to {from_name} for defeating Boss $bossname$!!\"
 		chan_minigames(\"boss\", \"slay\") $bossmaxhp$ = \"{newhp}\"
 		$bossdmg$ = \"0\"
 		uservars(\"\", \"{from_name}\") {
