@@ -156,9 +156,14 @@ __async__ void update_boss(object channel, mapping game) {
 			"font": "Lexend", "fontsize": "30",
 			"fillcolor": "#ff0000", "barcolor": "#ffffdd", "color": "#000000",
 			"borderwidth": "4", "bordercolor": "#00ffff",
+			"boss_selfheal": game->selfheal, "boss_giftrecipient": game->giftrecipient,
 		]));
 		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->boss = game;});
 	}
+	await(G->G->DB->mutate_config(channel->userid, "monitors") { //TODO: Only do this if one of these two fields changed
+		mapping mon = __ARGS__[0][game->monitorid]; if (!mon) return;
+		mon->boss_selfheal = game->selfheal; mon->boss_giftrecipient = game->giftrecipient;
+	});
 	if (!channel->commands->slayboss) G->G->cmdmgr->update_command(channel, "", "slayboss", #"
 		#access \"none\"
 		#visibility \"hidden\"

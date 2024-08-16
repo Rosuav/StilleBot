@@ -37,6 +37,7 @@ constant saveable_attributes = "previewbg barcolor fillcolor needlesize threshol
 	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip follow kofi_dono kofi_member kofi_renew kofi_shop "
 	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive startonscene startonscene_time "
 	"twitchsched twitchsched_offset" / " " + TEXTFORMATTING_ATTRS;
+constant retained_attributes = (<"boss_selfheal", "boss_giftrecipient">); //Attributes set externally, not editable.
 constant valid_types = (<"text", "goalbar", "countdown">);
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
@@ -178,7 +179,7 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
 	string nonce = msg->nonce;
 	if (!stringp(msg->text) || !monitors[nonce]) return; //Monitor doesn't exist. You can't create monitors with this.
-	mapping info = monitors[nonce] = (["type": monitors[nonce]->type, "text": msg->text]);
+	mapping info = monitors[nonce] = (["type": monitors[nonce]->type, "text": msg->text]) | (monitors[nonce] & retained_attributes);
 	foreach (saveable_attributes, string key) if (msg[key]) info[key] = msg[key];
 	if (info->needlesize == "") info->needlesize = "0";
 	if (msg->varname) info->text = sprintf("$%s$:%s", msg->varname, info->text);
@@ -247,11 +248,20 @@ void autoadvance(object channel, mapping person, string key, int weight, mapping
 		if (!txt) continue;
 		echoable_message lvlup = channel->commands[info->lvlupcmd];
 		int prevtier = lvlup && (int)message_params(channel, person, ({id}))["{tier}"];
+		//HACK: If it's bit boss mode, we may need to change the from_name, and we may need to
+		//negate the advancement. Massive breach of encapsulation.
+		string from_name = person->from_name || person->user || "Anonymous";
+		if (string recip = info->boss_giftrecipient && extra->msg_param_recipient_display_name) from_name = recip;
+		if (info->boss_selfheal && lower_case(from_name) == lower_case(channel->expand_variables("$bossname$"))) {
+			int dmg = (int)channel->expand_variables("$bossdmg$");
+			if (advance > dmg) advance = dmg; //No healing past your max HP
+			advance = -advance; //Heal rather than hurt.
+		}
 		int total = (int)channel->set_variable(varname, advance, "add"); //Abuse the fact that it'll take an int just fine for add :)
 		Stdio.append_file("subs.log", sprintf("[%s] Advancing %s goal bar by %O*%O = %d - now %d\n", channel->name, varname, key, weight, advance, total));
 		if (advance > 0 && lvlup) {
 			int newtier = (int)message_params(channel, person, ({id}))["{tier}"];
-			while (prevtier++ < newtier) channel->send(person, lvlup, (["%s": (string)prevtier, "{from_name}": person->from_name || person->user]));
+			while (prevtier++ < newtier) channel->send(person, lvlup, (["%s": (string)prevtier, "{from_name}": from_name]));
 		}
 	}
 }
