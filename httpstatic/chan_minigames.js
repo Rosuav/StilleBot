@@ -80,10 +80,9 @@ export function render(data) {
 	const first = {...sections.first, ...(data.first || { })};
 	replace_content("#first", UL([
 		LI("Select which rewards you want active."),
-		LI(LABEL([INPUT({type: "checkbox", name: "first", checked: Boolean(first.first)}), " First"])),
-		LI(LABEL([INPUT({type: "checkbox", name: "second", checked: Boolean(first.second)}), " Second"])),
-		LI(LABEL([INPUT({type: "checkbox", name: "third", checked: Boolean(first.third)}), " Third"])),
-		LI(LABEL([INPUT({type: "checkbox", name: "last", checked: Boolean(first.last)}), " Last"])),
+		["First", "Second", "Third", "Last"].map(which => LI(LABEL([
+			INPUT({type: "checkbox", name: which.toLowerCase(), checked: Boolean(first[which.toLowerCase()])}), " " + which,
+		]))),
 		LI(LABEL([INPUT({type: "checkbox", name: "checkin", checked: Boolean(first.checkin)}), " Check-in (may be redeemed once each by all users)"])),
 	]));
 }
