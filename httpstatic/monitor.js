@@ -60,6 +60,7 @@ function vischange() {
 }
 
 export function render(data) {update_display(DOM("#display"), data.data);}
+let prevpos = 100;
 export function update_display(elem, data) { //Used for the preview as well as the live display
 	//Update styles. The server provides a single "text_css" attribute covering most of the easy
 	//stuff; all we have to do here is handle the goal bar position.
@@ -99,11 +100,12 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			//Stacked format
 			elem.style.flexDirection = "column";
 			set_content(elem, [
-				DIV({style: `flex-grow: 1; width: 100%; background: linear-gradient(.25turn, ${t.fillcolor} ${pos}%, ${t.barcolor} ${pos}%, ${t.barcolor})`}, [
+				DIV({class: "goalbar", style: `--oldpos: ${prevpos}%; --newpos: ${pos}%; background: linear-gradient(.25turn, ${t.fillcolor} var(--curpos), ${t.barcolor} var(--curpos), ${t.barcolor})`}, [
 					DIV({style: "padding: 2px 6px"}, curhp + "/" + maxhp),
 				]),
 				DIV({style: "text-wrap: nowrap; width: 100%; text-align: left"}, [img, name]),
 			]);
+			prevpos = pos;
 			return;
 		}
 		const thresholds = t.t;

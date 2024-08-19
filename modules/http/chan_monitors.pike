@@ -12,6 +12,26 @@ inherit builtin_command;
     (ie identical to Active) as this will be the most common.
 */
 
+constant monitorstyles = #"
+#display div {width: 33%;}
+#display div:nth-of-type(2) {text-align: center;}
+#display div:nth-of-type(3) {text-align: right;}
+.avatar {width: 40px; padding-right: 2px; vertical-align: top;}
+@property --oldpos {syntax: '<percentage>'; inherits: false; initial-value: 100%;}
+@property --newpos {syntax: '<percentage>'; inherits: false; initial-value: 100%;}
+@property --curpos {syntax: '<percentage>'; inherits: false; initial-value: 100%;}
+#display .goalbar {
+	flex-grow: 1;
+	width: 100%;
+	/*transition: --curpos 2s ease-in;*/
+	animation: .25s ease-in 0s 1 forwards damage;
+}
+@keyframes damage {
+	from {--curpos: var(--oldpos);}
+	to {--curpos: var(--newpos);}
+}
+";
+
 constant builtin_name = "Monitors"; //The front end may redescribe this according to the parameters
 constant builtin_description = "Get information about a channel monitor";
 //NOTE: The labels for parameters 1 and 2 will be replaced by the GUI editor based on monitor type.
@@ -50,7 +70,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		return render_template("monitor.html", ([
 			"vars": (["ws_type": ws_type, "ws_group": nonce + "#" + req->misc->channel->userid, "ws_code": "monitor"]),
 			//Note that $$styles$$ is used differently in chan_subpoints which reuses monitor.html.
-			"styles": "#display div {width: 33%;}#display div:nth-of-type(2) {text-align: center;}#display div:nth-of-type(3) {text-align: right;}.avatar {width: 40px; padding-right: 2px; vertical-align: top;}",
+			"styles": monitorstyles,
 
 		]));
 	}
