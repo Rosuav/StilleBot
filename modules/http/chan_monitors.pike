@@ -12,6 +12,7 @@ inherit builtin_command;
     (ie identical to Active) as this will be the most common.
 */
 
+//Note that "#display" gets replaced with ".preview" for the preview styles
 constant monitorstyles = #"
 #display div {width: 33%;}
 #display div:nth-of-type(2) {text-align: center;}
@@ -75,7 +76,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		]));
 	}
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
-	return render(req, (["vars": (["ws_group": ""])]) | req->misc->chaninfo);
+	return render(req, ([
+		"vars": (["ws_group": ""]),
+		"styles": replace(monitorstyles, "#display", ".preview"),
+	]) | req->misc->chaninfo);
 }
 
 __async__ void update_scheduled_timer(object channel, mapping mon) {

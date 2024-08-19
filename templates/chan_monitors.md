@@ -9,12 +9,9 @@ input[type=number] {width: 4em;}
 	overflow: hidden;
 }
 .preview-bg {padding: 6px;}
-.preview div {width: 33%;}
-.preview div:nth-of-type(2) {text-align: center;}
-.preview div:nth-of-type(3) {text-align: right;}
 .optionset {display: flex; padding: 0.125em 0;}
 .optionset fieldset {padding: 0.25em; margin-left: 1em;}
-.preview .avatar {width: 40px; padding-right: 2px; vertical-align: top;}
+$$styles$$
 </style>
 
 Preview | Actions | Link
