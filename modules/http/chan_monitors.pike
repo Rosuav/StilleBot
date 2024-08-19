@@ -235,6 +235,30 @@ int subscription(object channel, string type, mapping person, string tier, int q
 	autoadvance(channel, person, "sub_t" + tier, qty, extra);
 }
 
+void advance_goalbar(object channel, mapping|string info, mapping person, int advance, mapping|void extra) {
+	//May pass the info mapping or the monitor ID
+	if (stringp(info)) info = G->G->DB->load_cached_config(channel->userid, "monitors")[info];
+	if (!extra) extra = ([]);
+	sscanf(info->text, "$%s$:%s", string varname, string txt);
+	if (!txt) return;
+	echoable_message lvlup = channel->commands[info->lvlupcmd];
+	int prevtier = lvlup && calculate_current_goalbar_tier(channel, info)[2];
+	//HACK: If it's bit boss mode, we may need to change the from_name, and we may need to
+	//negate the advancement. Massive breach of encapsulation.
+	string from_name = person->from_name || person->user || "Anonymous";
+	if (string recip = info->boss_giftrecipient && extra->msg_param_recipient_display_name) from_name = recip;
+	if (info->boss_selfheal && lower_case(from_name) == lower_case(channel->expand_variables("$bossname$"))) {
+		int dmg = (int)channel->expand_variables("$bossdmg$");
+		if (advance > dmg) advance = dmg; //No healing past your max HP
+		advance = -advance; //Heal rather than hurt.
+	}
+	int total = (int)channel->set_variable(varname, advance, "add"); //Abuse the fact that it'll take an int just fine for add :)
+	if (advance > 0 && lvlup) {
+		int newtier = calculate_current_goalbar_tier(channel, info)[2];
+		while (++prevtier <= newtier) channel->send(person, lvlup, (["%s": (string)prevtier, "{from_name}": from_name]));
+	}
+}
+
 //Note: Use the builtin to advance bars from a command/trigger/special.
 //Otherwise, simply assigning to the variable won't trigger the level-up command.
 void autoadvance(object channel, mapping person, string key, int weight, mapping|void extra) {
@@ -244,25 +268,7 @@ void autoadvance(object channel, mapping person, string key, int weight, mapping
 		if (extra->is_gift_or_prime && info->exclude_gifts) continue;
 		int advance = key == "" ? weight : weight * (int)info[key];
 		if (!advance) continue;
-		sscanf(info->text, "$%s$:%s", string varname, string txt);
-		if (!txt) continue;
-		echoable_message lvlup = channel->commands[info->lvlupcmd];
-		int prevtier = lvlup && (int)message_params(channel, person, ({id}))["{tier}"];
-		//HACK: If it's bit boss mode, we may need to change the from_name, and we may need to
-		//negate the advancement. Massive breach of encapsulation.
-		string from_name = person->from_name || person->user || "Anonymous";
-		if (string recip = info->boss_giftrecipient && extra->msg_param_recipient_display_name) from_name = recip;
-		if (info->boss_selfheal && lower_case(from_name) == lower_case(channel->expand_variables("$bossname$"))) {
-			int dmg = (int)channel->expand_variables("$bossdmg$");
-			if (advance > dmg) advance = dmg; //No healing past your max HP
-			advance = -advance; //Heal rather than hurt.
-		}
-		int total = (int)channel->set_variable(varname, advance, "add"); //Abuse the fact that it'll take an int just fine for add :)
-		Stdio.append_file("subs.log", sprintf("[%s] Advancing %s goal bar by %O*%O = %d - now %d\n", channel->name, varname, key, weight, advance, total));
-		if (advance > 0 && lvlup) {
-			int newtier = (int)message_params(channel, person, ({id}))["{tier}"];
-			while (prevtier++ < newtier) channel->send(person, lvlup, (["%s": (string)prevtier, "{from_name}": from_name]));
-		}
+		advance_goalbar(channel, info, person, advance, extra);
 	}
 }
 
@@ -276,30 +282,38 @@ string format_subscriptions(int value) {
 	return sprintf("%.3f", value / 500.0);
 }
 
+//Work out where we are in the goal bar. Returns [pos, goal, tier] where pos and goal
+//show the basic positional stats ("43/100") and tier is the zero-based iteration of
+//the goal bar, always zero for tier-less goals.
+array(int) calculate_current_goalbar_tier(object channel, mapping info) {
+	int pos = (int)channel->expand_variables(info->text); //The text starts with the variable, then a colon, so this will give us the current (raw) value.
+	int tier, goal, found;
+	foreach (channel->expand_variables(info->thresholds) / " "; tier; string th) {
+		goal = (int)th;
+		if (pos < goal) {
+			found = 1;
+			break;
+		}
+		else if (!info->progressive) pos -= goal;
+	}
+	if (!found) {
+		//Beyond the last threshold. Some numbers may exceed normal
+		//limits, eg percentage being above 100. Note that, for a
+		//non-tiered goal bar, this simply means "goal is reached".
+		if (!info->progressive) pos += goal; //Show that we're past the goal
+	}
+	return ({pos, goal, tier});
+}
+
 mapping message_params(object channel, mapping person, array param) {
 	string monitor = param[0];
 	mapping info = G->G->DB->load_cached_config(channel->userid, "monitors")[monitor];
-	if (!monitor) error("Unrecognized monitor ID - has it been deleted?\n");
+	if (!info) error("Unrecognized monitor ID - has it been deleted?\n");
 	switch (info->type) {
 		case "goalbar": {
 			int advance = sizeof(param) > 1 && (int)param[1];
 			if (advance) autoadvance(channel, person, "", advance); //FIXME: Is this really advancing ALL goal bars?? That has to be a bug right?
-			int pos = (int)channel->expand_variables(info->text); //The text starts with the variable, then a colon, so this will give us the current (raw) value.
-			int tier, goal, found;
-			foreach (channel->expand_variables(info->thresholds) / " "; tier; string th) {
-				goal = (int)th;
-				if (pos < goal) {
-					found = 1;
-					break;
-				}
-				else if (!info->progressive) pos -= goal;
-			}
-			if (!found) {
-				//Beyond the last threshold. Some numbers may exceed normal
-				//limits, eg percentage being above 100. Note that, for a
-				//non-tiered goal bar, this simply means "goal is reached".
-				if (!info->progressive) pos += goal; //Show that we're past the goal
-			}
+			[int pos, int goal, int tier] = calculate_current_goalbar_tier(channel, info);
 			int percent = (int)(pos * 100.0 / goal + 0.5), distance = goal - pos;
 			function fmt = this["format_" + info->format] || format_plain;
 			return ([
