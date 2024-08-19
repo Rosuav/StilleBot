@@ -48,6 +48,7 @@ export function render(data) {
 		LI(["Increase per victory ", INPUT({type: "number", name: "hpgrowth", value: boss.hpgrowth}), " or -1 for overkill mode"]),
 		boss.monitorid && LI(["To see the bar, ", A({class: "monitorlink", href: "monitors?view=" + boss.monitorid}, "drag this to OBS")]),
 		boss.monitorid && LI(["Further configuration (colour, font, etc) can be done ", A({href: "monitors"}, "by editing the bar itself"), "."]),
+		boss.monitorid && LI(["For testing purposes, you may ", BUTTON({id: "dealdamage"}, "deal some damage to the boss")]),
 	]));
 	const crown = {...sections.crown, ...(data.crown || { })};
 	replace_content("#crown", UL([
@@ -105,3 +106,5 @@ on("dragstart", ".monitorlink", e => {
 	const url = `${e.match.href}&layer-name=Mustard%20Mine%20monitor&layer-width=750&layer-height=90`;
 	e.dataTransfer.setData("text/uri-list", url);
 });
+
+on("click", "#dealdamage", e => ws_sync.send({cmd: "dealdamage"}));

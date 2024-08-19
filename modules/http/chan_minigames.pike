@@ -46,7 +46,6 @@ Bit Boss
   - Autoreset on stream offline (implemented, untested)
 
 First, and optionally Second, Third, and Last
-- Untested: Resetting of descriptions on channel-offline
 - Count how many times a user has claimed a reward? ("You have been first N times")
   - What if you have multiple? Independently count? Count how many times you got ANY reward?
 */
@@ -183,6 +182,14 @@ __async__ void update_boss(object channel, mapping game) {
 
 void wscmd_resetboss(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	reset_boss(channel);
+}
+
+__async__ void wscmd_dealdamage(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping cfg = sections->boss | await(G->G->DB->load_config(channel->userid, "minigames"))->boss;
+	if (!cfg->monitorid) return;
+	string username = random("Rosuav MustardMine LoudLotus AnAnonymousCheerer AnAnonymousGifter" / " ");
+	werror("[%O] Dealing 100 bit boss damage as %O\n", channel, username);
+	G->G->goal_bar_advance(channel, cfg->monitorid, (["user": username]), 100);
 }
 
 __async__ void update_crown(object channel, mapping game) {
