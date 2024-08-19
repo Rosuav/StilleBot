@@ -27,9 +27,15 @@ constant monitorstyles = #"
 	animation: .25s ease-in 0s 1 forwards damage;
 	background: linear-gradient(.25turn, var(--fillcolor) var(--curpos), var(--barcolor) var(--curpos), var(--barcolor));
 }
+#display .waxing {animation: 1s ease-in-out 0.5s 1 both waxwane;}
+#display .waning {animation: 1s ease-in-out 0.5s 1 reverse both waxwane;}
 @keyframes damage {
 	from {--curpos: var(--oldpos);}
 	to {--curpos: var(--newpos);}
+}
+@keyframes waxwane {
+	from {opacity: 0;}
+	to {opacity: 1;}
 }
 ";
 

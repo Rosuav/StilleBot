@@ -60,7 +60,7 @@ function vischange() {
 }
 
 export function render(data) {update_display(DOM("#display"), data.data);}
-let prevpos = 100;
+let prevpos = 100, prevname = null, prevcredit = null;
 export function update_display(elem, data) { //Used for the preview as well as the live display
 	//Update styles. The server provides a single "text_css" attribute covering most of the easy
 	//stuff; all we have to do here is handle the goal bar position.
@@ -87,7 +87,24 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			const curhp = maxhp - m[1], avatar = m[2], name = m[3];
 			const pos = curhp/maxhp * 100;
 			elem.style.display = "flex";
-			const img = elem.querySelector("img") || IMG({class: "avatar", src: avatar});
+			let img = elem.querySelector("img");
+			if (name !== prevname || img?.src !== avatar) {
+				//New boss! Save the previous boss credit for the cross-fade, and make ourselves
+				//a new image for the avatar. Note that if an additional change occurs within the
+				//transition animation, the "previous" will not be changed. This allows for the
+				//name and avatar to change independently, but also means that rapid-fire boss
+				//replacements (what's going on, BOFH got angry?) will transition from the oldest
+				//directly to the newest.
+				prevname = name;
+				prevcredit = prevcredit || elem.querySelector(".bosscredit");
+				if (prevcredit) {
+					prevcredit.classList.remove("bosscredit");
+					prevcredit.classList.add("waning");
+				}
+				img = null;
+				setTimeout(() => prevcredit = null, 2000);
+			}
+			if (!img) img = IMG({class: "avatar", src: avatar});
 			if (img.src !== avatar) img.src = avatar; //Avoid flicker
 			/* Wide format
 			set_content(elem, [
@@ -103,7 +120,10 @@ export function update_display(elem, data) { //Used for the preview as well as t
 				DIV({class: "goalbar", style: `--oldpos: ${prevpos}%; --newpos: ${pos}%;`}, [
 					DIV({style: "padding: 2px 6px"}, curhp + "/" + maxhp),
 				]),
-				DIV({style: "text-wrap: nowrap; width: 100%; text-align: left"}, [img, name]),
+				DIV({style: "position: relative"}, [
+					DIV({class: prevcredit ? "bosscredit waxing" : "bosscredit", style: "position: absolute; text-wrap: nowrap; width: 100%; text-align: left"}, [img, name]),
+					prevcredit,
+				]),
 			]);
 			prevpos = pos;
 			return;
