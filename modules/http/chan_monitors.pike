@@ -238,6 +238,7 @@ int subscription(object channel, string type, mapping person, string tier, int q
 void advance_goalbar(object channel, mapping|string info, mapping person, int advance, mapping|void extra) {
 	//May pass the info mapping or the monitor ID
 	if (stringp(info)) info = G->G->DB->load_cached_config(channel->userid, "monitors")[info];
+	if (!mappingp(info)) return; //Probably wrong monitor ID
 	if (!extra) extra = ([]);
 	sscanf(info->text, "$%s$:%s", string varname, string txt);
 	if (!txt) return;
@@ -362,4 +363,5 @@ mapping message_params(object channel, mapping person, array param) {
 protected void create(string name) {
 	::create(name);
 	G->G->goal_bar_autoadvance = autoadvance;
+	G->G->goal_bar_advance = advance_goalbar;
 }
