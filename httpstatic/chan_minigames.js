@@ -46,6 +46,7 @@ export function render(data) {
 		]),
 		LI(["Initial HP ", INPUT({type: "number", name: "initialhp", value: boss.initialhp})]),
 		LI(["Increase per victory ", INPUT({type: "number", name: "hpgrowth", value: boss.hpgrowth}), " or -1 for overkill mode"]),
+		boss.monitorid && LI(["To see the bar, ", A({class: "monitorlink", href: "monitors?view=" + boss.monitorid}, "drag this to OBS")]),
 		boss.monitorid && LI(["Further configuration (colour, font, etc) can be done ", A({href: "monitors"}, "by editing the bar itself"), "."]),
 	]));
 	const crown = {...sections.crown, ...(data.crown || { })};
@@ -98,4 +99,9 @@ on("change", "input,select", e => {
 	const params = { };
 	sec.querySelectorAll("input,select").forEach(el => params[el.name] = el.type === "checkbox" ? el.checked : el.value);
 	ws_sync.send({cmd: "configure", section: sec.id, params});
+});
+
+on("dragstart", ".monitorlink", e => {
+	const url = `${e.match.href}&layer-name=Mustard%20Mine%20monitor&layer-width=750&layer-height=90`;
+	e.dataTransfer.setData("text/uri-list", url);
 });
