@@ -24,8 +24,8 @@ constant monitorstyles = #"
 #display .goalbar {
 	flex-grow: 1;
 	width: 100%;
-	/*transition: --curpos 2s ease-in;*/
 	animation: .25s ease-in 0s 1 forwards damage;
+	background: linear-gradient(.25turn, var(--fillcolor) var(--curpos), var(--barcolor) var(--curpos), var(--barcolor));
 }
 @keyframes damage {
 	from {--curpos: var(--oldpos);}

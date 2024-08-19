@@ -92,7 +92,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			/* Wide format
 			set_content(elem, [
 				img,
-				DIV({style: `flex-grow: 1; display: flex; background: linear-gradient(.25turn, ${t.fillcolor} ${pos}%, ${t.barcolor} ${pos}%, ${t.barcolor})`}, [
+				DIV({class: "goalbar", style: `display: flex; --oldpos: ${prevpos}%; --newpos: ${pos}%;`}, [
 					DIV(name), DIV(), DIV(curhp + "/" + maxhp),
 				]),
 			]);
@@ -100,7 +100,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			//Stacked format
 			elem.style.flexDirection = "column";
 			set_content(elem, [
-				DIV({class: "goalbar", style: `--oldpos: ${prevpos}%; --newpos: ${pos}%; background: linear-gradient(.25turn, ${t.fillcolor} var(--curpos), ${t.barcolor} var(--curpos), ${t.barcolor})`}, [
+				DIV({class: "goalbar", style: `--oldpos: ${prevpos}%; --newpos: ${pos}%;`}, [
 					DIV({style: "padding: 2px 6px"}, curhp + "/" + maxhp),
 				]),
 				DIV({style: "text-wrap: nowrap; width: 100%; text-align: left"}, [img, name]),
@@ -130,6 +130,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			goal = thresholds[thresholds.length - 1];
 			if (!t.progressive) pos += goal; //After blowing past the last goal, we're clearly past that goal
 		}
+		//TODO: Is it worth changing this to use CSS variables instead of interpolation? See bit boss code above for example.
 		elem.style.background = `linear-gradient(.25turn, ${t.fillcolor} ${mark-t.needlesize}%, red, ${t.barcolor} ${mark+t.needlesize}%, ${t.barcolor})`;
 		elem.style.display = "flex";
 		const f = formatters[t.format] || (x => ""+x);

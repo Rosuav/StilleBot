@@ -1212,6 +1212,10 @@ string textformatting_css(mapping cfg) {
 	//If you set a border width, assume we want a solid border. (For others, set the
 	//entire border definition in custom CSS.)
 	if ((int)cfg->borderwidth) css += sprintf("border-width: %dpx; border-style: solid;", (int)cfg->borderwidth);
+	//Colors are made available as CSS variables, although not everything uses them that way currently.
+	//Note that these aren't text formatting attributes, but are processed the same way for convenience.
+	foreach ("barcolor fillcolor" / " ", string col)
+		if (cfg[col]) css += sprintf("--%s: %s;", col, cfg[col]);
 	return css;
 }
 //Validate the textformatting attributes. Ignores any other attributes.
