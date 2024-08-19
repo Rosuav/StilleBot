@@ -121,7 +121,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 					DIV({style: "padding: 2px 6px"}, curhp + "/" + maxhp),
 				]),
 				DIV({style: "position: relative"}, [
-					DIV({class: prevcredit ? "bosscredit waxing" : "bosscredit", style: "position: absolute; text-wrap: nowrap; width: 100%; text-align: left"}, [img, name]),
+					DIV({class: prevcredit ? "bosscredit waxing" : "bosscredit", style: "text-wrap: nowrap; width: 100%; text-align: left"}, [img, name]),
 					prevcredit,
 				]),
 			]);
