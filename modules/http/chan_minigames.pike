@@ -42,7 +42,6 @@ loading...
 
 /*
 Bit Boss
-  - "Last damage dealt" and animation?? Maybe??
   - Autoreset on stream offline (implemented, untested)
 
 First, and optionally Second, Third, and Last
@@ -56,7 +55,7 @@ constant sections = ([
 	"boss": ([
 		"enabled": 0,
 		"initialhp": 1000,
-		"initialboss": 279141671, //Mustard Mine himself
+		"initialboss": 279141671, //Mustard Mine himself. Note that if this ID isn't an available voice (see http_request), it'll actually be rejected as invalid.
 		"hpgrowth": 0, //0 for static, positive numbers for fixed growth, -1 for overkill
 		"autoreset": 1, //Reset at end of stream automatically. There'll be a mod command to reset regardless.
 		"giftrecipient": 0,
@@ -84,7 +83,16 @@ constant sections = ([
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo); //Should there be non-privileged info shown?
-	return render(req, (["vars": (["ws_group": "", "sections": sections])]) | req->misc->chaninfo);
+	mapping vox = G->G->DB->load_cached_config(req->misc->channel->userid, "voices");
+	mapping voices = mkmapping(indices(vox), values(vox)->name); //Don't need all the other info, id/name is enough
+	//Loading the voices page ensures that the bot's default voice is available. Even if
+	//this streamer hasn't, that voice is available as a default boss.
+	string defvoice = G->G->irc->id[0]->?config->?defvoice;
+	if (defvoice && !voices[defvoice]) {
+		mapping bv = G->G->DB->load_cached_config(0, "voices");
+		if (bv[defvoice]) voices[defvoice] = bv[defvoice]->name;
+	}
+	return render(req, (["vars": (["ws_group": "", "sections": sections, "voices": voices])]) | req->misc->chaninfo);
 }
 
 Concurrent.Future get_chan_state(object channel, string grp, string|void id) {
@@ -134,6 +142,13 @@ __async__ void update_boss(object channel, mapping game) {
 		return;
 	}
 	mapping cfg = sections->boss | game;
+	mapping vox = G->G->DB->load_cached_config(channel->userid, "voices");
+	if (!vox[(string)game->initialboss]) {
+		string defvoice = G->G->irc->id[0]->?config->?defvoice;
+		werror("Invalid initial boss %O resetting to %O\n", game->initialboss, defvoice);
+		game->initialboss = (int)defvoice;
+		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->boss = game;});
+	}
 	if (!game->monitorid) {
 		//Note that the boss's current HP is max HP minus damage, and is not directly tracked.
 		await(reset_boss(channel, cfg));
@@ -448,6 +463,7 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 }
 
 @hook_channel_offline: __async__ void disconnected(string channel, int uptime, int userid) {
+	werror("MINIGAMES OFFLINE HOOK %O %O %O\n", channel, uptime, userid);
 	m_delete(already_claimed, userid);
 	mapping games = await(G->G->DB->load_config(userid, "minigames"));
 	//Disable the second and subsequent rewards until First gets claimed

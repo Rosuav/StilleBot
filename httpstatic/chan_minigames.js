@@ -14,11 +14,9 @@ export function render(data) {
 		]),
 		LI([
 			"Initial boss ",
-			SELECT({name: "initialboss", value: boss.initialboss}, [
-				OPTION({value: "279141671"}, "Mustard Mine"),
-				OPTION({value: "274598607"}, "AnAnonymousGifter"),
-				//TODO: Broadcaster, and all registered channel voices
-			]),
+			SELECT({name: "initialboss", value: boss.initialboss}, Object.entries(voices).map(([id, name]) =>
+				OPTION({value: id}, name)
+			)),
 		]),
 		LI([
 			"Gift subs ",
