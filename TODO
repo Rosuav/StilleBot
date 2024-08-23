@@ -130,11 +130,10 @@
   - GET A SCREENREADER and see how everything sounds. If needed, adjust.
     - Orca sucks. What others are there?
 * Should Favourites become a tray like any other??
-* Raid finder "share status"
-  - Option: "Share status with potential raiders"
-  - If enabled, when you open the raid finder, it signals all raid finders who have you
-    as a tile. Red asterisk to signal "Has raid finder open, is probably ending soon!"
-  - Similarly, when you close the raid finder (or disable the option), signal-revert all.
+* Can we get "snooze raids" information?
+  - Option: Snooze raids when you open the raid finder, unsnooze when you close it
+  - Option: Query if the channel has snoozed raids, show a big warning
+  - Neither is, to my knowledge, currently supported. These would need API augmentation.
 * Cron job to track channels that have been inactive for a long time (maybe 2 weeks) to
   dispose of their configs
 * Make connection priority dynamic
