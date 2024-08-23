@@ -426,3 +426,19 @@ body:not(:has(nav#sidebar.vis)) nav#topbar {
 img[src="/static/MustardMineBanner.png"] {
 	max-width: 100%;
 }
+
+#unavailableindemo {
+	visibility: hidden;
+	opacity: 0;
+	background: #fcf;
+	border: 1px solid rebeccapurple;
+	position: fixed;
+	left: 120px; right: 0px;
+	top: 40px; height: 1.5em;
+	text-align: center;
+	transition: all 0.5s;
+}
+#unavailableindemo.shown {
+	visibility: visible;
+	opacity: 1;
+}

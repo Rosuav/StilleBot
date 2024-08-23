@@ -39,8 +39,6 @@
 * Enable/disable rewards - allow use of title, will do lookup
 * If you attempt to rename a command or add an alias that already exists (and isn't an
   alias for the current command), warn on client side and block save unless confirmed.
-* Tidy up demo mode a bit.
-  - Some pages have mutely nonfunctional buttons - they should announce that it's a demo.
 * Goal bar templates - nice easy ones that you can use right away
   - Note that Twitch now has on-platform goals that track current followers and subs,
     so this can continue to focus on how many have been gained recently (eg daily

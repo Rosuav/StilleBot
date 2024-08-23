@@ -137,7 +137,7 @@ export function connect(group, handler)
 			redirect_host = data.redirect; redirect_xfr = data.xfr;
 			return;
 		}
-		const f = handler["sockmsg_" + data.cmd] || callbacks[callback_pfx + data.cmd];
+		const f = handler["sockmsg_" + data.cmd] || callbacks[callback_pfx + data.cmd] || callbacks[data.cmd];
 		if (f) {f(data); unknown = "";}
 		verbose(unknown ? "unkmsg" : "msg", "Got " + unknown + "message from server:", data);
 	};
@@ -175,3 +175,12 @@ export function get_prefs() {return prefs;}
 //If there's no sockmsg_socketcommand in the handler for that sockettype, this will be
 //called instead. Does not need to be exported (the way sockmsg_* does).
 export function register_callback(func) {callbacks[func.name] = func;}
+//Automatically handle "not available in demo" messages. TODO: Allow a custom extra bit of information?
+let demomsg_timeout = null;
+callbacks.demo = data => {
+	console.log("Got a demo msg");
+	const elem = DOM("#unavailableindemo"); if (!elem) return;
+	elem.className = "shown";
+	clearTimeout(demomsg_timeout);
+	demomsg_timeout = setTimeout(() => elem.className = "", 10000);
+}
