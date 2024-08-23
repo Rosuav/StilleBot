@@ -62,7 +62,28 @@ void hypetrain_progression(object chan, mapping info) {
 
 __async__ mapping get_state(int|string chan)
 {
-	if (chan == "-") return 0;
+	if (chan == "-") return 0; //FIXME: What causes a state of "-" and is that still a thing?
+	if (chan == "!demo") return ([
+		"expires": time() + 180, //Three minutes left on the demo hype train, as of when you load the page
+		"level": 2, "goal": 1800, "total": 500,
+		"conductors": ({([
+			"display_name": "Demo User",
+			"total": 100,
+			"type": "BITS",
+			"user": "49497888",
+		]), ([
+			"display_name": "MustardMine",
+			"total": 500,
+			"type": "SUBS",
+			"user": "279141671",
+		])}),
+		"lastcontrib": ([
+			"display_name": "Demo User",
+			"total": 100,
+			"type": "BITS",
+			"user": "49497888",
+		]),
+	]);
 	mixed ex = catch {
 		string uid;
 		if (intp(chan)) {//Deprecated, might change everything to be all channel names at some point
