@@ -76,9 +76,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	]);
 }
 
-void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (conn->session->fake) return;
-	[object channel, string grp] = split_channel(conn->group);
+void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (msg->unsetdefault) { //No voice selection here
 		m_delete(channel->botconfig, "defvoice");
 		send_updates_all(conn->group);
@@ -109,9 +107,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	};
 }
 
-void websocket_cmd_activate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (conn->session->fake) return;
-	[object channel, string grp] = split_channel(conn->group);
+void wscmd_activate(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping bv = G->G->DB->load_cached_config(0, "voices")[msg->id];
 	if (!bv) return;
 	//Activating a voice requires that you be either the voice itself, or the bot
@@ -123,9 +119,7 @@ void websocket_cmd_activate(mapping(string:mixed) conn, mapping(string:mixed) ms
 	};
 }
 
-void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (conn->session->fake) return;
-	[object channel, string grp] = split_channel(conn->group);
+void wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	G->G->DB->mutate_config(channel->userid, "voices") {
 		if (m_delete(__ARGS__[0], msg->id)) update_one(conn->group, msg->id);
 	};

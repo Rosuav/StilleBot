@@ -205,15 +205,14 @@ __async__ void delete_file(object channel, string userid, string fileid) {
 	}
 }
 
-void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+mapping|zero websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return (["cmd": "demo"]);
 	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || conn->session->fake) return;
+	if (!channel) return 0;
 	delete_file(channel, grp, msg->id);
 }
 
-__async__ void websocket_cmd_config(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string grp] = split_channel(conn->group);
-	if (!channel || conn->session->fake || !conn->is_mod) return; //TODO: Use wscmd_ once async functions can be annotated
+@"is_mod": __async__ void wscmd_config(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping settings = await(G->G->DB->load_config(channel->userid, "artshare"));
 	foreach ("msgformat" / " ", string key)
 		if (stringp(msg[key])) settings[key] = msg[key];

@@ -1376,15 +1376,17 @@ class http_websocket
 		return get_chan_state(channel, grp, id, type);
 	}
 
-	mixed websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 		::websocket_msg(conn, msg);
 		string name = "wscmd_" + msg->?cmd;
 		function f = this[name]; if (!f) return 0;
+		if (conn->session->fake) {send_msg(conn, (["cmd": "demo"])); return;}
 		[object channel, string grp] = split_channel(conn->group);
-		if (!channel || conn->session->fake) return 0;
+		if (!channel) return 0;
 		if (annotation_lookup[name] && annotation_lookup[name]["is_mod"] && !conn->is_mod) return 0;
 		//TODO: What about non-category connections? Should this be handled by websocket_handler?
-		return f(channel, conn, msg);
+		mixed ret = f(channel, conn, msg);
+		if (ret) spawn_task(ret)->then() {if (__ARGS__[0]) send_msg(conn, __ARGS__[0]);};
 	}
 	/* Example:
 	@"is_mod": void wscmd_do_the_thing(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {

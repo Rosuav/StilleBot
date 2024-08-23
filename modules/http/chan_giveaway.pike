@@ -405,16 +405,16 @@ __async__ void open_close(string chan, int broadcaster_id, int want_open) {
 	]));
 }
 
-void websocket_cmd_makenotifs(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (conn->session->fake) return 0;
+mapping|zero websocket_cmd_makenotifs(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return (["cmd": "demo"]);
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
 	foreach (NOTIFICATION_SPECIALS; string kwd; mapping resp)
 		G->G->cmdmgr->update_command(channel, "!!", "!giveaway_" + kwd, resp);
 }
 
-__async__ void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (conn->session->fake) return 0;
+__async__ mapping|zero websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return (["cmd": "demo"]);
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
 	string chan = channel->name[1..];

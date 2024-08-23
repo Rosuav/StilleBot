@@ -135,21 +135,21 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 }
 
 //Can overwrite an existing variable
-void websocket_cmd_createvar(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (conn->session->fake) return;
+mapping|zero websocket_cmd_createvar(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return (["cmd": "demo"]);
 	[object channel, string grp] = split_channel(conn->group);
-	if (grp != "" || !msg->varname) return;
+	if (grp != "" || !msg->varname) return 0;
 	sscanf(msg->varname, "%[A-Za-z]", string var);
 	if (var != "") channel->set_variable(var, "0", "set");
 }
 
 //Requires that the variable exist
-void websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (conn->session->fake) return;
+mapping|zero websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return (["cmd": "demo"]);
 	[object channel, string grp] = split_channel(conn->group);
-	if (grp != "") return;
+	if (grp != "") return 0;
 	string prev = G->G->DB->load_cached_config(channel->userid, "variables")["$" + msg->varname + "$"];
-	if (!prev) return;
+	if (!prev) return 0;
 	channel->set_variable(msg->varname, (string)(int)msg->val, "set");
 }
 

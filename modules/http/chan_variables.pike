@@ -205,15 +205,15 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	return (["items": variabledata]);
 }
 
-void websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (conn->session->fake) return;
+mapping|zero websocket_cmd_delete(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return (["cmd": "demo"]);
 	[object channel, string grp] = split_channel(conn->group);
 	mapping vars = G->G->DB->load_cached_config(channel->userid, "variables");
 	if (m_delete(vars, "$" + msg->id + "$")) update_one(conn->group, msg->id);
 }
 
-void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (conn->session->fake) return;
+mapping|zero websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return (["cmd": "demo"]);
 	[object channel, string grp] = split_channel(conn->group);
 	mapping vars = G->G->DB->load_cached_config(channel->userid, "variables");
 	if (mappingp(msg->per_user)) {
@@ -222,7 +222,7 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		//Currently just filters by validity.
 		foreach (msg->per_user; string uid; string value)
 			channel->set_variable(var, value, "set", (["": uid]));
-		return;
+		return 0;
 	}
 	if (mappingp(msg->group)) {
 		string pfx = replace(msg->id, "*|$:{}" / 1, "") + ":";
@@ -230,9 +230,9 @@ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mixed) msg)
 			string var = pfx + replace(suffix, "*|$:{}" / 1, "");
 			if (!undefinedp(vars["$" + var + "$"])) channel->set_variable(var, value, "set");
 		}
-		return;
+		return 0;
 	}
-	if (undefinedp(vars["$" + msg->id + "$"])) return; //Only update existing vars this way.
+	if (undefinedp(vars["$" + msg->id + "$"])) return 0; //Only update existing vars this way.
 	channel->set_variable(msg->id, msg->value || "", "set");
 }
 

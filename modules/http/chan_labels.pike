@@ -147,7 +147,6 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 }
 
 @"is_mod": void wscmd_revokekey(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (conn->session->fake) return;
 	mapping cfg = G->G->DB->load_cached_config(channel->userid, "channel_labels");
 	m_delete(cfg, "accesskey");
 	string newkey = get_access_key(channel->userid);

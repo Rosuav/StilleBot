@@ -49,7 +49,8 @@ From here, you can make all kinds of really important changes. Maybe.
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "that the broadcaster use it"]) | req->misc->chaninfo);
-	if (!req->misc->session->fake && (int)req->misc->session->user->id != req->misc->channel->userid)
+	if (req->misc->session->fake) return render(req, (["js": "chan_mastercontrol"]) | req->misc->chaninfo);
+	if ((int)req->misc->session->user->id != req->misc->channel->userid)
 		return render_template("login.md", (["msg": "that the broadcaster use it. It contains settings so dangerous they are not available to mods. Sorry! If you ARE the broadcaster, please reauthenticate"]) | req->misc->chaninfo);
 	return render(req, (["vars": (["ws_group": ""])]) | req->misc->chaninfo);
 }
