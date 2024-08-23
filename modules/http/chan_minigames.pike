@@ -463,7 +463,6 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 }
 
 @hook_channel_offline: __async__ void disconnected(string channel, int uptime, int userid) {
-	werror("MINIGAMES OFFLINE HOOK %O %O %O\n", channel, uptime, userid);
 	m_delete(already_claimed, userid);
 	mapping games = await(G->G->DB->load_config(userid, "minigames"));
 	//Disable the second and subsequent rewards until First gets claimed
