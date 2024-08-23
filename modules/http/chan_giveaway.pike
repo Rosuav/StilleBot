@@ -244,7 +244,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	mapping cfg = req->misc->channel->config;
 	string chan = req->misc->channel->name[1..];
 	string login = "[Broadcaster login](:.twitchlogin data-scopes=channel:manage:redemptions)";
-	if (string scopes = ensure_bcaster_token(req, "channel:manage:redemptions")) return render(req, ([
+	if (string scopes = chan != "!demo" && ensure_bcaster_token(req, "channel:manage:redemptions")) return render(req, ([
 		"error": "This page will become available once the broadcaster has logged in and configured redemptions.",
 		"login": "[Broadcaster login](:.twitchlogin data-scopes=" + replace(scopes, " ", "%20") + ")",
 	]) | req->misc->chaninfo);
@@ -284,8 +284,8 @@ __async__ mapping get_chan_state(object channel, string grp)
 		"last_winner": givcfg->last_winner,
 	]);
 	if (grp != "control") return 0;
-	array rewards;
-	if (mixed ex = catch {rewards = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + channel->userid,
+	array rewards = ({ });
+	if (mixed ex = chan != "!demo" && catch {rewards = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + channel->userid,
 		(["Authorization": "Bearer " + token_for_user_id(channel->userid)[0]])))->data;
 	}) {
 		if (arrayp(ex) && stringp(ex[0]) && has_value(ex[0], "Error from Twitch") && has_value(ex[0], "401")) {
@@ -294,7 +294,7 @@ __async__ mapping get_chan_state(object channel, string grp)
 		werror("Unexpected error listing channel rewards: %s\n", describe_backtrace(ex));
 		return 0;
 	}
-	array(array) redemptions = await(Concurrent.all(list_redemptions(channel->userid, chan, rewards->id[*])));
+	array(array) redemptions = chan == "!demo" ? ({ }) : await(Concurrent.all(list_redemptions(channel->userid, chan, rewards->id[*])));
 	//Every time a new websocket is established, fully recalculate. Guarantee fresh data.
 	giveaway_tickets[chan] = ([]);
 	foreach (redemptions * ({ }), mapping redem) await(update_ticket_count(givcfg, redem));
@@ -406,6 +406,7 @@ __async__ void open_close(string chan, int broadcaster_id, int want_open) {
 }
 
 void websocket_cmd_makenotifs(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return 0;
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
 	foreach (NOTIFICATION_SPECIALS; string kwd; mapping resp)
@@ -413,6 +414,7 @@ void websocket_cmd_makenotifs(mapping(string:mixed) conn, mapping(string:mixed) 
 }
 
 __async__ void websocket_cmd_master(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->session->fake) return 0;
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
 	string chan = channel->name[1..];
