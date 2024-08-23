@@ -115,6 +115,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			}
 			return (["data": "<style>body{font-size:16pt}</style><ul>" + lines * "\n" + "</ul><p>See tiled: <a href=\"raidfinder?categories=mustardmine\">categories=mustardmine</a></p>", "type": "text/html"]);
 		}
+		if (chan == "!demo") return redirect("raidfinder?categories=mustardmine");
 		if (chan == (string)(int)chan) userid = (int)chan;
 		else userid = await(get_user_id(chan));
 	}
