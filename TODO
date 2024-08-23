@@ -70,7 +70,6 @@
   - Mod command to nuke the last-posted file?
   - Anyone currently under timeout or ban is to be denied upload permission.
     - Need a way to grant authentication for this purpose.
-  - Add link to the /channels/NAME/ landing page once it's ready for launch
 * GUI editor - params need formatting options, in and out
   - Builtin params need to cope with splitting strings to arrays
 * Rename "gifted" flag in sub alerts to "is_gifted" to trigger boolean handling
