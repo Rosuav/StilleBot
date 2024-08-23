@@ -13,11 +13,6 @@
 * Pike HTTP, SSL, and keep-alive: what's going on? Is that why Chrome gets confused?
   - It's currently just disabled - we add "Connection: close" to all responses. Would
     be nice to figure out what's actually wrong and then reap the performance benefits.
-* Advanced timer functionality
-  - If there's already a timer of this command happening, allow the user to pick whether it
-    adds another independent one (current behaviour), restarts the timer (cancel existing
-    and create new), or errors out with an immediate message of some sort.
-  - Optionally emit message only if online at the time.
 * Raid finder: Also show recent outgoing raids to allow notes to be added?
   - Or just "pick any channel, add notes". Have it show the stream as if in the raid finder.
   - The allfollows display could be this, but it's nondiscoverable and could be quite costly
@@ -36,7 +31,6 @@
   channel is too quiet. Might not be worth it though.
 * Authentication on Firefox may now have issues with the default popup blocker. Can we
   comply with normal "click for popup" expectations somehow?
-* Enable/disable rewards - allow use of title, will do lookup
 * If you attempt to rename a command or add an alias that already exists (and isn't an
   alias for the current command), warn on client side and block save unless confirmed.
 * Goal bar templates - nice easy ones that you can use right away
@@ -63,7 +57,8 @@
     be just another way to have more than one invocation for a single command.
 * Art Share tool
   - Implement !permit command for temporary single-use access
-  - Mod command to nuke the last-posted file?
+  - Mod command to nuke the last-posted file? You can already delete the message (eg
+    time out the user) to delete the file.
   - Anyone currently under timeout or ban is to be denied upload permission.
     - Need a way to grant authentication for this purpose.
 * GUI editor - params need formatting options, in and out
