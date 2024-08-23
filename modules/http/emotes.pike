@@ -142,6 +142,11 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	if (req->variables->broadcaster) {
 		//Show emotes for a specific broadcaster
 		//Nothing to do with the main page, other than that it's all about emotes.
+		if (req->variables->broadcaster == "!demo") {
+			//Passing "?broadcaster=!demo", which happens if this page is accessed from the link
+			//in /channels/demo, will show you your own emotes if you're logged in, otherwise Rosuav's.
+			return redirect("emotes?broadcaster=" + (req->misc->session->user->?login || "rosuav"));
+		}
 		int id = (int)req->variables->broadcaster;
 		//If you pass ?broadcaster=49497888 this will show for that user ID. Otherwise, look up the name and get the ID.
 		if ((string)id != req->variables->broadcaster) id = await(get_user_id(req->variables->broadcaster));
