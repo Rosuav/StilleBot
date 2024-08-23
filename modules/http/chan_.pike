@@ -130,13 +130,20 @@ __async__ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, 
 		req->misc->chaninfo->logout = "| <a href=\"/logout\" class=twitchlogout>Log out</a>";
 	}
 	else req->misc->chaninfo->save_or_login = "[Mods, login to make changes](:.twitchlogin)";
-	mapping profile = ([]);
-	if (channel->userid) profile = await(get_user_info(channel->userid));
+	mapping profile = channel->userid ? await(get_user_info(channel->userid))
+		: ([ //For the demo channel, provide some basic information.
+			"display_name": "!Demo",
+			"email": "demo@mustardmine.com",
+			"id": "0",
+			"login": "!demo",
+			"profile_image_url": "/static/MustardMineSquavatar.png",
+			"link_override": "https://mustardmine.com/activate",
+		]);
 	req->misc->chaninfo->menunav = sprintf(
 		"<nav id=sidebar><ul>%{<li><a href=%q>%s</a></li>%}</ul>"
 		"<a href=%q target=_blank><img src=%q alt=\"Channel avatar\" title=%q></a></nav>",
 		req->misc->is_mod ? sidebar_modmenu : sidebar_nonmodmenu,
-		"https://twitch.tv/" + profile->login,
+		profile->link_override || "https://twitch.tv/" + profile->login,
 		profile->profile_image_url || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=",
 		"Go to channel " + (profile->display_name || ""));
 	if (req->misc->is_mod) {
