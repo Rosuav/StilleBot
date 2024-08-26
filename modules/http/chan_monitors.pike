@@ -17,7 +17,7 @@ constant monitorstyles = #"
 #display div {width: 33%;}
 #display div:nth-of-type(2) {text-align: center;}
 #display div:nth-of-type(3) {text-align: right;}
-.avatar {width: 40px; padding-right: 2px; vertical-align: top;}
+.avatar {width: 80px; padding-right: 2px; vertical-align: top;}
 @property --oldpos {syntax: '<percentage>'; inherits: false; initial-value: 100%;}
 @property --newpos {syntax: '<percentage>'; inherits: false; initial-value: 100%;}
 @property --curpos {syntax: '<percentage>'; inherits: false; initial-value: 100%;}
