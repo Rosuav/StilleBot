@@ -5,6 +5,10 @@ that it'll help me figure out what's going on so I can track down the
 actual issues. It also has a couple of tiny improvements over Pike's
 library that haven't yet been upstreamed (eg UUID/JSON parsing). */
 
+#if !constant(G)
+mapping G = (["G": ([])]);
+#endif
+
 //Offset between 1970 and 2000
 #define EPOCH2000 (10957*24*3600*1000000)
 
