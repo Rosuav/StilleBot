@@ -247,7 +247,8 @@ int message(object channel, mapping person, string msg)
 	if (!mon || !sizeof(mon)) return 0;
 	//TODO: Support other ways of recognizing donations
 	if (person->user == "streamlabs") {
-		sscanf(msg, "%s just tipped $%d.%d!", string user, int dollars, int cents);
+		//Note that the dollar amount might have a comma in it, if Mixer237237 is being insane.
+		sscanf(msg - ",", "%s just tipped $%d.%d!", string user, int dollars, int cents);
 		if (sizeof(user) > 3 && user[1] == ' ') user = user[2..]; //See related handling in vipleaders, there's a random symbol in there
 		autoadvance(channel, person | (["from_name": user]), "tip", 100 * dollars + cents);
 	}

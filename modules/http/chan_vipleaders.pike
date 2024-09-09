@@ -335,7 +335,8 @@ __async__ void add_tip(object channel, string type, mapping params, mapping raw,
 int message(object channel, mapping person, string msg)
 {
 	//TODO: Unify this somewhere and have an event hook for tips.
-	if (person->user == "streamlabs" && sscanf(msg, "%s just tipped $%d.%d!", string user, int dollars, int cents) && user && (dollars || cents)) {
+	//Thanks to Mixer237237 for proving that it's possible to have a comma in the dollar amount.
+	if (person->user == "streamlabs" && sscanf(msg - ",", "%s just tipped $%d.%d!", string user, int dollars, int cents) && user && (dollars || cents)) {
 		if (sizeof(user) > 3 && user[1] == ' ') user = user[2..]; //Not sure if this always happens. There's often some sort of symbol, and I have no idea if it means anything, just before the name.
 		add_tip(channel, "!kofi_dono", ([
 			"cents": dollars * 100 + cents,
