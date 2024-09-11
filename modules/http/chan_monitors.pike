@@ -249,7 +249,7 @@ int message(object channel, mapping person, string msg)
 	if (person->user == "streamlabs") {
 		//Note that the dollar amount might have a comma in it, if Mixer237237 is being insane.
 		sscanf(msg - ",", "%s just tipped $%d.%d!", string user, int dollars, int cents);
-		if (sizeof(user) > 3 && user[1] == ' ') user = user[2..]; //See related handling in vipleaders, there's a random symbol in there
+		if (user && sizeof(user) > 3 && user[1] == ' ') user = user[2..]; //See related handling in vipleaders, there's a random symbol in there
 		autoadvance(channel, person | (["from_name": user]), "tip", 100 * dollars + cents);
 	}
 }
