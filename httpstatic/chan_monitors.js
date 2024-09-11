@@ -165,6 +165,7 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 		FIELDSET([LEGEND("Border"),
 			INPUT({name: "borderwidth", type: "number"}), " px ",
 			INPUT({name: "bordercolor", type: "color"}),
+			INPUT({name: "borderradius", type: "number"}), " curve",
 		]),
 		FIELDSET([LEGEND("Preview bg"), INPUT({type: "color", name: "previewbg"})]),
 	]))]),

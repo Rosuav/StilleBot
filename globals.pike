@@ -1180,7 +1180,7 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 //textformatting_css and textformatting_validate. Both of them will happily accept
 //mappings with other attributes, but must poke every textformatting attribute.
 array TEXTFORMATTING_ATTRS = ("font fontweight fontstyle fontsize fontfamily whitespace css "
-			"color strokewidth strokecolor borderwidth bordercolor "
+			"color strokewidth strokecolor borderwidth bordercolor borderradius "
 			"bgcolor bgalpha padvert padhoriz textalign "
 			"shadowx shadowy shadowcolor shadowalpha") / " ";
 string textformatting_css(mapping cfg) {
@@ -1188,7 +1188,7 @@ string textformatting_css(mapping cfg) {
 	if (css != "" && !has_suffix(css, ";")) css += ";";
 	foreach ("color font-weight font-style border-color white-space text-align" / " ", string attr)
 		if (mixed val = cfg[attr - "-"]) css += attr + ": " + val + ";";
-	foreach ("font-size width height" / " ", string attr) //FIXME: This is processing width and height, which aren't text formatting attrs
+	foreach ("font-size width height border-radius" / " ", string attr) //FIXME: This is processing width and height, which aren't text formatting attrs
 		if (mixed val = cfg[attr - "-"]) css += attr + ": " + val + "px;";
 	if (cfg->font && cfg->fontfamily) css += "font-family: " + cfg->font + ", " + cfg->fontfamily + ";"; //Note that the front end may have other work to do too, but here, we just set the font family.
 	else if (cfg->font || cfg->fontfamily) css += "font-family: " + (cfg->font || cfg->fontfamily) + ";";

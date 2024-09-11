@@ -107,6 +107,7 @@ export function TEXTFORMATTING(cfg) {
 	TR([TH("Border"), TD([
 		LABEL(["Width (px): ", INPUT({name: "borderwidth", type: "number"})]),
 		LABEL([" Color: ", INPUT({name: "bordercolor", type: "color"})]),
+		LABEL(["Radius (px): ", INPUT({name: "borderradius", type: "number"})]),
 	])]),
 	TR([TH("Padding"), TD([
 		LABEL(["Vertical (em): ", INPUT({name: "padvert", type: "number", step: "0.25"})]),
