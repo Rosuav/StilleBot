@@ -193,3 +193,5 @@ on("click", "#togglesidebar", e => {
 	if (sidebar) sidebar.classList.toggle("vis", sbvis.matches);
 	if (box) box.classList.toggle("sbvis", sbvis.matches);
 })();
+
+//window.onerror = (msg, source, line, col) => window.__socket__ && ws_sync.send({cmd: "error", msg, source, line, col});

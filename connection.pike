@@ -1366,6 +1366,13 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 			call_out(h->websocket_cmd_prefs_send, 0, conn, ([]));
 		}
 	}
+	if (data->cmd == "error") {
+		//TODO: Have a way to enable and disable this so it only shows up for self
+		werror("JS error from sock %s:%s:\n%s:%d:%d: %s\n",
+			conn->type || "(null)", (string)(conn->group || "(null)"),
+			data->source || "(null)", data->line, data->col, data->msg || "(null)",
+		);
+	}
 	string type = has_prefix(data->cmd||"", "prefs_") ? "prefs" : conn->type;
 	if (object handler = G->G->websocket_types[type]) handler->websocket_msg(conn, data);
 	else write("Message to unknown type %O: %O\n", type, data);
