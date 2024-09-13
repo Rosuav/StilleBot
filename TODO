@@ -210,3 +210,11 @@
 * In interactive mode, have an explore(mixed value) that will create a GTK window to
   show the value, same as Internals does
 * Test out Fourth Wall with goal bars, might not be working. Add a ton of tracing.
+* Bug note: Waydroid, command viewer, pre-opened command GUI.
+  - If mouse is over canvas on load, will blank canvas on first mouse move
+  - If mouse is not over canvas, will blank canvas if moved over, sometimes after a
+    delay, sometimes immediate
+  - No JS console output sighted
+  - Does not occur if command GUI closed and reopened within the page.
+  - Happens only in Waydroid Firefox, not in desktop Firefox. Not tested in Waydroid
+    Chromium-based browsers as I haven't managed to get any of them working.
