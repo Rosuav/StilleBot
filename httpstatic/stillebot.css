@@ -19,16 +19,8 @@ input[type=color] {vertical-align: middle;}
 input.narrow {width: 6em;}
 
 dialog {
-	position: fixed;
+	/*position: fixed;*/ /* Was this needed for anything other than old Firefoxes? If not, remove it. */
 	resize: both; overflow: auto; /* TODO: Should only some dialogs support resizing? */
-}
-@supports (-moz-appearance:none) {
-	/* Firefox doesn't automatically position dialogs properly. */
-	/* It's a pain to try to center them during resizes, so just
-	position them once and hope for the best. */
-	/* CJA 20220107: It might actually work natively in some
-	versions now. Will have to see if this can be removed. */
-	dialog {top: 50%; transform: translateY(-50%);}
 }
 /* Create a scroll context inside dialogs */
 dialog > section {
