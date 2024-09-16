@@ -52,6 +52,13 @@ document.body.appendChild(DIALOG({id: "emotepicker"}, SECTION([
 ])));
 fix_dialogs();
 
+//Perform one-time initialization of the display context. It's not strictly one-time though,
+//as this seems to get reset when the canvas is resized.
+function initctx() {
+	ctx.font = "12px 'Lexend', 'Noto Sans Symbols 2', sans-serif"; //Match the font names with the ones used in stillebot.css
+}
+initctx();
+
 const in_rect = (x, y, rect) => x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
 const arrayify = x => Array.isArray(x) ? x : [x];
 const ensure_blank = arr => {
@@ -919,7 +926,6 @@ function boxed_set(set, color, desc, y, minheight) {
 let next_key_idx = 1;
 function repaint() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	ctx.font = "14px 'Lexend', 'Noto Sans Symbols 2', sans-serif"; //Match the font names with the ones used in the CSS
 	max_descent = 600; //Base height, will never shrink shorter than this
 	tray_y = boxed_set(favourites, "#eeffee", "> Drop here to save favourites <", template_y);
 	//Draw the tabs down the side of the tray
@@ -989,7 +995,7 @@ function repaint() {
 	actives.forEach(el => el.parent || el === dragging || draw_at(ctx, el));
 	//if (focus) repaint_that_element(); //TODO: Repaint the element with focus, or at least its focus ring
 	if (dragging) draw_at(ctx, dragging); //Anything being dragged gets drawn last, ensuring it is at the top of z-order.
-	if (max_descent != canvas.height) {canvas.height = max_descent; repaint();}
+	if (max_descent != canvas.height) {canvas.height = max_descent; initctx(); repaint();}
 }
 repaint();
 
