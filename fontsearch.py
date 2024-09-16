@@ -1,14 +1,20 @@
 import collections
+import subprocess
 import requests
-FONTS = "Lexend", "Noto Emoji"
+FONTS = "Lexend", "Noto+Emoji", "Noto+Sans+Symbols+2"
 
 r = requests.get("https://fonts.googleapis.com/css?family=" + "|".join(FONTS), headers={"User-Agent": "Mozilla/5.0 Firefox/90.0"})
 r.raise_for_status()
 avail = collections.defaultdict(list)
+seen = set()
 for line in r.text.split("\n"):
 	if ":" not in line: continue
 	key, val = line.split(":", 1)
-	if key.strip() == "font-family": font = val.strip(" ;'")
+	if key.strip() == "font-family":
+		font = val.strip(" ;'")
+		if font not in seen:
+			print("Scanning font", font)
+			seen.add(font)
 	if key.strip() == "unicode-range":
 		for rng in val.strip(" ;").split(","):
 			rng = rng.strip(" U+")
@@ -27,4 +33,5 @@ for line in r.text.split("\n"):
 				avail[c].append(font)
 
 for c in "🖉⯇⣿":
-	print(c, avail[ord(c)])
+	print("U+%04X" % ord(c), c, avail[ord(c)])
+	subprocess.run(["fc-list", ":charset=" + hex(ord(c))])
