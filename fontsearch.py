@@ -1,7 +1,7 @@
 import collections
 import subprocess
 import requests
-FONTS = "Lexend", "Noto+Emoji", "Noto+Sans+Symbols+2"
+FONTS = "Lexend", "Noto+Color+Emoji", "Noto+Sans+Symbols+2"
 
 r = requests.get("https://fonts.googleapis.com/css?family=" + "|".join(FONTS), headers={"User-Agent": "Mozilla/5.0 Firefox/90.0"})
 r.raise_for_status()
@@ -32,6 +32,6 @@ for line in r.text.split("\n"):
 			for c in range(int(start, 16), int(end, 16) + 1):
 				avail[c].append(font)
 
-for c in "🖉⯇⣿":
+for c in "🖉⯇⣿🔒💎👪🌞🌚":
 	print("U+%04X" % ord(c), c, avail[ord(c)])
 	subprocess.run(["fc-list", ":charset=" + hex(ord(c))])
