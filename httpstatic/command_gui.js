@@ -831,7 +831,6 @@ function draw_at(ctx, el, parent, reposition) {
 		canvas.parentElement.scrollTop = scr;
 		//TODO: Check if this path is on screen, and if not, don't snap back.
 	}
-	ctx.font = "12px sans";
 	let right_margin = 4;
 	if (type.actionlbl !== null) { //Set to null to force there to be no action link
 		let x = (type.width||200) - right_margin, y = path.labelpos[0];
@@ -901,7 +900,7 @@ function boxed_set(set, color, desc, y, minheight) {
 	ctx.fillStyle = color;
 	ctx.fillRect(template_x - 10, y, 220, h);
 	ctx.strokeRect(template_x - 10, y, 220, h);
-	ctx.font = "12px sans"; ctx.fillStyle = "black";
+	ctx.fillStyle = "black";
 	ctx.fillText(desc, template_x + 15, y + 19, 175);
 	ctx.beginPath();
 	ctx.rect(template_x - 9, y, 218, h);
@@ -920,6 +919,7 @@ function boxed_set(set, color, desc, y, minheight) {
 let next_key_idx = 1;
 function repaint() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	ctx.font = "14px 'Lexend', 'Noto Sans Symbols 2', sans-serif"; //Match the font names with the ones used in the CSS
 	max_descent = 600; //Base height, will never shrink shorter than this
 	tray_y = boxed_set(favourites, "#eeffee", "> Drop here to save favourites <", template_y);
 	//Draw the tabs down the side of the tray
@@ -940,7 +940,7 @@ function repaint() {
 			ctx.fillStyle = tab.color;
 			ctx.fill(traytab_path);
 			ctx.stroke(traytab_path);
-			ctx.font = "12px sans"; ctx.fillStyle = "black";
+			ctx.fillStyle = "black";
 			ctx.fillText(tab.hotkey, 3, 43);
 			ctx.restore();
 		}
@@ -958,7 +958,7 @@ function repaint() {
 		ctx.fillStyle = curtab.color; ctx.strokeStyle = "black";
 		ctx.fill(traytab_path);
 		ctx.stroke(traytab_path);
-		ctx.font = "12px sans"; ctx.fillStyle = "black";
+		ctx.fillStyle = "black";
 		ctx.fillText(curtab.hotkey, 3, 43);
 		ctx.restore();
 	}

@@ -1,10 +1,11 @@
 /* Styling across all StilleBot pages */
 @import url('https://fonts.googleapis.com/css2?family=Lexend&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols+2&display=swap');
 
 * {box-sizing: border-box;}
 
 body, button { /* not sure why buttons don't get this by inheritance */
-	font-family: 'Lexend', sans-serif;
+	font-family: 'Lexend', 'Noto Sans Symbols 2', sans-serif; /* Match the font names with the ones used in command_gui.js */
 	line-height: 1.3;
 }
 
