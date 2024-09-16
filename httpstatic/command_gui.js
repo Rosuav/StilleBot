@@ -55,7 +55,7 @@ fix_dialogs();
 //Perform one-time initialization of the display context. It's not strictly one-time though,
 //as this seems to get reset when the canvas is resized.
 function initctx() {
-	ctx.font = "12px 'Lexend', 'Noto Sans Symbols 2', sans-serif"; //Match the font names with the ones used in stillebot.css
+	ctx.font = "12px 'Lexend', 'Noto Color Emoji', 'Noto Sans Symbols 2', sans-serif"; //Match the font names with the ones used in stillebot.css
 }
 initctx();
 
