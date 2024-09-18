@@ -119,7 +119,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			set_content(elem, [
 				img,
 				DIV({style: "display: flex; flex-direction: column; flex-grow: 1"}, [
-					DIV({class: "goalbar", style: `--oldpos: ${prevpos}%; --newpos: ${pos}%;`}, [
+					DIV({class: "goalbar", style: `--oldpos: ${prevpos}%; --newpos: ${pos}%; border-radius: ${elem.style.borderRadius}`}, [
 						DIV({style: "padding: 2px 6px"}, curhp + "/" + maxhp),
 					]),
 					DIV({style: "position: relative"}, [
