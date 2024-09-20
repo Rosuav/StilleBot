@@ -12,8 +12,6 @@ X | User | Followed | Created | Description
 - |-     |-         |-        | loading...
 {:#followers}
 
-<div id=copied>Copied!</div>
-
 <style>
 button {padding: 0;}
 img.avatar {max-width: 40px;}

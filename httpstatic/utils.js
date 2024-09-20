@@ -174,10 +174,12 @@ on("click", ".clipbtn", e => {
 		try {document.execCommand("copy");}
 		finally {mle.remove();}
 	}
-	const c = DOM("#copied");
+	const c = DOM("#copied") || DIV({id: "copied"}, "Copied!");
+	const par = e.match.closest("dialog") || document.body;
+	par.append(c); //Reparent the "Copied!" marker to the dialog or document every time it's used
 	c.classList.add("shown");
-	c.style.left = e.pageX + "px";
-	c.style.top = e.pageY + "px";
+	c.style.left = e.clientX + "px";
+	c.style.top = e.clientY + "px";
 	setTimeout(() => c.classList.remove("shown"), 1000);
 });
 

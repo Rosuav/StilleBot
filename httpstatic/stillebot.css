@@ -309,7 +309,7 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 .clipbtn {cursor: copy;}
 #copied {
 	opacity: 0;
-	position: absolute;
+	position: fixed;
 	background: black;
 	color: white;
 	border: 1px solid green;

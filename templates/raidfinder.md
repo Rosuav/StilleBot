@@ -26,7 +26,6 @@ $$ccl_options||> - | - | - | - | (not available)$$
 {: #sort}
 
 <div id=streams class="streamtiles sizeborders"></div>
-<div id=copied>Copied!</div>
 
 > <span id=notes_about_channel>Channel name: </span>
 >
