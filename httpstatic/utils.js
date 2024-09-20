@@ -165,7 +165,7 @@ export function ensure_font(font) {
 	}));
 }
 
-function copytext(copyme) {
+export function copytext(copyme) {
 	try {navigator.clipboard.writeText(copyme);} //TODO: What if this fails asynchronously?
 	catch (exc) {
 		//If we can't copy to clipboard, it might be possible to do it via an MLE.
@@ -178,7 +178,7 @@ function copytext(copyme) {
 }
 
 //Note that this uses #copied for hysterical raisins, but any quick description label will work.
-function notify(elem, x, y, label) {
+export function notify(elem, x, y, label) {
 	const c = DOM("#copied") || DIV({id: "copied"});
 	const par = (elem && elem.closest("dialog")) || document.body;
 	par.append(c); //Reparent the marker element to the dialog or document every time it's used
