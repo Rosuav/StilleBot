@@ -211,7 +211,7 @@ on("click", ".pastestyles", async e => {
 		finally {mle.remove();}
 	}
 	const values = { };
-	clip.replace(/^([^:]+): ([^\n]+)$/gm, (m, k, v) => values[k] = v); //Yeah this is abusing replace() a bit.
+	clip.replace(/^([^:]+): ([^\n]*)$/gm, (m, k, v) => values[k] = v); //Yeah this is abusing replace() a bit.
 	const par = elem.closest("[data-copystyles]");
 	if (!par) return;
 	let styles = "";
