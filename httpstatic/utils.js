@@ -82,8 +82,8 @@ export function TEXTFORMATTING(cfg) {
     //Half an indent coz I can't be bothered
     if (cfg.textname === "-") cfg.texts = []; //Compat (deprecated)
     if (!cfg.texts) cfg.texts = [{ }];
-    return TABLE({border: 1}, [
-	cfg.texts.map(t => TR({class: t.class || cfg.textclass || ""}, [TH(t.label || cfg.textlabel || "Text"), TD([INPUT({size: 40, name: t.name || cfg.textname || "text"}), t.desc])])),
+    return TABLE({border: 1, "data-copystyles": 1}, [
+	cfg.texts.map(t => TR({class: t.class || cfg.textclass || ""}, [TH(t.label || cfg.textlabel || "Text"), TD([INPUT({size: 40, name: t.name || cfg.textname || "text", "data-nocopy": 1}), t.desc])])),
 	TR([TH("Font"), TD([
 		INPUT({name: "font", size: "28"}),
 		SELECT({name: "fontweight"}, [cfg.blank_opts && OPTION(), OPTION("normal"), OPTION("bold")]),
@@ -103,7 +103,7 @@ export function TEXTFORMATTING(cfg) {
 		INPUT({name: "strokecolor", type: "color"}),
 		" Note: Outline works only in Chrome (including OBS)",
 	])]),
-	cfg.use_preview && TR([TH("Preview bg"), TD(INPUT({name: "previewbg", type: "color"}))]),
+	cfg.use_preview && TR([TH("Preview bg"), TD(INPUT({name: "previewbg", type: "color"}))]), //Should this one be non-copiable? It's not quite a style, but not quite NOT a style either.
 	TR([TH("Border"), TD([
 		LABEL(["Width (px): ", INPUT({name: "borderwidth", type: "number"})]),
 		LABEL([" Color: ", INPUT({name: "bordercolor", type: "color"})]),
@@ -145,7 +145,8 @@ export function TEXTFORMATTING(cfg) {
 		"Alignment",
 		SELECT({name: "textalign"}, [cfg.blank_opts && OPTION(), "start end center justify".split(" ").map(o => OPTION(o))]),
 	])]),
-	TR([TH("Custom CSS"), TD(INPUT({name: "css", size: 60}))]),
+	TR([TH("Custom CSS"), TD(INPUT({name: "css", size: 60, "data-nocopy": 1}))]),
+	TR([TH("Share styles"), TD([BUTTON({type: "button", class: "copystyles"}, "Copy to clipboard"), BUTTON({type: "button", class: "pastestyles"}, "Paste from clipboard")])]),
     ]);
 }
 
@@ -164,11 +165,12 @@ export function ensure_font(font) {
 	}));
 }
 
-on("click", ".clipbtn", e => {
-	try {navigator.clipboard.writeText(e.match.dataset.copyme);}
+//Copy some text to the clipboard, and put the "Copied!" marker relative to e.match, e.clientX, e.clientY
+function copytext(copyme, e) {
+	try {navigator.clipboard.writeText(copyme);}
 	catch (exc) {
 		//If we can't copy to clipboard, it might be possible to do it via an MLE.
-		const mle = TEXTAREA({value: e.match.dataset.copyme, style: "position: absolute; left: -99999999px"});
+		const mle = TEXTAREA({value: copyme, style: "position: absolute; left: -99999999px"});
 		document.body.append(mle);
 		mle.select();
 		try {document.execCommand("copy");}
@@ -181,6 +183,17 @@ on("click", ".clipbtn", e => {
 	c.style.left = e.clientX + "px";
 	c.style.top = e.clientY + "px";
 	setTimeout(() => c.classList.remove("shown"), 1000);
+}
+
+on("click", ".clipbtn", e => copytext(e.match.dataset.copyme, e));
+on("click", ".copystyles", e => {
+	const par = e.match.closest("[data-copystyles]");
+	if (!par) return;
+	let styles = "";
+	par.querySelectorAll("input,select").forEach(inp => {
+		if (!inp.dataset.nocopy) styles += inp.name + ": " + inp.value + "\n";
+	});
+	copytext(styles, e);
 });
 
 const sidebar = DOM("nav#sidebar"), box = DOM("#togglesidebarbox");
