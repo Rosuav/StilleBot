@@ -165,8 +165,7 @@ export function ensure_font(font) {
 	}));
 }
 
-//Copy some text to the clipboard, and put the "Copied!" marker relative to e.match, e.clientX, e.clientY
-function copytext(copyme, e) {
+function copytext(copyme) {
 	try {navigator.clipboard.writeText(copyme);} //TODO: What if this fails asynchronously?
 	catch (exc) {
 		//If we can't copy to clipboard, it might be possible to do it via an MLE.
@@ -176,16 +175,20 @@ function copytext(copyme, e) {
 		try {document.execCommand("copy");}
 		finally {mle.remove();}
 	}
-	const c = DOM("#copied") || DIV({id: "copied"}, "Copied!");
-	const par = e.match.closest("dialog") || document.body;
-	par.append(c); //Reparent the "Copied!" marker to the dialog or document every time it's used
-	c.classList.add("shown");
-	c.style.left = e.clientX + "px";
-	c.style.top = e.clientY + "px";
+}
+
+//Note that this uses #copied for hysterical raisins, but any quick description label will work.
+function notify(elem, x, y, label) {
+	const c = DOM("#copied") || DIV({id: "copied"});
+	const par = (elem && elem.closest("dialog")) || document.body;
+	par.append(c); //Reparent the marker element to the dialog or document every time it's used
+	set_content(c, label).classList.add("shown");
+	c.style.left = x + "px";
+	c.style.top = y + "px";
 	setTimeout(() => c.classList.remove("shown"), 1000);
 }
 
-on("click", ".clipbtn", e => copytext(e.match.dataset.copyme, e));
+on("click", ".clipbtn", e => {copytext(e.match.dataset.copyme); notify(e.match, e.clientX, e.clientY, "Copied!");});
 on("click", ".copystyles", e => {
 	const par = e.match.closest("[data-copystyles]");
 	if (!par) return;
@@ -193,22 +196,20 @@ on("click", ".copystyles", e => {
 	par.querySelectorAll("input,select").forEach(inp => {
 		if (!inp.dataset.nocopy) styles += inp.name + ": " + inp.value + "\n";
 	});
-	copytext(styles, e);
+	copytext(styles);
+	notify(e.match, e.clientX, e.clientY, "Copied!");
 });
-
-function delay(t) {return new Promise(r => setTimeout(r, t));}
 
 on("click", ".pastestyles", async e => {
 	const elem = e.match;
 	let clip;
 	try {clip = await(navigator.clipboard.readText());}
 	catch (exc) {
-		//As above, it might be possible to do it via an MLE.
-		const mle = TEXTAREA({style: "position: absolute; left: -99999999px"});
-		document.body.append(mle);
-		mle.focus();
-		try {document.execCommand("paste"); await(delay(50)); clip = mle.value;}
-		finally {mle.remove();}
+		//Do we need an MLE-based fallback? Wasn't able to get it to work.
+		console.error(exc);
+		console.warn("Clipboard paste failed, maybe too old Firefox? Upgrade to v125 or newer to be able to paste.");
+		notify(elem, e.clientX, e.clientY, "Paste failed");
+		return;
 	}
 	const values = { };
 	clip.replace(/^([^:]+): ([^\n]*)$/gm, (m, k, v) => values[k] = v); //Yeah this is abusing replace() a bit.
@@ -218,6 +219,7 @@ on("click", ".pastestyles", async e => {
 	par.querySelectorAll("input,select").forEach(inp => {
 		if (!inp.dataset.nocopy && typeof values[inp.name] === "string") inp.value = values[inp.name];
 	});
+	notify(elem, e.clientX, e.clientY, "Pasted!");
 });
 
 const sidebar = DOM("nav#sidebar"), box = DOM("#togglesidebarbox");
