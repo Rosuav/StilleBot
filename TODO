@@ -209,7 +209,6 @@
   - Try to get both the URL and the song title (as Unicode, no mojibake thanks)
 * In interactive mode, have an explore(mixed value) that will create a GTK window to
   show the value, same as Internals does
-* Test out Fourth Wall with goal bars, might not be working. Add a ton of tracing.
 * Bug note: Waydroid, command viewer, pre-opened command GUI.
   - If mouse is over canvas on load, will blank canvas on first mouse move
   - If mouse is not over canvas, will blank canvas if moved over, sometimes after a
