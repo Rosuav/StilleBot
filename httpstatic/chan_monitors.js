@@ -123,29 +123,29 @@ set_content("#editcountdown form div", [
 	]),
 ]);
 
-set_content("#editgoalbar form div", TABLE({border: 1}, [
-	TR([TH("Active"), TD(LABEL([INPUT({name: "active", type: "checkbox"}), "Enable auto-advance and level up messages"]))]),
+set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
+	TR([TH("Active"), TD(LABEL([INPUT({name: "active", type: "checkbox", "data-nocopy": 1}), "Enable auto-advance and level up messages"]))]),
 	TR([TH("Variable"), TD([
-		SELECT({name: "varname"}, OPTION("loading...")),
+		SELECT({name: "varname", "data-nocopy": 1}, OPTION("loading...")),
 		" Or create a new one: ",
-		INPUT({id: "newvarname", size: 20}),
+		INPUT({id: "newvarname", size: 20, "data-nocopy": 1}),
 		BUTTON({type: "button", id: "createvar"}, "Create"),
 	])]),
 	TR([TH("Current"), TD([
-		"Value:", INPUT({name: "currentval", size: 10}),
-		"Or tier:", SELECT({name: "tierpicker"}),
+		"Value:", INPUT({name: "currentval", size: 10, "data-nocopy": 1}),
+		"Or tier:", SELECT({name: "tierpicker", "data-nocopy": 1}),
 		BUTTON({type: "button", id: "setval"}, "Set"),
 		BR(), "NOTE: This will override any automatic advancement! Be careful!",
 		BR(), "Changes made here are NOT applied with the Save button.",
 	])]),
 	TR([TH("Text"), TD([
-		INPUT({name: "text", size: 60}),
+		INPUT({name: "text", size: 60, "data-nocopy": 1}),
 		BR(), "For tiered goals, put a '#' for the current tier - it'll be replaced",
 		BR(), "with the actual number.",
 	])]),
 	TR([TH("Goal(s)"), TD([
-		INPUT({name: "thresholds", size: 60}),
-		BR(), LABEL([INPUT({name: "progressive", type: "checkbox"}), "Progressive goals (begin each goal after the previous one)"]),
+		INPUT({name: "thresholds", size: 60, "data-nocopy": 1}),
+		BR(), LABEL([INPUT({name: "progressive", type: "checkbox", "data-nocopy": 1}), "Progressive goals (begin each goal after the previous one)"]),
 		BR(), "To make a tiered goal bar, set multiple goals eg '", CODE("10 10 10 10 20 30 40 50"), "'",
 		BR(), "For currency or subs, use values in cents (eg 1000 for $10 or 2 subs)",
 		BR(), SPAN({id: "thresholds-formatted"}),
@@ -167,7 +167,7 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 			INPUT({name: "bordercolor", type: "color"}),
 			INPUT({name: "borderradius", type: "number"}), " curve",
 		]),
-		FIELDSET([LEGEND("Preview bg"), INPUT({type: "color", name: "previewbg"})]),
+		FIELDSET([LEGEND("Preview bg"), INPUT({type: "color", name: "previewbg"})]), //As per TEXTFORMATTING, should this be non-copiable?
 	]))]),
 	TR([TH("Bar size"), TD(DIV({className: "optionset"}, [
 		FIELDSET([LEGEND("Width"), INPUT({type: "number", name: "width"}), "px"]),
@@ -180,7 +180,7 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 		"Thickness of the red indicator needle",
 	])]),
 	TR([TH("Format"), TD([
-		SELECT({name: "format"}, [
+		SELECT({name: "format", "data-nocopy": 1}, [
 			OPTION({value: "plain"}, "plain - ordinary numbers"),
 			OPTION({value: "currency"}, "currency - cents eg 2718 is $27.18"),
 			OPTION({value: "subscriptions"}, "subs or sub points - 500 each (roughly USD cents)"),
@@ -190,45 +190,46 @@ set_content("#editgoalbar form div", TABLE({border: 1}, [
 	TR([TH("Auto-count"), TD([
 		"Automatically advance the goal bar based on Twitch support",
 		DIV({className: "optionset"}, [
-			FIELDSET([LEGEND("Bits"), INPUT({type: "number", name: "bit"}), "per bit"]),
-			FIELDSET([LEGEND("Tip (each cent)"), INPUT({type: "number", name: "tip"})]), //TODO: Show somewhere what it takes to make this work
-			FIELDSET([LEGEND("Follow"), INPUT({type: "number", name: "follow"})]),
+			FIELDSET([LEGEND("Bits"), INPUT({type: "number", name: "bit", "data-nocopy": 1}), "per bit"]),
+			FIELDSET([LEGEND("Tip (each cent)"), INPUT({type: "number", name: "tip", "data-nocopy": 1})]), //TODO: Show somewhere what it takes to make this work
+			FIELDSET([LEGEND("Follow"), INPUT({type: "number", name: "follow", "data-nocopy": 1})]),
 			//FIELDSET([LEGEND("Raid"), INPUT({type: "number", name: "raid"})]), //Maybe have a tiered system for size of raid???
 		]),
 		DIV({className: "optionset"}, [
-			FIELDSET([LEGEND("T1 sub"), INPUT({type: "number", name: "sub_t1"})]),
-			FIELDSET([LEGEND("T2 sub"), INPUT({type: "number", name: "sub_t2"})]),
-			FIELDSET([LEGEND("T3 sub"), INPUT({type: "number", name: "sub_t3"})]),
+			FIELDSET([LEGEND("T1 sub"), INPUT({type: "number", name: "sub_t1", "data-nocopy": 1})]),
+			FIELDSET([LEGEND("T2 sub"), INPUT({type: "number", name: "sub_t2", "data-nocopy": 1})]),
+			FIELDSET([LEGEND("T3 sub"), INPUT({type: "number", name: "sub_t3", "data-nocopy": 1})]),
 			FIELDSET([LEGEND("Gift & Prime"), LABEL([
-				INPUT({type: "checkbox", name: "exclude_gifts"}),
+				INPUT({type: "checkbox", name: "exclude_gifts", "data-nocopy": 1}),
 				" Exclude",
 			])]),
 		]),
 		"Similarly for Ko-fi support (all scaled by number of cents)",
 		DIV({className: "optionset"}, [
-			FIELDSET([LEGEND("Donation"), INPUT({type: "number", name: "kofi_dono"})]),
-			FIELDSET([LEGEND("Membership"), INPUT({type: "number", name: "kofi_member"})]),
-			FIELDSET([LEGEND("Renewal"), INPUT({type: "number", name: "kofi_renew"})]),
-			FIELDSET([LEGEND("Shop sale"), INPUT({type: "number", name: "kofi_shop"})]),
+			FIELDSET([LEGEND("Donation"), INPUT({type: "number", name: "kofi_dono", "data-nocopy": 1})]),
+			FIELDSET([LEGEND("Membership"), INPUT({type: "number", name: "kofi_member", "data-nocopy": 1})]),
+			FIELDSET([LEGEND("Renewal"), INPUT({type: "number", name: "kofi_renew", "data-nocopy": 1})]),
+			FIELDSET([LEGEND("Shop sale"), INPUT({type: "number", name: "kofi_shop", "data-nocopy": 1})]),
 		]),
 		"And for Fourth Wall support (all scaled by number of cents)",
 		DIV({className: "optionset"}, [
-			FIELDSET([LEGEND("Donation"), INPUT({type: "number", name: "fw_dono"})]),
-			FIELDSET([LEGEND("Membership"), INPUT({type: "number", name: "fw_member"})]),
-			FIELDSET([LEGEND("Shop sale"), INPUT({type: "number", name: "fw_shop"})]),
-			FIELDSET([LEGEND("Gift"), INPUT({type: "number", name: "fw_gift"})]),
+			FIELDSET([LEGEND("Donation"), INPUT({type: "number", name: "fw_dono", "data-nocopy": 1})]),
+			FIELDSET([LEGEND("Membership"), INPUT({type: "number", name: "fw_member", "data-nocopy": 1})]),
+			FIELDSET([LEGEND("Shop sale"), INPUT({type: "number", name: "fw_shop", "data-nocopy": 1})]),
+			FIELDSET([LEGEND("Gift"), INPUT({type: "number", name: "fw_gift", "data-nocopy": 1})]),
 		]),
 		"For events not listed, create a command or trigger.",
-		DIV(["Select preset: ", SELECT({name: "preset"}, [
+		DIV(["Select preset: ", SELECT({name: "preset", "data-nocopy": 1}, [
 			OPTION("Custom"), //Must be first
 			Object.keys(presets).map(p => OPTION(p)),
 		])]),
 	])]),
 	TR([TH("On level up"), TD([
-		SELECT({name: "lvlupcmd", id: "cmdpicker"}, [OPTION("Loading...")]),
+		SELECT({name: "lvlupcmd", id: "cmdpicker", "data-nocopy": 1}, [OPTION("Loading...")]),
 		BR(), "Add and edit commands ", A({href: "commands"}, "on the Commands page"),
 	])]),
-	TR([TH("Custom CSS"), TD(TEXTAREA({name: "css"}))]),
+	TR([TH("Custom CSS"), TD(TEXTAREA({name: "css", "data-nocopy": 1}))]),
+	TR([TH("Share styles"), TD([BUTTON({type: "button", class: "copystyles"}, "Copy to clipboard"), BUTTON({type: "button", class: "pastestyles"}, "Paste from clipboard")])]),
 ]));
 
 on("click", "#createvar", e => {
