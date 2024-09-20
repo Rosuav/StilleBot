@@ -167,7 +167,7 @@ export function ensure_font(font) {
 
 //Copy some text to the clipboard, and put the "Copied!" marker relative to e.match, e.clientX, e.clientY
 function copytext(copyme, e) {
-	try {navigator.clipboard.writeText(copyme);}
+	try {navigator.clipboard.writeText(copyme);} //TODO: What if this fails asynchronously?
 	catch (exc) {
 		//If we can't copy to clipboard, it might be possible to do it via an MLE.
 		const mle = TEXTAREA({value: copyme, style: "position: absolute; left: -99999999px"});
@@ -194,6 +194,30 @@ on("click", ".copystyles", e => {
 		if (!inp.dataset.nocopy) styles += inp.name + ": " + inp.value + "\n";
 	});
 	copytext(styles, e);
+});
+
+function delay(t) {return new Promise(r => setTimeout(r, t));}
+
+on("click", ".pastestyles", async e => {
+	const elem = e.match;
+	let clip;
+	try {clip = await(navigator.clipboard.readText());}
+	catch (exc) {
+		//As above, it might be possible to do it via an MLE.
+		const mle = TEXTAREA({style: "position: absolute; left: -99999999px"});
+		document.body.append(mle);
+		mle.focus();
+		try {document.execCommand("paste"); await(delay(50)); clip = mle.value;}
+		finally {mle.remove();}
+	}
+	const values = { };
+	clip.replace(/^([^:]+): ([^\n]+)$/gm, (m, k, v) => values[k] = v); //Yeah this is abusing replace() a bit.
+	const par = elem.closest("[data-copystyles]");
+	if (!par) return;
+	let styles = "";
+	par.querySelectorAll("input,select").forEach(inp => {
+		if (!inp.dataset.nocopy && typeof values[inp.name] === "string") inp.value = values[inp.name];
+	});
 });
 
 const sidebar = DOM("nav#sidebar"), box = DOM("#togglesidebarbox");
