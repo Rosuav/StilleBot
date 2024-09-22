@@ -139,7 +139,8 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		//abbreviated form, mainly for checking notes.
 		if (mapping resp = ensure_login(req, "user:read:follows")) return resp;
 		array f = await(get_helix_paginated("https://api.twitch.tv/helix/channels/followed",
-				(["user_id": (string)req->misc->session->user->id])));
+				(["user_id": (string)req->misc->session->user->id]),
+				(["Authorization": "Bearer " + req->misc->session->token])));
 		follows_helix = await(get_helix_paginated("https://api.twitch.tv/helix/users", (["id": f->broadcaster_id])));
 		array users = await(get_users_info(highlightids));
 		highlights = users->login * "\n";
