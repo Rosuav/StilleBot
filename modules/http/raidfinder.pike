@@ -157,6 +157,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 				"all_raids": ({}), "raid_suggestions": 0, "mode": "allfollows", "on_behalf_of_userid": userid,
 			]),
 			"sortorders": ({"Channel Creation", "Follow Date", "Name"}) * "\n* ",
+			"title": "All follows (" + sizeof(follows_helix) + ")",
 		]));
 	}
 	string login, disp, raidbtn = logged_in ? "[Suggest](:#suggestraid)" : "";
