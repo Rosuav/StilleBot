@@ -167,7 +167,7 @@ class PromiseResult(array data) {
 	array get() {return data;}
 }
 
-class SSLDatabase(string host, mapping|void cfg) {
+class SSLDatabase(string|mapping connect_to, mapping|void cfg) {
 	Stdio.File|SSL.File sock;
 	Stdio.Buffer in, out;
 	string state;
@@ -179,6 +179,7 @@ class SSLDatabase(string host, mapping|void cfg) {
 	array(string) preparing_statements = ({ });
 	int(1bit) in_transaction = 0; //If true, we're in a transaction, and autocommitted queries have to wait.
 	Concurrent.Promise|zero transaction_pending = 0;
+	mapping connect_params = (["user": System.get_user() || "postgres"]);
 
 	protected void create() {
 		if (!cfg) cfg = ([]);
@@ -186,7 +187,17 @@ class SSLDatabase(string host, mapping|void cfg) {
 		sock = Stdio.File();
 		sock->open_socket();
 		sock->set_nonblocking(rawread, rawwrite, sockclosed);
-		sock->connect(host, 5432);
+		if (mappingp(connect_to)) {
+			connect_params = connect_to;
+			connect_to = m_delete(connect_params, "host");
+		}
+		if (has_value(connect_to, "://")) {
+			object uri = Standards.URI(connect_to);
+			connect_to = uri->host;
+			connect_params->user = uri->user;
+			connect_params->database = uri->path[1..];
+		}
+		sock->connect(connect_to, 5432);
 		state = "connect";
 	}
 	void rawwrite() {
@@ -200,7 +211,7 @@ class SSLDatabase(string host, mapping|void cfg) {
 		sock->set_nonblocking(sockread, sockwrite, sockclosed, 0, 0) {
 			out = Stdio.Buffer(); //Not actually using buffer mode for output
 			sock->set_buffer_mode(in = Stdio.Buffer(), 0);
-			out->add_hstring("\0\3\0\0user\0rosuav\0database\0stillebot\0application_name\0stillebot\0\0", 4, 4);
+			out->add_hstring(sprintf("\0\3\0\0%{%s\0%s\0%}\0", (array)connect_params), 4, 4);
 			write();
 			state = "auth";
 			if (!sizeof(typcategory)) {
@@ -239,7 +250,13 @@ class SSLDatabase(string host, mapping|void cfg) {
 							backtrace(),
 						}));
 					}
-					else if (state == "auth") state = "authfailed";
+					else if (state == "auth") {
+						//We can't really throw an error here as it all happens asynchronously,
+						//but we can at least dump something to the console. TODO: Support
+						//password-based authentication methods??
+						state = "authfailed";
+						werror("Database authentication failure:\n%s\n", fields->M);
+					}
 					else werror("Database error, unknown cause: %O\n", fields);
 					break;
 				}

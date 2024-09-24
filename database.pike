@@ -306,7 +306,8 @@ __async__ void connect(string host) {
 	array(string) root = Standards.PEM.Messages(Stdio.read_file("/etc/ssl/certs/ISRG_Root_X1.pem"))->get_certificates();
 	ctx->add_cert(Standards.PEM.simple_decode(key), Standards.PEM.Messages(cert)->get_certificates() + root);
 	#if constant(SSLDatabase)
-	db->conn = SSLDatabase(host, (["ctx": ctx, "host": host, "notify_callback": notify_callback]));
+	db->conn = SSLDatabase((["host": host, "user": "rosuav", "application_name": "stillebot", "database": "stillebot"]),
+		(["ctx": ctx, "host": host, "notify_callback": notify_callback]));
 	werror("[%.3f] Established pgssl, listening...\n", tm->peek());
 	if (sizeof(notify_channels)) await(db->conn->batch(sprintf("listen \"%s\"", indices(notify_channels)[*])));
 	string ro = db->conn->server_params->default_transaction_read_only;
