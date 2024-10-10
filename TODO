@@ -217,3 +217,4 @@
   - Does not occur if command GUI closed and reopened within the page.
   - Happens only in Waydroid Firefox, not in desktop Firefox. Not tested in Waydroid
     Chromium-based browsers as I haven't managed to get any of them working.
+* Per-user variables dialog - allow sorting by username or value
