@@ -1,3 +1,4 @@
+#charset utf-8
 inherit http_websocket;
 
 void add_command(mapping info, string type, string name, string desc, int overwrite)
@@ -110,6 +111,9 @@ table {width: 100%%;}
 ul {margin: 0;}
 td {vertical-align: top;}
 #uservars.clean button[type=submit] {display: none;}
+#uservars th {cursor: pointer;}
+#uservars th.sortasc::after {content: \" ▲\";}
+#uservars th.sortdesc::after {content: \" ▼\";}
 </style>
 
 > ### Per-user variables

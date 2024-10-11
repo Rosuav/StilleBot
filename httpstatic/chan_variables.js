@@ -57,6 +57,33 @@ on("click", ".showuservars", e => {
 });
 
 let editing_uservar = null, editmode;
+let uservars_sortcol = -1, uservars_sortdesc = false;
+on("click", "#uservars th", e => {
+	const col = e.match.cellIndex;
+	if (col === uservars_sortcol) uservars_sortdesc = !uservars_sortdesc;
+	else {uservars_sortcol = col; uservars_sortdesc = false;}
+	document.querySelectorAll("#uservars th").forEach((el, i) => {
+		el.classList.toggle("sortasc", i === col && !uservars_sortdesc);
+		el.classList.toggle("sortdesc", i === col && uservars_sortdesc);
+	});
+	sort_uservars();
+});
+
+function sort_uservars() {
+	if (uservars_sortcol === -1) return;
+	const rows = [...DOM("#uservars tbody").children];
+	rows.sort((r1, r2) => {
+		//textContent doesn't include the value of an input, so special-case that one
+		const a = uservars_sortcol === 2 ? r1.querySelector("input").value : r1.children[uservars_sortcol].textContent;
+		const b = uservars_sortcol === 2 ? r2.querySelector("input").value : r2.children[uservars_sortcol].textContent;
+		let diff = a.localeCompare(b);
+		if (+a > 0 && +b > 0) diff = +a - +b;
+		if (uservars_sortdesc) return -diff;
+		return diff;
+	});
+	set_content("#uservars tbody", rows);
+}
+
 export function sockmsg_uservars(msg) {
 	editmode = "per_user";
 	set_content("#uservarname", editing_uservar = msg.varname);
@@ -67,6 +94,7 @@ export function sockmsg_uservars(msg) {
 	])));
 	DOM("#uservars").classList.add("clean");
 	set_content("#uservars #close_or_cancel", "Close");
+	sort_uservars();
 	DOM("#uservars").showModal();
 }
 
