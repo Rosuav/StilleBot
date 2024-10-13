@@ -280,6 +280,12 @@ void notify_session_gone(int pid, string cond, string extra, string host) {
 	G->G->http_sessions_deleted[extra] = 1;
 }
 
+@"stillebot.conduit_broken":
+void notify_conduit_broken(int pid, string cond, string extra, string host) {
+	werror("Conduit broken, signalled via database - %O\n", extra);
+	G->G->setup_conduit();
+}
+
 @"stillebot.commands":
 void notify_command_added(int pid, string cond, string extra, string host) {
 	if (!G->G->irc) return; //Interactive mode - no need to push updates out

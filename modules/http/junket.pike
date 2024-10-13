@@ -1,5 +1,15 @@
 inherit http_endpoint;
 
+__async__ void confirm_conduit_active() {
+	//Wait a bit, then see if the conduit's active. If it isn't, scream.
+	//If that doesn't work? Maybe we need to activate ourselves.
+	mapping resp = await(twitch_api_request("https://api.twitch.tv/helix/eventsub/conduits/shards?conduit_id=" + G->G->condid));
+	werror("Pre-check, conduit status %O\n", resp->data);
+	sleep(5);
+	resp = await(twitch_api_request("https://api.twitch.tv/helix/eventsub/conduits/shards?conduit_id=" + G->G->condid));
+	werror("Post-check, conduit status %O\n", resp->data);
+}
+
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (!req->variables->conduitbroken) return 0; //The only webhook handler now is this one.
@@ -26,6 +36,14 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (!data) return (["error": 400, "data": "Unrecognized body type"]);
 	werror("Conduit broken! %O\n", data); //Probably a non-event if we're active??
 	if (is_active_bot()) G->G->setup_conduit();
+	else if (string other = get_active_bot()) {
+		//Forward the request to the other bot.
+		//Note that the notification itself gives no feedback. So we wait a few seconds,
+		//then check to see if the conduit is now active.
+		G->G->DB->query_rw(sprintf("notify \"stillebot.conduit_broken\", '%s for %s'", G->G->instance_config->local_address || "unknown", other));
+		confirm_conduit_active();
+	}
 	else if (G->G->emergency) G->G->emergency();
+	else werror("CONDUIT LOST ON INACTIVE BOT, NO RECOURSE\n"); //Should only happen in a crisis situation eg main bot down, standby not yet promoted
 	return (["data": "PRAD"]);
 }
