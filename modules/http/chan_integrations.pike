@@ -158,12 +158,11 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 				"{msg}": data->message || "",
 				"{shop_item_ids}": Array.arrayify(data->offers->?id) * " ",
 			]); break;
-			//TODO: Check this against what we see in the log
-			case "GIFT_PURCHASE": special = "!fw_gift"; params = ([
+			case "GIVEAWAY_PURCHASED": special = "!fw_gift"; params = ([
 				"{from_name}": data->username || "Anonymous",
 				"{amount}": data->amounts->?total->?value + " " + data->amounts->?total->?currency,
 				"{msg}": data->message || "",
-				"{shop_item_ids}": Array.arrayify(data->offers->?id) * " ",
+				"{shop_item_ids}": Array.arrayify(data->offer->?id) * " ",
 			]); break;
 			case "DONATION": special = "!fw_dono"; params = ([
 				"{from_name}": data->username || "Anonymous",
