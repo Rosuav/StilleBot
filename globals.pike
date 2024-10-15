@@ -1074,7 +1074,7 @@ class Lexer
 }
 
 @"G->G->template_defaults";
-mapping(string:mixed) render_template(string template, mapping replacements)
+mapping(string:mixed)|string render_template(string template, mapping replacements)
 {
 	string content;
 	if (has_value(template, '\n')) {content = template; template = "<inline>.md";}
@@ -1143,8 +1143,8 @@ mapping(string:mixed) render_template(string template, mapping replacements)
 		}
 	}
 	content = pieces * "";
-	if (has_suffix(template, ".md"))
-	{
+	if (replacements->_raw) return content;
+	if (has_suffix(template, ".md")) {
 		mapping headings = ([]);
 		string content = Tools.Markdown.parse(content, ([
 			"renderer": Renderer, "lexer": Lexer,
