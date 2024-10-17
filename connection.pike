@@ -829,7 +829,6 @@ class channel(mapping identity) {
 	__async__ void record_raid(int fromid, string fromname, int toid, string toname, int|void ts, int|void viewers)
 	{
 		write("Detected a raid: %O %O %O %O %O\n", fromid, fromname, toid, toname, ts);
-		if (!is_active) return;
 		if (!ts) ts = time();
 		//JavaScript timestamps seem to be borked (given in ms instead of seconds).
 		//Real timestamps won't hit this threshold until September 33658. At some
