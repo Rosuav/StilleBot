@@ -167,13 +167,14 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 			"goalbar": "Achieve a goal!",
 			"countdown": "#:##",
 		])[msg->type] || "",
+		"previewbg": "#FFFFFF",
 	]);
 	if (msg->type == "goalbar") monitors[nonce] |= ([
 		"thresholds": "100",
 		"color": "#005500",
 		"barcolor": "#DDDDFF",
 		"fillcolor": "#FFFF55",
-		"previewbg": "#BBFFFF",
+		"previewbg": "#BBFFFF", //Override the default so you can see the colours more easily
 		"needlesize": "0.375",
 		"active": 1,
 	]);
