@@ -1067,8 +1067,24 @@ function clone_template(t, par) {
 	return el;
 }
 
+/* By default, we only support drag within the same canvas.
+
+EXPERIMENTAL FEATURE, probably incomplete, definitely buggy: Use external drag-and-drop.
+This allows elements to be dragged from one canvas to another. Unfortunately it conflicts
+with the default (intra-canvas) drag, and as such, needs to be at least as clean, or it's
+not worth switching to. It currently isn't.
+
+If this were to be continued with, it would need:
+* Drag image - a snapshot of the actual element(s) being dragged
+* Better positioning (currently uses offsetX/offsetY directly as the origin)
+* DragOver event that shows a ghost of the target
+
+*/
+const ALLOW_DRAG = false;
+//const ALLOW_DRAG = !!voices_available[265796767]; //Hack: Use this feature on my account, for testing
+
 let clicking_on = null; //If non-null, will have rectangle in clicking_on.actionlink
-canvas.addEventListener("pointerdown", e => {
+if (!ALLOW_DRAG) canvas.addEventListener("pointerdown", e => {
 	if (e.button) return; //Only left clicks
 	e.preventDefault();
 	if (e.offsetX >= tray_x) {
@@ -1096,6 +1112,29 @@ canvas.addEventListener("pointerdown", e => {
 	dragging = el; dragbasex = e.offsetX - el.x; dragbasey = e.offsetY - el.y;
 	//Note that the element doesn't lose its parent until you first move the mouse.
 });
+
+const ELEMENT_MIME = "application/x-stillebot-command-element";
+if (ALLOW_DRAG) {
+	canvas.addEventListener("dragstart", e => {
+		console.log("Drag start");
+		const el = element_at_position(e.offsetX, e.offsetY, el => !types[el.type].fixed);
+		if (!el) return e.preventDefault();
+		const data = JSON.stringify(element_to_message(el));
+		e.dataTransfer.setData("application/json", data);
+		e.dataTransfer.setData("text/plain", data); //For ease of dropping into text editors
+		e.dataTransfer.setData(ELEMENT_MIME, data);
+	});
+	canvas.addEventListener("dragover", e => {
+		if (e.dataTransfer.types.includes(ELEMENT_MIME)) e.preventDefault(); //Allow drop if it's an element, otherwise don't.
+	});
+	canvas.addEventListener("drop", e => {
+		const msg = JSON.parse(e.dataTransfer.getData(ELEMENT_MIME));
+		if (dragging) return;
+		dragging = message_to_element(msg, el => {actives.push(el); return el;});
+		drop_element(e.offsetX, e.offsetY);
+	});
+	canvas.draggable = true;
+}
 
 function has_parent(child, parent) {
 	while (child) {
@@ -1218,8 +1257,12 @@ canvas.addEventListener("pointerup", e => {
 		repaint();
 		return;
 	}
+	drop_element(e.offsetX - dragbasex, e.offsetY - dragbasey);
+});
+
+function drop_element(dropx, dropy) {
 	let parent, conn;
-	[dragging.x, dragging.y, parent, conn] = snap_to_elements(e.offsetX - dragbasex, e.offsetY - dragbasey);
+	[dragging.x, dragging.y, parent, conn] = snap_to_elements(dropx, dropy);
 	if (dragging.x > template_x - 100) {
 		//Dropping something over the favourites (the top section of templates) will save it as a
 		//favourite. Dropping it anywhere else (over templates, over trash, or below the trash)
@@ -1263,7 +1306,7 @@ canvas.addEventListener("pointerup", e => {
 	}
 	dragging = null;
 	repaint();
-});
+}
 
 function currently_focused_element() {
 	const focus = document.activeElement;
