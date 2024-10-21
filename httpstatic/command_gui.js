@@ -1077,7 +1077,8 @@ not worth switching to. It currently isn't.
 If this were to be continued with, it would need:
 * Drag image - a snapshot of the actual element(s) being dragged
 * Better positioning (currently uses offsetX/offsetY directly as the origin)
-* DragOver event that shows a ghost of the target
+* DragOver event that shows a ghost of the target. This is hard; the drag data is not available
+  inside DragOver, so it can't see the element to ghost.
 
 */
 const ALLOW_DRAG = false;
@@ -1120,9 +1121,22 @@ if (ALLOW_DRAG) {
 		const el = element_at_position(e.offsetX, e.offsetY, el => !types[el.type].fixed);
 		if (!el) return e.preventDefault();
 		const data = JSON.stringify(element_to_message(el));
+		//Remove the element. We'll create a shadow element in the dragover event.
+		make_template(el); //Easiest way to purge it from actives recursively.
+		if (el.parent) {
+			const childset = el.parent[0][el.parent[1]], idx = el.parent[2];
+			childset[idx] = "";
+			while (childset[idx - 1] === "" && childset[idx] === "") remove_child(childset, idx);
+			if (childset[idx] === "" && childset[idx + 1] === "") remove_child(childset, idx);
+			el.parent = null;
+		}
+		repaint();
+		//TODO: Store the base position (e.offsetX - el.x, e.offsetY - el.y) for use in dragover
 		e.dataTransfer.setData("application/json", data);
 		e.dataTransfer.setData("text/plain", data); //For ease of dropping into text editors
 		e.dataTransfer.setData(ELEMENT_MIME, data);
+		const TRANSPARENT_IMAGE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
+		e.dataTransfer.setDragImage(IMG({src: TRANSPARENT_IMAGE}), 0, 0);
 	});
 	canvas.addEventListener("dragover", e => {
 		if (e.dataTransfer.types.includes(ELEMENT_MIME)) e.preventDefault(); //Allow drop if it's an element, otherwise don't.
