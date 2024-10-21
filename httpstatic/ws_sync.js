@@ -37,6 +37,12 @@ export function connect(group, handler)
 	if (!autorender.all) autorender.all = Object.keys(autorender).filter(k => autorender[k] && autorender[k + "_parent"]);
 	const cfg = handler.ws_config || { };
 	if (!cfg.quiet) cfg.quiet = { };
+	if (cfg._disconnect) cfg._disconnect();
+	cfg._disconnect = () => {
+		socket.close();
+		cfg._disconnect = null;
+		verbose("conn", "Socket disconnected.");
+	};
 	function verbose(kwd, ...msg) {if (!cfg.quiet[kwd]) console.log(...msg)}
 	let socket = new WebSocket(protocol + (handler.ws_host || redirect_host || window.location.host) + "/ws");
 	const callback_pfx = (handler.ws_type || ws_type) + "_";
@@ -60,6 +66,7 @@ export function connect(group, handler)
 	socket.onclose = (e) => {
 		if (handler.socket_connected) handler.socket_connected(null);
 		else send_socket = null;
+		if (!cfg._disconnect) return; //Requested disconnection, don't reconnect
 		verbose("conn", "Socket connection lost.");
 		setTimeout(connect, reconnect_delay, e.new_group || group, handler);
 		if (reconnect_delay < 5000) reconnect_delay *= 1.5 + 0.5 * Math.random(); //Exponential back-off with a (small) random base
