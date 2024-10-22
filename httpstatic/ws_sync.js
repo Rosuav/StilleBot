@@ -65,6 +65,7 @@ export function connect(group, handler)
 	};
 	socket.onclose = (e) => {
 		if (handler.socket_connected) handler.socket_connected(null);
+		else if (handler.ws_sendid) delete send_sockets[handler.ws_sendid];
 		else send_socket = null;
 		if (e.target.explicit_close) return; //Requested disconnection, don't reconnect
 		verbose("conn", "Socket connection lost.");
