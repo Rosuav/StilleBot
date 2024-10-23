@@ -163,7 +163,7 @@ __async__ void update_boss(object channel, mapping game) {
 			"thresholds": "$bossmaxhp$ 1",
 			"text": "$bossavatar$ $bossname$",
 			"font": "Lexend", "fontsize": "30",
-			"fillcolor": "#ff0000", "barcolor": "#ffffdd", "color": "#000000",
+			"fillcolor": "#ff0000", "barcolor": "#ffffdd", "color": "#000000", "altcolor": "#000000",
 			"borderwidth": "4", "bordercolor": "#00ffff",
 			"boss_selfheal": game->selfheal, "boss_giftrecipient": game->giftrecipient,
 		]));

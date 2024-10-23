@@ -69,7 +69,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		if (data.type) styleinfo[data.id] = {type: data.type}; //Reset all type-specific info when type is sent
 		if (data.thresholds) styleinfo[data.id].t = (data.thresholds_rendered || data.thresholds).split(" ").map(x => +x).filter(x => x && x === x); //Suppress any that fail to parse as numbers
 		if (data.needlesize) styleinfo[data.id].needlesize = +data.needlesize;
-		["barcolor", "fillcolor", "format", "progressive", "textcompleted", "textinactive"].forEach(
+		["barcolor", "fillcolor", "altcolor", "format", "progressive", "textcompleted", "textinactive"].forEach(
 			key => data[key] && (styleinfo[data.id][key] = data[key]));
 		ensure_font(data.font);
 	}

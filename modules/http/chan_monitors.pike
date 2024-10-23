@@ -27,6 +27,9 @@ constant monitorstyles = #"
 	animation: .25s ease-in 0s 1 forwards damage;
 	background: linear-gradient(.25turn, var(--fillcolor) var(--curpos), var(--barcolor) var(--curpos), var(--barcolor));
 }
+#display .bosscredit {
+	color: var(--altcolor);
+}
 #display .waxing {animation: 1s ease-in-out 0.5s 1 both waxwane;}
 #display .waning {position: absolute; top: 0; animation: 1s ease-in-out 0.5s 1 reverse both waxwane;}
 @keyframes damage {
@@ -60,7 +63,7 @@ constant vars_provided = ([
 ]);
 
 //Some of these attributes make sense only with certain types (eg needlesize is only for goal bars).
-constant saveable_attributes = "previewbg barcolor fillcolor needlesize thresholds progressive lvlupcmd format width height "
+constant saveable_attributes = "previewbg barcolor fillcolor altcolor needlesize thresholds progressive lvlupcmd format width height "
 	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip follow kofi_dono kofi_member kofi_renew kofi_shop "
 	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive startonscene startonscene_time "
 	"twitchsched twitchsched_offset" / " " + TEXTFORMATTING_ATTRS;

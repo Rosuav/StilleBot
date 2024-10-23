@@ -160,6 +160,7 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 	])]),
 	TR([TH("Colors"), TD(DIV({className: "optionset"}, [
 		FIELDSET([LEGEND("Text"), INPUT({type: "color", name: "color"})]),
+		FIELDSET([LEGEND("Alt"), INPUT({type: "color", name: "altcolor"})]),
 		FIELDSET([LEGEND("Bar"), INPUT({type: "color", name: "barcolor"})]),
 		FIELDSET([LEGEND("Fill"), INPUT({type: "color", name: "fillcolor"})]),
 		FIELDSET([LEGEND("Border"),
