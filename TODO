@@ -217,3 +217,13 @@
   - Does not occur if command GUI closed and reopened within the page.
   - Happens only in Waydroid Firefox, not in desktop Firefox. Not tested in Waydroid
     Chromium-based browsers as I haven't managed to get any of them working.
+* Form fillout.
+  - Broadcaster and mods can manage the form, creating fields, same as Google Forms
+  - By default, only the broadcaster (not mods) can see the form responses
+  - Filling out the form requires that you be logged in.
+  - Form can be open or closed. If it is closed, specific users may be permitted to
+    answer the form once, using a builtin. This will create a unique nonce that goes
+    into the URL. (The same user may be permitted more than once, and will get a
+    unique nonce for each permit.)
+  - When permissions are used, they are logged in order, so you can see which have
+    and haven't been used.
