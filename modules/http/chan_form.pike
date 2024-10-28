@@ -25,9 +25,12 @@ constant markdown = #"# Forms for $$channel$$
 .element {
 	border: 1px solid black;
 	margin: 0.5em;
+	padding: 0.5em;
 }
 .element .header {
 	background: #ccc;
+	margin: -0.5em; /* Put the background all the way to the black border */
+	padding: 0.5em; /* But still have the gap */
 }
 </style>
 ";
@@ -120,6 +123,20 @@ __async__ mapping|zero wscmd_add_element(object channel, mapping(string:mixed) c
 	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
 		form_data = cfg->forms[?msg->id]; if (!form_data) return;
 		form_data->elements += ({(["type": msg->type])});
+	});
+	send_updates_all(channel, "");
+	return (["cmd": "openform", "form_data": form_data]);
+}
+
+__async__ mapping|zero wscmd_delete_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping form_data;
+	if (!intp(msg->idx) || msg->idx < 0) return 0;
+	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
+		form_data = cfg->forms[?msg->id]; if (!form_data) return;
+		if (msg->idx < sizeof(form_data->elements)) {
+			form_data->elements[msg->idx] = 0;
+			form_data->elements -= ({0});
+		}
 	});
 	send_updates_all(channel, "");
 	return (["cmd": "openform", "form_data": form_data]);

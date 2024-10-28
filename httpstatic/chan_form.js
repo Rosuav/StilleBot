@@ -1,5 +1,5 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, DIV, LI} = choc; //autoimport
+const {BUTTON, DIV, INPUT, LABEL, LI, P} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 export const autorender = {
@@ -17,7 +17,15 @@ export function render(data) { }
 const render_element = {
 	"": el => "Unknown element type - something went wrong - " + el.type,
 	//({"twitchid", "Twitch username"}), //If mandatory, will force user to be logged in to submit
-	//({"simple", "Text input"}),
+	simple: el => [ //extcall
+		P("Text input"),
+		LABEL(["Label: ", INPUT({name: "label", value: el.label || ""}), " - shown in the form"]),
+		//Type (numeric/text)?
+	],
+	paragraph: el => [ //extcall
+		P("Paragraph input"),
+		LABEL(["Label: ", INPUT({name: "label", value: el.label || ""}), " - shown in the form"]),
+	],
 	//({"paragraph", "Paragraph input"}),
 	//({"address", "Street address"}),
 	//({"radio", "Selection (radio) buttons"}),
@@ -31,8 +39,10 @@ function openform(f) {
 		DOM("#editformdlg [name=" + key + "]").value = f[key] || "";
 	});
 	set_content("#formelements", (f.elements||[]).map((el, idx) => DIV({class: "element", "data-idx": idx}, [
-		//TODO: Move up/down buttons
 		DIV({class: "header"}, [
+			LABEL(["Field name: ", INPUT({name: "name", value: el.name || ""}), " - must be unique"]),
+			BUTTON({class: "moveup", type: "button", disabled: true}, "Up"),
+			BUTTON({class: "movedn", type: "button", disabled: true}, "Dn"),
 			BUTTON({class: "delelement", type: "button"}, "x"),
 		]),
 		(render_element[el.type] || render_element[""])(el),
