@@ -12,6 +12,7 @@ constant markdown = #"# Forms for $$channel$$
 > ### Edit form
 >
 > $$formfields$$
+> [Delete form](:#delete_form)
 >
 > <div id=formelements></div>
 > <select id=addelement><option value=\"\">Add new element$$elementtypes$$</select>
@@ -85,6 +86,15 @@ __async__ mapping wscmd_create_form(object channel, mapping(string:mixed) conn, 
 	});
 	send_updates_all(channel, "");
 	return (["cmd": "openform", "form_data": form_data]);
+}
+
+__async__ void wscmd_delete_form(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
+		if (!cfg->forms) return;
+		m_delete(cfg->forms, msg->id);
+		cfg->formorder -= ({msg->id});
+	});
+	send_updates_all(channel, "");
 }
 
 __async__ void wscmd_form_meta(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {

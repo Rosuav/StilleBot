@@ -1,5 +1,6 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {BUTTON, DIV, LI} = choc; //autoimport
+import {simpleconfirm} from "$$static||utils.js$$";
 
 export const autorender = {
 	form_parent: DOM("#forms"),
@@ -51,3 +52,8 @@ on("click", "#addelement", e => {
 });
 
 on("click", ".delelement", e => ws_sync.send({cmd: "delete_element", id: editing, idx: +e.match.closest_data("idx")}));
+
+on("click", "#delete_form", simpleconfirm("Are you sure? This cannot be undone!", e => {
+	ws_sync.send({cmd: "delete_form", id: editing});
+	DOM("#editformdlg").close();
+}));
