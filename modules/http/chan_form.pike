@@ -122,7 +122,11 @@ __async__ mapping|zero wscmd_add_element(object channel, mapping(string:mixed) c
 	if (!element_types[msg->type]) return 0;
 	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
 		form_data = cfg->forms[?msg->id]; if (!form_data) return;
-		form_data->elements += ({(["type": msg->type])});
+		multiset in_use = (multiset)(form_data->elements || ({ }))->name;
+		string name = msg->type;
+		int i = 1;
+		while (in_use[name]) name = sprintf("%s #%d", msg->type, ++i);
+		form_data->elements += ({(["type": msg->type, "name": name])});
 	});
 	send_updates_all(channel, "");
 	return (["cmd": "openform", "form_data": form_data]);

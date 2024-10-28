@@ -15,7 +15,7 @@ export const autorender = {
 export function render(data) { }
 
 const render_element = {
-	"": el => "Unknown element type - something went wrong - " + el.type,
+	"": el => P("Unknown element type - something went wrong - " + el.type),
 	//({"twitchid", "Twitch username"}), //If mandatory, will force user to be logged in to submit
 	simple: el => [ //extcall
 		P("Text input"),
