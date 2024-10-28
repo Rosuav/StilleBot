@@ -4,7 +4,7 @@
 import {choc, on, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
 const {BR, BUTTON, DIALOG, DIV, H3, HEADER, INPUT, LABEL, LINK, OPTGROUP, OPTION, P, SECTION, SELECT, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
 ensure_simpleconfirm_dlg(); //Unnecessary overhead once Firefox 98+ is standard - can then be removed
-fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless"});
+fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless", methods: 1});
 
 //Deprecated. Use simpleconfirm instead - dialogs work in all current browsers (even inside other dlgs).
 export function waitlate(wait_time, late_time, confirmdesc, callback) {
