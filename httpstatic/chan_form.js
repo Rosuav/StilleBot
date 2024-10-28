@@ -3,7 +3,7 @@ const {A, BR, BUTTON, CODE, INPUT, LABEL, LI, OPTION, SELECT, SPAN, UL} = choc; 
 
 export const autorender = {
 	form_parent: DOM("#forms"),
-	form(f) {return LI({"data-id": f.id}, [ //extcall
+	form(f) {return LI({"data-id": f.id, class: "openform", ".form_data": f}, [ //extcall
 		f.id, " ", f.formtitle,
 	]);},
 	form_empty() {return DOM("#forms").appendChild(LI([
@@ -13,4 +13,17 @@ export const autorender = {
 
 export function render(data) { }
 
-on("click", "#createform", e => ws_sync.send({cmd: "createform"}));
+let editing = null;
+function openform(f) {
+	editing = f.id;
+	["id", "formtitle"].forEach(key => {
+		DOM("#editformdlg [name=" + key + "]").value = f[key] || "";
+	});
+	DOM("#editformdlg").showModal();
+}
+on("click", ".openform", e => {e.preventDefault(); openform(e.match.form_data);});
+
+on("click", "#createform", e => ws_sync.send({cmd: "create_form"}));
+export function sockmsg_openform(msg) {openform(msg.form_data);}
+
+on("change", ".formmeta", e => ws_sync.send({cmd: "form_meta", id: editing, [e.match.name]: e.match.value}));

@@ -11,20 +11,27 @@ constant markdown = #"# Forms for $$channel$$
 
 > ### Edit form
 >
-> Form ID:
-> <label>Form title <input name=formtitle></label>
+> $$formfields$$
 >
 > <div id=formelements></div>
 >
 > [Close](:.dialog_close)
 {: tag=formdialog #editformdlg}
 
+<style>
+.openform {cursor: pointer;}
+</style>
 ";
 
 constant formview = #"# $$formtitle$$
 
 $$formdata$$
 ";
+
+array formfields = ({
+	({"id readonly", "Form ID"}), //Note that this won't match a lookup for "id", might be useful(?)
+	({"formtitle", "Title"}),
+});
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (string nonce = req->variables->nonce) {
@@ -34,7 +41,9 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 		//...
 	}
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo); //Should there be non-privileged info shown?
-	return render(req, (["vars": (["ws_group": ""])]) | req->misc->chaninfo);
+	return render(req, (["vars": (["ws_group": ""]),
+		"formfields": sprintf("%{* <label>%[1]s: <input class=formmeta name=%[0]s></label>\n> %}", formfields),
+	]) | req->misc->chaninfo);
 }
 
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
@@ -43,19 +52,32 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	return (["forms": cfg->forms[cfg->formorder[*]]]);
 }
 
-__async__ mapping wscmd_createform(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	string id;
+__async__ mapping wscmd_create_form(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping form_data;
 	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
 		if (!cfg->forms) cfg->forms = ([]);
+		string id;
 		do {id = String.string2hex(random_string(4));} while (cfg->forms[id]);
-		cfg->forms[id] = ([
+		cfg->forms[id] = form_data = ([
 			"id": id,
 			"formtitle": "New Form", //Doesn't have to be unique, so I won't say "New Form #4" here
 		]);
 		cfg->formorder += ({id});
 	});
 	send_updates_all(channel, "");
-	return (["cmd": "openform", "formid": id]);
+	return (["cmd": "openform", "form_data": form_data]);
+}
+
+__async__ mapping wscmd_form_meta(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	multiset editable = (<"formtitle">);
+	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
+		mapping form = cfg->forms[?msg->id]; if (!form) return;
+		foreach (editable; string key;) if (mixed val = msg[key]) {
+			if (stringp(val)) form[key] = val;
+			//TODO: Permit numerics too? Float or just int?
+		}
+	});
+	send_updates_all(channel, "");
 }
 
 //TODO: Allow a form's ID to be changed, subject to restrictions:
