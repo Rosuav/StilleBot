@@ -67,3 +67,5 @@ on("click", "#delete_form", simpleconfirm("Are you sure? This cannot be undone!"
 	ws_sync.send({cmd: "delete_form", id: editing});
 	DOM("#editformdlg").close();
 }));
+
+on("change", ".element input", e => ws_sync.send({cmd: "edit_element", id: editing, idx: +e.match.closest_data("idx"), field: e.match.name, value: e.match.value}));

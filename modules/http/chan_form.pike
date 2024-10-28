@@ -132,6 +132,29 @@ __async__ mapping|zero wscmd_add_element(object channel, mapping(string:mixed) c
 	return (["cmd": "openform", "form_data": form_data]);
 }
 
+__async__ mapping|zero wscmd_edit_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping|zero form_data;
+	if (!intp(msg->idx) || msg->idx < 0) return 0;
+	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
+		form_data = cfg->forms[?msg->id]; if (!form_data) return;
+		if (msg->idx >= sizeof(form_data->elements)) return;
+		mapping el = form_data->elements[msg->idx];
+		if (msg->field == "name") {
+			//Special-case: Names must be unique and non-blank
+			//Note that setting to the same name that it already has is going to
+			//look like a collision; but it wouldn't make any difference anyway,
+			//so it's okay to handle it as an error.
+			if (!stringp(msg->value) || msg->value == "" || sizeof(msg->value) > 25) return;
+			if (has_value(form_data->elements->name, msg->value)) return;
+			el->name = msg->value;
+			form_data = 0; return; //Signal acceptance of the edit
+		}
+		//else check a type-specific whitelist and possibly data type validation
+	});
+	send_updates_all(channel, "");
+	if (form_data) return (["cmd": "openform", "form_data": form_data]);
+}
+
 __async__ mapping|zero wscmd_delete_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping form_data;
 	if (!intp(msg->idx) || msg->idx < 0) return 0;
