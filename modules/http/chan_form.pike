@@ -14,12 +14,20 @@ constant markdown = #"# Forms for $$channel$$
 > $$formfields$$
 >
 > <div id=formelements></div>
+> <select id=addelement><option value=\"\">Add new element$$elementtypes$$</select>
 >
 > [Close](:.dialog_close)
 {: tag=formdialog #editformdlg}
 
 <style>
 .openform {cursor: pointer;}
+.element {
+	border: 1px solid black;
+	margin: 0.5em;
+}
+.element .header {
+	background: #ccc;
+}
 </style>
 ";
 
@@ -33,6 +41,16 @@ array formfields = ({
 	({"formtitle", "Title"}),
 });
 
+array _element_types = ({
+	({"twitchid", "Twitch username"}), //If mandatory, will force user to be logged in to submit
+	({"simple", "Text input"}),
+	({"paragraph", "Paragraph input"}),
+	({"address", "Street address"}),
+	({"radio", "Selection (radio) buttons"}),
+	({"checkbox", "Check box(es)"}),
+});
+mapping element_types = (mapping)_element_types;
+
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (string nonce = req->variables->nonce) {
 		//...
@@ -43,6 +61,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo); //Should there be non-privileged info shown?
 	return render(req, (["vars": (["ws_group": ""]),
 		"formfields": sprintf("%{* <label>%[1]s: <input class=formmeta name=%[0]s></label>\n> %}", formfields),
+		"elementtypes": sprintf("%{<option value=\"%s\">%s%}", _element_types),
 	]) | req->misc->chaninfo);
 }
 
@@ -68,12 +87,12 @@ __async__ mapping wscmd_create_form(object channel, mapping(string:mixed) conn, 
 	return (["cmd": "openform", "form_data": form_data]);
 }
 
-__async__ mapping wscmd_form_meta(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void wscmd_form_meta(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	multiset editable = (<"formtitle">);
 	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
-		mapping form = cfg->forms[?msg->id]; if (!form) return;
+		mapping form_data = cfg->forms[?msg->id]; if (!form_data) return;
 		foreach (editable; string key;) if (mixed val = msg[key]) {
-			if (stringp(val)) form[key] = val;
+			if (stringp(val)) form_data[key] = val;
 			//TODO: Permit numerics too? Float or just int?
 		}
 	});
@@ -84,6 +103,17 @@ __async__ mapping wscmd_form_meta(object channel, mapping(string:mixed) conn, ma
 // * Must be unique (within this channel)
 // * Must be an atom - -A-Za-z0-9_ and maybe a few others, notably no spaces
 // * Length 1-15 characters? Maybe a bit longer but not huge.
+
+__async__ mapping|zero wscmd_add_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping form_data;
+	if (!element_types[msg->type]) return 0;
+	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
+		form_data = cfg->forms[?msg->id]; if (!form_data) return;
+		form_data->elements += ({(["type": msg->type])});
+	});
+	send_updates_all(channel, "");
+	return (["cmd": "openform", "form_data": form_data]);
+}
 
 constant command_description = "Grant form fillout";
 constant builtin_name = "Form fillout";
