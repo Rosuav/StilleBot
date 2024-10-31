@@ -139,6 +139,7 @@ export function connect(group, handler)
 			verbose("conn", "Kicked by server", data);
 			//The server's kicking us. If we're VERY fortunate, we'll be told of an alternative
 			//place to connect. Otherwise, well, I guess it's back to the retry loop.
+			if (data.error) reconnect_delay = 30000; //TODO: Stick something in the DOM too
 			socket.close();
 			//If these are non-null, they can be used, otherwise we'll return to default.
 			//A simple packet of {"cmd": "*DC*"} will cause us to revert to normal.
