@@ -89,10 +89,12 @@ mapping element_attributes = ([
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	string|zero formid = req->variables->form;
-	if (string nonce = req->variables->nonce) {
+	string nonce = req->variables->nonce;
+	if (nonce) {
 		//TODO: If the nonce is found, set formid to the corresponding form
-		//Otherwise, set formid to zero
-		formid = 0; //Nonce not found or invalid.
+		//Otherwise, return failure (don't fall through - that would allow nonce=&form= usage)
+		//TODO: Have a maximum age for nonce validity, configurable per form?
+		return 0; //Nonce not found or invalid. TODO: Return a nicer error?
 	}
 	if (formid) {
 		//If the form is open, anyone may fill it out by providing the form ID.
@@ -105,6 +107,23 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		}
 		if (req->request_type == "POST") {
 			werror("Variables: %O\n", req->variables);
+			mapping fields = ([]);
+			foreach (form->elements, mapping el) {
+				string|zero val = req->variables["field-" + el->name];
+				//TODO: If field is required and absent, reject
+				//TODO: Reformat as required, eg address input
+				fields[el->name] = val;
+			}
+			mapping response = ([
+				"timestamp": time(),
+				"fields": fields,
+				"ip": req->get_ip(),
+			]);
+			if (nonce) response->nonce = nonce;
+			await(G->G->DB->mutate_config(req->misc->channel->userid, "formresponses") {mapping resp = __ARGS__[0];
+				resp->responses += ({response});
+				if (resp->nonces) m_delete(resp->nonces, nonce);
+			});
 			return render_template(formcloser, ([
 				"formtitle": form->formtitle,
 			]));
