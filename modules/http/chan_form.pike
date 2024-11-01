@@ -41,8 +41,9 @@ $$formdata$$
 ";
 
 array formfields = ({
-	({"id readonly", "Form ID"}), //Note that this won't match a lookup for "id", might be useful(?)
-	({"formtitle", "Title"}),
+	({"id", "readonly", "Form ID"}),
+	({"formtitle", "", "Title"}),
+	({"is_open", "type=checkbox", "Open form"}),
 });
 
 array _element_types = ({
@@ -54,17 +55,23 @@ array _element_types = ({
 	({"checkbox", "Check box(es)"}),
 });
 mapping element_types = (mapping)_element_types;
+mapping element_attributes = ([
+	"simple": (["label": type_string]),
+	"paragraph": (["label": type_string]),
+]);
 
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (string nonce = req->variables->nonce) {
 		//...
 	}
 	if (string formid = req->variables->form) {
-		//...
+		//If the form is open, anyone may fill it out by providing the form ID.
+		mapping cfg = await(G->G->DB->load_config(req->misc->channel->userid, "forms"));
+		
 	}
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo); //Should there be non-privileged info shown?
 	return render(req, (["vars": (["ws_group": ""]),
-		"formfields": sprintf("%{* <label>%[1]s: <input class=formmeta name=%[0]s></label>\n> %}", formfields),
+		"formfields": sprintf("%{* <label>%[2]s: <input class=formmeta name=%[0]s %[1]s></label>\n> %}", formfields),
 		"elementtypes": sprintf("%{<option value=\"%s\">%s%}", _element_types),
 	]) | req->misc->chaninfo);
 }
@@ -101,12 +108,15 @@ __async__ void wscmd_delete_form(object channel, mapping(string:mixed) conn, map
 }
 
 __async__ void wscmd_form_meta(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	multiset editable = (<"formtitle">);
+	mapping editable = (["formtitle": "string", "is_open": "bool"]);
 	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
 		mapping form_data = cfg->forms[?msg->id]; if (!form_data) return;
-		foreach (editable; string key;) if (mixed val = msg[key]) {
-			if (stringp(val)) form_data[key] = val;
-			//TODO: Permit numerics too? Float or just int?
+		foreach (editable; string key; string type) if (!undefinedp(msg[key])) {
+			switch (type) {
+				case "string": form_data[key] = (string)msg[key]; break;
+				case "bool": form_data[key] = !!msg[key]; break;
+				//TODO: Permit numerics too? Float or just int?
+			}
 		}
 	});
 	send_updates_all(channel, "");

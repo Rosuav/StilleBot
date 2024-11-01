@@ -35,8 +35,10 @@ const render_element = {
 let editing = null;
 function openform(f) {
 	editing = f.id;
-	["id", "formtitle"].forEach(key => {
-		DOM("#editformdlg [name=" + key + "]").value = f[key] || "";
+	["id", "formtitle", "is_open"].forEach(key => {
+		const el = DOM("#editformdlg [name=" + key + "]");
+		if (el.type === "checkbox") el.checked = !!f[key];
+		else el.value = f[key] || "";
 	});
 	set_content("#formelements", (f.elements||[]).map((el, idx) => DIV({class: "element", "data-idx": idx}, [
 		DIV({class: "header"}, [
@@ -54,7 +56,7 @@ on("click", ".openform", e => {e.preventDefault(); openform(e.match.form_data);}
 on("click", "#createform", e => ws_sync.send({cmd: "create_form"}));
 export function sockmsg_openform(msg) {openform(msg.form_data);}
 
-on("change", ".formmeta", e => ws_sync.send({cmd: "form_meta", id: editing, [e.match.name]: e.match.value}));
+on("change", ".formmeta", e => ws_sync.send({cmd: "form_meta", id: editing, [e.match.name]: e.match.type === "checkbox" ? e.match.checked : e.match.value}));
 
 on("click", "#addelement", e => {
 	if (e.match.value != "") ws_sync.send({cmd: "add_element", id: editing, "type": e.match.value});
