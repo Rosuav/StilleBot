@@ -12,8 +12,6 @@ export const autorender = {
 	]));},
 }
 
-export function render(data) { }
-
 const render_element = {
 	"": el => P("Unknown element type - something went wrong - " + el.type),
 	//({"twitchid", "Twitch username"}), //If mandatory, will force user to be logged in to submit
@@ -55,6 +53,9 @@ on("click", ".openform", e => {e.preventDefault(); openform(e.match.form_data);}
 
 on("click", "#createform", e => ws_sync.send({cmd: "create_form"}));
 export function sockmsg_openform(msg) {openform(msg.form_data);}
+export function render(data) {
+	data.forms.forEach(f => f.id === editing && openform(f));
+}
 
 on("change", ".formmeta", e => ws_sync.send({cmd: "form_meta", id: editing, [e.match.name]: e.match.type === "checkbox" ? e.match.checked : e.match.value}));
 

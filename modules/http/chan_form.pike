@@ -127,9 +127,9 @@ __async__ void wscmd_form_meta(object channel, mapping(string:mixed) conn, mappi
 // * Must be an atom - -A-Za-z0-9_ and maybe a few others, notably no spaces
 // * Length 1-15 characters? Maybe a bit longer but not huge.
 
-__async__ mapping|zero wscmd_add_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void wscmd_add_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping form_data;
-	if (!element_types[msg->type]) return 0;
+	if (!element_types[msg->type]) return;
 	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
 		form_data = cfg->forms[?msg->id]; if (!form_data) return;
 		multiset in_use = (multiset)(form_data->elements || ({ }))->name;
@@ -139,12 +139,11 @@ __async__ mapping|zero wscmd_add_element(object channel, mapping(string:mixed) c
 		form_data->elements += ({(["type": msg->type, "name": name])});
 	});
 	send_updates_all(channel, "");
-	return (["cmd": "openform", "form_data": form_data]);
 }
 
-__async__ mapping|zero wscmd_edit_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void wscmd_edit_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping|zero form_data;
-	if (!intp(msg->idx) || msg->idx < 0 || !stringp(msg->field) || !stringp(msg->value)) return 0;
+	if (!intp(msg->idx) || msg->idx < 0 || !stringp(msg->field) || !stringp(msg->value)) return;
 	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
 		form_data = cfg->forms[?msg->id]; if (!form_data) return;
 		if (msg->idx >= sizeof(form_data->elements)) return;
@@ -165,11 +164,10 @@ __async__ mapping|zero wscmd_edit_element(object channel, mapping(string:mixed) 
 			form_data = 0; return;
 		}
 	});
-	send_updates_all(channel, "");
-	if (form_data) return (["cmd": "openform", "form_data": form_data]);
+	if (form_data) send_updates_all(channel, "");
 }
 
-__async__ mapping|zero wscmd_delete_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void wscmd_delete_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping form_data;
 	if (!intp(msg->idx) || msg->idx < 0) return 0;
 	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
@@ -180,7 +178,6 @@ __async__ mapping|zero wscmd_delete_element(object channel, mapping(string:mixed
 		}
 	});
 	send_updates_all(channel, "");
-	return (["cmd": "openform", "form_data": form_data]);
 }
 
 bool type_string(string value) {return 1;}
