@@ -12,6 +12,7 @@ constant markdown = #"# Forms for $$channel$$
 > ### Edit form
 >
 > $$formfields$$
+> [View form responses](form?responses=FORMID :#viewresp target=_blank) (opens in new window)<br>
 > [Delete form](:#delete_form)
 >
 > <div id=formelements></div>
@@ -64,6 +65,26 @@ label span {
 constant formcloser = #"# $$formtitle$$
 
 Thank you for filling out this form! (TODO: Let the broadcaster customize this text.)
+
+";
+
+constant formresponses = #"# Form responses
+
+Permitted | Submitted | Twitch user | Answers
+----------|-----------|-------------|---------
+loading... | -
+{:#responses}
+
+> ### Form response
+>
+> <label><span>Permitted at:</span> <input readonly name=permitted></label><br>
+> <label><span>Submitted at:</span> <input readonly name=timestamp></label><br>
+>
+> loading...
+> {:#formresponse}
+>
+> [Close](:.dialog_close)
+{: tag=dialog #responsedlg}
 
 ";
 
@@ -121,12 +142,13 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			]);
 			if (nonce) response->nonce = nonce;
 			await(G->G->DB->mutate_config(req->misc->channel->userid, "formresponses") {mapping resp = __ARGS__[0];
-				resp->responses += ({response});
-				if (resp->nonces) m_delete(resp->nonces, nonce);
+				if (!resp[formid]) resp[formid] = ([]);
+				resp[formid]->responses += ({response});
+				if (resp[formid]->nonces) m_delete(resp[formid]->nonces, nonce);
 			});
 			return render_template(formcloser, ([
 				"formtitle": form->formtitle,
-			]));
+			]) | req->misc->chaninfo);
 		}
 		string formdata = "";
 		foreach (form->elements, mapping el) {
@@ -149,19 +171,65 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		return render_template(formview, ([
 			"formtitle": form->formtitle,
 			"formdata": formdata,
-		]));
+		]) | req->misc->chaninfo);
 	}
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo); //Should there be non-privileged info shown?
+	if (string formid = req->variables->responses) {
+		//TODO: Allow the form to be configured to permit mods. By default, broadcaster only.
+		//Since websocket_validate is synchronous, the easiest way is probably to hack this
+		//to retain in memory the fact that this form ID permits mods.
+		mapping cfg = await(G->G->DB->load_config(req->misc->channel->userid, "forms"));
+		mapping form = cfg->forms[formid];
+		if (!form) return 0; //Bad form ID? Kick back a boring 404 page.
+		if (req->misc->channel->userid != (int)req->misc->session->user->id) {
+			//TODO: Include a banner saying what went wrong (or just have an error page, this is opened
+			//in a new tab anyway).
+			return redirect("form");
+		}
+		return render_template(formresponses, ([
+			"vars": (["ws_group": formid + "#" + req->misc->channel->userid, "ws_type": ws_type, "formdata": form]),
+		]));
+	}
 	return render(req, (["vars": (["ws_group": ""]),
 		"formfields": sprintf("%{* <label>%[2]s: <input class=formmeta name=%[0]s %[1]s></label>\n> %}", formfields),
 		"elementtypes": sprintf("%{<option value=\"%s\">%s%}", _element_types),
 	]) | req->misc->chaninfo);
 }
 
+string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(msg->group);
+	if (grp != "" && channel->userid != (int)conn->session->user->id) return "Broadcaster only";
+	return ::websocket_validate(conn, msg);
+}
+
+bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
-	mapping cfg = await(G->G->DB->load_config(channel->userid, "forms"));
-	if (!cfg->forms) return (["forms": ({ })]);
-	return (["forms": cfg->forms[cfg->formorder[*]]]);
+	if (grp == "") {
+		//List of forms, and form editing (for any form)
+		mapping cfg = await(G->G->DB->load_config(channel->userid, "forms"));
+		if (!cfg->forms) return (["forms": ({ })]);
+		return (["forms": cfg->forms[cfg->formorder[*]]]);
+	}
+	//Form responses (single form)
+	mapping resp = await(G->G->DB->load_config(channel->userid, "formresponses"))[grp];
+	if (!resp) return 0; //Bad form ID (or maybe no responses yet)
+	array responses = ({ }), order = ({ });
+	//First, go through all the permissions and key them by their nonces
+	mapping nonces = ([]);
+	foreach (resp->permissions || ({ }), mapping perm) {
+		nonces[perm->nonce] = perm;
+	}
+	//Now find all form responses, and match up their permissions if available
+	foreach (resp->responses, mapping r) {
+		mapping perm = r->nonce && m_delete(nonces, r->nonce);
+		responses += ({r | (perm || ([]))});
+		order += ({perm ? perm->timestamp : r->timestamp});
+	}
+	//Any remaining permissions, add them in as unfilled forms
+	responses += values(nonces);
+	order += values(nonces)->timestamp;
+	sort(order, responses);
+	return (["responses": responses]);
 }
 
 __async__ mapping wscmd_create_form(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -208,6 +276,7 @@ __async__ void wscmd_form_meta(object channel, mapping(string:mixed) conn, mappi
 // * Must be unique (within this channel)
 // * Must be an atom - -A-Za-z0-9_ and maybe a few others, notably no spaces
 // * Length 1-15 characters? Maybe a bit longer but not huge.
+//Be sure to migrate all form responses to the new ID
 
 __async__ void wscmd_add_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping form_data;
