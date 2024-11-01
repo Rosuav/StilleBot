@@ -37,7 +37,28 @@ constant markdown = #"# Forms for $$channel$$
 
 constant formview = #"# $$formtitle$$
 
+<form method=post>
+
 $$formdata$$
+
+<button type=submit>Submit response</button>
+</form>
+
+<style>
+form section {
+	border: 1px solid black;
+	margin: 0.1em;
+	padding: 0.5em;
+}
+textarea {
+	vertical-align: text-top;
+}
+label span {
+	min-width: 10em;
+	font-weight: bold;
+	display: inline-block;
+}
+</style>
 ";
 
 array formfields = ({
@@ -61,13 +82,46 @@ mapping element_attributes = ([
 ]);
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
+	string|zero formid = req->variables->form;
 	if (string nonce = req->variables->nonce) {
-		//...
+		//TODO: If the nonce is found, set formid to the corresponding form
+		//Otherwise, set formid to zero
+		formid = 0; //Nonce not found or invalid.
 	}
-	if (string formid = req->variables->form) {
+	if (formid) {
 		//If the form is open, anyone may fill it out by providing the form ID.
 		mapping cfg = await(G->G->DB->load_config(req->misc->channel->userid, "forms"));
-		
+		mapping form = cfg->forms[formid];
+		if (!form) return 0; //Bad form ID? Kick back a boring 404 page.
+		if (!req->variables->nonce && !form->is_open) {
+			//TODO: Return a nicer page saying that the form is closed.
+			return 0;
+		}
+		if (req->request_type == "POST") {
+			werror("Variables: %O\n", req->variables);
+		}
+		string formdata = "";
+		foreach (form->elements, mapping el) {
+			string|zero elem = 0;
+			switch (el->type) {
+				case "simple":
+					elem = sprintf("<label><span>%s</span> <input name=%q></label>",
+						el->label, "field-" + el->name,
+					);
+					break;
+				case "paragraph":
+					elem = sprintf("<label><span>%s</span> <textarea name=%q rows=8 cols=80></textarea></label>",
+						el->label, "field-" + el->name,
+					);
+					break;
+				default: break;
+			}
+			if (elem) formdata += sprintf("<section id=%q>%s</section>\n", "field-" + el->name, elem);
+		}
+		return render_template(formview, ([
+			"formtitle": form->formtitle,
+			"formdata": formdata,
+		]));
 	}
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo); //Should there be non-privileged info shown?
 	return render(req, (["vars": (["ws_group": ""]),
