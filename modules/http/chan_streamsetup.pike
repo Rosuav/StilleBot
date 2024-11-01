@@ -210,7 +210,7 @@ __async__ void wscmd_applysetup(object channel, mapping(string:mixed) conn, mapp
 	//Note that this does NOT apply a setup by ID; it sets all the specifics.
 	mapping params = ([]);
 	if (msg->title && msg->title != "") params->title = msg->title; //Easy.
-	if (msg->tags) params->tags = String.trim((msg->tags / ",")[*]) - ({""});
+	if (msg->tags) params->tags = replace((msg->tags / ",")[*], " ", "") - ({""});
 	if (msg->category) params->game_id = await(get_category_id(msg->category));
 	if (msg->ccls) {
 		//Twitch expects us to show "add/remove" for each CCL. So if you select a specific
