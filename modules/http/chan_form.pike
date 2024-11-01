@@ -144,7 +144,7 @@ __async__ mapping|zero wscmd_add_element(object channel, mapping(string:mixed) c
 
 __async__ mapping|zero wscmd_edit_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping|zero form_data;
-	if (!intp(msg->idx) || msg->idx < 0) return 0;
+	if (!intp(msg->idx) || msg->idx < 0 || !stringp(msg->field) || !stringp(msg->value)) return 0;
 	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
 		form_data = cfg->forms[?msg->id]; if (!form_data) return;
 		if (msg->idx >= sizeof(form_data->elements)) return;
@@ -154,12 +154,16 @@ __async__ mapping|zero wscmd_edit_element(object channel, mapping(string:mixed) 
 			//Note that setting to the same name that it already has is going to
 			//look like a collision; but it wouldn't make any difference anyway,
 			//so it's okay to handle it as an error.
-			if (!stringp(msg->value) || msg->value == "" || sizeof(msg->value) > 25) return;
+			if (msg->value == "" || sizeof(msg->value) > 25) return;
 			if (has_value(form_data->elements->name, msg->value)) return;
 			el->name = msg->value;
 			form_data = 0; return; //Signal acceptance of the edit
 		}
-		//else check a type-specific whitelist and possibly data type validation
+		else if (function validator = element_attributes[el->type][msg->field]) {
+			if (!validator(msg->value)) return;
+			el[msg->field] = msg->value;
+			form_data = 0; return;
+		}
 	});
 	send_updates_all(channel, "");
 	if (form_data) return (["cmd": "openform", "form_data": form_data]);
@@ -178,6 +182,8 @@ __async__ mapping|zero wscmd_delete_element(object channel, mapping(string:mixed
 	send_updates_all(channel, "");
 	return (["cmd": "openform", "form_data": form_data]);
 }
+
+bool type_string(string value) {return 1;}
 
 constant command_description = "Grant form fillout";
 constant builtin_name = "Form fillout";
