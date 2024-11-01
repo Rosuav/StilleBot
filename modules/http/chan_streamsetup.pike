@@ -228,6 +228,7 @@ __async__ void wscmd_applysetup(object channel, mapping(string:mixed) conn, mapp
 		(["method": "PATCH", "json": params, "return_errors": 1]),
 	));
 	//TODO: Report errors
+	if (ret->error) werror("UNABLE TO UPDATE STREAM SETUP %O: %O\n", channel, ret);
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "prevsetup", "setup": prev])));
 }
 
