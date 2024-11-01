@@ -12,6 +12,7 @@ constant markdown = #"# Forms for $$channel$$
 > ### Edit form
 >
 > $$formfields$$
+> [Link to form](form?form=FORMID :#viewform target=_blank) (only while form is open)<br>
 > [View form responses](form?responses=FORMID :#viewresp target=_blank) (opens in new window)<br>
 > [Delete form](:#delete_form)
 >
@@ -94,18 +95,19 @@ array formfields = ({
 	({"is_open", "type=checkbox", "Open form"}),
 });
 
-array _element_types = ({
+array _element_types = ({ //Search for _element_types in this and the JS to find places to add more
 	({"twitchid", "Twitch username"}), //If mandatory, will force user to be logged in to submit
 	({"simple", "Text input"}),
 	({"paragraph", "Paragraph input"}),
 	({"address", "Street address"}),
-	({"radio", "Selection (radio) buttons"}),
-	({"checkbox", "Check box(es)"}),
+	({"radio", "Selection (radio) buttons"}), //Should generally be made mandatory
+	({"checkbox", "Check box(es)"}), //If mandatory, at least one checkbox must be selected (but more than one may be)
 });
 mapping element_types = (mapping)_element_types;
-mapping element_attributes = ([
+mapping element_attributes = ([ //Matches _element_types
 	"simple": (["label": type_string]),
 	"paragraph": (["label": type_string]),
+	"checkbox": (["label[]": type_string]),
 ]);
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
@@ -153,7 +155,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		string formdata = "";
 		foreach (form->elements, mapping el) {
 			string|zero elem = 0;
-			switch (el->type) {
+			switch (el->type) { //Matches _element_types
 				case "simple":
 					elem = sprintf("<label><span>%s</span> <input name=%q></label>",
 						el->label, "field-" + el->name,
@@ -164,6 +166,15 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 						el->label, "field-" + el->name,
 					);
 					break;
+				case "checkbox": {
+					elem = "<ul>";
+					if (el->label) foreach (el->label; int i; string l)
+						elem += sprintf("<li><label><input type=checkbox name=%q> %s</label></li>",
+							"field-" + el->name, l,
+						);
+					elem += "</ul>";
+					break;
+				}
 				default: break;
 			}
 			if (elem) formdata += sprintf("<section id=%q>%s</section>\n", "field-" + el->name, elem);
@@ -294,7 +305,7 @@ __async__ void wscmd_add_element(object channel, mapping(string:mixed) conn, map
 
 __async__ void wscmd_edit_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping|zero form_data;
-	if (!intp(msg->idx) || msg->idx < 0 || !stringp(msg->field) || !stringp(msg->value)) return;
+	if (!intp(msg->idx) || msg->idx < 0 || !stringp(msg->field) || !stringp(msg->value) || msg->field == "") return;
 	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
 		form_data = cfg->forms[?msg->id]; if (!form_data) return;
 		if (msg->idx >= sizeof(form_data->elements)) return;
@@ -309,13 +320,24 @@ __async__ void wscmd_edit_element(object channel, mapping(string:mixed) conn, ma
 			el->name = msg->value;
 			form_data = 0; return; //Signal acceptance of the edit
 		}
+		else if (msg->field[-1] == ']') {
+			sscanf(msg->field, "%s[%d]", string basename, int idx);
+			if (msg->field != sprintf("%s[%d]", basename, idx)) return; //Strict formatting, no extra zeroes or anything
+			function validator = element_attributes[el->type][basename + "[]"];
+			if (!validator || !validator(msg->value)) return;
+			if (!arrayp(el[basename])) el[basename] = ({ });
+			while (sizeof(el[basename]) <= idx) el[basename] += ({""});
+			el[basename][idx] = msg->value;
+			el[basename] -= ({""}); //Set to blank to delete an entry
+			form_data = 0; return;
+		}
 		else if (function validator = element_attributes[el->type][msg->field]) {
 			if (!validator(msg->value)) return;
 			el[msg->field] = msg->value;
 			form_data = 0; return;
 		}
 	});
-	if (form_data) send_updates_all(channel, "");
+	if (!form_data) send_updates_all(channel, "");
 }
 
 __async__ void wscmd_delete_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {

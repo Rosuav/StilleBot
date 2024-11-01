@@ -1,5 +1,5 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, DIV, INPUT, LABEL, LI, P, PRE, TD, TIME, TR} = choc; //autoimport
+const {BUTTON, DIV, INPUT, LABEL, LI, P, PRE, TD, TIME, TR, UL} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 function format_time(ts) {
@@ -21,7 +21,7 @@ export const autorender = {
 	]));},
 }
 
-const render_element = {
+const render_element = { //Matches _element_types (see Pike code)
 	"": el => P("Unknown element type - something went wrong - " + el.type),
 	//({"twitchid", "Twitch username"}), //If mandatory, will force user to be logged in to submit
 	simple: el => [ //extcall
@@ -33,10 +33,21 @@ const render_element = {
 		P("Paragraph input"),
 		LABEL(["Label: ", INPUT({name: "label", value: el.label || ""}), " - shown in the form"]),
 	],
-	//({"paragraph", "Paragraph input"}),
 	//({"address", "Street address"}),
 	//({"radio", "Selection (radio) buttons"}),
-	//({"checkbox", "Check box(es)"}),
+	checkbox: el => [ //extcall
+		P("Set of checkboxes"),
+		UL([
+			(el.label || []).map((l, i) =>
+				LI([
+					LABEL(["Label " + (i+1) + ": ", INPUT({name: "label[" + i + "]", value: l || ""})]),
+					" ",
+					BUTTON({type: "button", class: "deletefield", "data-field": "label[" + i + "]"}, "x"),
+				])
+			),
+			LI(LABEL(["Add label: ", INPUT({name: "label[" + (el.label || []).length + "]", value: ""})])),
+		]),
+	],
 };
 
 let editing = null;
@@ -47,6 +58,7 @@ function openform(f) {
 		if (el.type === "checkbox") el.checked = !!f[key];
 		else el.value = f[key] || "";
 	});
+	DOM("#viewform").href = "form?form=" + f.id;
 	DOM("#viewresp").href = "form?responses=" + f.id;
 	set_content("#formelements", (f.elements||[]).map((el, idx) => DIV({class: "element", "data-idx": idx}, [
 		DIV({class: "header"}, [
@@ -88,6 +100,8 @@ on("click", "#delete_form", simpleconfirm("Are you sure? This cannot be undone!"
 }));
 
 on("change", ".element input", e => ws_sync.send({cmd: "edit_element", id: editing, idx: +e.match.closest_data("idx"), field: e.match.name, value: e.match.value}));
+
+on("click", ".element .deletefield", e => ws_sync.send({cmd: "edit_element", id: editing, idx: +e.match.closest_data("idx"), field: e.match.dataset.field, value: ""}));
 
 on("click", ".showresponse", e => {
 	const r = e.match.resp_data;
