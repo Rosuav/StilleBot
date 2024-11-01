@@ -61,6 +61,12 @@ label span {
 </style>
 ";
 
+constant formcloser = #"# $$formtitle$$
+
+Thank you for filling out this form! (TODO: Let the broadcaster customize this text.)
+
+";
+
 array formfields = ({
 	({"id", "readonly", "Form ID"}),
 	({"formtitle", "", "Title"}),
@@ -99,6 +105,9 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		}
 		if (req->request_type == "POST") {
 			werror("Variables: %O\n", req->variables);
+			return render_template(formcloser, ([
+				"formtitle": form->formtitle,
+			]));
 		}
 		string formdata = "";
 		foreach (form->elements, mapping el) {
