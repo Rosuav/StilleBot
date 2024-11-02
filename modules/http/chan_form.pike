@@ -64,6 +64,9 @@ label span {
 	font-weight: bold;
 	display: inline-block;
 }
+.required { /* The marker that follows a required field, not to be confused with input:required */
+	color: red;
+}
 </style>
 ";
 
@@ -168,20 +171,27 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			]));
 			switch (el->type) { //Matches _element_types
 				case "simple":
-					elem = sprintf("<label><span>%s</span> <input name=%q></label>",
+					elem = sprintf("<label><span>%s</span> <input name=%q%s>%s</label>",
 						el->label, "field-" + el->name,
+						el->required ? " required" : "",
+						el->required ? " <span class=required title=Required>\\*</span>" : "",
 					);
 					break;
 				case "paragraph":
-					elem = sprintf("<label><span>%s</span> <textarea name=%q rows=8 cols=80></textarea></label>",
-						el->label, "field-" + el->name,
+					elem = sprintf("<label><span>%s</span>%s<br><textarea name=%q rows=8 cols=80%s></textarea></label>",
+						el->label,
+						el->required ? " <span class=required title=Required>\\*</span>" : "",
+						"field-" + el->name,
+						el->required ? " required" : "",
 					);
 					break;
 				case "checkbox": {
 					elem = "<ul>";
 					if (el->label) foreach (el->label; int i; string l)
-						elem += sprintf("<li><label><input type=checkbox name=%q> %s</label></li>",
+						elem += sprintf("<li><label><input%s type=checkbox name=%q> %s%s</label></li>",
+							el->required ? " required" : "",
 							"field-" + el->name, l,
+							el->required ? " <span class=required title=Required>\\*</span>" : "",
 						);
 					elem += "</ul>";
 					break;
