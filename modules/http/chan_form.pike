@@ -346,6 +346,20 @@ __async__ void wscmd_edit_element(object channel, mapping(string:mixed) conn, ma
 	if (!form_data) send_updates_all(channel, "");
 }
 
+__async__ void wscmd_move_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!intp(msg->idx) || msg->idx < 0 || !intp(msg->dir) || !msg->dir) return;
+	int other = msg->idx + msg->dir;
+	if (other < 0) return; //Normally dir will be -1 or 1, but in theory, you could fiddle and send a -2, which is okay but weird
+	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
+		mapping form_data = cfg->forms[?msg->id]; if (!form_data) return;
+		if (msg->idx >= sizeof(form_data->elements) || other >= sizeof(form_data->elements)) return;
+		mapping tmp = form_data->elements[msg->idx];
+		form_data->elements[msg->idx] = form_data->elements[other];
+		form_data->elements[other] = tmp;
+	});
+	send_updates_all(channel, "");
+}
+
 __async__ void wscmd_delete_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping form_data;
 	if (!intp(msg->idx) || msg->idx < 0) return 0;

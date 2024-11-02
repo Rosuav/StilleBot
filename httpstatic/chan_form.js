@@ -67,8 +67,8 @@ function openform(f) {
 	set_content("#formelements", (f.elements||[]).map((el, idx) => DIV({class: "element", "data-idx": idx}, [
 		DIV({class: "header"}, [
 			LABEL(["Field name: ", INPUT({name: "name", value: el.name || ""}), " - must be unique"]),
-			BUTTON({class: "moveup", type: "button", disabled: true}, "Up"),
-			BUTTON({class: "movedn", type: "button", disabled: true}, "Dn"),
+			BUTTON({class: "moveelement", type: "button", "data-dir": -1, disabled: idx === 0}, "Up"),
+			BUTTON({class: "moveelement", type: "button", "data-dir":  1, disabled: idx === f.elements.length - 1}, "Dn"),
 			BUTTON({class: "delelement", type: "button"}, "x"),
 		]),
 		(render_element[el.type] || render_element[""])(el),
@@ -97,6 +97,8 @@ on("click", "#addelement", e => {
 });
 
 on("click", ".delelement", e => ws_sync.send({cmd: "delete_element", id: editing, idx: +e.match.closest_data("idx")}));
+
+on("click", ".moveelement", e => ws_sync.send({cmd: "move_element", id: editing, idx: +e.match.closest_data("idx"), dir: +e.match.dataset.dir}));
 
 on("click", "#delete_form", simpleconfirm("Are you sure? This cannot be undone!", e => {
 	ws_sync.send({cmd: "delete_form", id: editing});
