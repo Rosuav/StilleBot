@@ -137,30 +137,47 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			//TODO: Return a nicer page saying that the form is closed.
 			return 0;
 		}
+		multiset missing = (<>); //If anything is missing, we'll rerender the form
 		if (req->request_type == "POST") {
 			werror("Variables: %O\n", req->variables);
 			mapping fields = ([]);
 			foreach (form->elements, mapping el) {
-				string|zero val = req->variables["field-" + el->name];
-				//TODO: If field is required and absent, reject
-				//TODO: Reformat as required, eg address input
-				fields[el->name] = val;
+				switch (el->type) { //_element_types
+					case "checkbox": {
+						if (el->label) foreach (el->label; int i; string l) {
+							string field = "field-" + el->name + (-i || ""); //Must match the field generation below
+							if (el->required && !req->variables[field]) missing[field] = 1;
+							else if (req->variables[field]) fields[field] = 1;
+						}
+						break;
+					}
+					//case "address": //Reformat into a single string
+					default: {
+						string|zero val = req->variables["field-" + el->name];
+						if (el->required && (!val || val == "")) missing[el->name] = 1;
+						else fields[el->name] = val;
+					}
+				}
 			}
-			mapping response = ([
-				"timestamp": time(),
-				"fields": fields,
-				"ip": req->get_ip(),
-			]);
-			if (nonce) response->nonce = nonce;
-			await(G->G->DB->mutate_config(req->misc->channel->userid, "formresponses") {mapping resp = __ARGS__[0];
-				if (!resp[formid]) resp[formid] = ([]);
-				resp[formid]->responses += ({response});
-				if (resp[formid]->nonces) m_delete(resp[formid]->nonces, nonce);
-			});
-			return render_template(formcloser, ([
-				"formtitle": form->formtitle,
-			]) | req->misc->chaninfo);
+			if (!sizeof(missing)) {
+				mapping response = ([
+					"timestamp": time(),
+					"fields": fields,
+					"ip": req->get_ip(),
+				]);
+				if (nonce) response->nonce = nonce;
+				await(G->G->DB->mutate_config(req->misc->channel->userid, "formresponses") {mapping resp = __ARGS__[0];
+					if (!resp[formid]) resp[formid] = ([]);
+					resp[formid]->responses += ({response});
+					if (resp[formid]->nonces) m_delete(resp[formid]->nonces, nonce);
+				});
+				return render_template(formcloser, ([
+					"formtitle": form->formtitle,
+				]) | req->misc->chaninfo);
+			}
+			//Else we fall through and rerender the form.
 		}
+		//TODO: Prepopulate the form with req->variables on rerender
 		string formdata = "";
 		foreach (form->elements, mapping el) {
 			string|zero elem = 0;
@@ -174,25 +191,31 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 					elem = sprintf("<label><span>%s</span> <input name=%q%s>%s</label>",
 						el->label, "field-" + el->name,
 						el->required ? " required" : "",
-						el->required ? " <span class=required title=Required>\\*</span>" : "",
+						missing[el->name] ? " <span class=required title=Required>\\* Please enter something</span>" :
+							el->required ? " <span class=required title=Required>\\*</span>" : "",
 					);
 					break;
 				case "paragraph":
 					elem = sprintf("<label><span>%s</span>%s<br><textarea name=%q rows=8 cols=80%s></textarea></label>",
 						el->label,
-						el->required ? " <span class=required title=Required>\\*</span>" : "",
+						missing[el->name] ? " <span class=required title=Required>\\* Please enter something</span>" :
+							el->required ? " <span class=required title=Required>\\*</span>" : "",
 						"field-" + el->name,
 						el->required ? " required" : "",
 					);
 					break;
 				case "checkbox": {
 					elem = "<ul>";
-					if (el->label) foreach (el->label; int i; string l)
+					if (el->label) foreach (el->label; int i; string l) {
+						//"field-foo-1", "field-foo-2", etc but leave the first one unadorned
+						string field = "field-" + el->name + (-i || ""); //Must match the form response handling above
 						elem += sprintf("<li><label><input%s type=checkbox name=%q> %s%s</label></li>",
 							el->required ? " required" : "",
-							"field-" + el->name, l,
-							el->required ? " <span class=required title=Required>\\*</span>" : "",
+							field, l, 
+							missing[field] ? " <span class=required title=Required>\\* This must be checked</span>" :
+								el->required ? " <span class=required title=Required>\\*</span>" : "",
 						);
+					}
 					elem += "</ul>";
 					break;
 				}
