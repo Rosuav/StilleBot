@@ -1,5 +1,5 @@
-import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DIV, INPUT, LABEL, LI, P, PRE, SPAN, TD, TEXTAREA, TIME, TR, UL} = choc; //autoimport
+import {choc, lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
+const {BR, BUTTON, DIV, INPUT, LABEL, LI, P, PRE, SPAN, TD, TEXTAREA, TIME, TR, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 function format_time(ts) {
@@ -13,10 +13,10 @@ function format_time(ts) {
 
 export const autorender = {
 	form_parent: DOM("#forms"),
-	form(f) {return LI({"data-id": f.id, class: "openform", ".form_data": f}, [ //extcall
+	form(f) {return choc.LI({"data-id": f.id, class: "openform", ".form_data": f}, [
 		f.id, " ", f.formtitle,
 	]);},
-	form_empty() {return DOM("#forms").appendChild(LI([
+	form_empty() {return DOM("#forms").appendChild(choc.LI([
 		"No forms yet - create one!",
 	]));},
 }
@@ -71,7 +71,7 @@ function openform(f) {
 	});
 	DOM("#viewform").href = "form?form=" + f.id;
 	DOM("#viewresp").href = "form?responses=" + f.id;
-	set_content("#formelements", (f.elements||[]).map((el, idx) => DIV({class: "element", "data-idx": idx}, [
+	replace_content("#formelements", (f.elements||[]).map((el, idx) => DIV({class: "element", "data-idx": idx}, [
 		DIV({class: "header"}, [
 			LABEL(["Field name: ", INPUT({name: "name", value: el.name || ""}), " - must be unique"]),
 			BUTTON({class: "moveelement", type: "button", "data-dir": -1, disabled: idx === 0}, "Up"),
@@ -88,7 +88,7 @@ on("click", "#createform", e => ws_sync.send({cmd: "create_form"}));
 export function sockmsg_openform(msg) {openform(msg.form_data);}
 export function render(data) {
 	if (data.forms) data.forms.forEach(f => f.id === editing && openform(f));
-	if (data.responses) set_content("#responses tbody", data.responses.map(r => TR([
+	if (data.responses) replace_content("#responses tbody", data.responses.map(r => TR([
 		TD(format_time(r.permitted)),
 		TD(format_time(r.timestamp)),
 		TD(),
@@ -129,7 +129,7 @@ on("click", ".showresponse", e => {
 		}
 		else el.value = "";
 	});
-	set_content("#formresponse", (formdata.elements||[]).map((el, idx) => DIV({class: "element"}, [
+	replace_content("#formresponse", (formdata.elements||[]).map((el, idx) => DIV({class: "element"}, [
 		DIV({class: "header"}, [
 			"Field name: ", el.name
 		]),
