@@ -24,7 +24,7 @@ export const autorender = {
 const render_element = { //Matches _element_types (see Pike code)
 	"": (el, lbl) => [ //Defaults that are used by the majority of elements
 		P(lbl || "Unknown element type - something went wrong - " + el.type),
-		TEXTAREA({name: "text", value: el.text || "", rows: 2, cols: 80}), BR(),
+		LABEL(["Description:", BR(), TEXTAREA({name: "text", value: el.text || "", rows: 2, cols: 80}), BR()]),
 	],
 	//({"twitchid", "Twitch username"}), //If mandatory, will force user to be logged in to submit
 	simple: el => [ //extcall
@@ -54,7 +54,7 @@ const render_element = { //Matches _element_types (see Pike code)
 	text: el => [ //extcall
 		//Not using render_element[""]() as we want to vary this a little
 		P("Informational text - supports Markdown"),
-		TEXTAREA({name: "text", value: el.text || "", rows: 10, cols: 80}),
+		LABEL(["Description:", BR(), TEXTAREA({name: "text", value: el.text || "", rows: 10, cols: 80})]),
 	],
 };
 
