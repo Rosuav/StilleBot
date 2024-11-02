@@ -34,6 +34,10 @@ constant markdown = #"# Forms for $$channel$$
 	margin: -0.5em; /* Put the background all the way to the black border */
 	padding: 0.5em; /* But still have the gap */
 }
+.element .topmatter {
+	display: flex;
+	justify-content: space-between;
+}
 </style>
 ";
 
@@ -313,7 +317,7 @@ __async__ void wscmd_add_element(object channel, mapping(string:mixed) conn, map
 
 __async__ void wscmd_edit_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping|zero form_data;
-	if (!intp(msg->idx) || msg->idx < 0 || !stringp(msg->field) || !stringp(msg->value) || msg->field == "") return;
+	if (!intp(msg->idx) || msg->idx < 0 || !stringp(msg->field) || (msg->field != "required" && !stringp(msg->value)) || msg->field == "") return;
 	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
 		form_data = cfg->forms[?msg->id]; if (!form_data) return;
 		if (msg->idx >= sizeof(form_data->elements)) return;
@@ -331,6 +335,13 @@ __async__ void wscmd_edit_element(object channel, mapping(string:mixed) conn, ma
 		else if (msg->field == "text") {
 			//All fields can have descriptive text.
 			el->text = msg->value;
+			form_data = 0; return;
+		}
+		else if (msg->field == "required") {
+			//All fields can be made Required. There are some (eg "text") where this has no
+			//effect, though, and their Required checkboxes are hidden on the front end; if
+			//you mess around and set its Required, we'll happily store it and do nothing.
+			if (msg->value) el->required = 1; else m_delete(el, "required");
 			form_data = 0; return;
 		}
 		else if (msg->field[-1] == ']') {

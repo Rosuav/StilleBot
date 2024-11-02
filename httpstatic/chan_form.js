@@ -1,5 +1,5 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DIV, INPUT, LABEL, LI, P, PRE, TD, TEXTAREA, TIME, TR, UL} = choc; //autoimport
+const {BR, BUTTON, DIV, INPUT, LABEL, LI, P, PRE, SPAN, TD, TEXTAREA, TIME, TR, UL} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 function format_time(ts) {
@@ -22,8 +22,11 @@ export const autorender = {
 }
 
 const render_element = { //Matches _element_types (see Pike code)
-	"": (el, lbl) => [ //Defaults that are used by the majority of elements
-		P(lbl || "Unknown element type - something went wrong - " + el.type),
+	"": (el, lbl) => [ //Defaults that are used by the majority of elements //extcall
+		P({class: "topmatter"}, [
+			SPAN(lbl || "Unknown element type - something went wrong - " + el.type),
+			LABEL([INPUT({type: "checkbox", name: "required", checked: !!el.required}), " Required"]),
+		]),
 		LABEL(["Description:", BR(), TEXTAREA({name: "text", value: el.text || "", rows: 2, cols: 80}), BR()]),
 	],
 	//({"twitchid", "Twitch username"}), //If mandatory, will force user to be logged in to submit
@@ -52,7 +55,7 @@ const render_element = { //Matches _element_types (see Pike code)
 		]),
 	],
 	text: el => [ //extcall
-		//Not using render_element[""]() as we want to vary this a little
+		//Not using render_element[""]() as we want to vary this a little (no "Required", larger description box)
 		P("Informational text - supports Markdown"),
 		LABEL(["Description:", BR(), TEXTAREA({name: "text", value: el.text || "", rows: 10, cols: 80})]),
 	],
@@ -109,7 +112,10 @@ on("click", "#delete_form", simpleconfirm("Are you sure? This cannot be undone!"
 	DOM("#editformdlg").close();
 }));
 
-on("change", ".element input,.element textarea", e => ws_sync.send({cmd: "edit_element", id: editing, idx: +e.match.closest_data("idx"), field: e.match.name, value: e.match.value}));
+on("change", ".element input,.element textarea", e => ws_sync.send({
+	cmd: "edit_element", id: editing, idx: +e.match.closest_data("idx"),
+	field: e.match.name, value: e.match.type === "checkbox" ? e.match.checked : e.match.value,
+}));
 
 on("click", ".element .deletefield", e => ws_sync.send({cmd: "edit_element", id: editing, idx: +e.match.closest_data("idx"), field: e.match.dataset.field, value: ""}));
 
