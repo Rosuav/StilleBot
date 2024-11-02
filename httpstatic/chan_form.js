@@ -1,5 +1,5 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, DIV, INPUT, LABEL, LI, P, PRE, TD, TEXTAREA, TIME, TR, UL} = choc; //autoimport
+const {BR, BUTTON, DIV, INPUT, LABEL, LI, P, PRE, TD, TEXTAREA, TIME, TR, UL} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 function format_time(ts) {
@@ -26,17 +26,20 @@ const render_element = { //Matches _element_types (see Pike code)
 	//({"twitchid", "Twitch username"}), //If mandatory, will force user to be logged in to submit
 	simple: el => [ //extcall
 		P("Text input"),
+		TEXTAREA({name: "text", value: el.text || "", rows: 2, cols: 80}), BR(),
 		LABEL(["Label: ", INPUT({name: "label", value: el.label || ""}), " - shown in the form"]),
 		//Type (numeric/text)?
 	],
 	paragraph: el => [ //extcall
 		P("Paragraph input"),
+		TEXTAREA({name: "text", value: el.text || "", rows: 2, cols: 80}), BR(),
 		LABEL(["Label: ", INPUT({name: "label", value: el.label || ""}), " - shown in the form"]),
 	],
 	//({"address", "Street address"}),
 	//({"radio", "Selection (radio) buttons"}),
 	checkbox: el => [ //extcall
 		P("Set of checkboxes"),
+		TEXTAREA({name: "text", value: el.text || "", rows: 2, cols: 80}), BR(),
 		UL([
 			(el.label || []).map((l, i) =>
 				LI([

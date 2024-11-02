@@ -109,7 +109,7 @@ mapping element_attributes = ([ //Matches _element_types
 	"simple": (["label": type_string]),
 	"paragraph": (["label": type_string]),
 	"checkbox": (["label[]": type_string]),
-	"text": (["text": type_string]),
+	"text": ([]), //No special attributes, only the universal ones
 ]);
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
@@ -157,6 +157,11 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		string formdata = "";
 		foreach (form->elements, mapping el) {
 			string|zero elem = 0;
+			string text = "";
+			if (el->text && el->text != "") text = Tools.Markdown.parse(el->text, ([
+				"renderer": Renderer, "lexer": Lexer,
+				"attributes": 1,
+			]));
 			switch (el->type) { //Matches _element_types
 				case "simple":
 					elem = sprintf("<label><span>%s</span> <input name=%q></label>",
@@ -177,13 +182,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 					elem += "</ul>";
 					break;
 				}
-				case "text": elem = Tools.Markdown.parse(el->text, ([
-					"renderer": Renderer, "lexer": Lexer,
-					"attributes": 1,
-				])); break;
+				case "text": elem = ""; break; //Descriptive text - no actual form controls
 				default: break;
 			}
-			if (elem) formdata += sprintf("<section id=%q>%s</section>\n", "field-" + el->name, elem);
+			if (elem) formdata += sprintf("<section id=%q>%s%s</section>\n", "field-" + el->name, text, elem);
 		}
 		return render_template(formview, ([
 			"formtitle": form->formtitle,
@@ -325,6 +327,11 @@ __async__ void wscmd_edit_element(object channel, mapping(string:mixed) conn, ma
 			if (has_value(form_data->elements->name, msg->value)) return;
 			el->name = msg->value;
 			form_data = 0; return; //Signal acceptance of the edit
+		}
+		else if (msg->field == "text") {
+			//All fields can have descriptive text.
+			el->text = msg->value;
+			form_data = 0; return;
 		}
 		else if (msg->field[-1] == ']') {
 			sscanf(msg->field, "%s[%d]", string basename, int idx);
