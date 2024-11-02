@@ -102,12 +102,14 @@ array _element_types = ({ //Search for _element_types in this and the JS to find
 	({"address", "Street address"}),
 	({"radio", "Selection (radio) buttons"}), //Should generally be made mandatory
 	({"checkbox", "Check box(es)"}), //If mandatory, at least one checkbox must be selected (but more than one may be)
+	({"text", "Informational text"}),
 });
 mapping element_types = (mapping)_element_types;
 mapping element_attributes = ([ //Matches _element_types
 	"simple": (["label": type_string]),
 	"paragraph": (["label": type_string]),
 	"checkbox": (["label[]": type_string]),
+	"text": (["text": type_string]),
 ]);
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
@@ -175,6 +177,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 					elem += "</ul>";
 					break;
 				}
+				case "text": elem = Tools.Markdown.parse(el->text, ([
+					"renderer": Renderer, "lexer": Lexer,
+					"attributes": 1,
+				])); break;
 				default: break;
 			}
 			if (elem) formdata += sprintf("<section id=%q>%s</section>\n", "field-" + el->name, elem);

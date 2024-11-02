@@ -1,5 +1,5 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, DIV, INPUT, LABEL, LI, P, PRE, TD, TIME, TR, UL} = choc; //autoimport
+const {BUTTON, DIV, INPUT, LABEL, LI, P, PRE, TD, TEXTAREA, TIME, TR, UL} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 function format_time(ts) {
@@ -47,6 +47,10 @@ const render_element = { //Matches _element_types (see Pike code)
 			),
 			LI(LABEL(["Add label: ", INPUT({name: "label[" + (el.label || []).length + "]", value: ""})])),
 		]),
+	],
+	text: el => [ //extcall
+		P("Informational text - supports Markdown"),
+		TEXTAREA({name: "text", value: el.text || "", rows: 10, cols: 80}),
 	],
 };
 
@@ -99,7 +103,7 @@ on("click", "#delete_form", simpleconfirm("Are you sure? This cannot be undone!"
 	DOM("#editformdlg").close();
 }));
 
-on("change", ".element input", e => ws_sync.send({cmd: "edit_element", id: editing, idx: +e.match.closest_data("idx"), field: e.match.name, value: e.match.value}));
+on("change", ".element input,.element textarea", e => ws_sync.send({cmd: "edit_element", id: editing, idx: +e.match.closest_data("idx"), field: e.match.name, value: e.match.value}));
 
 on("click", ".element .deletefield", e => ws_sync.send({cmd: "edit_element", id: editing, idx: +e.match.closest_data("idx"), field: e.match.dataset.field, value: ""}));
 
