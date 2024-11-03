@@ -2,6 +2,20 @@ inherit annotated;
 inherit hook;
 inherit http_websocket;
 inherit builtin_command;
+constant shared_styles = #"
+<style>
+label span {
+	min-width: 10em;
+	font-weight: bold;
+	display: inline-block;
+}
+img[alt=\"(avatar)\"] {
+	height: 40px;
+	vertical-align: middle;
+}
+</style>
+";
+
 constant markdown = #"# Forms for $$channel$$
 
 * loading...
@@ -38,13 +52,8 @@ constant markdown = #"# Forms for $$channel$$
 	display: flex;
 	justify-content: space-between;
 }
-label span {
-	min-width: 10em;
-	font-weight: bold;
-	display: inline-block;
-}
 </style>
-";
+" + shared_styles;
 
 constant formview = #"# $$formtitle$$
 
@@ -64,26 +73,17 @@ form section {
 textarea {
 	vertical-align: text-top;
 }
-label span {
-	min-width: 10em;
-	font-weight: bold;
-	display: inline-block;
-}
 .required { /* The marker that follows a required field, not to be confused with input:required */
 	color: red;
 }
-img[alt=\"(avatar)\"] {
-	height: 40px;
-	vertical-align: middle;
-}
 </style>
-";
+" + shared_styles;
 
 constant formcloser = #"# $$formtitle$$
 
 Thank you for filling out this form! (TODO: Let the broadcaster customize this text.)
 
-";
+" + shared_styles;
 
 constant formresponses = #"# Form responses
 
@@ -103,7 +103,7 @@ loading... | -
 > [Close](:.dialog_close)
 {: tag=dialog #responsedlg}
 
-";
+" + shared_styles;
 
 array formfields = ({
 	({"id", "readonly", "Form ID"}),

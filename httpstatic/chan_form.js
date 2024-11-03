@@ -1,5 +1,5 @@
 import {choc, lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DIV, INPUT, LABEL, LI, P, PRE, SPAN, TD, TEXTAREA, TIME, TR, UL} = lindt; //autoimport
+const {BR, BUTTON, DIV, IMG, INPUT, LABEL, LI, P, PRE, SPAN, TD, TEXTAREA, TIME, TR, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 function format_time(ts) {
@@ -9,6 +9,14 @@ function format_time(ts) {
 	//For anything today, just show the time. For something this week, "Thu 12:30".
 	//For something older than that, just show the date.
 	return TIME({datetime: t.toISOString(), title: t.toLocaleString()}, t.toLocaleString());
+}
+
+function format_user(u) {
+	if (!u) return "";
+	return [ //Should this be a link to the person's Twitch page?
+		IMG({src: u.profile_image_url, alt: "(avatar)"}),
+		u.display_name,
+	];
 }
 
 export const autorender = {
@@ -105,7 +113,7 @@ export function render(data) {
 	if (data.responses) replace_content("#responses tbody", data.responses.map(r => TR([
 		TD(format_time(r.permitted)),
 		TD(format_time(r.timestamp)),
-		TD(),
+		TD(format_user(r.submitted_by || r.authorized_for)),
 		TD(BUTTON({type: "button", class: "showresponse", ".resp_data": r}, "View")),
 	])));
 }
