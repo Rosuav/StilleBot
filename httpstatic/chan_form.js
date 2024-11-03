@@ -39,7 +39,16 @@ const render_element = { //Matches _element_types (see Pike code)
 		render_element[""](el, "Paragraph input"),
 		LABEL(["Label: ", INPUT({name: "label", value: el.label || ""}), " - shown in the form"]),
 	],
-	//({"address", "Street address"}),
+	address: el => [ //extcall
+		render_element[""](el, "Address"),
+		P("The labels for the fields may be changed as required."),
+		address_parts.map(([name, lbl]) =>
+			[LABEL([SPAN(lbl + ":"), INPUT({name: "label-" + name, value: el["label-" + name] || lbl})]), BR()]
+		),
+		P(["Note that this makes a number of assumptions which may not always be correct.", BR(),
+			"Depending on which country your mail is going to, it may be preferable to use a simple", BR(),
+			"paragraph input and allow the address to be written free-form."]),
+	],
 	//({"radio", "Selection (radio) buttons"}),
 	checkbox: el => [ //extcall
 		render_element[""](el, "Set of checkboxes"),

@@ -38,6 +38,11 @@ constant markdown = #"# Forms for $$channel$$
 	display: flex;
 	justify-content: space-between;
 }
+label span {
+	min-width: 10em;
+	font-weight: bold;
+	display: inline-block;
+}
 </style>
 ";
 
@@ -115,9 +120,26 @@ mapping element_types = (mapping)_element_types;
 mapping element_attributes = ([ //Matches _element_types
 	"simple": (["label": type_string]),
 	"paragraph": (["label": type_string]),
+	"address": ([
+		"label-name": type_string,
+		"label-street": type_string,
+		"label-city": type_string,
+		"label-state": type_string,
+		"label-postalcode": type_string,
+		"label-country": type_string,
+	]),
 	"checkbox": (["label[]": type_string]),
 	"text": ([]), //No special attributes, only the universal ones
 ]);
+array address_parts = ({
+	({"name", "Name"}),
+	({"street", "Street"}),
+	({"city", "City"}),
+	({"state", "State/Province"}),
+	({"postalcode", "Postal code"}),
+	({"country", "Country"}),
+});
+constant address_required = ({"name", "street", "city", "country"}); //If an address field is required, which parts are?
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	string|zero formid = req->variables->form;
@@ -151,7 +173,23 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 						}
 						break;
 					}
-					//case "address": //Reformat into a single string
+					case "address": {
+						mapping parts = ([]);
+						foreach (address_parts, [string name, string lbl]) {
+							string field = "field-" + el->name + "-" + name; //Again, must match the below
+							int reqd = el->required && has_value(address_required, name);
+							string|zero val = req->variables[field];
+							if (reqd && (!val || val == "")) missing[field] = 1;
+							else fields[field] = parts[name] = val;
+						}
+						//Also save the address as a single piece
+						fields[el->name] = sprintf("%s\n%s\n%s %s  %s\n%s\n",
+							parts->name || "",
+							parts->street || "",
+							parts->city || "", parts->state || "", parts->postalcode || "",
+							parts->country || "");
+						break;
+					}
 					default: {
 						string|zero val = req->variables["field-" + el->name];
 						if (el->required && (!val || val == "")) missing[el->name] = 1;
@@ -204,6 +242,20 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 						el->required ? " required" : "",
 					);
 					break;
+				case "address":
+					elem = "";
+					foreach (address_parts, [string name, string lbl]) {
+						if (el["label-" + name] && el["label-" + name] != "") lbl = el["label-" + name];
+						string field = "field-" + el->name + "-" + name;
+						int reqd = el->required && has_value(address_required, name);
+						elem += sprintf("<label><span>%s</span> <input name=%q%s>%s</label><br>",
+							lbl, field,
+							reqd ? " required" : "",
+							missing[field] ? " <span class=required title=Required>\\* Please enter something</span>" :
+								reqd ? " <span class=required title=Required>\\*</span>" : "",
+						);
+					}
+					break;
 				case "checkbox": {
 					elem = "<ul>";
 					if (el->label) foreach (el->label; int i; string l) {
@@ -246,7 +298,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			"vars": (["ws_group": formid + "#" + req->misc->channel->userid, "ws_type": ws_type, "formdata": form]),
 		]));
 	}
-	return render(req, (["vars": (["ws_group": ""]),
+	return render(req, (["vars": (["ws_group": "", "address_parts": address_parts]),
 		"formfields": sprintf("%{* <label>%[2]s: <input class=formmeta name=%[0]s %[1]s></label>\n> %}", formfields),
 		"elementtypes": sprintf("%{<option value=\"%s\">%s%}", _element_types),
 	]) | req->misc->chaninfo);
