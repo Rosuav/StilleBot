@@ -141,6 +141,19 @@ on("change", ".element input,.element textarea", e => ws_sync.send({
 
 on("click", ".element .deletefield", e => ws_sync.send({cmd: "edit_element", id: editing, idx: +e.match.closest_data("idx"), field: e.match.dataset.field, value: ""}));
 
+const view_element = { //Matches _element_types (see Pike code)
+	twitchid: (el, r) => format_user(r.submitted_by || r.authorized_for),
+	simple: (el, r) => [LABEL(SPAN(el.label)), PRE(r.fields[el.name])],
+	paragraph: (el, r) => [LABEL(SPAN(el.label)), BR(), PRE(r.fields[el.name])],
+	address: (el, r) => [LABEL(SPAN(el.label)), BR(), PRE(r.fields[el.name])],
+	checkbox: (el, r) => UL([
+		(el.label || []).map((l, i) => LI({class: r.fields["field-" + el.name + (-i || "")] ? "checkbox-checked" : "checkbox-unchecked"}, [
+			LABEL(SPAN(r.fields["field-" + el.name + (-i || "")] ? "Selected" : "Unselected")),
+			" ", l,
+		])),
+	]),
+};
+
 on("click", ".showresponse", e => {
 	const r = e.match.resp_data;
 	["permitted", "timestamp"].forEach(key => {
@@ -151,11 +164,9 @@ on("click", ".showresponse", e => {
 		}
 		else el.value = "";
 	});
-	replace_content("#formresponse", (formdata.elements||[]).map((el, idx) => DIV({class: "element"}, [
-		DIV({class: "header"}, [
-			"Field name: ", el.name
-		]),
-		PRE(r.fields[el.name]),
+	replace_content("#formresponse tbody", (formdata.elements||[]).map((el, idx) => view_element[el.type] && TR([
+		TD(el.name),
+		TD(view_element[el.type](el, r)),
 	])));
 	DOM("#responsedlg").showModal();
 });

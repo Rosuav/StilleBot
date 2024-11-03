@@ -97,12 +97,19 @@ loading... | -
 > <label><span>Permitted at:</span> <input readonly name=permitted></label><br>
 > <label><span>Submitted at:</span> <input readonly name=timestamp></label><br>
 >
-> loading...
+> Field | Response
+> ------|---------
+> loading... | -
 > {:#formresponse}
 >
 > [Close](:.dialog_close)
 {: tag=dialog #responsedlg}
 
+<style>
+.checkbox-unchecked { /* Test for readability and unobtrusiveness */
+	opacity: .75;
+}
+</style>
 " + shared_styles;
 
 array formfields = ({
