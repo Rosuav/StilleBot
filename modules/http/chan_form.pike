@@ -160,6 +160,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		mapping cfg = await(G->G->DB->load_config(req->misc->channel->userid, "forms"));
 		mapping form = cfg->forms[formid];
 		if (!form) return 0; //Bad form ID? Kick back a boring 404 page.
+		string|zero permitted_id = 0; //Set to eg "49497888" if a nonce was used and a user granted permission
 		if (!req->variables->nonce && !form->is_open) {
 			//TODO: Return a nicer page saying that the form is closed.
 			return 0;
@@ -170,6 +171,22 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			mapping fields = ([]);
 			foreach (form->elements, mapping el) {
 				switch (el->type) { //_element_types
+					case "twitchid": {
+						//There's no form element for this. If you're logged in, we use the session user.
+						//What we do here is all about the validation.
+						mapping|zero user = req->misc->session->user;
+						if (el->permitted_only && permitted_id && permitted_id != user->?id)
+							missing[el->name] = 1;
+						else if (user)
+							//If a user changes display name or avatar or something, this will show the
+							//credentials as of form submission; but since the ID's there, you can check
+							//to see what their current name is.
+							foreach (({"id", "login", "display_name", "profile_image_url"}), string key)
+								fields[el->name + "-" + key] = user[key];
+						else if (el->required)
+							missing[el->name] = 1;
+						break;
+					}
 					case "checkbox": {
 						if (el->label) foreach (el->label; int i; string l) {
 							string field = "field-" + el->name + (-i || ""); //Must match the field generation below
@@ -232,7 +249,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			switch (el->type) { //Matches _element_types
 				case "twitchid": {
 					mapping|zero user = req->misc->session->user;
-					string|zero permitted_id = 0; //Set to eg "49497888" if a nonce was used and a user granted permission
 					if (el->permitted_only && permitted_id) { //Kinda implies required. If the form is open, using the form ID bypasses this, but it still applies if a nonce is used.
 						if (user && permitted_id == user->id)
 							//It's only available to this user, so don't offer to change user.
