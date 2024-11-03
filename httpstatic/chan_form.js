@@ -110,7 +110,8 @@ on("click", "#createform", e => ws_sync.send({cmd: "create_form"}));
 export function sockmsg_openform(msg) {openform(msg.form_data);}
 export function render(data) {
 	if (data.forms) data.forms.forEach(f => f.id === editing && openform(f));
-	if (data.responses) replace_content("#responses tbody", data.responses.map(r => TR([
+	if (data.responses) replace_content("#responses tbody", data.responses.map((r, idx) => TR([
+		TD(INPUT({type: "checkbox", "data-idx": idx, class: "selectrow"})),
 		TD(format_time(r.permitted)),
 		TD(format_time(r.timestamp)),
 		TD(format_user(r.submitted_by || r.authorized_for)),
@@ -140,6 +141,24 @@ on("change", ".element input,.element textarea", e => ws_sync.send({
 }));
 
 on("click", ".element .deletefield", e => ws_sync.send({cmd: "edit_element", id: editing, idx: +e.match.closest_data("idx"), field: e.match.dataset.field, value: ""}));
+
+//Allow range selection of rows
+let last_clicked = null;
+on("click", ".selectrow", e => {
+	const state = e.match.checked;
+	if (e.shiftKey && last_clicked && last_clicked.checked === state) {
+		const pos = e.match.compareDocumentPosition(last_clicked);
+		let from, to;
+		if (pos & 2) {to = e.match.closest("tr"); from = last_clicked.closest("tr");}
+		else if (pos & 4) {from = e.match.closest("tr"); to = last_clicked.closest("tr");}
+		//Else something went screwy. Ignore the shift and just select this one.
+		for (;from && from !== to; from = from.nextSibling) {
+			const cb = from.querySelector(".selectrow");
+			if (cb) cb.checked = state;
+		}
+	}
+	last_clicked = e.match;
+});
 
 const view_element = { //Matches _element_types (see Pike code)
 	twitchid: (el, r) => format_user(r.submitted_by || r.authorized_for),

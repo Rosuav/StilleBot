@@ -87,8 +87,8 @@ Thank you for filling out this form! (TODO: Let the broadcaster customize this t
 
 constant formresponses = #"# Form responses
 
-Permitted | Submitted | Twitch user | Answers
-----------|-----------|-------------|---------
+&nbsp; | Permitted | Submitted | Twitch user | Answers
+-------|-----------|-----------|-------------|---------
 loading... | -
 {:#responses}
 
