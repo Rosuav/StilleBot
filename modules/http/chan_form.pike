@@ -340,7 +340,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		}
 		return render_template(formresponses, ([
 			"vars": (["ws_group": formid + "#" + req->misc->channel->userid, "ws_type": ws_type, "formdata": form]),
-		]));
+		]) | req->misc->chaninfo);
 	}
 	return render(req, (["vars": (["ws_group": "", "address_parts": address_parts]),
 		"formfields": sprintf("%{* <label>%[2]s: <input class=formmeta name=%[0]s %[1]s></label>\n> %}", formfields),
