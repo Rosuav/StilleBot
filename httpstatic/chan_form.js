@@ -145,7 +145,7 @@ const view_element = { //Matches _element_types (see Pike code)
 	twitchid: (el, r) => format_user(r.submitted_by || r.authorized_for),
 	simple: (el, r) => [LABEL(SPAN(el.label)), PRE(r.fields[el.name])],
 	paragraph: (el, r) => [LABEL(SPAN(el.label)), BR(), PRE(r.fields[el.name])],
-	address: (el, r) => [LABEL(SPAN(el.label)), BR(), PRE(r.fields[el.name])],
+	address: (el, r) => PRE(r.fields[el.name]),
 	checkbox: (el, r) => UL([
 		(el.label || []).map((l, i) => LI({class: r.fields["field-" + el.name + (-i || "")] ? "checkbox-checked" : "checkbox-unchecked"}, [
 			LABEL(SPAN(r.fields["field-" + el.name + (-i || "")] ? "Selected" : "Unselected")),
