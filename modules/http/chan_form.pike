@@ -239,6 +239,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 					resp[formid]->responses += ({response});
 					if (resp[formid]->nonces) m_delete(resp[formid]->nonces, nonce);
 				});
+				send_updates_all(req->misc->channel, formid);
 				return render_template(formcloser, ([
 					"formtitle": form->formtitle,
 				]) | req->misc->chaninfo);
