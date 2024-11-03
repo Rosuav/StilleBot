@@ -168,6 +168,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		multiset missing = (<>); //If anything is missing, we'll rerender the form
 		if (req->request_type == "POST") {
 			werror("Variables: %O\n", req->variables);
+			mapping response = ([
+				"timestamp": time(),
+				"ip": req->get_ip(),
+			]);
 			mapping fields = ([]);
 			foreach (form->elements, mapping el) {
 				switch (el->type) { //_element_types
@@ -180,9 +184,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 						else if (user)
 							//If a user changes display name or avatar or something, this will show the
 							//credentials as of form submission; but since the ID's there, you can check
-							//to see what their current name is.
-							foreach (({"id", "login", "display_name", "profile_image_url"}), string key)
-								fields[el->name + "-" + key] = user[key];
+							//to see what their current name is. Note also that this does not save into
+							//fields[] but directly into response[], and having more than one twitchid
+							//field is useless (they both look in the same session anyway).
+							response->submitted_by = user & (<"id", "login", "display_name", "profile_image_url">);
 						else if (el->required)
 							missing[el->name] = 1;
 						break;
@@ -220,11 +225,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 				}
 			}
 			if (!sizeof(missing)) {
-				mapping response = ([
-					"timestamp": time(),
-					"fields": fields,
-					"ip": req->get_ip(),
-				]);
+				response->fields = fields;
 				if (nonce) response->nonce = nonce;
 				await(G->G->DB->mutate_config(req->misc->channel->userid, "formresponses") {mapping resp = __ARGS__[0];
 					if (!resp[formid]) resp[formid] = ([]);
