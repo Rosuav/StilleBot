@@ -402,24 +402,25 @@ __async__ void wscmd_add_element(object channel, mapping(string:mixed) conn, map
 
 __async__ void wscmd_edit_element(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping|zero form_data;
-	if (!intp(msg->idx) || msg->idx < 0 || !stringp(msg->field) || (msg->field != "required" && !stringp(msg->value)) || msg->field == "") return;
+	if (!intp(msg->idx) || msg->idx < 0 || !stringp(msg->field) || msg->field == "") return;
 	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
 		form_data = cfg->forms[?msg->id]; if (!form_data) return;
 		if (msg->idx >= sizeof(form_data->elements)) return;
 		mapping el = form_data->elements[msg->idx];
+		string val = msg->value ? (string)msg->value : "";
 		if (msg->field == "name") {
 			//Special-case: Names must be unique and non-blank
 			//Note that setting to the same name that it already has is going to
 			//look like a collision; but it wouldn't make any difference anyway,
 			//so it's okay to handle it as an error.
-			if (msg->value == "" || sizeof(msg->value) > 25) return;
-			if (has_value(form_data->elements->name, msg->value)) return;
-			el->name = msg->value;
+			if (val == "" || sizeof(val) > 25) return;
+			if (has_value(form_data->elements->name, val)) return;
+			el->name = val;
 			form_data = 0; return; //Signal acceptance of the edit
 		}
 		else if (msg->field == "text") {
 			//All fields can have descriptive text.
-			el->text = msg->value;
+			el->text = val;
 			form_data = 0; return;
 		}
 		else if (msg->field == "required") {
@@ -433,16 +434,16 @@ __async__ void wscmd_edit_element(object channel, mapping(string:mixed) conn, ma
 			sscanf(msg->field, "%s[%d]", string basename, int idx);
 			if (msg->field != sprintf("%s[%d]", basename, idx)) return; //Strict formatting, no extra zeroes or anything
 			function validator = element_attributes[el->type][basename + "[]"];
-			if (!validator || !validator(msg->value)) return;
+			if (!validator || !validator(val)) return;
 			if (!arrayp(el[basename])) el[basename] = ({ });
 			while (sizeof(el[basename]) <= idx) el[basename] += ({""});
-			el[basename][idx] = msg->value;
+			el[basename][idx] = val;
 			el[basename] -= ({""}); //Set to blank to delete an entry
 			form_data = 0; return;
 		}
 		else if (function validator = element_attributes[el->type][msg->field]) {
-			if (!validator(msg->value)) return;
-			el[msg->field] = msg->value;
+			if (!validator(val)) return;
+			el[msg->field] = val;
 			form_data = 0; return;
 		}
 	});
