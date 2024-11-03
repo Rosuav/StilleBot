@@ -72,6 +72,10 @@ label span {
 .required { /* The marker that follows a required field, not to be confused with input:required */
 	color: red;
 }
+img[alt=\"(avatar)\"] {
+	height: 40px;
+	vertical-align: middle;
+}
 </style>
 ";
 
@@ -112,12 +116,13 @@ array _element_types = ({ //Search for _element_types in this and the JS to find
 	({"simple", "Text input"}),
 	({"paragraph", "Paragraph input"}),
 	({"address", "Street address"}),
-	({"radio", "Selection (radio) buttons"}), //Should generally be made mandatory
+	//({"radio", "Selection (radio) buttons"}), //Should generally be made mandatory
 	({"checkbox", "Check box(es)"}), //If mandatory, at least one checkbox must be selected (but more than one may be)
 	({"text", "Informational text"}),
 });
 mapping element_types = (mapping)_element_types;
 mapping element_attributes = ([ //Matches _element_types
+	"twitchid": (["permitted_only": type_boolean]),
 	"simple": (["label": type_string]),
 	"paragraph": (["label": type_string]),
 	"address": ([
@@ -225,6 +230,28 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 				"attributes": 1,
 			]));
 			switch (el->type) { //Matches _element_types
+				case "twitchid": {
+					mapping|zero user = req->misc->session->user;
+					string|zero permitted_id = 0; //Set to eg "49497888" if a nonce was used and a user granted permission
+					if (el->permitted_only && permitted_id) { //Kinda implies required. If the form is open, using the form ID bypasses this, but it still applies if a nonce is used.
+						if (user && permitted_id == user->id)
+							//It's only available to this user, so don't offer to change user.
+							elem = sprintf("You are currently logged in as ![(avatar)](%s) %s.",
+								user->profile_image_url, user->display_name);
+						else if (user)
+							elem = sprintf("You are currently logged in as ![(avatar)](%s) %s. This form was granted to another user. [Change user](:.twitchlogin)",
+								user->profile_image_url, user->display_name);
+						else
+							elem = "This form was granted to a specific Twitch user; you are not currently logged in. [Confirm identity](:.twitchlogin)";
+					} else if (user)
+						elem = sprintf("You are currently logged in as ![(avatar)](%s) %s. Not you? [Change user](:.twitchlogin)",
+							user->profile_image_url, user->display_name);
+					else if (el->required)
+						elem = "You are not currently logged in. [Confirm identity](:.twitchlogin) to submit this form.";
+					else
+						elem = "You are not currently logged in. If you wish, [confirm identity](:.twitchlogin) to include this with the form.";
+					break;
+				}
 				case "simple":
 					elem = sprintf("<label><span>%s</span> <input name=%q%s>%s</label>",
 						el->label, "field-" + el->name,
@@ -443,7 +470,8 @@ __async__ void wscmd_edit_element(object channel, mapping(string:mixed) conn, ma
 		}
 		else if (function validator = element_attributes[el->type][msg->field]) {
 			if (!validator(val)) return;
-			el[msg->field] = val;
+			if (validator == type_boolean) el[msg->field] = val == "1";
+			else el[msg->field] = val;
 			form_data = 0; return;
 		}
 	});
@@ -478,6 +506,7 @@ __async__ void wscmd_delete_element(object channel, mapping(string:mixed) conn, 
 }
 
 bool type_string(string value) {return 1;}
+bool type_boolean(string value) {return value == "1" || value == "0" || value == "";}
 
 constant command_description = "Grant form fillout";
 constant builtin_name = "Form fillout";

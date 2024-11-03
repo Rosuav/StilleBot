@@ -29,7 +29,12 @@ const render_element = { //Matches _element_types (see Pike code)
 		]),
 		LABEL(["Description:", BR(), TEXTAREA({name: "text", value: el.text || "", rows: 2, cols: 80}), BR()]),
 	],
-	//({"twitchid", "Twitch username"}), //If mandatory, will force user to be logged in to submit
+	twitchid: el => [ //extcall
+		render_element[""](el, "Twitch username"),
+		LABEL([INPUT({type: "checkbox", name: "permitted_only", checked: !!el.permitted_only}), " Restrict to the permitted user (if applicable)"]),
+		P(["When a form is granted to a specific user (via a command or trigger), requriring", BR(),
+			"that specific user to be logged in will ensure that the form is not sniped."]),
+	],
 	simple: el => [ //extcall
 		render_element[""](el, "Text input"),
 		LABEL(["Label: ", INPUT({name: "label", value: el.label || ""}), " - shown in the form"]),
