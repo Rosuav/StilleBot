@@ -159,10 +159,20 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	string|zero formid = req->variables->form;
 	string nonce = req->variables->nonce;
 	if (nonce) {
-		//TODO: If the nonce is found, set formid to the corresponding form
+		//If the nonce is found, set formid to the corresponding form
 		//Otherwise, return failure (don't fall through - that would allow nonce=&form= usage)
 		//TODO: Have a maximum age for nonce validity, configurable per form?
-		return 0; //Nonce not found or invalid. TODO: Return a nicer error?
+		mapping resp = await(G->G->DB->load_config(req->misc->channel->userid, "formresponses"));
+		formid = 0;
+		foreach (resp; string id; mapping f) if (f->permissions && f->permissions[nonce]) {
+			//Found! If necessary, check age and reject if too old.
+			//Note that we don't check the user ID here. If you're not logged in, you can
+			//still see the form, just not submit it. Also, if you're logged in as the
+			//wrong user, you need to get a page from which you can change user.
+			formid = id;
+			break;
+		}
+		if (!formid) return 0; //Nonce not found or invalid. TODO: Return a nicer error?
 	}
 	if (formid) {
 		//If the form is open, anyone may fill it out by providing the form ID.
@@ -238,8 +248,8 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 				response->nonce = nonce || String.string2hex(random_string(14)); //Every response must have a unique nonce (TODO: ensure uniqueness)
 				await(G->G->DB->mutate_config(req->misc->channel->userid, "formresponses") {mapping resp = __ARGS__[0];
 					if (!resp[formid]) resp[formid] = ([]);
+					//if (resp[formid]->permissions) m_delete(resp[formid]->permissions, nonce); //TODO: Consider removal from permissions and merging into response??
 					resp[formid]->responses += ({response});
-					if (resp[formid]->permissions) m_delete(resp[formid]->permissions, nonce);
 				});
 				send_updates_all(req->misc->channel, formid);
 				return render_template(formcloser, ([
@@ -382,11 +392,11 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		mapping perm = m_delete(nonces, r->nonce);
 		if (r->deleted) continue;
 		responses += ({r | (perm || ([]))});
-		order += ({perm ? -perm->timestamp : -r->timestamp});
+		order += ({perm ? -perm->permitted : -r->timestamp});
 	}
 	//Any remaining permissions, add them in as unfilled forms
 	responses += values(nonces);
-	order += -values(nonces)->timestamp[*];
+	order += -values(nonces)->permitted[*];
 	sort(order, responses);
 	return (["responses": responses]);
 }
@@ -609,8 +619,9 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 		if (!resp[formid]->permissions) resp[formid]->permissions = ([]);
 		nonce = String.string2hex(random_string(14));
 		resp[formid]->permissions[nonce] = ([
-			"timestamp": time(),
+			"permitted": time(),
 			"authorized_for": user & (<"id", "login", "display_name", "profile_image_url">),
+			"nonce": nonce,
 		]);
 	});
 	if (!nonce) return ([]);
