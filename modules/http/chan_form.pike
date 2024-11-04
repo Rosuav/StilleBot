@@ -79,9 +79,9 @@ textarea {
 </style>
 " + shared_styles;
 
-constant formcloser = #"# $$formtitle$$
+constant formmessage = #"# $$formtitle$$
 
-Thank you for filling out this form! (TODO: Let the broadcaster customize this text.)
+$$message$$
 
 " + shared_styles;
 
@@ -252,8 +252,9 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 					resp[formid]->responses += ({response});
 				});
 				send_updates_all(req->misc->channel, formid);
-				return render_template(formcloser, ([
+				return render_template(formmessage, ([
 					"formtitle": form->formtitle,
+					"message": "Thank you for filling out this form! (TODO: Let the broadcaster customize this text.)",
 				]) | req->misc->chaninfo);
 			}
 			//Else we fall through and rerender the form.
@@ -353,11 +354,11 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		mapping cfg = await(G->G->DB->load_config(req->misc->channel->userid, "forms"));
 		mapping form = cfg->forms[formid];
 		if (!form) return 0; //Bad form ID? Kick back a boring 404 page.
-		if (req->misc->channel->userid != (int)req->misc->session->user->id) {
-			//TODO: Include a banner saying what went wrong (or just have an error page, this is opened
-			//in a new tab anyway).
-			return redirect("form");
-		}
+		if (req->misc->channel->userid != (int)req->misc->session->user->id)
+			return render_template(formmessage, ([
+				"formtitle": form->formtitle,
+				"message": "This form is restricted and only the broadcaster can view the responses.",
+			]) | req->misc->chaninfo);
 		return render_template(formresponses, ([
 			"vars": (["ws_group": formid + "#" + req->misc->channel->userid, "ws_type": ws_type, "formdata": form]),
 		]) | req->misc->chaninfo);
