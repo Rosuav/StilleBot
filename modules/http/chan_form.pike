@@ -121,6 +121,7 @@ array formfields = ({
 	({"id", "readonly", "Form ID"}),
 	({"formtitle", "", "Title"}),
 	({"is_open", "type=checkbox", "Open form"}),
+	({"mods_see_responses", "type=checkbox", "Allow mods to see responses"}),
 });
 
 array _element_types = ({ //Search for _element_types in this and the JS to find places to add more
@@ -158,6 +159,7 @@ array address_parts = ({
 });
 constant address_required = ({"name", "street", "city", "country"}); //If an address field is required, which parts are?
 
+mapping mods_see_responses = ([]); //Map a group (eg "7957ea32#49497888", encoding both the form ID and channel) to the timestamp it was last seen as having this status
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	string|zero formid = req->variables->form;
 	string nonce = req->variables->nonce;
@@ -351,30 +353,39 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	}
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo); //Should there be non-privileged info shown?
 	if (string formid = req->variables->responses) {
-		//TODO: Allow the form to be configured to permit mods. By default, broadcaster only.
-		//Since websocket_validate is synchronous, the easiest way is probably to hack this
-		//to retain in memory the fact that this form ID permits mods.
 		mapping cfg = await(G->G->DB->load_config(req->misc->channel->userid, "forms"));
 		mapping form = cfg->forms[formid];
 		if (!form) return 0; //Bad form ID? Kick back a boring 404 page.
-		if (req->misc->channel->userid != (int)req->misc->session->user->id)
-			return render_template(formmessage, ([
+		if (req->misc->channel->userid != (int)req->misc->session->user->id) {
+			if (form->mods_see_responses) mods_see_responses[formid + "#" + req->misc->channel->userid] = time();
+			else return render_template(formmessage, ([
 				"formtitle": form->formtitle,
 				"message": "This form is restricted and only the broadcaster can view the responses.",
 			]) | req->misc->chaninfo);
+		}
 		return render_template(formresponses, ([
 			"vars": (["ws_group": formid + "#" + req->misc->channel->userid, "ws_type": ws_type, "formdata": form]),
 		]) | req->misc->chaninfo);
 	}
 	return render(req, (["vars": (["ws_group": "", "address_parts": address_parts]),
-		"formfields": sprintf("%{* <label>%[2]s: <input class=formmeta name=%[0]s %[1]s></label>\n> %}", formfields),
+		"formfields": sprintf("%{* <label><span>%[2]s:</span> <input class=formmeta name=%[0]s %[1]s></label>\n> %}", formfields),
 		"elementtypes": sprintf("%{<option value=\"%s\">%s%}", _element_types),
 	]) | req->misc->chaninfo);
 }
 
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(msg->group);
-	if (grp != "" && channel->userid != (int)conn->session->user->id) return "Broadcaster only";
+	if (grp != "" && channel->userid != (int)conn->session->user->id) {
+		//If we've had a page load within the last 60 seconds, and the form had mod permissions,
+		//let it go through. Otherwise, reject - but query, thus allowing a potential retry.
+		if (mods_see_responses[msg->group] < time() - 60) {
+			G->G->DB->load_config(channel->userid, "forms")->then() {
+				mapping form = __ARGS__[0]->forms[grp];
+				if (form->mods_see_responses) mods_see_responses[msg->group] = time();
+			};
+			return "Broadcaster only";
+		}
+	}
 	return ::websocket_validate(conn, msg);
 }
 
@@ -431,7 +442,7 @@ __async__ void wscmd_delete_form(object channel, mapping(string:mixed) conn, map
 }
 
 __async__ void wscmd_form_meta(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping editable = (["formtitle": "string", "is_open": "bool"]);
+	mapping editable = (["formtitle": "string", "is_open": "bool", "mods_see_responses": "bool"]);
 	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
 		mapping form_data = cfg->forms[?msg->id]; if (!form_data) return;
 		foreach (editable; string key; string type) if (!undefinedp(msg[key])) {
