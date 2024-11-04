@@ -92,6 +92,8 @@ constant formresponses = #"# Form responses
 loading... | -
 {:#responses}
 
+[Download CSV](:#downloadcsv) [Delete selected](:#deleteresponses)
+
 > ### Form response
 >
 > <label><span>Permitted at:</span> <input readonly name=permitted></label><br>
@@ -233,7 +235,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			}
 			if (!sizeof(missing)) {
 				response->fields = fields;
-				if (nonce) response->nonce = nonce;
+				response->nonce = nonce || String.string2hex(random_string(14)); //Every response must have a unique nonce (TODO: ensure uniqueness)
 				await(G->G->DB->mutate_config(req->misc->channel->userid, "formresponses") {mapping resp = __ARGS__[0];
 					if (!resp[formid]) resp[formid] = ([]);
 					resp[formid]->responses += ({response});
@@ -380,14 +382,15 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		nonces[perm->nonce] = perm;
 	}
 	//Now find all form responses, and match up their permissions if available
-	foreach (resp->responses, mapping r) {
-		mapping perm = r->nonce && m_delete(nonces, r->nonce);
+	foreach (resp->responses; int idx; mapping r) {
+		mapping perm = m_delete(nonces, r->nonce);
+		if (r->deleted) continue;
 		responses += ({r | (perm || ([]))});
-		order += ({perm ? perm->timestamp : r->timestamp});
+		order += ({perm ? -perm->timestamp : -r->timestamp});
 	}
 	//Any remaining permissions, add them in as unfilled forms
 	responses += values(nonces);
-	order += values(nonces)->timestamp;
+	order += -values(nonces)->timestamp[*];
 	sort(order, responses);
 	return (["responses": responses]);
 }
@@ -532,6 +535,18 @@ __async__ void wscmd_delete_element(object channel, mapping(string:mixed) conn, 
 
 bool type_string(string value) {return 1;}
 bool type_boolean(string value) {return value == "1" || value == "0" || value == "";}
+
+__async__ void wscmd_delete_responses(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!arrayp(msg->rows)) return;
+	multiset nonces = (multiset)msg->rows;
+	string formid = conn->subgroup;
+	await(G->G->DB->mutate_config(channel->userid, "formresponses") {mapping resp = __ARGS__[0];
+		if (!resp[formid]) return; //No responses, nothing to delete
+		foreach (resp[formid]->responses, mapping r) if (nonces[r->nonce]) r->deleted = 1;
+		if (resp[formid]->nonces) resp[formid]->nonces -= nonces;
+	});
+	send_updates_all(channel, formid);
+}
 
 constant command_description = "Grant form fillout";
 constant builtin_name = "Form fillout";

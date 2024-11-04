@@ -110,8 +110,8 @@ on("click", "#createform", e => ws_sync.send({cmd: "create_form"}));
 export function sockmsg_openform(msg) {openform(msg.form_data);}
 export function render(data) {
 	if (data.forms) data.forms.forEach(f => f.id === editing && openform(f));
-	if (data.responses) replace_content("#responses tbody", data.responses.map((r, idx) => TR([
-		TD(INPUT({type: "checkbox", "data-idx": idx, class: "selectrow"})),
+	if (data.responses) replace_content("#responses tbody", data.responses.map(r => TR([
+		TD(INPUT({type: "checkbox", "data-nonce": r.nonce, class: "selectrow"})),
 		TD(format_time(r.permitted)),
 		TD(format_time(r.timestamp)),
 		TD(format_user(r.submitted_by || r.authorized_for)),
@@ -159,6 +159,12 @@ on("click", ".selectrow", e => {
 	}
 	last_clicked = e.match;
 });
+
+on("click", "#deleteresponses", simpleconfirm("Deleted responses are hard to retrieve. Are you sure you want to do this?", e => {
+	const rows = [];
+	document.querySelectorAll(".selectrow:checked").forEach(el => rows.push(el.dataset.nonce));
+	ws_sync.send({cmd: "delete_responses", rows});
+}));
 
 const view_element = { //Matches _element_types (see Pike code)
 	twitchid: (el, r) => format_user(r.submitted_by || r.authorized_for),
