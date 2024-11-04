@@ -13,6 +13,9 @@ img[alt=\"(avatar)\"] {
 	height: 40px;
 	vertical-align: middle;
 }
+img {
+	max-width: 100%;
+}
 </style>
 ";
 
