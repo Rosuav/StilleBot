@@ -537,8 +537,8 @@ bool type_string(string value) {return 1;}
 bool type_boolean(string value) {return value == "1" || value == "0" || value == "";}
 
 __async__ void wscmd_delete_responses(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!arrayp(msg->rows)) return;
-	multiset nonces = (multiset)msg->rows;
+	if (!arrayp(msg->nonces)) return;
+	multiset nonces = (multiset)msg->nonces;
 	string formid = conn->subgroup;
 	await(G->G->DB->mutate_config(channel->userid, "formresponses") {mapping resp = __ARGS__[0];
 		if (!resp[formid]) return; //No responses, nothing to delete
@@ -546,6 +546,50 @@ __async__ void wscmd_delete_responses(object channel, mapping(string:mixed) conn
 		if (resp[formid]->nonces) resp[formid]->nonces -= nonces;
 	});
 	send_updates_all(channel, formid);
+}
+
+__async__ void wscmd_download_csv(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!arrayp(msg->nonces)) return;
+	multiset nonces = (multiset)msg->nonces;
+	string formid = conn->subgroup;
+	mapping resp = await(G->G->DB->load_config(channel->userid, "formresponses"));
+	if (!resp[formid]) return; //No responses, nothing to download (TODO: report error)
+	mapping cfg = await(G->G->DB->load_config(channel->userid, "forms"));
+	mapping form = cfg->forms[formid];
+	if (!form) return;
+	array(string) headers = ({"datetime"});
+	foreach (form->elements, mapping el) switch (el->type) { //_element_types
+		case "twitchid": case "simple": case "paragraph": case "address":
+			headers += ({el->name});
+			break;
+		case "checkbox":
+			foreach (el->label || ({ }); int i;) headers += ({el->name + (-i || "")});
+			break;
+		default: break;
+	}
+	array(array) rows = ({headers});
+	foreach (resp[formid]->responses, mapping r) if (nonces[r->nonce]) {
+		array row = ({r->timestamp ? ctime(r->timestamp)[..<1] : ""}); //TODO: Format date/time more nicely
+		foreach (form->elements, mapping el) switch (el->type) { //_element_types
+			case "twitchid":
+				row += ({r->submitted_by ? r->submitted_by->display_name : ""});
+				break;
+			case "simple": case "paragraph": case "address":
+				row += ({r->fields[el->name] || ""});
+				break;
+			case "checkbox":
+				foreach (el->label || ({ }); int i;) row += ({r->fields[el->name + (-i || "")] ? "yes" : "no"});
+				break;
+			default: break;
+		}
+		rows += ({row});
+	}
+	String.Buffer csv = String.Buffer();
+	foreach (rows, array row) {
+		foreach (row; int i; string cell) {if (i) csv->add(","); csv->add("\"" + replace(cell, (["\\": "\\\\", "\"": "\\\""])) + "\"");}
+		csv->add("\n");
+	}
+	send_msg(conn, (["cmd": "download_csv", "csvdata": csv->get()]));
 }
 
 constant command_description = "Grant form fillout";

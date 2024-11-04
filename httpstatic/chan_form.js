@@ -161,10 +161,22 @@ on("click", ".selectrow", e => {
 });
 
 on("click", "#deleteresponses", simpleconfirm("Deleted responses are hard to retrieve. Are you sure you want to do this?", e => {
-	const rows = [];
-	document.querySelectorAll(".selectrow:checked").forEach(el => rows.push(el.dataset.nonce));
-	ws_sync.send({cmd: "delete_responses", rows});
+	const nonces = [];
+	document.querySelectorAll(".selectrow:checked").forEach(el => nonces.push(el.dataset.nonce));
+	ws_sync.send({cmd: "delete_responses", nonces});
 }));
+
+on("click", "#downloadcsv", e => {
+	const nonces = [];
+	document.querySelectorAll(".selectrow:checked").forEach(el => nonces.push(el.dataset.nonce));
+	ws_sync.send({cmd: "download_csv", nonces});
+});
+export function sockmsg_download_csv(msg) {
+	const link = choc.A({href: "data:text/csv;charset=UTF-8," + encodeURIComponent(msg.csvdata), download: "formresponses.csv"});
+	document.body.appendChild(link);
+	link.click();
+	link.remove();
+}
 
 const view_element = { //Matches _element_types (see Pike code)
 	twitchid: (el, r) => format_user(r.submitted_by || r.authorized_for),
