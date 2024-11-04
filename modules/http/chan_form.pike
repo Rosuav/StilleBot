@@ -239,7 +239,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 				await(G->G->DB->mutate_config(req->misc->channel->userid, "formresponses") {mapping resp = __ARGS__[0];
 					if (!resp[formid]) resp[formid] = ([]);
 					resp[formid]->responses += ({response});
-					if (resp[formid]->nonces) m_delete(resp[formid]->nonces, nonce);
+					if (resp[formid]->permissions) m_delete(resp[formid]->permissions, nonce);
 				});
 				send_updates_all(req->misc->channel, formid);
 				return render_template(formcloser, ([
@@ -376,11 +376,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping resp = await(G->G->DB->load_config(channel->userid, "formresponses"))[grp];
 	if (!resp) return 0; //Bad form ID (or maybe no responses yet)
 	array responses = ({ }), order = ({ });
-	//First, go through all the permissions and key them by their nonces
-	mapping nonces = ([]);
-	foreach (resp->permissions || ({ }), mapping perm) {
-		nonces[perm->nonce] = perm;
-	}
+	mapping nonces = (resp->permissions || ([])) | ([]); //We'll mutate this
 	//Now find all form responses, and match up their permissions if available
 	foreach (resp->responses; int idx; mapping r) {
 		mapping perm = m_delete(nonces, r->nonce);
@@ -542,8 +538,11 @@ __async__ void wscmd_delete_responses(object channel, mapping(string:mixed) conn
 	string formid = conn->subgroup;
 	await(G->G->DB->mutate_config(channel->userid, "formresponses") {mapping resp = __ARGS__[0];
 		if (!resp[formid]) return; //No responses, nothing to delete
+		//Soft delete from responses. There's no current way to retrieve them, but at least the data's
+		//not destroyed.
 		foreach (resp[formid]->responses, mapping r) if (nonces[r->nonce]) r->deleted = 1;
-		if (resp[formid]->nonces) resp[formid]->nonces -= nonces;
+		//Hard delete from permissions - no need to keep them around
+		if (resp[formid]->permissions) resp[formid]->permissions -= nonces;
 	});
 	send_updates_all(channel, formid);
 }
@@ -594,16 +593,32 @@ __async__ void wscmd_download_csv(object channel, mapping(string:mixed) conn, ma
 
 constant command_description = "Grant form fillout";
 constant builtin_name = "Form fillout";
-constant builtin_param = ({"Form ID"}); //TODO: Drop-down
+constant builtin_param = ({"Form ID", "User name"}); //TODO: Drop-down
 constant vars_provided = ([
 	"{nonce}": "Unique nonce for this user's form fillout",
 	"{url}": "Direct link to fill out the form",
 ]);
 
 __async__ mapping message_params(object channel, mapping person, array param) {
-	mapping form = await(G->G->DB->load_config(channel->userid, "forms"))[param[0]];
-	if (!form) return ([]); //Including if you mess up the ID
-	return ([]);
+	string formid = param[0];
+	mapping user = await(get_user_info(param[1], "login"));
+	string nonce;
+	mapping form_data = await(G->G->DB->load_config(channel->userid, "forms"))->forms[formid];
+	await(G->G->DB->mutate_config(channel->userid, "formresponses") {mapping resp = __ARGS__[0];
+		if (!resp[formid]) resp[formid] = ([]);
+		if (!resp[formid]->permissions) resp[formid]->permissions = ([]);
+		nonce = String.string2hex(random_string(14));
+		resp[formid]->permissions[nonce] = ([
+			"timestamp": time(),
+			"authorized_for": user & (<"id", "login", "display_name", "profile_image_url">),
+		]);
+	});
+	if (!nonce) return ([]);
+	send_updates_all(channel, formid);
+	return (["{nonce}": nonce, "{url}": sprintf("%s/channels/%s/form?nonce=%s",
+		G->G->instance_config->http_address || "http://BOT_ADDRESS",
+		channel->login, nonce,
+	)]);
 }
 
 protected void create(string name) {::create(name);}
