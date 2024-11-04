@@ -73,7 +73,7 @@ const render_element = { //Matches _element_types (see Pike code)
 					BUTTON({type: "button", class: "deletefield", "data-field": "label[" + i + "]"}, "x"),
 				])
 			),
-			LI(LABEL(["Add label: ", INPUT({name: "label[" + (el.label || []).length + "]", value: ""})])),
+			LI(LABEL(["Add label: ", INPUT({name: "label[" + (el.label || []).length + "]", value: "", "data-addnew": "1"})])),
 		]),
 	],
 	text: el => [ //extcall
@@ -135,10 +135,13 @@ on("click", "#delete_form", simpleconfirm("Are you sure? This cannot be undone!"
 	DOM("#editformdlg").close();
 }));
 
-on("change", ".element input,.element textarea", e => ws_sync.send({
-	cmd: "edit_element", id: editing, idx: +e.match.closest_data("idx"),
-	field: e.match.name, value: e.match.type === "checkbox" ? e.match.checked : e.match.value,
-}));
+on("change", ".element input,.element textarea", e => {
+	ws_sync.send({
+		cmd: "edit_element", id: editing, idx: +e.match.closest_data("idx"),
+		field: e.match.name, value: e.match.type === "checkbox" ? e.match.checked : e.match.value,
+	});
+	if (e.match.dataset.addnew) e.match.value = "";
+});
 
 on("click", ".element .deletefield", e => ws_sync.send({cmd: "edit_element", id: editing, idx: +e.match.closest_data("idx"), field: e.match.dataset.field, value: ""}));
 
