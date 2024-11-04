@@ -86,7 +86,7 @@ const render_element = { //Matches _element_types (see Pike code)
 let editing = null;
 function openform(f) {
 	editing = f.id;
-	["id", "formtitle", "is_open", "mods_see_responses"].forEach(key => {
+	["id", "formtitle", "is_open", "mods_see_responses", "thankyou"].forEach(key => {
 		const el = DOM("#editformdlg [name=" + key + "]");
 		if (el.type === "checkbox") el.checked = !!f[key];
 		else el.value = f[key] || "";

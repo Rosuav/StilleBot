@@ -29,10 +29,13 @@ constant markdown = #"# Forms for $$channel$$
 > ### Edit form
 >
 > $$formfields$$
+> <label><span>Form completion message:</span><br><textarea class=formmeta name=thankyou placeholder=\"Thank you for filling out this form!\" rows=3 cols=50></textarea></label>
+>
 > [Link to form](form?form=FORMID :#viewform target=_blank) (only while form is open)<br>
 > [View form responses](form?responses=FORMID :#viewresp target=_blank) (opens in new window)<br>
 > [Delete form](:#delete_form)
 >
+> #### Form elements
 > <div id=formelements></div>
 > <select id=addelement><option value=\"\">Add new element$$elementtypes$$</select>
 >
@@ -191,7 +194,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		}
 		multiset missing = (<>); //If anything is missing, we'll rerender the form
 		if (req->request_type == "POST") {
-			werror("Variables: %O\n", req->variables);
 			mapping response = ([
 				"timestamp": time(),
 				"ip": req->get_ip(),
@@ -259,7 +261,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 				send_updates_all(req->misc->channel, formid);
 				return render_template(formmessage, ([
 					"formtitle": form->formtitle,
-					"message": "Thank you for filling out this form! (TODO: Let the broadcaster customize this text.)",
+					"message": form->thankyou || "Thank you for filling out this form!",
 				]) | req->misc->chaninfo);
 			}
 			//Else we fall through and rerender the form.
@@ -442,7 +444,7 @@ __async__ void wscmd_delete_form(object channel, mapping(string:mixed) conn, map
 }
 
 __async__ void wscmd_form_meta(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping editable = (["formtitle": "string", "is_open": "bool", "mods_see_responses": "bool"]);
+	mapping editable = (["formtitle": "string", "is_open": "bool", "mods_see_responses": "bool", "thankyou": "string"]);
 	await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
 		mapping form_data = cfg->forms[?msg->id]; if (!form_data) return;
 		foreach (editable; string key; string type) if (!undefinedp(msg[key])) {
