@@ -43,7 +43,11 @@ constant markdown = #"# Forms for $$channel$$
 {: tag=formdialog #editformdlg}
 
 <style>
-.openform {cursor: pointer;}
+.openform {
+	color: blue;
+	text-decoration: underline;
+	cursor: pointer;
+}
 .element {
 	border: 1px solid black;
 	margin: 0.5em;
