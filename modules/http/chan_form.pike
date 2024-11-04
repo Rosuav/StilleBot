@@ -607,11 +607,3 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 }
 
 protected void create(string name) {::create(name);}
-
-/* Next steps:
-* Nonce-based permissions (note that failed submissions eg form missing a required field don't consume the permission slot)
-* More field types esp twitchid. Note that this will require a login button and that will reload the page after login.
-  - The user MUST be allowed to change user even if currently logged in.
-* Required fields - if blank/omitted, form submission will be rejected; also use HTML required attribute and style them appropriately
-* Descriptive paragraph on any/all form elements
-*/
