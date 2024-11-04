@@ -282,7 +282,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 							elem = "This form was granted to a specific Twitch user; you are not currently logged in. [Confirm identity](:.twitchlogin)";
 					} else if (user)
 						elem = sprintf("You are currently logged in as ![(avatar)](%s) %s. Not you? [Change user](:.twitchlogin)",
-							user->profile_image_url, user->display_name);
+							user->profile_image_url || "", user->display_name);
 					else if (el->required)
 						elem = "You are not currently logged in. [Confirm identity](:.twitchlogin) to submit this form.";
 					else
@@ -291,7 +291,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 				}
 				case "simple":
 					elem = sprintf("<label><span>%s</span> <input name=%q%s>%s</label>",
-						el->label, "field-" + el->name,
+						el->label || "", "field-" + el->name,
 						el->required ? " required" : "",
 						missing[el->name] ? " <span class=required title=Required>\\* Please enter something</span>" :
 							el->required ? " <span class=required title=Required>\\*</span>" : "",
@@ -299,7 +299,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 					break;
 				case "paragraph":
 					elem = sprintf("<label><span>%s</span>%s<br><textarea name=%q rows=8 cols=80%s></textarea></label>",
-						el->label,
+						el->label || "",
 						missing[el->name] ? " <span class=required title=Required>\\* Please enter something</span>" :
 							el->required ? " <span class=required title=Required>\\*</span>" : "",
 						"field-" + el->name,
