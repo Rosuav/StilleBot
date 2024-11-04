@@ -1359,6 +1359,7 @@ class http_websocket
 				"user": ([
 					"broadcaster_type": "fakemod", //Hack :)
 					"display_name": "!Demo",
+					"profile_image_url": "/static/MustardMineSquavatar.png",
 					"id": "3141592653589793", //Hopefully Twitch doesn't get THAT many users any time soon. If this ever shows up in logs, it should be obvious.
 					"login": "!demo",
 				]),
