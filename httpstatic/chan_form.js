@@ -172,6 +172,7 @@ on("click", "#deleteresponses", simpleconfirm("Deleted responses are hard to ret
 on("click", "#downloadcsv", e => {
 	const nonces = [];
 	document.querySelectorAll(".selectrow:checked").forEach(el => nonces.push(el.dataset.nonce));
+	if (nonces.length === 0) document.querySelectorAll(".selectrow").forEach(el => nonces.push(el.dataset.nonce));
 	ws_sync.send({cmd: "download_csv", nonces});
 });
 export function sockmsg_download_csv(msg) {
