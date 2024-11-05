@@ -109,6 +109,8 @@ loading... | -
 > <label><span>Permitted at:</span> <input readonly name=permitted></label><br>
 > <label><span>Submitted at:</span> <input readonly name=timestamp></label><br>
 >
+> <div id=formdesc></div>
+>
 > Field | Response
 > ------|---------
 > loading... | -

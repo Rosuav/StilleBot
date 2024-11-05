@@ -1,5 +1,5 @@
 import {choc, lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DIV, IMG, INPUT, LABEL, LI, P, PRE, SPAN, TD, TEXTAREA, TIME, TR, UL} = lindt; //autoimport
+const {A, BR, BUTTON, DIV, IMG, INPUT, LABEL, LI, P, PRE, SPAN, TD, TEXTAREA, TIME, TR, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 function format_time(ts) {
@@ -9,6 +9,16 @@ function format_time(ts) {
 	//For anything today, just show the time. For something this week, "Thu 12:30".
 	//For something older than that, just show the date.
 	return TIME({datetime: t.toISOString(), title: t.toLocaleString()}, t.toLocaleString());
+}
+
+function format_timedelta(sec) {
+	let desc = sec + " seconds ago";
+	if (sec > 86400 * 2) desc = Math.floor(sec / 86400) + " days ago";
+	else if (sec > 86400) desc = "yesterday";
+	else if (sec > 7200) desc = Math.floor(sec / 3600) + " hours ago";
+	else if (sec > 3600) desc = "an hour ago";
+	else if (sec > 60) desc = Math.floor(sec / 60) + " minutes ago";
+	return TIME({datetime: "P" + sec + "S"}, desc);
 }
 
 function format_user(u) {
@@ -205,9 +215,16 @@ on("click", ".showresponse", e => {
 		}
 		else el.value = "";
 	});
-	replace_content("#formresponse tbody", (formdata.elements||[]).map((el, idx) => view_element[el.type] && TR([
+	if (r.fields) replace_content("#formresponse tbody", (formdata.elements||[]).map((el, idx) => view_element[el.type] && TR([
 		TD(el.name),
 		TD(view_element[el.type](el, r)),
 	])));
+	else replace_content("#formdesc", [
+		P(["Form has not been submitted (was permitted ", format_timedelta(new Date / 1000 - r.permitted), ")"]),
+		P(A({href: "form?nonce=" + r.nonce}, "Form submission link")),
+		P("Provide this to the permitted user."),
+	]);
+	DOM("#formresponse").hidden = !r.fields
+	DOM("#formdesc").hidden = !!r.fields
 	DOM("#responsedlg").showModal();
 });
