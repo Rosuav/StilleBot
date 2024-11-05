@@ -618,7 +618,11 @@ __async__ void wscmd_download_csv(object channel, mapping(string:mixed) conn, ma
 	}
 	String.Buffer csv = String.Buffer();
 	foreach (rows, array row) {
-		foreach (row; int i; string cell) {if (i) csv->add(","); csv->add("\"" + replace(cell, (["\\": "\\\\", "\"": "\\\""])) + "\"");}
+		foreach (row; int i; string cell) {
+			if (i) csv->add(",");
+			if (has_value(cell, '"')) csv->add("\"" + replace(cell, (["\\": "\\\\", "\"": "\\\""])) + "\"");
+			else csv->add(replace(cell, (["\\": "\\\\", "\"": "\\\""])));
+		}
 		csv->add("\n");
 	}
 	send_msg(conn, (["cmd": "download_csv", "csvdata": csv->get()]));
