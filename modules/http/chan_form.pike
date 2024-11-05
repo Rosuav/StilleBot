@@ -620,8 +620,8 @@ __async__ void wscmd_download_csv(object channel, mapping(string:mixed) conn, ma
 	foreach (rows, array row) {
 		foreach (row; int i; string cell) {
 			if (i) csv->add(",");
-			if (has_value(cell, '"')) csv->add("\"" + replace(cell, (["\\": "\\\\", "\"": "\\\""])) + "\"");
-			else csv->add(replace(cell, (["\\": "\\\\", "\"": "\\\""])));
+			if (has_value(cell, '"') || has_value(cell, '\n')) csv->add("\"" + replace(cell, (["\\": "\\\\", "\"": "\\\""])) + "\"");
+			else csv->add(cell);
 		}
 		csv->add("\n");
 	}
