@@ -122,8 +122,8 @@ export function update_display(elem, data) { //Used for the preview as well as t
 					DIV({class: "goalbar", style: `--oldpos: ${prevpos}%; --newpos: ${pos}%; border-radius: ${elem.style.borderRadius}`}, [
 						DIV({style: "padding: 2px 6px"}, curhp + "/" + maxhp),
 					]),
-					DIV({style: "position: relative"}, [
-						DIV({class: prevcredit ? "bosscredit waxing" : "bosscredit", style: "text-wrap: nowrap; width: 100%; text-align: left"}, name),
+					DIV({style: "position: relative; width: 100%"}, [
+						DIV({class: prevcredit ? "bosscredit waxing" : "bosscredit", style: "text-wrap: nowrap; width: 100%; text-align: left; overflow: hidden"}, name),
 						prevcredit,
 					]),
 				]),
