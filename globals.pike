@@ -1024,6 +1024,15 @@ class Renderer
 		}
 		return ::link(href, title, text, token);
 	}
+
+	string image(string url, string title, string text, mapping token) {
+		if (sscanf(url, "%s :%s", string dest, string att) && _parse_attrs("{:" + att + "}", token)) {
+			//Usage: ![Alt Text](https://image.example/destination/image.png :attr=value)
+			string tag = m_delete(token, "attr_tag") || "img";
+			return sprintf("<%s%s></%[0]s>", tag, attrs(token, (["src": dest, "title": text, "alt": text])));
+		}
+		return ::image(url, title, text, token);
+	}
 }
 class Lexer
 {
