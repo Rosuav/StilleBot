@@ -62,9 +62,9 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if (sizeof(missing)) {werror("LOGIN FAIL: %O %O %O\n", tok->scopes, req->variables->scope, (tok->scopes | missing) * " "); return render_template(#"# Twitch Login
 
 Hey, sorry, something seems to be messed up. Rosuav is looking into it. For now, you may
-be able to get logged in by clicking this button:
+be able to get logged in by clicking one of these buttons:
 
-[Try again](:.twitchlogin data-scopes=@$$scopes$$@)
+[Try again](:.twitchlogin data-scopes=@$$scopes$$@) [Log out](:onclick=window.location='/logout')
 ", (["scopes": (tok->scopes | missing) * " "]));}
 		G->G->DB->save_user_credentials(([
 			"userid": (int)user->id,
