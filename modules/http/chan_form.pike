@@ -97,6 +97,8 @@ $$message$$
 
 constant formresponses = #"# Form responses
 
+[Back to form list](form)
+
 &nbsp; | Permitted | Submitted | Twitch user | Answers
 -------|-----------|-----------|-------------|---------
 loading... | -
