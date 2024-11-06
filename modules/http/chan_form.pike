@@ -226,18 +226,18 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 					}
 					case "checkbox": {
 						if (el->label) foreach (el->label; int i; string l) {
-							string field = "field-" + el->name + (-i || ""); //Must match the field generation below
-							if (el->required && !req->variables[field]) missing[field] = 1;
-							else if (req->variables[field]) fields[field] = 1;
+							string field = el->name + (-i || ""); //Must match the field generation below
+							if (el->required && !req->variables["field-" + field]) missing[field] = 1;
+							else if (req->variables["field-" + field]) fields[field] = 1;
 						}
 						break;
 					}
 					case "address": {
 						mapping parts = ([]);
 						foreach (address_parts, [string name, string lbl]) {
-							string field = "field-" + el->name + "-" + name; //Again, must match the below
+							string field = el->name + "-" + name; //Again, must match the below
 							int reqd = el->required && has_value(address_required, name);
-							string|zero val = req->variables[field];
+							string|zero val = req->variables["field-" + field];
 							if (reqd && (!val || val == "")) missing[field] = 1;
 							else fields[field] = parts[name] = val;
 						}
@@ -591,8 +591,14 @@ __async__ void wscmd_download_csv(object channel, mapping(string:mixed) conn, ma
 	if (!form) return;
 	array(string) headers = ({"datetime"});
 	foreach (form->elements, mapping el) switch (el->type) { //_element_types
-		case "twitchid": case "simple": case "paragraph": case "address":
+		case "twitchid": case "simple": case "paragraph":
 			headers += ({el->name});
+			break;
+		case "address":
+			//Provide the individual parts, plus the combined one
+			//TODO: When the user asks for CSV download, prompt for some options, including address
+			//format: "Combined", "Parts", "Parts + Combined", "Parts + Spreadsheet Formula"
+			headers += (el->name + "-" + address_parts[*][0][*]) + ({el->name});
 			break;
 		case "checkbox":
 			foreach (el->label || ({ }); int i;) headers += ({el->name + (-i || "")});
@@ -606,8 +612,22 @@ __async__ void wscmd_download_csv(object channel, mapping(string:mixed) conn, ma
 			case "twitchid":
 				row += ({r->submitted_by ? r->submitted_by->display_name : ""});
 				break;
-			case "simple": case "paragraph": case "address":
-				row += ({r->fields[el->name] || ""});
+			case "simple": case "paragraph":
+				row += ({r->fields[el->name]});
+				break;
+			case "address":
+				//Addresses are a bit weird. You might be able to make this work with just the combined field,
+				//or maybe it works better like this.
+				row += r->fields[(el->name + "-" + address_parts[*][0][*])[*]] + ({sprintf(
+					"=%c%d&CHAR(13)&%c%[1]d&CHAR(13)&%c%[1]d&\" \"&%c%[1]d&\"  \"&%c%[1]d&CHAR(13)&%c%[1]d",
+					'A' + sizeof(row),
+					1 + sizeof(rows),
+					'B' + sizeof(row),
+					'C' + sizeof(row),
+					'D' + sizeof(row),
+					'E' + sizeof(row),
+					'F' + sizeof(row),
+				)});
 				break;
 			case "checkbox":
 				foreach (el->label || ({ }); int i;) row += ({r->fields[el->name + (-i || "")] ? "yes" : "no"});
@@ -620,7 +640,8 @@ __async__ void wscmd_download_csv(object channel, mapping(string:mixed) conn, ma
 	foreach (rows, array row) {
 		foreach (row; int i; string cell) {
 			if (i) csv->add(",");
-			if (has_value(cell, '"') || has_value(cell, '\n')) csv->add("\"" + replace(cell, (["\\": "\\\\", "\"": "\\\""])) + "\"");
+			if (!cell) cell = "";
+			if (has_value(cell, '"') || has_value(cell, '\n')) csv->add("\"" + replace(cell, (["\\": "\\\\", "\"": "\"\""])) + "\"");
 			else csv->add(cell);
 		}
 		csv->add("\n");

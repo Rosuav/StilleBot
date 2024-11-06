@@ -198,8 +198,8 @@ const view_element = { //Matches _element_types (see Pike code)
 	paragraph: (el, r) => [LABEL(SPAN(el.label)), BR(), PRE(r.fields[el.name])],
 	address: (el, r) => PRE(r.fields[el.name]),
 	checkbox: (el, r) => UL([
-		(el.label || []).map((l, i) => LI({class: r.fields["field-" + el.name + (-i || "")] ? "checkbox-checked" : "checkbox-unchecked"}, [
-			LABEL(SPAN(r.fields["field-" + el.name + (-i || "")] ? "Selected" : "Unselected")),
+		(el.label || []).map((l, i) => LI({class: r.fields[el.name + (-i || "")] ? "checkbox-checked" : "checkbox-unchecked"}, [
+			LABEL(SPAN(r.fields[el.name + (-i || "")] ? "Selected" : "Unselected")),
 			" ", l,
 		])),
 	]),
@@ -221,7 +221,7 @@ on("click", ".showresponse", e => {
 	])));
 	else replace_content("#formdesc", [
 		P(["Form has not been submitted (was permitted ", format_timedelta(new Date / 1000 - r.permitted), ")"]),
-		P(A({href: "form?nonce=" + r.nonce}, "Form submission link")),
+		P(A({href: "form?nonce=" + r.nonce, target: "_blank"}, "Form submission link")),
 		P("Provide this to the permitted user."),
 	]);
 	DOM("#formresponse").hidden = !r.fields
