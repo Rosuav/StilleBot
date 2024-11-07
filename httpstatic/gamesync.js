@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, DIV, FORM, H1, H2, INPUT, LABEL, OPTION, SELECT, SPAN, STYLE, TABLE, TD, TH, TR} = lindt; //autoimport
+const {A, BR, BUTTON, CODE, DIV, FORM, H1, H2, INPUT, LABEL, OPTION, SELECT, SPAN, STYLE, TABLE, TD, TR} = lindt; //autoimport
 
 let last_data = { };
 
@@ -336,6 +336,22 @@ const games = {
 			]),
 		];},
 	},
+	qte: {
+		label: "Quick-Time Events (generic)",
+		render(data) {return [
+			STYLE("input {font-size: 175%; margin: 0.25em;} code {font-size: 125%; font-weight: bold;}"),
+			DIV(["Enter directions with ", CODE("^<v>"), " or ", CODE("WASD"), " and use spaces to separate blocks."]),
+			LABEL(["Sequence: ", INPUT({"data-setting": "sequence", value: data["sequence"] || "", size: 60,
+				//Shorthand for input, nicer-looking character for display
+				".xfrm": txt => txt
+					.replaceAll("^", "⮝").replaceAll("6", "⮝").replaceAll("w", "⮝").replaceAll("W", "⮝") //Holding Shift is optional
+					.replaceAll("<", "⮜").replaceAll(",", "⮜").replaceAll("a", "⮜").replaceAll("A", "⮜")
+					.replaceAll("v", "⮟").replaceAll("V", "⮟").replaceAll("s", "⮟").replaceAll("S", "⮟")
+					.replaceAll(">", "⮞").replaceAll(".", "⮞").replaceAll("d", "⮞").replaceAll("D", "⮞")
+					.replaceAll(" ", "\u2003"), //Widen spaces out a bit
+			})]),
+		];},
+	},
 	//For Ukrainian Prisoner, it may be of value to have these recorded:
 	//0123456789 --> 零一二三四五六七八九
 	//Chinese numerals. Though the game seems pretty merciful in their use, so it may not be necessary.
@@ -383,4 +399,5 @@ on("click", "button[data-setting]", e => {
 	ws_sync.send({cmd: "update_data", key, val});
 });
 on("change", "select[data-setting]", e => ws_sync.send({cmd: "update_data", key: e.match.dataset.setting, val: e.match.value}));
-on("input", "input[data-setting]", e => ws_sync.send({cmd: "update_data", key: e.match.dataset.setting, val: e.match.value}));
+const ident = x => x;
+on("input", "input[data-setting]", e => ws_sync.send({cmd: "update_data", key: e.match.dataset.setting, val: (e.match.xfrm || ident)(e.match.value)}));
