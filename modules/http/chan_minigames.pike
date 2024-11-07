@@ -83,6 +83,7 @@ constant sections = ([
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo); //Should there be non-privileged info shown?
+	//TODO: If broadcaster hasn't granted channel:manage:redemptions, have an auth button
 	mapping vox = G->G->DB->load_cached_config(req->misc->channel->userid, "voices");
 	mapping voices = mkmapping(indices(vox), values(vox)->name); //Don't need all the other info, id/name is enough
 	//Loading the voices page ensures that the bot's default voice is available. Even if
