@@ -136,6 +136,8 @@ tr.archived {
 	font-style: italic;
 	background: #ccc;
 }
+tr.row-default {background: #eef;}
+tr.row-alternate {background: #efe;}
 </style>
 " + shared_styles;
 

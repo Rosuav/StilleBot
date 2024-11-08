@@ -124,13 +124,22 @@ on("click", "#createform", e => ws_sync.send({cmd: "create_form"}));
 export function sockmsg_openform(msg) {openform(msg.form_data);}
 export function render(data) {
 	if (data.forms) data.forms.forEach(f => f.id === editing && openform(f));
-	if (data.responses) replace_content("#responses tbody", data.responses.map(r => TR({class: r.archived ? "archived" : ""}, [
-		TD(INPUT({type: "checkbox", "data-nonce": r.nonce, class: "selectrow"})),
-		TD(format_time(r.permitted)),
-		TD(format_time(r.timestamp)),
-		TD(format_user(r.submitted_by || r.authorized_for)),
-		TD(BUTTON({type: "button", class: "showresponse", ".resp_data": r}, "View")),
-	])));
+	let highlight = false, lastaddress = "";
+	if (data.responses) replace_content("#responses tbody", data.responses.map(r => {
+		if (!r.archived && (!r.fields || r.fields.address !== lastaddress)) {
+			//TODO: Don't depend on a hard-coded field name "address", allow any field to be the
+			//grouping field.
+			highlight = !highlight;
+			lastaddress = r.fields?.address;
+		}
+		return TR({class: r.archived ? "archived" : highlight ? "row-alternate" : "row-default"}, [
+			TD(INPUT({type: "checkbox", "data-nonce": r.nonce, class: "selectrow"})),
+			TD(format_time(r.permitted)),
+			TD(format_time(r.timestamp)),
+			TD(format_user(r.submitted_by || r.authorized_for)),
+			TD(BUTTON({type: "button", class: "showresponse", ".resp_data": r}, "View")),
+		]);
+	}));
 }
 
 on("change", ".formmeta", e => ws_sync.send({cmd: "form_meta", id: editing, [e.match.name]: e.match.type === "checkbox" ? e.match.checked : e.match.value}));
