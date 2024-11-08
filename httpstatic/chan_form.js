@@ -1,5 +1,5 @@
 import {choc, lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, DIV, IMG, INPUT, LABEL, LI, P, PRE, SPAN, TD, TEXTAREA, TIME, TR, UL} = lindt; //autoimport
+const {A, BR, BUTTON, DIV, IMG, INPUT, LABEL, LI, OPTION, P, PRE, SPAN, TD, TEXTAREA, TIME, TR, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 function format_time(ts) {
@@ -122,20 +122,35 @@ on("click", ".openform", e => {e.preventDefault(); openform(e.match.form_data);}
 
 on("click", "#createform", e => ws_sync.send({cmd: "create_form"}));
 export function sockmsg_openform(msg) {openform(msg.form_data);}
-let response_groupfield = "address"; //TODO: Let this be customized. Set to null to disable response grouping.
+const groupable = { //_element_types that can be used for grouping
+	//Note that twitchid doesn't actually work due to how it's stored
+	simple: v => v.toLowerCase(),
+	url: v => v,
+	//When grouping by address, ignore the Name line and group identical delivery points.
+	address: v => v.toLowerCase().split("\n").slice(1).join("\n"),
+	//checkbox might be nice, but you'd have to choose which one (if there are multiple)
+};
+const grouptypes = { }; //Map element name to the groupable type
 export function render(data) {
 	if (data.forms) data.forms.forEach(f => f.id === editing && openform(f));
+	if (data.forminfo) replace_content("#groupfield", [
+		OPTION({value: ""}, "Select field..."),
+		data.forminfo.elements && data.forminfo.elements.map(el => groupable[grouptypes[el.name] = el.type] && OPTION({value: el.name}, el.label || el.name)),
+	]);
 	if (data.responses) {
 		let highlight = false, lastfield = "";
+		const response_groupfield = DOM("#groupfield").value;
 		replace_content("#responses tbody", data.responses.map(r => {
 			let matches = [r];
+			let grp = null, grpfold = v => v;
 			if (response_groupfield && r.fields && !r.archived) {
 				if (r.river) return;
 				//Scan the rest of the responses to see if there are any others with the same groupfield
 				//Not applicable to entries that lack fields (ie unsubmitted permissions), they will not be grouped.
 				//TODO: Allow grouping by permitted/submitted user??
-				const grp = r.fields[response_groupfield];
-				matches = data.responses.filter(r => !r.river && r.fields && !r.archived && r.fields[response_groupfield] === grp);
+				grpfold = groupable[grouptypes[response_groupfield]];
+				grp = grpfold(r.fields[response_groupfield]);
+				matches = data.responses.filter(r => !r.river && r.fields && !r.archived && grpfold(r.fields[response_groupfield]) === grp);
 				r.river = true;
 				matches.forEach(r => r.river = true);
 			}
@@ -151,10 +166,14 @@ export function render(data) {
 					return [format_user(user), BR()];
 				})),
 				TD(matches.map(r => [BUTTON({type: "button", class: "showresponse", ".resp_data": r}, "View"), BR()])),
+				//Note that we aren't using the folded version here (as it'll potentially have been uglified in the process)
+				grp && TD({style: "white-space: pre-line"}, matches[0].fields[response_groupfield]),
 			]);
 		}));
 	}
 }
+
+on("change", "#groupfield", e => ws_sync.send({cmd: "refresh"})); //me is lazy
 
 on("change", ".formmeta", e => ws_sync.send({cmd: "form_meta", id: editing, [e.match.name]: e.match.type === "checkbox" ? e.match.checked : e.match.value}));
 

@@ -99,7 +99,9 @@ constant formresponses = #"# Form responses
 
 [Back to form list](form)
 
-<label><input type=checkbox id=showarchived> Show archived responses</label>
+* <label><input type=checkbox id=showarchived> Show archived responses</label>
+* <label>Group by <select id=groupfield><option value=\"\">Select field...</select></label>
+{:#responseoptions}
 
 &nbsp; | Permitted | Submitted | Twitch user | Answers
 -------|-----------|-----------|-------------|---------
@@ -125,10 +127,16 @@ loading... | -
 {: tag=dialog #responsedlg}
 
 <style>
+#responseoptions {
+	list-style-type: none;
+	padding: 0;
+	display: flex;
+	gap: 2em;
+}
 .checkbox-unchecked { /* Test for readability and unobtrusiveness */
 	opacity: .75;
 }
-label:has(#showarchived:checked) ~ table tr.archived {
+:has(#showarchived:checked) ~ table tr.archived {
 	display: revert;
 }
 tr.archived {
@@ -424,9 +432,9 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 
 bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
+	mapping cfg = await(G->G->DB->load_config(channel->userid, "forms"));
 	if (grp == "") {
 		//List of forms, and form editing (for any form)
-		mapping cfg = await(G->G->DB->load_config(channel->userid, "forms"));
 		if (!cfg->forms) return (["forms": ({ })]);
 		return (["forms": cfg->forms[cfg->formorder[*]]]);
 	}
@@ -446,7 +454,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	responses += values(nonces);
 	order += -values(nonces)->permitted[*];
 	sort(order, responses);
-	return (["responses": responses]);
+	return (["responses": responses, "forminfo": cfg->forms[grp]]);
 }
 
 __async__ mapping wscmd_create_form(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
