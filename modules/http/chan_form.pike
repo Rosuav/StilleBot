@@ -599,7 +599,7 @@ __async__ void wscmd_archive_responses(object channel, mapping(string:mixed) con
 	string formid = conn->subgroup;
 	await(G->G->DB->mutate_config(channel->userid, "formresponses") {mapping resp = __ARGS__[0];
 		if (!resp[formid]) return; //No responses, nothing to archive
-		foreach (resp[formid]->responses, mapping r) if (nonces[r->nonce]) r->archived = time();
+		foreach (resp[formid]->responses, mapping r) if (nonces[r->nonce] && !r->archived) r->archived = time();
 		//Archiving permissions is the same as deleting them - no need to keep them around
 		if (resp[formid]->permissions) resp[formid]->permissions -= nonces;
 	});
