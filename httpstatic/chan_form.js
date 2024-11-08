@@ -58,6 +58,10 @@ const render_element = { //Matches _element_types (see Pike code)
 		LABEL(["Label: ", INPUT({name: "label", value: el.label || ""}), " - shown in the form"]),
 		//Type (numeric/text)?
 	],
+	url: el => [ //extcall
+		render_element[""](el, "URL (web address)"),
+		LABEL(["Label: ", INPUT({name: "label", value: el.label || ""}), " - shown in the form"]),
+	],
 	paragraph: el => [ //extcall
 		render_element[""](el, "Paragraph input"),
 		LABEL(["Label: ", INPUT({name: "label", value: el.label || ""}), " - shown in the form"]),
@@ -210,6 +214,7 @@ export function sockmsg_download_csv(msg) {
 const view_element = { //Matches _element_types (see Pike code)
 	twitchid: (el, r) => format_user(r.submitted_by || r.authorized_for),
 	simple: (el, r) => [LABEL(SPAN(el.label)), PRE(r.fields[el.name])],
+	url: (el, r) => [LABEL(SPAN(el.label)), A({href: r.fields[el.name]}, r.fields[el.name])],
 	paragraph: (el, r) => [LABEL(SPAN(el.label)), BR(), PRE(r.fields[el.name])],
 	address: (el, r) => PRE(r.fields[el.name]),
 	checkbox: (el, r) => UL([

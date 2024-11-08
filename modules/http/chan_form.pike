@@ -149,6 +149,7 @@ array formfields = ({
 array _element_types = ({ //Search for _element_types in this and the JS to find places to add more
 	({"twitchid", "Twitch username"}), //If mandatory, will force user to be logged in to submit
 	({"simple", "Text input"}),
+	({"url", "URL (web address)"}),
 	({"paragraph", "Paragraph input"}),
 	({"address", "Street address"}),
 	//({"radio", "Selection (radio) buttons"}), //Should generally be made mandatory
@@ -159,6 +160,7 @@ mapping element_types = (mapping)_element_types;
 mapping element_attributes = ([ //Matches _element_types
 	"twitchid": (["permitted_only": type_boolean]),
 	"simple": (["label": type_string]),
+	"url": (["label": type_string]),
 	"paragraph": (["label": type_string]),
 	"address": ([
 		"label-name": type_string,
@@ -321,6 +323,14 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 						el->label || "", "field-" + el->name,
 						el->required ? " required" : "",
 						missing[el->name] ? " <span class=required title=Required>\\* Please enter something</span>" :
+							el->required ? " <span class=required title=Required>\\*</span>" : "",
+					);
+					break;
+				case "url":
+					elem = sprintf("<label><span>%s</span> <input type=url name=%q%s>%s</label>",
+						el->label || "", "field-" + el->name,
+						el->required ? " required" : "",
+						missing[el->name] ? " <span class=required title=Required>\\* Please enter a URL (web address)</span>" :
 							el->required ? " <span class=required title=Required>\\*</span>" : "",
 					);
 					break;
@@ -617,7 +627,7 @@ __async__ void wscmd_download_csv(object channel, mapping(string:mixed) conn, ma
 	if (!form) return;
 	array(string) headers = ({"datetime"});
 	foreach (form->elements, mapping el) switch (el->type) { //_element_types
-		case "twitchid": case "simple": case "paragraph":
+		case "twitchid": case "simple": case "url": case "paragraph":
 			headers += ({el->name});
 			break;
 		case "address":
@@ -638,7 +648,7 @@ __async__ void wscmd_download_csv(object channel, mapping(string:mixed) conn, ma
 			case "twitchid":
 				row += ({r->submitted_by ? r->submitted_by->display_name : ""});
 				break;
-			case "simple": case "paragraph":
+			case "simple": case "url": case "paragraph":
 				row += ({r->fields[el->name]});
 				break;
 			case "address":
