@@ -99,17 +99,20 @@ constant formresponses = #"# Form responses
 
 [Back to form list](form)
 
+<label><input type=checkbox id=showarchived> Show archived responses</label>
+
 &nbsp; | Permitted | Submitted | Twitch user | Answers
 -------|-----------|-----------|-------------|---------
 loading... | -
 {:#responses}
 
-[Download CSV](:#downloadcsv) [Delete selected](:#deleteresponses)
+[Download CSV](:#downloadcsv) [Archive selected](:#archiveresponses) [Delete selected](:#deleteresponses)
 
 > ### Form response
 >
 > <label><span>Permitted at:</span> <input readonly name=permitted></label><br>
 > <label><span>Submitted at:</span> <input readonly name=timestamp></label><br>
+> <div id=archived_at></div>
 >
 > <div id=formdesc></div>
 >
@@ -124,6 +127,14 @@ loading... | -
 <style>
 .checkbox-unchecked { /* Test for readability and unobtrusiveness */
 	opacity: .75;
+}
+label:has(#showarchived:checked) ~ table tr.archived {
+	display: revert;
+}
+tr.archived {
+	display: none;
+	font-style: italic;
+	background: #ccc;
 }
 </style>
 " + shared_styles;
@@ -577,6 +588,19 @@ __async__ void wscmd_delete_responses(object channel, mapping(string:mixed) conn
 		//not destroyed.
 		foreach (resp[formid]->responses, mapping r) if (nonces[r->nonce]) r->deleted = time();
 		//Hard delete from permissions - no need to keep them around
+		if (resp[formid]->permissions) resp[formid]->permissions -= nonces;
+	});
+	send_updates_all(channel, formid);
+}
+
+__async__ void wscmd_archive_responses(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!arrayp(msg->nonces)) return;
+	multiset nonces = (multiset)msg->nonces;
+	string formid = conn->subgroup;
+	await(G->G->DB->mutate_config(channel->userid, "formresponses") {mapping resp = __ARGS__[0];
+		if (!resp[formid]) return; //No responses, nothing to archive
+		foreach (resp[formid]->responses, mapping r) if (nonces[r->nonce]) r->archived = time();
+		//Archiving permissions is the same as deleting them - no need to keep them around
 		if (resp[formid]->permissions) resp[formid]->permissions -= nonces;
 	});
 	send_updates_all(channel, formid);

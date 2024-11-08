@@ -120,7 +120,7 @@ on("click", "#createform", e => ws_sync.send({cmd: "create_form"}));
 export function sockmsg_openform(msg) {openform(msg.form_data);}
 export function render(data) {
 	if (data.forms) data.forms.forEach(f => f.id === editing && openform(f));
-	if (data.responses) replace_content("#responses tbody", data.responses.map(r => TR([
+	if (data.responses) replace_content("#responses tbody", data.responses.map(r => TR({class: r.archived ? "archived" : ""}, [
 		TD(INPUT({type: "checkbox", "data-nonce": r.nonce, class: "selectrow"})),
 		TD(format_time(r.permitted)),
 		TD(format_time(r.timestamp)),
@@ -173,9 +173,18 @@ on("click", ".selectrow", e => {
 	last_clicked = e.match;
 });
 
+//TODO: Disable both #archiveresponses and #deleteresponses if nothing selected
+//TODO: If all selected rows are currently archived (minimum 1 row), change the button label
+//to "Unarchive selected" and have it unarchive them on the back end
+on("click", "#archiveresponses", e => {
+	const nonces = [];
+	document.querySelectorAll(".selectrow:checked").forEach(el => {nonces.push(el.dataset.nonce); el.checked = false;});
+	ws_sync.send({cmd: "archive_responses", nonces});
+});
+
 on("click", "#deleteresponses", simpleconfirm("Deleted responses are hard to retrieve. Are you sure you want to do this?", e => {
 	const nonces = [];
-	document.querySelectorAll(".selectrow:checked").forEach(el => nonces.push(el.dataset.nonce));
+	document.querySelectorAll(".selectrow:checked").forEach(el => {nonces.push(el.dataset.nonce); el.checked = false;});
 	ws_sync.send({cmd: "delete_responses", nonces});
 }));
 
@@ -215,6 +224,10 @@ on("click", ".showresponse", e => {
 		}
 		else el.value = "";
 	});
+	if (r.archived) {
+		const t = new Date(r.archived * 1000);
+		replace_content("#archived_at", "Archived at " + t.toLocaleString());
+	}
 	if (r.fields) replace_content("#formresponse tbody", (formdata.elements||[]).map((el, idx) => view_element[el.type] && TR([
 		TD(el.name),
 		TD(view_element[el.type](el, r)),
