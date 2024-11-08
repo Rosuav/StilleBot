@@ -122,24 +122,38 @@ on("click", ".openform", e => {e.preventDefault(); openform(e.match.form_data);}
 
 on("click", "#createform", e => ws_sync.send({cmd: "create_form"}));
 export function sockmsg_openform(msg) {openform(msg.form_data);}
+let response_groupfield = "address"; //TODO: Let this be customized. Set to null to disable response grouping.
 export function render(data) {
 	if (data.forms) data.forms.forEach(f => f.id === editing && openform(f));
-	let highlight = false, lastaddress = "";
-	if (data.responses) replace_content("#responses tbody", data.responses.map(r => {
-		if (!r.archived && (!r.fields || r.fields.address !== lastaddress)) {
-			//TODO: Don't depend on a hard-coded field name "address", allow any field to be the
-			//grouping field.
-			highlight = !highlight;
-			lastaddress = r.fields?.address;
-		}
-		return TR({class: r.archived ? "archived" : highlight ? "row-alternate" : "row-default"}, [
-			TD(INPUT({type: "checkbox", "data-nonce": r.nonce, class: "selectrow"})),
-			TD(format_time(r.permitted)),
-			TD(format_time(r.timestamp)),
-			TD(format_user(r.submitted_by || r.authorized_for)),
-			TD(BUTTON({type: "button", class: "showresponse", ".resp_data": r}, "View")),
-		]);
-	}));
+	if (data.responses) {
+		let highlight = false, lastfield = "";
+		replace_content("#responses tbody", data.responses.map(r => {
+			let matches = [r];
+			if (response_groupfield && r.fields && !r.archived) {
+				if (r.river) return;
+				//Scan the rest of the responses to see if there are any others with the same groupfield
+				//Not applicable to entries that lack fields (ie unsubmitted permissions), they will not be grouped.
+				//TODO: Allow grouping by permitted/submitted user??
+				const grp = r.fields[response_groupfield];
+				matches = data.responses.filter(r => !r.river && r.fields && !r.archived && r.fields[response_groupfield] === grp);
+				r.river = true;
+				matches.forEach(r => r.river = true);
+			}
+			const seenuser = { };
+			return TR({class: r.archived ? "archived" : (highlight = !highlight) ? "row-alternate" : "row-default"}, [
+				TD(matches.map(r => [INPUT({type: "checkbox", "data-nonce": r.nonce, class: "selectrow"}), BR()])),
+				TD(matches.map(r => [format_time(r.permitted), BR()])),
+				TD(matches.map(r => [format_time(r.timestamp), BR()])),
+				TD(matches.map(r => {
+					const user = r.submitted_by || r.authorized_for;
+					if (seenuser[user.id]) return null;
+					seenuser[user.id] = 1;
+					return [format_user(user), BR()];
+				})),
+				TD(matches.map(r => [BUTTON({type: "button", class: "showresponse", ".resp_data": r}, "View"), BR()])),
+			]);
+		}));
+	}
 }
 
 on("change", ".formmeta", e => ws_sync.send({cmd: "form_meta", id: editing, [e.match.name]: e.match.type === "checkbox" ? e.match.checked : e.match.value}));
