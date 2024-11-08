@@ -171,9 +171,11 @@ on("click", ".selectrow", e => {
 		}
 	}
 	last_clicked = e.match;
+	//So! Are any selected? If the current one is, no need to search; otherwise, see if there are any.
+	if (!state && document.querySelector(".selectrow:checked")) state = true;
+	DOM("#archiveresponses").disabled = DOM("#deleteresponses").disabled = !state;
 });
 
-//TODO: Disable both #archiveresponses and #deleteresponses if nothing selected
 //TODO: If all selected rows are currently archived (minimum 1 row), change the button label
 //to "Unarchive selected" and have it unarchive them on the back end
 on("click", "#archiveresponses", e => {

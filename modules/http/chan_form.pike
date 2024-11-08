@@ -106,7 +106,7 @@ constant formresponses = #"# Form responses
 loading... | -
 {:#responses}
 
-[Download CSV](:#downloadcsv) [Archive selected](:#archiveresponses) [Delete selected](:#deleteresponses)
+[Download CSV](:#downloadcsv) [Archive selected](:#archiveresponses disabled=1) [Delete selected](:#deleteresponses disabled=1)
 
 > ### Form response
 >
