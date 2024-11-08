@@ -575,7 +575,7 @@ __async__ void wscmd_delete_responses(object channel, mapping(string:mixed) conn
 		if (!resp[formid]) return; //No responses, nothing to delete
 		//Soft delete from responses. There's no current way to retrieve them, but at least the data's
 		//not destroyed.
-		foreach (resp[formid]->responses, mapping r) if (nonces[r->nonce]) r->deleted = 1;
+		foreach (resp[formid]->responses, mapping r) if (nonces[r->nonce]) r->deleted = time();
 		//Hard delete from permissions - no need to keep them around
 		if (resp[formid]->permissions) resp[formid]->permissions -= nonces;
 	});
