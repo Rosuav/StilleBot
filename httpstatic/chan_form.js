@@ -158,7 +158,7 @@ on("click", ".element .deletefield", e => ws_sync.send({cmd: "edit_element", id:
 //Allow range selection of rows
 let last_clicked = null;
 on("click", ".selectrow", e => {
-	const state = e.match.checked;
+	let state = e.match.checked;
 	if (e.shiftKey && last_clicked && last_clicked.checked === state) {
 		const pos = e.match.compareDocumentPosition(last_clicked);
 		let from, to;
@@ -174,14 +174,18 @@ on("click", ".selectrow", e => {
 	//So! Are any selected? If the current one is, no need to search; otherwise, see if there are any.
 	if (!state && document.querySelector(".selectrow:checked")) state = true;
 	DOM("#archiveresponses").disabled = DOM("#deleteresponses").disabled = !state;
+	//If at least one is selected, and all selected rows are currently archived,
+	//the Archive button becomes Unarchive.
+	if (!state || document.querySelector("tr:not(.archived) .selectrow:checked"))
+		replace_content("#archiveresponses", "Archive selected").dataset.cmd = "archive_responses";
+	else
+		replace_content("#archiveresponses", "Unarchive selected").dataset.cmd = "unarchive_responses";
 });
 
-//TODO: If all selected rows are currently archived (minimum 1 row), change the button label
-//to "Unarchive selected" and have it unarchive them on the back end
 on("click", "#archiveresponses", e => {
 	const nonces = [];
 	document.querySelectorAll(".selectrow:checked").forEach(el => {nonces.push(el.dataset.nonce); el.checked = false;});
-	ws_sync.send({cmd: "archive_responses", nonces});
+	ws_sync.send({cmd: e.match.dataset.cmd || "archive_responses", nonces});
 });
 
 on("click", "#deleteresponses", simpleconfirm("Deleted responses are hard to retrieve. Are you sure you want to do this?", e => {

@@ -578,32 +578,32 @@ __async__ void wscmd_delete_element(object channel, mapping(string:mixed) conn, 
 bool type_string(string value) {return 1;}
 bool type_boolean(string value) {return value == "1" || value == "0" || value == "";}
 
-__async__ void wscmd_delete_responses(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+//Take a selection of form response nonces and do something to them all.
+__async__ void manipulate_responses(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg, function update) {
 	if (!arrayp(msg->nonces)) return;
 	multiset nonces = (multiset)msg->nonces;
 	string formid = conn->subgroup;
 	await(G->G->DB->mutate_config(channel->userid, "formresponses") {mapping resp = __ARGS__[0];
 		if (!resp[formid]) return; //No responses, nothing to delete
-		//Soft delete from responses. There's no current way to retrieve them, but at least the data's
-		//not destroyed.
-		foreach (resp[formid]->responses, mapping r) if (nonces[r->nonce]) r->deleted = time();
+		foreach (resp[formid]->responses, mapping r) if (nonces[r->nonce]) update(r);
 		//Hard delete from permissions - no need to keep them around
 		if (resp[formid]->permissions) resp[formid]->permissions -= nonces;
 	});
 	send_updates_all(channel, formid);
 }
 
-__async__ void wscmd_archive_responses(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!arrayp(msg->nonces)) return;
-	multiset nonces = (multiset)msg->nonces;
-	string formid = conn->subgroup;
-	await(G->G->DB->mutate_config(channel->userid, "formresponses") {mapping resp = __ARGS__[0];
-		if (!resp[formid]) return; //No responses, nothing to archive
-		foreach (resp[formid]->responses, mapping r) if (nonces[r->nonce] && !r->archived) r->archived = time();
-		//Archiving permissions is the same as deleting them - no need to keep them around
-		if (resp[formid]->permissions) resp[formid]->permissions -= nonces;
-	});
-	send_updates_all(channel, formid);
+void wscmd_delete_responses(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//Soft delete from responses. There's no current way to retrieve them, but at least the data's
+	//not destroyed.
+	manipulate_responses(channel, conn, msg) {__ARGS__[0]->deleted = time();};
+}
+
+void wscmd_archive_responses(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	manipulate_responses(channel, conn, msg) {if (!__ARGS__[0]->archived) __ARGS__[0]->archived = time();};
+}
+
+void wscmd_unarchive_responses(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	manipulate_responses(channel, conn, msg) {m_delete(__ARGS__[0], "archived");};
 }
 
 __async__ void wscmd_download_csv(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
