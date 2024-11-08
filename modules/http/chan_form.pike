@@ -146,6 +146,19 @@ tr.archived {
 }
 tr.row-default {background: #eef;}
 tr.row-alternate {background: #efe;}
+.twocol {
+	display: flex;
+	gap: 1em;
+}
+.twocol > * {
+	width: max-content;
+	margin: 0;
+}
+.column {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-around;
+}
 </style>
 " + shared_styles;
 

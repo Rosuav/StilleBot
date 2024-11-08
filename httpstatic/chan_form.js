@@ -258,7 +258,11 @@ const view_element = { //Matches _element_types (see Pike code)
 	simple: (el, r) => [LABEL(SPAN(el.label)), PRE(r.fields[el.name])],
 	url: (el, r) => [LABEL(SPAN(el.label)), A({href: r.fields[el.name]}, r.fields[el.name])],
 	paragraph: (el, r) => [LABEL(SPAN(el.label)), BR(), PRE(r.fields[el.name])],
-	address: (el, r) => PRE(r.fields[el.name]),
+	address: (el, r) => DIV({class: "twocol"}, [
+		PRE(r.fields[el.name]),
+		DIV({class: "column"}, BUTTON({class: "clipbtn", "data-copyme": r.fields[el.name],
+			title: "Click to copy address"}, "📋")),
+	]),
 	checkbox: (el, r) => UL([
 		(el.label || []).map((l, i) => LI({class: r.fields[el.name + (-i || "")] ? "checkbox-checked" : "checkbox-unchecked"}, [
 			LABEL(SPAN(r.fields[el.name + (-i || "")] ? "Selected" : "Unselected")),
