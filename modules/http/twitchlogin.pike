@@ -56,27 +56,70 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		mapping user = await(twitch_api_request("https://api.twitch.tv/helix/users",
 			(["Authorization": "Bearer " + auth->access_token])))
 				->data[0];
-		//Check if these credentials are at least what we already had.
+
+		//First, see if the current credentials are a superset of what we already had.
+		//If they are, great! Expand the login scope and all is well.
+		//If not, are the old credentials a superset of what we now have? Keep the old
+		//login and move on. Replace what's in the user's session.
+		//Otherwise, there's some sort of symmetric difference - each token has some
+		//scope that the other doesn't. Keep the NEW token, but report a banner on all
+		//pages showing that there is more to be seen.
+
+		//Grab the old credentials (if any) and validate them...
 		mapping tok = G->G->user_credentials[(int)user->id] || ([]);
-		array missing = (tok->scopes || ({ })) - (req->variables->scope / " ") - ({""});
-		if (sizeof(missing)) {werror("LOGIN FAIL: %O %O %O\n", tok->scopes, req->variables->scope, (tok->scopes | missing) * " "); return render_template(#"# Twitch Login
-
-Hey, sorry, something seems to be messed up. Rosuav is looking into it. For now, you may
-be able to get logged in by clicking one of these buttons:
-
-[Try again](:.twitchlogin data-scopes=@$$scopes$$@) [Log out](:onclick=window.location='/logout')
-", (["scopes": (tok->scopes | missing) * " "]));}
-		G->G->DB->save_user_credentials(([
-			"userid": (int)user->id,
-			"login": user->login,
-			"token": auth->access_token,
-			//"authcookie": cookie, //Not currently stored since it's not needed. Consider storing it encoded if it would help with anything.
-			"scopes": sort(req->variables->scope / " "),
-			"validated": time(),
-			"user_info": user,
-		]));
+		mapping oldtok = tok->token ? await(twitch_api_request("https://id.twitch.tv/oauth2/validate",
+			(["Authorization": "Bearer " + tok->token]))) : ([]);
+		//... and compare to what Twitch says we now have:
+		mapping newtok = await(twitch_api_request("https://id.twitch.tv/oauth2/validate",
+			(["Authorization": "Bearer " + auth->access_token])));
+		array oldscopes = oldtok->scopes || ({ }), newscopes = newtok->scopes || ({ });
+		array oldmissing = newscopes - oldscopes, newmissing = oldscopes - newscopes;
+		multiset scopes; string token;
+		if (!sizeof(newmissing)) {
+			//The new token has at least the same scopes as the old one did. Use it.
+			//This might actually fix (or partly fix) a previous "missing" state.
+			array stillmissing = (tok->missing || ({ })) - newscopes;
+			G->G->DB->save_user_credentials(([
+				"userid": (int)user->id,
+				"login": user->login,
+				"token": auth->access_token,
+				//"authcookie": cookie, //Not currently stored since it's not needed. Consider storing it encoded if it would help with anything.
+				"scopes": sort(newscopes),
+				"validated": time(),
+				"user_info": user,
+				"missing": sizeof(stillmissing) && stillmissing,
+			]));
+			scopes = (multiset)newscopes; token = auth->access_token;
+			werror("Saving NEW token for %s\n", user->login);
+		} else if (!sizeof(oldmissing)) {
+			//The old token has all the scopes, the new one is missing some. (Most
+			//likely, the new one has none whatsoever, because it's simply a relogin.)
+			//Don't save the new credentials; the old ones are still good, and there's
+			//nothing to be learned from the new ones other than that this is the same
+			//user. Replace the session credentials with the saved ones.
+			scopes = (multiset)oldscopes; token = tok->token;
+			werror("Saving OLD token for %s\n", user->login);
+		} else {
+			//We have a symmetric difference. For example, you previously gave permission
+			//to view hype train stats, but now you're independently giving permission to
+			//check your emote list. Since the user is more likely to want to do the thing
+			//they're NOW doing, retain the new token, but have a marker saying that there
+			//is a problem.
+			G->G->DB->save_user_credentials(([
+				"userid": (int)user->id,
+				"login": user->login,
+				"token": auth->access_token,
+				//"authcookie": cookie, //Not currently stored since it's not needed. Consider storing it encoded if it would help with anything.
+				"scopes": sort(newscopes),
+				"validated": time(),
+				"user_info": user,
+				"missing": (tok->missing || ({ })) | newmissing,
+			]));
+			scopes = (multiset)newscopes; token = auth->access_token;
+			werror("WARNING: Saving NEW token for %s but missing %O + %O\n", user->login, tok->missing || ({ }), newmissing);
+		}
 		if (function f = login_callback[req->variables->state])
-			return f(req, user, (multiset)(req->variables->scope / " "), auth->access_token);
+			return f(req, user, scopes, token);
 		//Try to figure out a plausible place to send the person after login.
 		//For streamers, redirect to the stream's landing page. Doesn't work
 		//for mods, as there might be more than one (and we'd need permission
@@ -86,7 +129,7 @@ be able to get logged in by clicking one of these buttons:
 		if (channel) dest = "/channels/" + user->login + "/";
 		resend_redirect[req->variables->code] = dest;
 		call_out(m_delete, 30, resend_redirect, req->variables->code);
-		login_popup_done(req, user, (multiset)(req->variables->scope / " "), auth->access_token);
+		login_popup_done(req, user, scopes, token);
 		return redirect(dest);
 	}
 	//Merge scopes, similarly to ensure_login()
