@@ -136,8 +136,9 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	//NOTE: Some things are inconsistent on whether it's "scope" or "scopes". Currently
 	//checking for either. TODO: Make them all consistent.
 	multiset havescopes = req->misc->session->?scopes || (<>);
-	string bcast_scopes = token_for_user_login(req->misc->session->user->?login)[1];
-	if (bcast_scopes != "") havescopes |= (multiset)(bcast_scopes / " ");
+	mapping tok = G->G->user_credentials[(int)req->misc->session->?user->?id] || ([]);
+	if (tok->scopes) havescopes |= (multiset)tok->scopes;
+	if (tok->missing) havescopes |= (multiset)tok->missing; //These are actually ones we DON'T have, but include them in the request anyway.
 	multiset wantscopes = (multiset)((req->variables->scopes || req->variables->scope || "") / " " - ({""}));
 	multiset bad = wantscopes - TwitchAuth()->list_valid_scopes();
 	if (sizeof(bad)) return (["error": 400, "type": "text/plain", //Note that this is a 400, as opposed to a 500 in ensure_login
