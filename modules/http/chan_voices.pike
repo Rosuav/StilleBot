@@ -147,7 +147,7 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 	string url = function_object(G->G->http_endpoints->twitchlogin)->get_redirect_url(
 		scopes, (["force_verify": "true"]), conn->hostname,
 	) {
-		[object req, mapping user, multiset scopes, string token, string cookie] = __ARGS__;
+		[object req, mapping user, multiset scopes, string token] = __ARGS__;
 		mapping vox = G->G->DB->load_cached_config(channel->userid, "voices");
 		mapping v = vox[user->id]; if (!v) v = vox[user->id] = ([]);
 		v->id = (string)user->id;

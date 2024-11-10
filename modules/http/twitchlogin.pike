@@ -27,9 +27,9 @@ mapping scope_reasons = ([
 	"user:read:follows": "Enables the core Raid Finder mode",
 ]);
 
-mapping(string:mixed) login_popup_done(Protocols.HTTP.Server.Request req, mapping user, multiset scopes, string token, string cookie) {
+mapping(string:mixed) login_popup_done(Protocols.HTTP.Server.Request req, mapping user, multiset scopes, string token) {
 	req->misc->session->user = user;
-	req->misc->session->scopes = (multiset)(req->variables->scope / " ");
+	req->misc->session->scopes = scopes;
 	req->misc->session->token = token;
 	return (["data": "<script>window.close(); window.opener.location.reload();</script>", "type": "text/html"]);
 }
@@ -76,7 +76,7 @@ be able to get logged in by clicking one of these buttons:
 			"user_info": user,
 		]));
 		if (function f = login_callback[req->variables->state])
-			return f(req, user, (multiset)(req->variables->scope / " "), auth->access_token, /*cookie*/""/*hackedout*/);
+			return f(req, user, (multiset)(req->variables->scope / " "), auth->access_token);
 		//Try to figure out a plausible place to send the person after login.
 		//For streamers, redirect to the stream's landing page. Doesn't work
 		//for mods, as there might be more than one (and we'd need permission
@@ -86,7 +86,7 @@ be able to get logged in by clicking one of these buttons:
 		if (channel) dest = "/channels/" + user->login + "/";
 		resend_redirect[req->variables->code] = dest;
 		call_out(m_delete, 30, resend_redirect, req->variables->code);
-		login_popup_done(req, user, (multiset)(req->variables->scope / " "), auth->access_token, /*cookie*/""/*hackedout*/);
+		login_popup_done(req, user, (multiset)(req->variables->scope / " "), auth->access_token);
 		return redirect(dest);
 	}
 	//Merge scopes, similarly to ensure_login()
