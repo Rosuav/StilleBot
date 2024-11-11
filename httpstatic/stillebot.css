@@ -347,7 +347,7 @@ nav#sidebar ul {
 	margin: 0;
 	overflow: clip auto;
 	position: absolute;
-	top: 0px; bottom: 100px; /* Leave room for the avatar below */
+	top: 0px; bottom: 112px; /* Leave room for the avatar below */
 }
 nav#sidebar img {
 	display: block;
