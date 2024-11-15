@@ -38,7 +38,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	));
 	mapping hooks = Standards.JSON.decode_utf8(res->get());
 	//Do I need to check every campaign to see if it has a hook, or just assume that there's one campaign?
-	string hookuri = "https://mustardmine.com/channels/" + channel->login + "/patreon";
+	string hookuri = "https://mustardmine.com/channels/" + channel->login + "/integrations";
 	//Note that if you rename your channel, the URL will break, and thus webhooks will stop coming through;
 	//to fix this, simply reauthenticate and the new hook will be created.
 	if (!has_value(hooks->data->attributes->uri, hookuri)) {
