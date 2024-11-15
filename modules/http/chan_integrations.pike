@@ -2,7 +2,11 @@ inherit http_websocket;
 inherit hook;
 
 constant markdown = #"
-# Integrations
+# Support Platform Integrations
+
+Mustard Mine can integrate with several other web sites where your community can support you.
+When linked together, these services can trigger actions within the bot, such as goal bar
+advancement, on-stream alerts, or in-chat appreciative notes.
 
 ## Enabling Ko-fi notifications
 
