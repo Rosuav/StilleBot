@@ -47,16 +47,19 @@ $$loginprompt||$$
 @create_hook: constant kofi_support = ({"object channel", "string type", "mapping params", "mapping raw"});
 
 __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req) {
+	if (string other = req->request_type == "POST" && !is_active_bot() && get_active_bot()) {
+		//POST requests are likely to be webhooks. Forward them to the active bot, including whichever
+		//of the relevant headers we spot. Add headers to this as needed.
+		constant headers = (<"x-fourthwall-hmac-sha256", "content-type", "x-patreon-event", "x-patreon-signature">);
+		werror("Forwarding webhook...\n");
+		Concurrent.Future fwd = Protocols.HTTP.Promise.post_url("https://" + other + req->not_query,
+			Protocols.HTTP.Promise.Arguments((["headers": req->request_headers & headers, "data": req->body_raw])));
+		//As above, not currently awaiting the promise. Should we?
+		return "Passing it along.";
+	}
 	if (req->request_type == "POST" && req->variables->data) {
 		//Ko-fi webhook. Check the Verification Token against the one
 		//we have stored, and if it matches, fire all the signals.
-		if (string other = !is_active_bot() && get_active_bot()) {
-			werror("Ko-fi integration - forwarding...\n");
-			Concurrent.Future fwd = Protocols.HTTP.Promise.post_url("https://" + other + req->not_query,
-				Protocols.HTTP.Promise.Arguments((["headers": (["content-type": req->request_headers["content-type"]]), "data": req->body_raw])));
-			//Not currently awaiting the promise. Should we?
-			return "Passing it along.";
-		}
 		mapping data = Standards.JSON.decode(req->variables->data); //If malformed, will bomb and send back a 500. (Note: Don't use decode_utf8 here, it's already Unicode text.)
 		if (!mappingp(data)) return (["error": 400, "type": "text/plain", "data": "No data mapping given"]);
 		mapping cfg = await(G->G->DB->load_config(req->misc->channel->userid, "kofi"));
@@ -137,13 +140,6 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	}
 	if (string sig = req->request_type == "POST" && req->request_headers["x-fourthwall-hmac-sha256"]) {
 		//Fourth Wall integration - could be a sale, donation, subscription, etc
-		if (string other = !is_active_bot() && get_active_bot()) {
-			werror("Fourth Wall integration - forwarding...\n");
-			Concurrent.Future fwd = Protocols.HTTP.Promise.post_url("https://" + other + req->not_query,
-				Protocols.HTTP.Promise.Arguments((["headers": (["x-fourthwall-hmac-sha256": sig]), "data": req->body_raw])));
-			//Not currently awaiting the promise. Should we?
-			return "Passing it along.";
-		}
 		//TODO: Deduplicate based on the ID
 		mapping fw = await(G->G->DB->load_config(req->misc->channel->userid, "fourthwall"));
 		object signer = Crypto.SHA256.HMAC(fw->verification_token || "");
@@ -196,6 +192,15 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		if (amount) G->G->goal_bar_autoadvance(req->misc->channel, (["user": req->misc->channel->login, "from_name": data->username || "Anonymous"]), special[1..], amount);
 		return "Awesome, thanks!";
 	}
+	if (string sig = req->request_type == "POST" && req->request_headers["x-patreon-signature"]) {
+		mapping secret = await(G->G->DB->load_config(req->misc->channel->userid, "patreon"))->hook_secret;
+		object signer = Crypto.MD5.HMAC(secret || "-");
+		if (req->request_headers["x-patreon-signature"] != String.string2hex(signer(req->body_raw)))
+			return (["error": 418, "data": "My teapot thinks your signature is wrong."]);
+		mapping body = Standards.JSON.decode_utf8(req->body_raw);
+		werror("Got a Patreon %O notification: %O\n", req->request_headers["x-patreon-event"], body);
+		return "Thanks!";
+	}
 	if (req->misc->is_mod) {
 		return render(req, ([
 			"vars": (["ws_group": ""]),
@@ -224,6 +229,7 @@ bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping kofi = await(G->G->DB->load_config(channel->userid, "kofi"));
 	mapping fw = await(G->G->DB->load_config(channel->userid, "fourthwall"));
+	mapping pat = await(G->G->DB->load_config(channel->userid, "patreon"));
 	return ([
 		"kofitoken": stringp(kofi->verification_token) && "..." + kofi->verification_token[<3..],
 		"fwtoken": stringp(fw->verification_token) && "..." + fw->verification_token[<3..],

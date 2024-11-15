@@ -6,21 +6,6 @@ inherit http_websocket;
 @retain: mapping patreon_csrf_states = ([]);
 
 __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req) {
-	if (req->request_type == "POST") {
-		//Might be a web hook
-		if (string other = !is_active_bot() && get_active_bot()) {
-			werror("Patreon integration - forwarding...\n");
-			Concurrent.Future fwd = Protocols.HTTP.Promise.post_url("https://" + other + req->not_query,
-				Protocols.HTTP.Promise.Arguments((["headers": (["content-type": req->request_headers["content-type"]]), "data": req->body_raw])));
-			//As in chan_integrations, not currently awaiting the promise. Should we?
-			return "Passing it along.";
-		}
-		object signer = Crypto.MD5.HMAC("DufWFHQgjKSat_KRmIUFyTiCFS0WfQCtQHGZc3SugDNCLsQQeeQJFXsQdiH1_DRB");
-		if (req->request_headers["x-patreon-signature"] != String.string2hex(signer(req->body_raw)))
-			return (["error": 418, "data": "My teapot thinks your signature is wrong."]);
-		mapping body = Standards.JSON.decode_utf8(req->body_raw);
-		return "Thanks!";
-	}
 	mapping state = m_delete(patreon_csrf_states, req->variables->state);
 	if (!state) return "Unable to login, please close this window and try again";
 	object res = await(Protocols.HTTP.Promise.post_url("https://www.patreon.com/api/oauth2/token",
@@ -53,7 +38,10 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	));
 	mapping hooks = Standards.JSON.decode_utf8(res->get());
 	//Do I need to check every campaign to see if it has a hook, or just assume that there's one campaign?
-	if (!sizeof(hooks->data)) {
+	string hookuri = "https://mustardmine.com/channels/" + channel->login + "/patreon";
+	//Note that if you rename your channel, the URL will break, and thus webhooks will stop coming through;
+	//to fix this, simply reauthenticate and the new hook will be created.
+	if (!has_value(hooks->data->attributes->uri, hookuri)) {
 		//No hooks yet; establish one.
 		res = await(Protocols.HTTP.Promise.post_url("https://www.patreon.com/api/oauth2/v2/webhooks",
 			Protocols.HTTP.Promise.Arguments((["headers": ([
@@ -67,7 +55,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 						"members:pledge:create", "members:pledge:update", "members:pledge:delete",
 						"posts:publish", //At least for testing - not sure if this will have long-term value
 					}),
-					"uri": "https://mustardmine.com/patreon",
+					"uri": hookuri,
 				]),
 				"relationships": ([
 					"campaign": (["data": (["type": "campaign", "id": campaigns->data[0]->id])]),
