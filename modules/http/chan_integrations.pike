@@ -34,6 +34,10 @@ that looks something like: `8e7d24cf-66b4-4695-a651-3e744df5a861`<br>Paste it he
 Once this is complete, Fourth Wall events will begin showing up in [Alerts](alertbox#fourthwall) and
 anywhere else they end up getting added.
 
+## Enabling Patreon notifications
+
+[Link your Patreon account](:#patreonlogin)
+
 $$loginprompt||$$
 ";
 
@@ -224,6 +228,22 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		"kofitoken": stringp(kofi->verification_token) && "..." + kofi->verification_token[<3..],
 		"fwtoken": stringp(fw->verification_token) && "..." + fw->verification_token[<3..],
 	]);
+}
+
+//Note that this message comes to the bot that's active as of when you click the button,
+//and the eventual redirect from Patreon will come to the bot that's active at that time.
+//If there's a bot handover during that time, the login will have to be restarted.
+@"is_mod": mapping wscmd_patreonlogin(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string tok = String.string2hex(random_string(8));
+	G->G->patreon_csrf_states[tok] = (["timestamp": time(), "channel": channel->login]);
+	object uri = Standards.URI("https://www.patreon.com/oauth2/authorize");
+	uri->set_query_variables(([
+		"response_type": "code",
+		"client_id": G->G->instance_config->patreon_clientid,
+		"redirect_uri": "https://" + G->G->instance_config->local_address + "/patreon", //Or should it always go to mustardmine.com?
+		"state": tok,
+	]));
+	return (["cmd": "patreonlogin", "uri": (string)uri]);
 }
 
 protected void create(string name) {::create(name);}
