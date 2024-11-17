@@ -66,8 +66,9 @@ on("click", "#simpleconfirmyes", e => {
 })
 
 on("click", ".twitchlogin", async e => {
-	let scopes = e.match.dataset.scopes || ""; //Buttons may specify their scopes-required, otherwise assume just identity is needed
-	const data = await (await fetch("/twitchlogin?urlonly=true&scope=" + scopes)).json();
+	const scopes = e.match.dataset.scopes || ""; //Buttons may specify their scopes-required, otherwise assume just identity is needed
+	const force = e.match.dataset.force ? "&force_verify=true" : "";
+	const data = await (await fetch("/twitchlogin?urlonly=true&scope=" + scopes + force)).json();
 	window.open(data.uri, "login", "width=525, height=900");
 });
 

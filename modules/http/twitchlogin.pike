@@ -144,7 +144,12 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (sizeof(bad)) return (["error": 400, "type": "text/plain", //Note that this is a 400, as opposed to a 500 in ensure_login
 		"data": sprintf("Unrecognized scope %O being requested", (array)bad * " ")]);
 	multiset needscopes = havescopes | wantscopes; //Note that we'll keep any that we already have.
-	if (req->variables->urlonly) return jsonify((["uri": get_redirect_url(needscopes, ([]), deduce_host(req->request_headers || ([])), login_popup_done)]));
+	if (req->variables->urlonly) return jsonify((["uri": get_redirect_url(
+		needscopes,
+		req->variables->force_verify ? (["force_verify": "true"]) : ([]),
+		deduce_host(req->request_headers || ([])),
+		login_popup_done,
+	)]));
 
 	//Offer an interactive page for adding scopes. Can also be used with a handy URL
 	//like https://mustardmine.com/twitchlogin?scopes=channel:manage:redemptions
