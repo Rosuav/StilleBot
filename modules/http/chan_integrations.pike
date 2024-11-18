@@ -43,6 +43,21 @@ When linked, Patreon events will begin showing up in [Alerts](alertbox#patreon),
 and [Goal Bars](monitors).
 
 $$loginprompt||$$
+
+> ### Current Patrons
+>
+> Your current patrons are:
+>
+> * loading...
+> {: #patrons}
+>
+> [Close](:.dialog_close)
+{: tag=dialog #patrondlg}
+
+<style>
+.avatar {max-width: 1.5em;}
+vertical-align: middle;
+</style>
 ";
 
 //NOTE: Currently this is only used by chan_vipleaders, which is alphabetically after
@@ -255,6 +270,46 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		"state": tok,
 	]));
 	return (["cmd": "patreonlogin", "uri": (string)uri]);
+}
+
+@"is_mod": __async__ mapping|zero wscmd_resyncpatreon(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping lookup = await(G->G->DB->load_config(0, "patreon"))->twitch_from_patreon || ([]);
+	mapping cfg = await(G->G->DB->load_config(channel->userid, "patreon"));
+	if (!cfg->campaign_url) return 0;
+	//Is it worth retaining the campaign ID? What if there are multiple? CAN there ever be multiple?
+	object res = await(Protocols.HTTP.Promise.get_url("https://www.patreon.com/api/oauth2/v2/campaigns",
+		Protocols.HTTP.Promise.Arguments((["headers": ([
+			"Authorization": "Bearer " + cfg->auth->access_token,
+		])]))
+	));
+	mapping campaigns = Standards.JSON.decode_utf8(res->get());
+	string cpid = campaigns->data[0]->id;
+	array members = ({ });
+	do {
+		res = await(Protocols.HTTP.Promise.get_url("https://www.patreon.com/api/oauth2/v2/campaigns/" + cpid + "/members?include=user&fields[member]=currently_entitled_amount_cents,full_name",
+			Protocols.HTTP.Promise.Arguments((["headers": ([
+				"Authorization": "Bearer " + cfg->auth->access_token,
+			])]))
+		));
+		mapping page = Standards.JSON.decode_utf8(res->get());
+		members += page->data;
+		string next = page->meta->pagination->cursors->next;
+		//TODO: What does next look like and how do we use it?
+	} while (0); //TODO: while (next);
+	mapping ret = (["cmd": "resyncpatreon", "members": ({ })]);
+	foreach (members, mapping mem) {
+		string patid = mem->relationships->user->data->id;
+		string|zero twitchid = lookup[patid];
+		werror("PATREON SYNC: User %O (Twitch %O) is paying %d/month\n", patid, twitchid, mem->attributes->currently_entitled_amount_cents);
+		mapping user = twitchid && await(get_user_info(twitchid));
+		ret->members += ({([
+			"patreonid": patid,
+			"price": mem->attributes->currently_entitled_amount_cents,
+			"name": mem->attributes->full_name,
+			"twitch": user,
+		])});
+	}
+	return ret;
 }
 
 protected void create(string name) {::create(name);}
