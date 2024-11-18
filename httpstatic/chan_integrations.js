@@ -1,10 +1,14 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {} = choc; //autoimport
+const {A} = choc; //autoimport
 
 export function render(data) {
 	//Note that the entire token will never be shown, only the last few characters
 	if (data.kofitoken) DOM("#kofitoken").value = data.kofitoken;
 	if (data.fwtoken) DOM("#fwtoken").value = data.fwtoken;
+	if (data.paturl) set_content("#patreonstatus", [
+		"Your Patreon campaign is: ",
+		A({href: data.paturl}, data.paturl),
+	]);
 }
 
 on("submit", ".token", e => {

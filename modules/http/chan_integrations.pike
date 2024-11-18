@@ -37,6 +37,10 @@ anywhere else they end up getting added.
 ## Enabling Patreon notifications
 
 [Link your Patreon account](:#patreonlogin)
+{:#patreonstatus}
+
+When linked, Patreon events will begin showing up in [Alerts](alertbox#patreon), [Special Triggers](specials),
+and [Goal Bars](monitors).
 
 $$loginprompt||$$
 ";
@@ -233,6 +237,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	return ([
 		"kofitoken": stringp(kofi->verification_token) && "..." + kofi->verification_token[<3..],
 		"fwtoken": stringp(fw->verification_token) && "..." + fw->verification_token[<3..],
+		"paturl": pat->campaign_url, //May be null
 	]);
 }
 

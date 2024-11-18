@@ -73,12 +73,15 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 
 __async__ void link_channel_patreon(mapping auth, mapping ident, mapping state) {
 	object channel = G->G->irc->id[state->channel];
-	object res = await(Protocols.HTTP.Promise.get_url("https://www.patreon.com/api/oauth2/v2/campaigns",
+	object res = await(Protocols.HTTP.Promise.get_url("https://www.patreon.com/api/oauth2/v2/campaigns?fields[campaign]=url",
 		Protocols.HTTP.Promise.Arguments((["headers": ([
 			"Authorization": "Bearer " + auth->access_token,
 		])]))
 	));
 	mapping campaigns = Standards.JSON.decode_utf8(res->get());
+	await(G->G->DB->mutate_config(channel->userid, "patreon") {mapping cfg = __ARGS__[0];
+		cfg->campaign_url = campaigns->data[0]->attributes->url;
+	});
 	res = await(Protocols.HTTP.Promise.get_url("https://www.patreon.com/api/oauth2/v2/webhooks",
 		Protocols.HTTP.Promise.Arguments((["headers": ([
 			"Authorization": "Bearer " + auth->access_token,
