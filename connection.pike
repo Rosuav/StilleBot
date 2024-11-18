@@ -1294,6 +1294,7 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 			m_delete(G->G->http_sessions_deleted, conn->session->cookie);
 			ws_msg(pending[*], conn);
 		};
+		return;
 	}
 	mixed data;
 	if (catch {data = Standards.JSON.decode(frm->text);}) return; //Ignore frames that aren't text or aren't valid JSON
