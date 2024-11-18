@@ -54,6 +54,18 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		])]))
 	));
 	mapping ident = Standards.JSON.decode_utf8(res->get());
+	string twitch = state->channel ? (string)state->channel : state->user;
+	if (twitch) {
+		//Record both forward and reverse linkage
+		await(G->G->DB->mutate_config(twitch, "patreon") {mapping cfg = __ARGS__[0];
+			cfg->auth = auth;
+			cfg->patreon_user_id = ident->data->id;
+		});
+		await(G->G->DB->mutate_config(0, "patreon") {mapping cfg = __ARGS__[0];
+			if (!cfg->twitch_from_patreon) cfg->twitch_from_patreon = ([]);
+			cfg->twitch_from_patreon[ident->data->id] = twitch;
+		});
+	}
 	if (state->channel) link_channel_patreon(auth, ident, state);
 	if (state->user) link_user_patreon(auth, ident, state);
 	return (["data": "<script>window.close(); window.opener.location.reload();</script>", "type": "text/html"]);
@@ -61,10 +73,6 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 
 __async__ void link_channel_patreon(mapping auth, mapping ident, mapping state) {
 	object channel = G->G->irc->id[state->channel];
-	await(G->G->DB->mutate_config(channel->userid, "patreon") {mapping cfg = __ARGS__[0];
-		cfg->auth = auth;
-		cfg->patreon_user_id = ident->data->id;
-	});
 	object res = await(Protocols.HTTP.Promise.get_url("https://www.patreon.com/api/oauth2/v2/campaigns",
 		Protocols.HTTP.Promise.Arguments((["headers": ([
 			"Authorization": "Bearer " + auth->access_token,
@@ -112,10 +120,6 @@ __async__ void link_channel_patreon(mapping auth, mapping ident, mapping state) 
 }
 
 __async__ void link_user_patreon(mapping auth, mapping ident, mapping state) {
-	await(G->G->DB->mutate_config(state->user, "patreon") {mapping cfg = __ARGS__[0];
-		cfg->auth = auth;
-		cfg->patreon_user_id = ident->data->id;
-	});
 	werror("USER: Patreon %O is Twitch %O\n", ident->data->id, state->user);
 }
 
