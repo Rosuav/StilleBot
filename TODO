@@ -217,3 +217,17 @@
   - Does not occur if command GUI closed and reopened within the page.
   - Happens only in Waydroid Firefox, not in desktop Firefox. Not tested in Waydroid
     Chromium-based browsers as I haven't managed to get any of them working.
+* Patreon integration
+  - Alerts. Include a field showing the membership tier, to allow variants, eg no
+    alert for free members (aka followers)
+  - VIP status for all patreons at some minimum level (don't set to 0 or free members
+    will get it)
+    - Would require that people link their Patreon and Twitch - one-off but since it's
+      not supported by Patreon themselves, has to be done on Mustard Mine
+    - Whenever you resync, add new VIPs for anyone who is a supporter
+    - Track failure to add VIPs and don't unvip them later
+    - Remove VIP from anyone who is no longer a supporter
+    - React to members:create, members:delete, and possibly members:pledge:create/delete?
+  - Can we have a builtin that iterates over all current patrons?
+  - Note that members:create includes free memberships. May need a "membership upgrade"
+    alert too?
