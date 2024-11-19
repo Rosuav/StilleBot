@@ -231,3 +231,5 @@
   - Can we have a builtin that iterates over all current patrons?
   - Note that members:create includes free memberships. May need a "membership upgrade"
     alert too?
+* Font chooser in textformatting. Open another dlg with all known Google Fonts (API call?)
+  and if possible, your local system fonts???
