@@ -235,10 +235,25 @@
   and if possible, your local system fonts???
 * Weighted randomness. Currently, "Randomize" has equal weight for each element. Have a
   subelement that weights them.
-* If spare time - why is art share upload not showing thumbnail? Maybe push out a stub
+* Bug note - why is art share upload not showing thumbnail? Maybe push out a stub
   url until fully uploaded?
 * Scaling factor for goal bars
   - By default, it's 1.
   - Sub points mode sets it to 500. (Are there any other changes??) Presets using this
     will now set the scaling factor rather than the format.
   - Other factors equivalently. The variable will thus have, in effect, higher resolution.
+* Form fillout, twitchid input: Require follower, require sub
+  - Will require broadcaster authentication
+  - Check for bcaster auth on the form cfg page and prompt for it immediately (if the
+    corresponding box is checked)
+  - Yes, you COULD demand that someone be both following and a sub, but not sure why
+    you'd bother
+* Goal bar autoadvance leaderboard
+  - If enabled, will create a per-user variable with the same name as the goal bar's
+    variable and automatically update it
+  - Have a "reset leaderboard" option??
+* "Pick random chat participant" builtin
+  - Retain existing $participant$ for compatibility but it's inflexible
+  - Can be parameterized for how recently they have to have spoken in chat
+  - Can be used more than once (stick 'em into variables)
+  - Maybe allow filtering to just followers or just subs???
