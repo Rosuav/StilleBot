@@ -238,10 +238,10 @@
 * Bug note - why is art share upload not showing thumbnail? Maybe push out a stub
   url until fully uploaded?
 * Scaling factor for goal bars
-  - By default, it's 1.
-  - Sub points mode sets it to 500. (Are there any other changes??) Presets using this
-    will now set the scaling factor rather than the format.
+  - Replace "Sub points" format with Plain/500. (Are there any other changes??) Use it
+    that way in presets.
   - Other factors equivalently. The variable will thus have, in effect, higher resolution.
+  - Fix "Shown as" in editor
 * Form fillout, twitchid input: Require follower, require sub
   - Will require broadcaster authentication
   - Check for bcaster auth on the form cfg page and prompt for it immediately (if the
