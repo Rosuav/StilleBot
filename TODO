@@ -253,3 +253,5 @@
 * Possible alertbox filtering?
   - Create multiple links that are able to react to alerts
   - Filter which alerts will be shown on which links
+* Hype Train notifications now say if it's a Golden Kappa Train. Update the set of
+  available emotes in this situation.
