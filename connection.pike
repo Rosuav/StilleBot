@@ -1013,6 +1013,10 @@ class channel(mapping identity) {
 						"{msgid}": params->id || "", //Does this happen? Is there a message at all?
 					]));
 					break;
+				case "sharedchatnotice":
+					//If you're participating in a shared chat, and a notification is sent to the other,
+					//you get a sharedchatnotice that has a source_msg_id in it.
+					break;
 				default: werror("Unrecognized %s with msg_id %O on channel %s\n%O\n%O\n",
 					type, params->msg_id, name, params, msg);
 					Stdio.append_file("notice.log", sprintf("%sUnknown %s %s %s %O\n", ctime(time()), type, chan, msg, params));
