@@ -306,11 +306,11 @@ DOM("#setval").onclick = e => {
 
 function fixformatting() {
 	const fmt = DOM("[name=format]").value;
-	const formatter = formatters[fmt];
-	if (!formatter) {set_content("#thresholds-formatted", ""); return;} //plain mode (or fallback if error)
+	const formatter = formatters[fmt] || formatters.plain;
+	const sty = DOM("[name=format_style]").value;
 	const thresholds = DOM("[name=thresholds]").value
 		.split(" ")
-		.map(th => formatter(+th))
+		.map(th => formatter(+th, sty))
 		.join(" ");
 	const label = fmt === "subscriptions" ? " subs" : ""; //TODO: Generalize this
 	set_content("#thresholds-formatted", "Shown as: " + thresholds + label);
