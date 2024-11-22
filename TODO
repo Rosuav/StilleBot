@@ -241,10 +241,6 @@
     corresponding box is checked)
   - Yes, you COULD demand that someone be both following and a sub, but not sure why
     you'd bother
-* Goal bar autoadvance leaderboard
-  - If enabled, will create a per-user variable with the same name as the goal bar's
-    variable and automatically update it
-  - Have a "reset leaderboard" option??
 * "Pick random chat participant" builtin
   - Retain existing $participant$ for compatibility but it's inflexible
   - Can be parameterized for how recently they have to have spoken in chat
@@ -255,3 +251,4 @@
   - Filter which alerts will be shown on which links
 * Hype Train notifications now say if it's a Golden Kappa Train. Update the set of
   available emotes in this situation.
+* randrot -> switch, add a variable, pick the Nth

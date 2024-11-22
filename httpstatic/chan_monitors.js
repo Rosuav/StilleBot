@@ -227,6 +227,11 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 			Object.keys(presets).map(p => OPTION(p)),
 		])]),
 	])]),
+	TR([TH("Leaderboard"), TD([
+		LABEL([INPUT({type: "checkbox", name: "record_leaderboard", "data-nocopy": 1}), " Track per-user contributions"]),
+		//TODO: Have a "Show" button here that gives the same info as in the Variables page
+		//TODO: "Reset leaderboard" which will query all users and remove the per-user var for all of them
+	])]),
 	TR([TH("On level up"), TD([
 		SELECT({name: "lvlupcmd", id: "cmdpicker", "data-nocopy": 1}, [OPTION("Loading...")]),
 		BR(), "Add and edit commands ", A({href: "commands"}, "on the Commands page"),

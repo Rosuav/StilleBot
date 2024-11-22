@@ -65,7 +65,7 @@ constant vars_provided = ([
 //Some of these attributes make sense only with certain types (eg needlesize is only for goal bars).
 constant saveable_attributes = "previewbg barcolor fillcolor altcolor needlesize thresholds progressive lvlupcmd format format_style width height "
 	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip follow kofi_dono kofi_member kofi_renew kofi_shop "
-	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive startonscene startonscene_time "
+	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive startonscene startonscene_time record_leaderboard "
 	"twitchsched twitchsched_offset" / " " + TEXTFORMATTING_ATTRS;
 constant retained_attributes = (<"boss_selfheal", "boss_giftrecipient">); //Attributes set externally, not editable.
 constant valid_types = (<"text", "goalbar", "countdown">);
@@ -293,6 +293,9 @@ void advance_goalbar(object channel, mapping|string info, mapping person, int ad
 		int newtier = calculate_current_goalbar_tier(channel, info)[2];
 		while (++prevtier <= newtier) channel->send(person, lvlup, (["%s": (string)prevtier, "{from_name}": from_name]));
 	}
+	if (info->record_leaderboard) get_user_info(from_name, "login")->then() {
+		channel->set_variable("from*" + varname, advance, "add", (["from": (string)__ARGS__[0]->id]));
+	};
 }
 
 //Note: Use the builtin to advance bars from a command/trigger/special.
