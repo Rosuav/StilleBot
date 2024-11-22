@@ -516,7 +516,7 @@ export function render(data) {
 		if (type === "variant") DOM("#replaceme").replaceWith(alerttypes.variant);
 		load_data(type, { });
 	});
-	if (selecttab !== null && data.alerttypes && !DOM("input[name=alertselect]:checked")) {
+	if (selecttab !== null && data.alerttypes) {
 		if (!DOM("#select-" + selecttab))
 			//Invalid or not specified? Use the first tab.
 			selecttab = document.querySelectorAll("input[name=alertselect]")[0].id.replace("select-", "")
@@ -1061,6 +1061,12 @@ on("submit", "#editpersonal", e => {
 	ws_sync.send(msg);
 	DOM("#personaldlg").close();
 });
+
+export function sockmsg_selecttab(msg) {
+	const rb = DOM("#select-" + msg.id);
+	if (rb) {rb.checked = true; update_visible_form();}
+	else selecttab = msg.id; //Hold the "select this tab" reminder until the next data update (which should contain it)
+}
 
 on("click", "#delpersonal", simpleconfirm("Really delete this personal alert?", e => {
 	ws_sync.send({cmd: "delpersonal", id: DOM("#editpersonal").elements.id.value});

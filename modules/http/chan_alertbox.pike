@@ -775,14 +775,14 @@ __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:m
 }
 
 //NOW it's personal.
-@"is_mod": __async__ void wscmd_makepersonal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": __async__ mapping|zero wscmd_makepersonal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "alertbox"));
 	if (!cfg->personals) cfg->personals = ({ });
-	mapping info;
+	mapping info, ret;
 	if (msg->id && msg->id != "") {
 		//Look up an existing one to edit
 		int idx = search(cfg->personals->id, msg->id);
-		if (idx == -1) return; //ID specified and not found? Can't save.
+		if (idx == -1) return 0; //ID specified and not found? Can't save.
 		info = cfg->personals[idx];
 	}
 	else {
@@ -794,11 +794,13 @@ __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:m
 		do {id = replace(MIME.encode_base64(random_string(9)), (["/": "1", "+": "0"]));}
 		while (has_value(cfg->personals->id, id) || id[0] < 'A');
 		cfg->personals += ({info = (["id": id])});
+		ret = (["cmd": "selecttab", "id": id]);
 	}
 	foreach ("label heading description" / " ", string key)
 		if (stringp(msg[key])) info[key] = msg[key];
 	await(G->G->DB->save_config(channel->userid, "alertbox", cfg));
 	update_all(channel->userid, cfg->authkey);
+	return ret;
 }
 
 @"is_mod": __async__ void wscmd_delpersonal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
