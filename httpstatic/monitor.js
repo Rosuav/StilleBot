@@ -5,12 +5,20 @@ import {ensure_font} from "$$static||utils.js$$";
 const currency_formatter = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
 export const formatters = {
 	currency: cents => {
+		//TODO: Parameterize this with the currency (so "currency, USD" would look like "$5" but "currency, GBP" would show "£5")
 		if (cents >= 0 && !(cents % 100)) return "$" + (cents / 100); //Abbreviate the display to "$5" for 500
 		return currency_formatter.format(cents / 100);
 	},
-	subscriptions: cents => {
+	subscriptions: cents => { //Semi-deprecated in favour of plain/500
 		if (cents >= 0 && !(cents % 500)) return "" + (cents / 500);
 		return (cents / 500).toFixed(3);
+	},
+	plain: (cents, fmt) => {
+		if (+fmt) {
+			if (cents >= 0 && !(cents % +fmt)) return "" + (cents / +fmt);
+			return (cents / 500).toFixed(3);
+		}
+		return ""+cents;
 	},
 }
 
@@ -69,7 +77,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		if (data.type) styleinfo[data.id] = {type: data.type}; //Reset all type-specific info when type is sent
 		if (data.thresholds) styleinfo[data.id].t = (data.thresholds_rendered || data.thresholds).split(" ").map(x => +x).filter(x => x && x === x); //Suppress any that fail to parse as numbers
 		if (data.needlesize) styleinfo[data.id].needlesize = +data.needlesize;
-		["barcolor", "fillcolor", "altcolor", "format", "progressive", "textcompleted", "textinactive"].forEach(
+		["barcolor", "fillcolor", "altcolor", "format", "progressive", "textcompleted", "textinactive", "format_style"].forEach(
 			key => data[key] && (styleinfo[data.id][key] = data[key]));
 		ensure_font(data.font);
 	}
@@ -156,8 +164,8 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		//TODO: Is it worth changing this to use CSS variables instead of interpolation? See bit boss code above for example.
 		elem.style.background = `linear-gradient(.25turn, ${t.fillcolor} ${mark-t.needlesize}%, red, ${t.barcolor} ${mark+t.needlesize}%, ${t.barcolor})`;
 		elem.style.display = "flex";
-		const f = formatters[t.format] || (x => ""+x);
-		set_content(elem, [DIV(text), DIV(f(pos)), DIV(f(goal))]);
+		const f = formatters[t.format] || formatters.plain;
+		set_content(elem, [DIV(text), DIV(f(pos, t.format_style)), DIV(f(goal, t.format_style))]);
 	}
 	else if (type === "countdown") {
 		const m = /^([0-9]+):(.*)$/.exec(data.display);

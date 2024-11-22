@@ -186,6 +186,8 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 			OPTION({value: "currency"}, "currency - cents eg 2718 is $27.18"),
 			OPTION({value: "subscriptions"}, "subs or sub points - 500 each (roughly USD cents)"),
 			OPTION({value: "hitpoints"}, "Bit Boss hitpoints (complex, use as directed)")]),
+		//TODO: Change the label according to the format (eg if Plain, say "scale factor")
+		LABEL([SPAN(" Style: "), INPUT({name: "format_style"})]),
 		BR(), "Select the desired display format; note that everything is managed in cents still.",
 	])]),
 	TR([TH("Auto-count"), TD([
