@@ -682,7 +682,22 @@ class channel(mapping identity) {
 
 		if (arrayp(msg))
 		{
-			if (message->mode == "random") msg = random(msg);
+			if (message->mode == "random") {
+				//Are there any options that are mappings with a "weight" attribute?
+				//If so, do a weighted random.
+				int totweight = 0;
+				foreach (msg, echoable_message m)
+					totweight += (mappingp(m) && m->weight) || 1;
+				if (totweight == sizeof(msg)) msg = random(msg); //No weighting given, nice and easy.
+				else {
+					int selection = random(totweight);
+					//If this turns out to be really expensive, precalculate the cumulative sums above
+					foreach (msg, msg) { //This is sufficiently insane, I think.
+						selection -= (mappingp(msg) && msg->weight) || 1;
+						if (selection < 0) break;
+					}
+				}
+			}
 			else if (message->mode == "rotate") {
 				string varname = message->rotatename;
 				if (!varname || varname == "") varname = ".borked"; //Shouldn't happen, just guard against crashes

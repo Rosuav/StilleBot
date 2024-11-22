@@ -102,7 +102,7 @@ echoable_message parse_mustard(string|Stdio.Buffer mustard) {
 	return parser->parse(next, this);
 }
 
-constant message_flags = ({"delay", "dest", "target", "destcfg", "voice", "mode", "participant_activity", "variable"});
+constant message_flags = ({"delay", "dest", "target", "destcfg", "voice", "mode", "participant_activity", "variable", "weight"});
 string quoted_string(string value) {
 	return string_to_utf8(Standards.JSON.encode(value));
 }

@@ -104,6 +104,11 @@ const default_handlers = {
 	//retrieve_value: (val, el) => val.value,
 };
 const required = {...default_handlers, validate: val => typeof val === "string"}; //Filter that demands that an attribute be present
+const numeric = {...default_handlers,
+	validate: val => typeof val === "number",
+	make_control: (id, val, el) => INPUT({...id, value: val || "", size: 5, type: "number"}),
+	retrieve_value: el => +el.value,
+};
 const bool_attr = {...default_handlers,
 	make_control: (id, val, el) => INPUT({...id, type: "checkbox", checked: val === "on"}),
 	retrieve_value: el => el.checked ? "on" : "",
@@ -571,6 +576,12 @@ const types = {
 		typedesc: "Each time this is triggered, pick one child and show it. "
 			+ "Rotation can specify a synchronization tag so multiple commands can rotate together.",
 	},
+	weight: {
+		color: "#ee7777", children: ["message"], label: el => "Chance: " + (el.weight || 1),
+		params: [{attr: "weight", label: "Weight", values: numeric}],
+		typedesc: "When inserted into a Random selector, this one will have more chance "
+			+ "of being selected.",
+	},
 	text: {
 		color: "#77eeee", width: 400, label: el => el.message,
 		params: [{attr: "message", label: "Text", values: text_message}],
@@ -683,8 +694,6 @@ const tray_tabs = [
 		{type: "comment"},
 		{type: "block_comment"},
 		//NOTE: Even though they're internally conditionals too, cooldowns don't belong in this tray.
-		//Conversely, even though argsplit isn't really control flow, it fits into the same kind of
-		//use case, where you're thinking more like a programmer.
 	]},
 	{name: "Interaction", color: "#ffffbb", items: [
 		{type: "builtin_shoutout", builtin_param: "%s"},
@@ -695,7 +704,7 @@ const tray_tabs = [
 	{name: "Advanced", color: "#bbffbb", items: [
 		{type: "builtin_chan_pointsrewards"},
 		{type: "randrot", mode: "rotate"},
-		{type: "builtin_argsplit", builtin_param: "{param}"},
+		{type: "weight", weight: 2},
 		{type: "cooldown", cdlength: "30", cdname: ""},
 		{type: "foreach_vars"},
 		{type: "foreach", "participant_activity": "300"},

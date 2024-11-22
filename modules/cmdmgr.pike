@@ -347,6 +347,10 @@ echoable_message _validate_recursive(echoable_message resp, mapping state)
 		if (stringp(delay) && sscanf(delay, "%[0-9]", string d) && d == delay) delay = (int)delay;
 		ret->delay = delay;
 	}
+	if (int w = (int)resp->weight) {
+		//TODO maybe: Only allow weights if the immediate parent has mode "random"
+		if (w != 1) ret->weight = w;
+	}
 
 	if (ret->mode == "rotate") {
 		//Anonymous rotations, like anonymous cooldowns, get named for the back end only.
