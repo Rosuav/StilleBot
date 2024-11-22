@@ -233,6 +233,21 @@ function check_monitor_params(id) {
 }
 on("change", ".monitor-selection", e => check_monitor_params(e.match.value));
 
+function format_time_delay(sec) {
+	if (sec >= 3600) {
+		if (sec % 3600 === 0) return sec / 3600 + "-hour";
+		return (Math.floor(sec / 3600) + ":" +
+			("0" + Math.floor(sec / 60) % 60).slice(-2) + ":" +
+			("0" + (sec % 60)).slice(-2));
+	}
+	if (sec >= 60) {
+		if (sec % 60 === 0) return sec / 60 + "-minute";
+		return (Math.floor(sec / 60) + ":" +
+			("0" + (sec % 60)).slice(-2));
+	}
+	return sec + "-second";
+}
+
 const builtin_label_funcs = {
 	chan_pointsrewards: el => {
 		if (!el.builtin_param || typeof el.builtin_param === "string") return "Points rewards"; //TODO: Reformat into new style?
@@ -555,7 +570,7 @@ const types = {
 		typedesc: "Spend some of a bot-managed value. Subtracts from the variable but won't let it go below zero.",
 	},
 	cooldown: {
-		color: "#aacc55", children: ["message", "otherwise"], label: el => [el.cdlength + "-second cooldown", "If on cooldown:"],
+		color: "#aacc55", children: ["message", "otherwise"], label: el => [format_time_delay(el.cdlength) + " cooldown", "If on cooldown:"],
 		params: [{attr: "conditional", values: "cooldown"},
 			{attr: "cdlength", label: "Delay (seconds)", values: [1, 86400, 1]}, //TODO: Support hh:mm:ss and show it that way for display
 			{attr: "cdname", label: "Tag (optional)", values: cooldown_name},
