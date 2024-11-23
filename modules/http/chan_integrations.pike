@@ -265,6 +265,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	object uri = Standards.URI("https://www.patreon.com/oauth2/authorize");
 	uri->set_query_variables(([
 		"response_type": "code",
+		"scope": "identity campaigns w:campaigns.webhook campaigns.members",
 		"client_id": G->G->instance_config->patreon_clientid,
 		"redirect_uri": "https://" + G->G->instance_config->local_address + "/patreon", //Or should it always go to mustardmine.com?
 		"state": tok,
