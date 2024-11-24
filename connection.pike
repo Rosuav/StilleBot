@@ -705,6 +705,12 @@ class channel(mapping identity) {
 				if (val >= sizeof(msg)) val = 0;
 				msg = msg[val];
 				vars["$" + varname + "$"] = set_variable(varname, (string)(val + 1), "", cfg->users);
+			} else if (message->mode == "switch") {
+				int opt = (int)expr(message->switchon);
+				if (opt < 0 || opt > sizeof(msg)) //Should there be an "else" option?
+					msg = "";
+				else
+					msg = msg[opt - 1]; //Humans prefer to count from 1.
 			} else {
 				//CJA 20230623: This previously kept all attributes from the current
 				//message except for conditional, and merged that with the message.

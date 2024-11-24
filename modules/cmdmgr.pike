@@ -175,7 +175,7 @@ void autospam(string|int chanid, string cmd) {
 //Map a flag name to a set of valid values for it
 //Blank or null is always allowed, and will result in no flag being set.
 constant message_flags = ([
-	"mode": (<"random", "rotate", "foreach">),
+	"mode": (<"random", "rotate", "foreach", "switch">),
 	"dest": (<"/w", "/web", "/set", "/chain", "/reply", "//">),
 ]);
 //As above, but applying only to the top level of a command.
@@ -356,6 +356,10 @@ echoable_message _validate_recursive(echoable_message resp, mapping state)
 		//Anonymous rotations, like anonymous cooldowns, get named for the back end only.
 		//In this case, though, it also creates a variable. For simplicity, reuse cdanon.
 		ret->rotatename = normalize_cooldown_name(resp->rotatename, state);
+	}
+	if (ret->mode == "switch") {
+		if (stringp(resp->switchon)) ret->switchon = resp->switchon;
+		else m_delete(ret, "mode");
 	}
 	//Iteration can be done on all-in-chat or all-who've-chatted.
 	if (int timeout = ret->mode == "foreach" && (int)resp->participant_activity)
