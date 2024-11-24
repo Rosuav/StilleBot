@@ -251,7 +251,6 @@
   - Filter which alerts will be shown on which links
 * Hype Train notifications now say if it's a Golden Kappa Train. Update the set of
   available emotes in this situation.
-* randrot -> switch, add a variable, pick the Nth
 * Make {displayname} available in all commands? Currently $$ defaults to display name
   if it's available, or login if it isn't. Having {displayname} would allow you to
   force the use of a display name, or blank if unavailable. Worth it?
