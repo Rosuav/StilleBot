@@ -67,6 +67,6 @@ value: "@" "string" {varlookup};
 value: "@" "=" "word" "=" value {varassign};
 value: "@" "=" "string" "=" value {varassign};
 
-arglist: value {make_array};
-arglist: value "," {make_array};
-arglist: value "," arglist {prepend_array};
+arglist: expression {make_array};
+arglist: expression "," {make_array};
+arglist: expression "," arglist {prepend_array};
