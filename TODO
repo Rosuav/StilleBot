@@ -241,11 +241,6 @@
     corresponding box is checked)
   - Yes, you COULD demand that someone be both following and a sub, but not sure why
     you'd bother
-* "Pick random chat participant" builtin
-  - Retain existing $participant$ for compatibility but it's inflexible
-  - Can be parameterized for how recently they have to have spoken in chat
-  - Can be used more than once (stick 'em into variables)
-  - Maybe allow filtering to just followers or just subs???
 * Possible alertbox filtering?
   - Create multiple links that are able to react to alerts
   - Filter which alerts will be shown on which links
