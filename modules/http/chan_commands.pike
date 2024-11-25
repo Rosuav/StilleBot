@@ -143,7 +143,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				"simulate": lambda(string m) {capture += ({m});},
 			]));
 			mapping stats = ([]);
-			for (int i = 0; i < 10000; ++i) c->_send_with_catch(person, message, vars, ([
+			for (int i = 0; i < 100; ++i) c->_send_with_catch(person, message, vars, ([
 				"users": (["": (string)person->uid]),
 				"simulate": lambda(string m) {stats[m]++;},
 			]));
@@ -155,6 +155,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				tot -= counts[i]; //counts are all negative
 				lines[i] = -counts[i] + " " + lines[i];
 			}
+			if (!sizeof(lines)) lines = ({"-"});
 			return render_template(#"## Command output:
 
 <pre>$$dump$$</pre>
