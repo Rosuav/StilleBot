@@ -823,7 +823,8 @@ constant builtin_name = "Raid suggestion";
 constant builtin_param = ({"Suggestion"}); //Maybe add "Comments" as second param?
 constant vars_provided = ([]);
 
-__async__ mapping message_params(object channel, mapping person, array params) {
+__async__ mapping message_params(object channel, mapping person, array params, mapping cfg) {
+	if (cfg->simulate) return ([]);
 	//No facility currently for sending comments about the suggestion, but you can include
 	//them and we'll ignore them (they'll be in chat anyway)
 	string chan = params[0];

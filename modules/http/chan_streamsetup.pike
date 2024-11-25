@@ -272,7 +272,8 @@ constant vars_provided = ([
 	"{newccls}": "Active CCLs after any update",
 ]);
 
-__async__ mapping message_params(object channel, mapping person, array param) {
+__async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
+	if (cfg->simulate) return ([]); //TODO: Query once and then cache, so it gives correct results w/o spamming API calls
 	string token = token_for_user_id(channel->userid)[0];
 	if (token == "") error("Need broadcaster permissions\n");
 	mapping prev = await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid,

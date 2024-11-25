@@ -567,8 +567,8 @@ constant command_suggestions = ([
 	//TODO: Mod-only refund command (maybe the same one??) to refund other person's tickets
 ]);
 
-__async__ mapping message_params(object channel, mapping person, array params)
-{
+__async__ mapping message_params(object channel, mapping person, array params, mapping cfg) {
+	if (cfg->simulate) {cfg->simulate("Giveaway " + params * " "); return ([]);}
 	if (params[0] == "") error("Need a subcommand\n");
 	sscanf(params[0], "%[^ ]%*[ ]%s", string cmd, string arg);
 	if (cmd != "refund" && cmd != "status") error("Invalid subcommand\n");

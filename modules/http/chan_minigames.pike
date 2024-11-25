@@ -424,7 +424,8 @@ constant vars_provided = ([
 //Should this be stored somewhere other than ephemeral memory? If the bot hops, this gets lost, with the (tragic) result
 //that people can claim an additional reward that stream without getting shamed for it.
 @retain: mapping already_claimed = ([]);
-__async__ mapping message_params(object channel, mapping person, array param) {
+__async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
+	if (cfg->simulate) return ([]); //This doesn't really simulate well. There are better ways of testing.
 	mapping game = await(G->G->DB->load_config(channel->userid, "minigames"))[param[0]];
 	if (!game) return ([]); //Including if you mess up the keyword
 	if (param[0] == "first") {

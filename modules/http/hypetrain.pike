@@ -207,8 +207,8 @@ string fmt_contrib(mapping c) {
 	return sprintf("%s with %d subs", c->display_name, c->total / 500);
 }
 
-__async__ mapping message_params(object channel, mapping person, array param)
-{
+__async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
+	if (cfg->simulate) return ([]); //TODO: Do the query once and then cache the result so we get correct data, just not spamming API calls
 	mapping state = await(get_state(channel->name[1..]));
 	if (state->error) error(state->error + " " + state->errorlink + "\n");
 	mapping conductors = (["SUBS": "Nobody", "BITS": "Nobody"]);

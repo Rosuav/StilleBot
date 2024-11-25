@@ -563,6 +563,8 @@ class channel(mapping identity) {
 			}
 			case "cooldown": //Timeout (defined in seconds, although the front end may show it as mm:ss or hh:mm:ss)
 			{
+				//HACK: When simulating, bypass cooldowns.
+				if (cfg->simulate) {vars["{cooldown}"] = vars["{cooldown_hms}"] = "0"; break;}
 				string key = message->cdname + name;
 				if (has_prefix(key, "*")) key = vars["{uid}"] + key; //Cooldown of "*foo" will be a per-user cooldown.
 				int delay = cooldown_timeout[key] - time();
@@ -658,6 +660,8 @@ class channel(mapping identity) {
 					if (info->lastnotice >= limit) users += ({info->userid});
 			} else {
 				//Ask Twitch who's currently in chat.
+				//HACK: Since this is potentially expensive, we don't do this in simulation mode.
+				if (cfg->simulate) return; //TODO: Maybe have it always use the broadcaster as the sole chatter?
 				mapping tok = G->G->user_credentials[(int)voice];
 				get_helix_paginated(
 					"https://api.twitch.tv/helix/chat/chatters",
@@ -762,7 +766,8 @@ class channel(mapping identity) {
 		if (dest == "/web")
 		{
 			if (target == "") return; //Attempting to send to a borked destination just silences it
-			send_private_message(target - "@", msg, destcfg);
+			if (cfg->simulate) cfg->simulate(sprintf("[Private to %s]: %s", target - "@", msg));
+			else send_private_message(target - "@", msg, destcfg);
 			return; //Nothing more to send here.
 		}
 
@@ -771,6 +776,10 @@ class channel(mapping identity) {
 		if (dest == "/w") prefix = sprintf("%s %s %s", dest, target, prefix);
 		//Any other destination, just send it to open chat (there used to be a facility
 		//for sending to other channels, but this is no longer the case).
+
+		//Simulation of commands (for bulk testing etc) will capture all text sent, including
+		//slash commands. TODO: Include the voice at the beginning of the message?
+		if (cfg->simulate) {cfg->simulate(prefix + msg); return;}
 
 		//Wrap to 500 characters to fit inside the Twitch limit
 		array msgs = ({ });

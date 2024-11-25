@@ -1439,10 +1439,11 @@ mapping parse_emotes(string text, mapping person) {
 	return (["_noemotes": noemotes + text[pos..], "_emoted": emoted + ({text[pos..]})]);
 }
 
-__async__ mapping message_params(object channel, mapping person, [string alert, string text]) {
+__async__ mapping message_params(object channel, mapping person, [string alert, string text], mapping msgcfg) {
 	if (!alert || alert == "") error("Need an alert type\n");
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "alertbox"));
 	if (!valid_alert_type(alert, cfg)) error("Unknown alert type\n");
+	if (msgcfg->simulate) {msgcfg->simulate("Send alert " + alert); return ([]);}
 	mapping emotes = ([]);
 	//TODO: If text isn't exactly %s but is contained in it, give an offset.
 	//TODO: If %s is contained in text, parse that somehow too.

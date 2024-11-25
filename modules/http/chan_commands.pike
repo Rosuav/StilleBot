@@ -128,6 +128,42 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		return jsonify(result, 7);
 	}
 	if (req->misc->is_mod) {
+		if (req->variables->cmdname) {
+			//HACK: Test out a command
+			object c = req->misc->channel;
+			echoable_message message = c->commands[command_casefold(req->variables->cmdname)];
+			mapping u = req->misc->session->user;
+			mapping person = (["displayname": u->display_name, "uid": (int)u->id]);
+			mapping vars = c->get_channel_variables(person->id) | ([]);
+			vars["$$"] = u->display_name;
+			vars["{uid}"] = (string)person->uid; //Will be "0" if no UID known
+			array capture = ({ });
+			c->_send_with_catch(person, message, vars, ([
+				"users": (["": (string)person->uid]),
+				"simulate": lambda(string m) {capture += ({m});},
+			]));
+			mapping stats = ([]);
+			for (int i = 0; i < 10000; ++i) c->_send_with_catch(person, message, vars, ([
+				"users": (["": (string)person->uid]),
+				"simulate": lambda(string m) {stats[m]++;},
+			]));
+			sleep(2); //Hack upon hack: Wait till it's probably done sending.*/
+			array lines = indices(stats), counts = -values(stats)[*];
+			sort(counts, lines);
+			int tot = 0;
+			foreach (lines; int i; string l) {
+				tot -= counts[i]; //counts are all negative
+				lines[i] = -counts[i] + " " + lines[i];
+			}
+			return render_template(#"## Command output:
+
+<pre>$$dump$$</pre>
+
+# Statistics:
+* $$stats$$
+* $$total$$
+", (["dump": sprintf("%O", capture), "stats": lines * "\n* ", "total": tot + " total lines"]));
+		}
 		return render(req, ([
 			"vars": (["ws_group": ""]) | command_editor_vars(req->misc->channel),
 			"templates": G->G->commands_templates * "\n",

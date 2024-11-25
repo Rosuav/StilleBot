@@ -212,7 +212,8 @@ constant vars_provided = ([
 	"{newdesc}": "Long description (prompt) after any update",
 ]);
 
-__async__ mapping message_params(object channel, mapping person, array param) {
+__async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
+	if (cfg->simulate) return ([]); //In simulation mode, all this is likely to be used for is refunding or fulfilling the triggering redemption, so assume that that happened.
 	string token = token_for_user_id(channel->userid)[0];
 	if (token == "") error("Need broadcaster permissions\n");
 	string reward_id = param[0];

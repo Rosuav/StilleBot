@@ -23,7 +23,8 @@ constant vars_provided = ([
 	"{title}": "Title of the goal",
 ]);
 
-__async__ mapping message_params(object channel, mapping person, array param) {
+__async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
+	if (cfg->simulate) return (["{goalid}": ""]); //No goals when simulating (to avoid API calls)
 	mapping info = await(twitch_api_request("https://api.twitch.tv/helix/goals?broadcaster_id=" + channel->userid,
 		(["Authorization": "Bearer " + G->G->user_credentials[channel->userid]->token])));
 	if (!sizeof(info->data)) return (["{goalid}": ""]); //No goals.
