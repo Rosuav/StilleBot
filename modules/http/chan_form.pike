@@ -181,7 +181,11 @@ array _element_types = ({ //Search for _element_types in this and the JS to find
 });
 mapping element_types = (mapping)_element_types;
 mapping element_attributes = ([ //Matches _element_types
-	"twitchid": (["permitted_only": type_boolean]),
+	"twitchid": ([
+		"permitted_only": type_boolean,
+		"require_follower": type_boolean,
+		"require_subscriber": type_boolean,
+	]),
 	"simple": (["label": type_string]),
 	"url": (["label": type_string]),
 	"paragraph": (["label": type_string]),
@@ -249,6 +253,27 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 						//There's no form element for this. If you're logged in, we use the session user.
 						//What we do here is all about the validation.
 						mapping|zero user = req->misc->session->user;
+						//Note that "require_follower" and "require_subscriber" actually just pretend
+						//that there's no user if the current user doesn't fit the req; this makes them
+						//mostly useless if not combined with "required".
+						//There's currently no option for "must be a sub, or a mod" or complex things
+						//like that. For those, figure it out yourself, sorry.
+						if (el->require_follower && user && (int)user->id != req->misc->channel->userid) {
+							//You don't follow yourself, so we'll arbitrarily permit self-fill-out
+							mapping info = await(twitch_api_request(sprintf(
+								"https://api.twitch.tv/helix/channels/followers?broadcaster_id=%d&user_id=%d",
+								req->misc->channel->userid, (int)user->id),
+								(["Authorization": req->misc->channel->userid])));
+							if (!sizeof(info->data)) user = 0;
+						}
+						if (el->require_subscriber && user && (int)user->id != req->misc->channel->userid) {
+							//But you DO subscribe to yourself, so we could skip that check.
+							mapping info = await(twitch_api_request(sprintf(
+								"https://api.twitch.tv/helix/subscriptions?broadcaster_id=%d&user_id=%d",
+								req->misc->channel->userid, (int)user->id),
+								(["Authorization": req->misc->channel->userid])));
+							if (!sizeof(info->data)) user = 0;
+						}
 						if (el->permitted_only && permitted_id && permitted_id != user->?id)
 							missing[el->name] = 1;
 						else if (user)
@@ -421,7 +446,11 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			"vars": (["ws_group": formid + "#" + req->misc->channel->userid, "ws_type": ws_type, "formdata": form]),
 		]) | req->misc->chaninfo);
 	}
-	return render(req, (["vars": (["ws_group": "", "address_parts": address_parts]),
+	return render(req, (["vars": ([
+			"ws_group": "", "address_parts": address_parts,
+			"follower_scopes": req->misc->channel->name != "#!demo" && ensure_bcaster_token(req, "moderator:read:followers"),
+			"subscriber_scopes": req->misc->channel->name != "#!demo" && ensure_bcaster_token(req, "channel:read:subscriptions"),
+		]),
 		"formfields": sprintf("%{* <label><span>%[2]s:</span> <input class=formmeta name=%[0]s %[1]s></label>\n> %}", formfields),
 		"elementtypes": sprintf("%{<option value=\"%s\">%s%}", _element_types),
 	]) | req->misc->chaninfo);

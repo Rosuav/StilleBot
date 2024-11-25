@@ -235,12 +235,6 @@
   and if possible, your local system fonts???
 * Bug note - why is art share upload not showing thumbnail? Maybe push out a stub
   url until fully uploaded?
-* Form fillout, twitchid input: Require follower, require sub
-  - Will require broadcaster authentication
-  - Check for bcaster auth on the form cfg page and prompt for it immediately (if the
-    corresponding box is checked)
-  - Yes, you COULD demand that someone be both following and a sub, but not sure why
-    you'd bother
 * Possible alertbox filtering?
   - Create multiple links that are able to react to alerts
   - Filter which alerts will be shown on which links
