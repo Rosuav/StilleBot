@@ -143,7 +143,8 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				"simulate": lambda(string m) {capture += ({m});},
 			]));
 			mapping stats = ([]);
-			for (int i = 0; i < 100; ++i) c->_send_with_catch(person, message, vars, ([
+			int num = (int)req->variables->num || 100;
+			for (int i = 0; i < num; ++i) c->_send_with_catch(person, message, vars, ([
 				"users": (["": (string)person->uid]),
 				"simulate": lambda(string m) {stats[m]++;},
 			]));
@@ -156,14 +157,20 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				lines[i] = -counts[i] + " " + lines[i];
 			}
 			if (!sizeof(lines)) lines = ({"-"});
-			return render_template(#"## Command output:
+			return render_template(#"# Simulating $$num$$ of !$$cmd$$
+## Command output:
 
 <pre>$$dump$$</pre>
 
-# Statistics:
+## Statistics:
 * $$stats$$
 * $$total$$
-", (["dump": sprintf("%O", capture), "stats": lines * "\n* ", "total": tot + " total lines"]));
+", ([
+			"num": (string)num, "cmd": req->variables->cmdname,
+			"dump": sprintf("%O", capture),
+			"stats": lines * "\n* ",
+			"total": tot + " total lines",
+]));
 		}
 		return render(req, ([
 			"vars": (["ws_group": ""]) | command_editor_vars(req->misc->channel),
