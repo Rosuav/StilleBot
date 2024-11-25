@@ -524,6 +524,11 @@ const types = {
 		typedesc: ["Capture message into a variable. Can be accessed as $varname$ in this or any other command.", BR(),
 			"Use ", CODE("*varname"), " for a per-user variable, and/or ", CODE("varname?"), " for ephemeral."],
 	},
+	force_chat: {
+		color: "#dd7777", children: ["message"], label: el => "Chat bypass",
+		params: [{attr: "dest", values: ""}],
+		typedesc: "Force a message to be sent into chat, rather than captured",
+	},
 	foreach_vars: {
 		color: "#66ee66", children: ["message"], label: el => "For each user with vars",
 		params: [{attr: "mode", values: "foreach"},

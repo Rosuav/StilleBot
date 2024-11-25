@@ -176,7 +176,7 @@ void autospam(string|int chanid, string cmd) {
 //Blank or null is always allowed, and will result in no flag being set.
 constant message_flags = ([
 	"mode": (<"random", "rotate", "foreach", "switch">),
-	"dest": (<"/w", "/web", "/set", "/chain", "/reply", "//">),
+	"dest": (<"", "/w", "/web", "/set", "/chain", "/reply", "//">),
 ]);
 //As above, but applying only to the top level of a command.
 constant command_flags = ([
@@ -258,7 +258,8 @@ echoable_message _validate_recursive(echoable_message resp, mapping state)
 		//If there's any dest other than "" (aka "open chat") or "//", it should
 		//have a target. Failing to have a target breaks other destinations,
 		//so remove that if this is missing; otherwise, any target works.
-		if (!resp->target) m_delete(ret, "dest");
+		if (ret->dest == "") ;
+		else if (!resp->target) m_delete(ret, "dest");
 		else ret->target = resp->target;
 		if (ret->dest == "/chain") {
 			//Command chaining gets extra validation done. You may ONLY chain to
