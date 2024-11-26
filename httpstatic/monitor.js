@@ -16,7 +16,7 @@ export const formatters = {
 	plain: (cents, fmt) => {
 		if (+fmt) {
 			if (cents >= 0 && !(cents % +fmt)) return "" + (cents / +fmt);
-			return (cents / 500).toFixed(3);
+			return (cents / fmt).toFixed(3);
 		}
 		return ""+cents;
 	},
