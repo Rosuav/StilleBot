@@ -243,3 +243,4 @@
 * Make {displayname} available in all commands? Currently $$ defaults to display name
   if it's available, or login if it isn't. Having {displayname} would allow you to
   force the use of a display name, or blank if unavailable. Worth it?
+* Infinite tiers mode. Copy the last goal (or last goal delta?) infinitely.
