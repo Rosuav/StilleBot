@@ -59,8 +59,14 @@ Upload time: %s
 		string|zero redir = await(G->G->DB->load_config(0, "upload_redirect"))[parts[-1]];
 		return redir && redirect(redir, 301); //If we don't have a redirect, it's probably deleted, so... 404.
 	}
-	mapping file = await(G->G->DB->get_file(fileid, 1));
-	if (!file) return 0;
+	//The file might not be uploaded yet. Try a few times to see if we get it.
+	mapping file;
+	for (int tries = 0; tries < 10; ++tries) {
+		file = await(G->G->DB->get_file(fileid, 1));
+		if (!file) return 0;
+		if (file->data != "") break;
+		sleep(1);
+	}
 	if (req->request_headers["if-none-match"] == file->metadata->etag) return (["error": 304]);
 	return ([
 		"data": file->data,

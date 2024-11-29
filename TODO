@@ -233,8 +233,6 @@
     alert too?
 * Font chooser in textformatting. Open another dlg with all known Google Fonts (API call?)
   and if possible, your local system fonts???
-* Bug note - why is art share upload not showing thumbnail? Maybe push out a stub
-  url until fully uploaded?
 * Possible alertbox filtering?
   - Create multiple links that are able to react to alerts
   - Filter which alerts will be shown on which links
