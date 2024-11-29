@@ -305,7 +305,7 @@ function update_tierpicker() { //TODO: If infinite tiers, add one more past the 
 			//after that (so you can always advance to the next tier).
 			if (progressive) {
 				const delta = +thresholds[which] - +(thresholds[which - 1]||0);
-				if (delta > 0) thresholds.push(thresholds[which] + delta);
+				if (delta > 0) thresholds.push(+thresholds[which] + delta);
 			}
 			else if (thresholds[which] > 0) thresholds.push(thresholds[which]);
 		}
