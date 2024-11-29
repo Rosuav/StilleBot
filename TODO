@@ -237,3 +237,7 @@
 * Possible alertbox filtering?
   - Create multiple links that are able to react to alerts
   - Filter which alerts will be shown on which links
+* Charity donations affecting goal bars?
+  - https://dev.twitch.tv/docs/api/reference/#get-charity-campaign-donations
+  - https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channelcharity_campaigndonate
+  - Would allow more complex goal bars than the default ones, eg tiered
