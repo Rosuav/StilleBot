@@ -793,10 +793,10 @@ class channel(mapping identity) {
 		}
 		msgs += ({prefix + msg});
 
-		if (G->G->send_chat_command) {
+		if (G->G->send_chat_commands) {
 			//Attempt to send the message(s) via the Twitch APIs if they have slash commands
 			//Any that can't be sent that way will be sent the usual way.
-			msgs = filter(msgs, G->G->send_chat_command, this, voice);
+			msgs = G->G->send_chat_commands(this, voice, msgs);
 			if (!sizeof(msgs)) return;
 		}
 		mapping tags = ([]);
