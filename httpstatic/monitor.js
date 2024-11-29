@@ -77,7 +77,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		if (data.type) styleinfo[data.id] = {type: data.type}; //Reset all type-specific info when type is sent
 		if (data.thresholds) styleinfo[data.id].t = (data.thresholds_rendered || data.thresholds).split(" ").map(x => +x).filter(x => x && x === x); //Suppress any that fail to parse as numbers
 		if (data.needlesize) styleinfo[data.id].needlesize = +data.needlesize;
-		["barcolor", "fillcolor", "altcolor", "format", "progressive", "textcompleted", "textinactive", "format_style"].forEach(
+		["barcolor", "fillcolor", "altcolor", "format", "progressive", "infinitier", "textcompleted", "textinactive", "format_style"].forEach(
 			key => data[key] && (styleinfo[data.id][key] = data[key]));
 		ensure_font(data.font);
 	}
@@ -153,6 +153,14 @@ export function update_display(elem, data) { //Used for the preview as well as t
 				break;
 			}
 			else if (!t.progressive) pos -= thresholds[which];
+			if (which === thresholds.length - 1 && t.infinitier) {
+				//Hack: If we have infinite tiers, append more as we need them.
+				if (t.progressive) {
+					const delta = thresholds[which] - (thresholds[which - 1]||0);
+					if (delta > 0) thresholds.push(thresholds[which] + delta);
+				}
+				else if (thresholds[which] > 0) thresholds.push(thresholds[which]);
+			}
 		}
 		if (!text) {
 			//We're beyond the last threshold!

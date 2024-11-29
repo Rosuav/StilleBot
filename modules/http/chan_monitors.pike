@@ -63,7 +63,8 @@ constant vars_provided = ([
 ]);
 
 //Some of these attributes make sense only with certain types (eg needlesize is only for goal bars).
-constant saveable_attributes = "previewbg barcolor fillcolor altcolor needlesize thresholds progressive lvlupcmd format format_style width height "
+constant saveable_attributes = "previewbg barcolor fillcolor altcolor needlesize thresholds progressive "
+	"infinitier lvlupcmd format format_style width height "
 	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip follow kofi_dono kofi_member kofi_renew kofi_shop "
 	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive startonscene startonscene_time record_leaderboard "
 	"twitchsched twitchsched_offset" / " " + TEXTFORMATTING_ATTRS;
@@ -326,8 +327,10 @@ string format_subscriptions(int value) {
 //the goal bar, always zero for tier-less goals.
 array(int) calculate_current_goalbar_tier(object channel, mapping info) {
 	int pos = (int)channel->expand_variables(info->text); //The text starts with the variable, then a colon, so this will give us the current (raw) value.
-	int tier, goal, found;
+	int tier, goal = 0, found;
+	int prev; //For delta calculation
 	foreach (channel->expand_variables(info->thresholds) / " "; tier; string th) {
+		prev = goal;
 		goal = (int)th;
 		if (pos < goal) {
 			found = 1;
@@ -339,7 +342,26 @@ array(int) calculate_current_goalbar_tier(object channel, mapping info) {
 		//Beyond the last threshold. Some numbers may exceed normal
 		//limits, eg percentage being above 100. Note that, for a
 		//non-tiered goal bar, this simply means "goal is reached".
-		if (!info->progressive) pos += goal; //Show that we're past the goal
+		//However, if we have infinite goals, we effectively have more
+		//tiers, each one having the same delta, until we exceed the
+		//current position.
+		if (info->infinitier) {
+			if (!info->progressive) {
+				//With resetting goals, the goal doesn't change but the position does.
+				if (goal) while (pos >= goal) {
+					++tier;
+					pos -= goal;
+				}
+			} else {
+				//With progressive goals, each new tier is as far from the previous goal as the calculated delta.
+				int delta = goal - prev;
+				if (delta) while (pos >= goal) {
+					++tier;
+					goal += delta;
+				}
+			}
+		}
+		else if (!info->progressive) pos += goal; //Show that we're past the goal
 	}
 	return ({pos, goal, tier});
 }

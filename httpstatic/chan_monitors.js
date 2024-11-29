@@ -146,6 +146,7 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 	TR([TH("Goal(s)"), TD([
 		INPUT({name: "thresholds", size: 60, "data-nocopy": 1}),
 		BR(), LABEL([INPUT({name: "progressive", type: "checkbox", "data-nocopy": 1}), "Progressive goals (begin each goal after the previous one)"]),
+		BR(), LABEL([INPUT({name: "infinitier", type: "checkbox", "data-nocopy": 1}), "Infinite goals (generate more goals after these)"]),
 		BR(), "To make a tiered goal bar, set multiple goals eg '", CODE("10 10 10 10 20 30 40 50"), "'",
 		BR(), "For currency or subs, use values in cents (eg 1000 for $10 or 2 subs)",
 		BR(), SPAN({id: "thresholds-formatted"}),
@@ -279,7 +280,7 @@ on("dragstart", ".monitorlink", e => {
 	e.dataTransfer.setData("text/uri-list", url);
 });
 
-function update_tierpicker() {
+function update_tierpicker() { //TODO: If infinite tiers, add one more past the current tier
 	const thresholds = DOM("[name=thresholds]").value.split(" ");
 	const pos = +DOM("[name=currentval]").value;
 	const opts = [];
