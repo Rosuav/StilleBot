@@ -284,13 +284,14 @@ function update_tierpicker() { //TODO: If infinite tiers, add one more past the 
 	const thresholds = DOM("[name=thresholds]").value.split(" ");
 	const pos = +DOM("[name=currentval]").value;
 	const opts = [];
-	thresholds.push(Infinity); //Place a known elephant in Cairo
 	let val = -1, total = 0;
 	const progressive = DOM("[name=progressive]").checked;
+	const infinitier = DOM("[name=infinitier]").checked;
+	if (!infinitier) thresholds.push(Infinity); //Place a known elephant in Cairo
 	for (let which = 0; which < thresholds.length; ++which) {
 		//Record the *previous* total as the mark for this tier. If you pick
 		//tier 3, the total should be set to the *start* of tier 3.
-		const desc = which === thresholds.length - 1 ? "And beyond!" : "Tier " + (which + 1);
+		const desc = which === thresholds.length - 1 && !infinitier ? "And beyond!" : "Tier " + (which + 1);
 		const prevtotal = total;
 		if (progressive) total = +thresholds[which];
 		else total += +thresholds[which]; //What if thresholds[which] isn't numeric??
@@ -298,6 +299,16 @@ function update_tierpicker() { //TODO: If infinite tiers, add one more past the 
 		//bar with a zero, that tier will be skipped. Show it as an inaccessible tier.
 		if (total === prevtotal) opts.push(OPTION({value: "(" + prevtotal + ")", disabled: true}, "(" + desc + ")"));
 		else opts.push(OPTION({value: prevtotal}, desc));
+		if (which === thresholds.length - 1 && infinitier && val === -1) {
+			//Hack: If we have infinite tiers, append more as we need them.
+			//Do this until we find the currently-selected tier, and then one more
+			//after that (so you can always advance to the next tier).
+			if (progressive) {
+				const delta = +thresholds[which] - +(thresholds[which - 1]||0);
+				if (delta > 0) thresholds.push(thresholds[which] + delta);
+			}
+			else if (thresholds[which] > 0) thresholds.push(thresholds[which]);
+		}
 		if (val === -1 && pos < total) val = prevtotal;
 	}
 	set_content(DOM("[name=tierpicker]"), opts).value = val;
@@ -308,6 +319,7 @@ DOM("#setval").onclick = e => {
 	const val = +DOM("[name=currentval]").value;
 	if (val !== val) return; //TODO: Be nicer
 	ws_sync.send({cmd: "setvar", varname: DOM("[name=varname]").value, val});
+	if (DOM("[name=infinitier]").checked) update_tierpicker(); //If you select a different tier, adjust the number of tiers shown in the dropdown.
 }
 
 function fixformatting() {
@@ -317,12 +329,13 @@ function fixformatting() {
 	const thresholds = DOM("[name=thresholds]").value
 		.split(" ")
 		.map(th => formatter(+th, sty))
-		.join(" ");
+		.join(" ")
+		+ (DOM("[name=infinitier]").checked ? " ..." : "");
 	const label = fmt === "subscriptions" ? " subs" : ""; //TODO: Generalize this
 	set_content("#thresholds-formatted", "Shown as: " + thresholds + label);
 }
 on("input", "[name=thresholds]", fixformatting);
-on("change", "[name=format],[name=thresholds]", fixformatting);
+on("change", "[name=format],[name=thresholds],[name=infinitier]", fixformatting);
 
 on("change", "[name=preset]", e => {
 	const preset = presets[e.match.value];
