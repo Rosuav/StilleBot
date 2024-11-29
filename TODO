@@ -123,7 +123,8 @@
 * Can we get "snooze raids" information?
   - Option: Snooze raids when you open the raid finder, unsnooze when you close it
   - Option: Query if the channel has snoozed raids, show a big warning
-  - Neither is, to my knowledge, currently supported. These would need API augmentation.
+  - Requires API access to both set and query the snooze status. Note that querying
+    may never be implemented directly, but on attempting the raid, may become visible.
 * Cron job to track channels that have been inactive for a long time (maybe 2 weeks) to
   dispose of their configs
 * Make connection priority dynamic
