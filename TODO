@@ -241,3 +241,10 @@
   - https://dev.twitch.tv/docs/api/reference/#get-charity-campaign-donations
   - https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channelcharity_campaigndonate
   - Would allow more complex goal bars than the default ones, eg tiered
+* Consider making _send_recursive an async function.
+  - Ditto _send_with_catch and send, naturally
+  - This will allow callers to know when a command has been fully processed. Currently we
+    use hacks instead in some places.
+  - An error thrown from a slash command would block subsequent text from being sent
+    (see !vipmm test command)
+  - What are the consequences? CHECK EVERYWHERE.
