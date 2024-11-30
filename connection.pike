@@ -259,6 +259,7 @@ class channel(mapping identity) {
 		}
 		person->vars = ([
 			"%s": msg, "{@mod}": person->badges->?_mod ? "1" : "0", "{@sub}": person->badges->?_sub ? "1" : "0",
+			"{@vip}": person->badges->?vip ? "1" : "0",
 			//Even without broadcaster permissions, it's possible to see the UUID of a reward.
 			//You can't see the redemption ID, and definitely can't complete/reject it, but you
 			//would be able to craft a trigger that responds to it.
