@@ -30,14 +30,19 @@ __async__ void points_redeemed(object channel, mapping data, int|void removal) {
 				(["method": "PATCH", "json": (["cost": newcost])]),
 			);
 	}
-	if (channel && !removal) foreach (channel->redemption_commands[data->reward->id] || ({ }), string cmd) {
-		channel->send(([
-			"displayname": data->user_name, "user": data->user_login,
-			"uid": data->user_id,
-		]), channel->commands[cmd], ([
-			"%s": data->user_input,
-			"{rewardid}": data->reward->id, "{redemptionid}": data->id,
-		]));
+	if (channel && !removal) {
+		mapping badges = channel->user_badges[data->user_id] || ([]);
+		foreach (channel->redemption_commands[data->reward->id] || ({ }), string cmd) {
+			channel->send(([
+				"displayname": data->user_name, "user": data->user_login,
+				"uid": data->user_id,
+			]), channel->commands[cmd], ([
+				"%s": data->user_input,
+				"{rewardid}": data->reward->id, "{redemptionid}": data->id,
+				"{@mod}": badges->?_mod ? "1" : "0", "{@sub}": badges->?_sub ? "1" : "0",
+				"{@vip}": badges->?vip ? "1" : "0",
+			]));
+		}
 	}
 }
 
