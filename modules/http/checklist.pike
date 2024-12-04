@@ -6,6 +6,12 @@ inherit annotated;
 //be greyed out if not available.
 //NOTE: The display is aimed at no more than six emotes across.
 constant hypetrain = replace(#"
+## Holidays 2024
+### Unlockable via Shared Chat during holidays
+May:<br>SSSsssplode<br>
+October:<br>TreatCorn TrickCorn<br>
+December:<br>LightsSwirl LightsBlink LightsTwinkle<br>
+
 ## Hype Train set eight
 ### Unlockable May 2024 to current
 FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume<br>
@@ -212,6 +218,12 @@ constant emoteids = ([
 	"RedCard": "emotesv2_a83f8ade02cd4b37b8ae079584407c66",
 	"ApplauseBreak": "emotesv2_c3db311615df4ecb9e3be0c492fbfc8b",
 	"TouchOfSalt": "emotesv2_871fb6fa55d54fae8e807198c59e082f",
+	"SSSsssplode": "emotesv2_df1b3a19d9fc4bff81429afdfb46fff0",
+	"TreatCorn": "emotesv2_0672054d322f4bd7a176b905b612810b",
+	"TrickCorn": "emotesv2_e1623767957941d3960a16bab644b53e",
+	"LightsSwirl": "emotesv2_beda979b077141acaa5fb0196e52a544",
+	"LightsBlink": "emotesv2_f1337249b2ac4482ad1a9318bf2018f2",
+	"LightsTwinkle": "emotesv2_2d3b718f2de34770ba2e61cfbc270a58",
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
