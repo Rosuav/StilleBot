@@ -748,7 +748,7 @@ constant vars_provided = ([
 __async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
 	if (cfg->simulate) {cfg->simulate("Send form"); return ([]);}
 	string formid = param[0];
-	mapping user = await(get_user_info(param[1], "login"));
+	mapping user = await(get_user_info(param[1] - "@", "login"));
 	string nonce;
 	mapping form_data = await(G->G->DB->load_config(channel->userid, "forms"))->forms[formid];
 	await(G->G->DB->mutate_config(channel->userid, "formresponses") {mapping resp = __ARGS__[0];
