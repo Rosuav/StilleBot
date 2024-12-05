@@ -220,12 +220,12 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		//TODO: Have a maximum age for nonce validity, configurable per form?
 		mapping resp = await(G->G->DB->load_config(req->misc->channel->userid, "formresponses"));
 		formid = 0;
-		foreach (resp; string id; mapping f) if (f->permissions && f->permissions[nonce]) {
+		foreach (resp; string id; mapping f) if (mapping p = f->permissions[?nonce]) {
 			//Found! If necessary, check age and reject if too old.
 			//Note that we don't check the user ID here. If you're not logged in, you can
 			//still see the form, just not submit it. Also, if you're logged in as the
 			//wrong user, you need to get a page from which you can change user.
-			formid = id;
+			if (!p->used) formid = id; //Otherwise, no more permission.
 			break;
 		}
 		if (!formid) return 0; //Nonce not found or invalid. TODO: Return a nicer error?
@@ -324,7 +324,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 				response->nonce = nonce || String.string2hex(random_string(14)); //Every response must have a unique nonce (TODO: ensure uniqueness)
 				await(G->G->DB->mutate_config(req->misc->channel->userid, "formresponses") {mapping resp = __ARGS__[0];
 					if (!resp[formid]) resp[formid] = ([]);
-					//if (resp[formid]->permissions) m_delete(resp[formid]->permissions, nonce); //TODO: Consider removal from permissions and merging into response??
+					if (mapping p = resp[formid]->permissions[?nonce]) {
+						//The permission is no longer available.
+						p->used = 1;
+					}
 					resp[formid]->responses += ({response});
 				});
 				send_updates_all(req->misc->channel, formid);
