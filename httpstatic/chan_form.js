@@ -12,7 +12,7 @@ function format_time(ts) {
 }
 
 function format_timedelta(sec) {
-	let desc = sec + " seconds ago";
+	let desc = Math.floor(sec) + " seconds ago";
 	if (sec > 86400 * 2) desc = Math.floor(sec / 86400) + " days ago";
 	else if (sec > 86400) desc = "yesterday";
 	else if (sec > 7200) desc = Math.floor(sec / 3600) + " hours ago";
