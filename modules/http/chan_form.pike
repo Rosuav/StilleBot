@@ -344,6 +344,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			string|zero elem = 0;
 			string text = "";
 			if (el->text && el->text != "") text = Tools.Markdown.parse(el->text, ([
+				//TODO: Flag "auto-target-blank external links"
 				"renderer": Renderer, "lexer": Lexer,
 				"attributes": 1,
 			]));
