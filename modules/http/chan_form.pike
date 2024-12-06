@@ -67,6 +67,8 @@ constant markdown = #"# Forms for $$channel$$
 
 constant formview = #"# $$formtitle$$
 
+$$formbanner$$
+
 <form method=post>
 
 $$formdata$$
@@ -85,6 +87,16 @@ textarea {
 }
 .required { /* The marker that follows a required field, not to be confused with input:required */
 	color: red;
+}
+.banner {
+	background: #ffffdd;
+	border: 1px solid #ffff00;
+	position: fixed;
+	top: 0; left: 0; right: 0;
+	min-height: 2em;
+	text-align: center;
+	font-size: larger;
+	padding: 0.8em;
 }
 </style>
 " + shared_styles;
@@ -236,9 +248,12 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		mapping form = cfg->forms[formid];
 		if (!form) return 0; //Bad form ID? Kick back a boring 404 page.
 		string|zero permitted_id = 0; //Set to eg "49497888" if a nonce was used and a user granted permission
+		string banner = "";
 		if (!req->variables->nonce && !form->is_open) {
 			//TODO: Return a nicer page saying that the form is closed.
-			return 0;
+			//If you're a mod, the form can still be viewed (but not submitted).
+			if (req->misc->is_mod && req->request_type != "POST") banner = "<div class=banner>Form preview, cannot be submitted</div>";
+			else return 0;
 		}
 		multiset missing = (<>); //If anything is missing, we'll rerender the form
 		if (req->request_type == "POST") {
@@ -430,6 +445,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		}
 		return render_template(formview, ([
 			"formtitle": form->formtitle,
+			"formbanner": banner,
 			"formdata": formdata,
 		]) | req->misc->chaninfo);
 	}
