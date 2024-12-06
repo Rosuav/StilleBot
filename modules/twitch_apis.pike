@@ -342,6 +342,8 @@ __async__ void warn(object channel, string voiceid, string msg, mapping tok) {
 string|Concurrent.Future send_chat_command(object channel, string voiceid, string msg) {
 	if (!has_prefix(msg, "/")) return msg;
 	sscanf(msg, "/%[^ ] %s", string cmd, string param);
+	//Special cases: You can "/me" in chat, without using the API
+	if (cmd == "me") return msg;
 	if (!need_scope[cmd]) return " " + msg; //Return "/asdf" as " /asdf" so it gets output correctly
 	mapping tok = G->G->user_credentials[(int)voiceid];
 	if (!voiceid || voiceid == "0") {
