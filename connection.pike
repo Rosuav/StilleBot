@@ -422,13 +422,13 @@ class channel(mapping identity) {
 	//Mutually recursive with _send_recursive. Call this rather than _send_recursive directly
 	//when you want an error boundary that sends to cfg->error_handler, or if the call is being
 	//delayed in some way.
-	void _send_with_catch(mapping person, echoable_message message, mapping vars, mapping cfg) {
-		if (mixed ex = catch {_send_recursive(person, message, vars, cfg);}) {
+	__async__ void _send_with_catch(mapping person, echoable_message message, mapping vars, mapping cfg) {
+		if (mixed ex = catch {await(_send_recursive(person, message, vars, cfg));}) {
 			//TODO: Carry context around, eg who triggered what command
 			if (arrayp(ex) && sizeof(ex) && stringp(ex[0])) {
 				if (cfg->error_handler) {
 					vars["{error}"] = String.trim(ex[0]);
-					_send_with_catch(person, cfg->error_handler->message, vars, cfg->error_handler->cfg);
+					await(_send_with_catch(person, cfg->error_handler->message, vars, cfg->error_handler->cfg));
 				}
 				report_error("ERROR", String.trim(ex[0]), "");
 			}
@@ -438,8 +438,7 @@ class channel(mapping identity) {
 
 	//Changes to vars[] will propagate linearly. Changes to cfg[] will propagate
 	//within a subtree only. Change it only with |=.
-	void _send_recursive(mapping person, echoable_message message, mapping vars, mapping cfg)
-	{
+	__async__ void _send_recursive(mapping person, echoable_message message, mapping vars, mapping cfg) {
 		if (!message) return;
 		if (!mappingp(message)) message = (["message": message]);
 		if (message->dest == "//") return; //Comments are ignored. Not even side effects.
@@ -449,6 +448,8 @@ class channel(mapping identity) {
 			if (!intp(delay)) delay = (int)_substitute_vars((string)delay, vars, person, cfg->users);
 			//Note that, if a string delay evaluates to zero - say, it has a bad variable
 			//reference that falls to blank - this will call_out zero, which should work fine.
+			//Note also that a delayed message does NOT block the promise; it is still a deferred
+			//operation rather than a sleep inside the message-send operation.
 			call_out(_send_with_catch, delay, person, message | (["delay": 0, "_changevars": 1]), vars, cfg);
 			return;
 		}
@@ -488,11 +489,10 @@ class channel(mapping identity) {
 			if (objectp(handler)) {
 				string|array param = _substitute_vars(message->builtin_param || "", vars, person, cfg->users);
 				if (stringp(param)) param = ({param});
-				spawn_task(handler->message_params(this, person, param, cfg))->then() {
-					if (!__ARGS__[0]) return; //No params? No output.
-					mapping cfg_changes = m_delete(__ARGS__[0], "cfg") || ([]);
-					_send_with_catch(person, message->message, vars | __ARGS__[0], cfg | cfg_changes);
-				};
+				mapping params = await(spawn_task(handler->message_params(this, person, param, cfg)));
+				if (!params) return; //No params? No output.
+				mapping cfg_changes = m_delete(params, "cfg") || ([]);
+				await(_send_with_catch(person, message->message, vars | params, cfg | cfg_changes));
 				return;
 			}
 			else message = (["message": sprintf("Bad builtin name %O", message->builtin)]); //FIXME: Log error instead?
@@ -575,6 +575,8 @@ class channel(mapping identity) {
 				if (message->cdqueue) {
 					//As well as bouncing to the Otherwise, we queue the original message
 					//after the delay. (You probably don't often need an Otherwise here.)
+					//Note that, as with regular delayed messages, a cooldown queue is a
+					//deferral and NOT a pause. The promise won't be blocked on this.
 					cooldown_timeout[key] = time() + delay + message->cdlength;
 					call_out(_send_with_catch, delay, person, message | (["conditional": 0, "_changevars": 1]), vars, cfg);
 				}
@@ -592,8 +594,8 @@ class channel(mapping identity) {
 				break;
 			}
 			case "catch": { //Exception handling
-				_send_with_catch(person, message | (["conditional": 0]), vars,
-					cfg | (["error_handler": (["message": message->otherwise, "cfg": cfg])]));
+				await(_send_with_catch(person, message | (["conditional": 0]), vars,
+					cfg | (["error_handler": (["message": message->otherwise, "cfg": cfg])])));
 				return;
 			}
 			default: break; //including UNDEFINED which means unconditional, and 0 which means "condition already processed"
@@ -662,26 +664,19 @@ class channel(mapping identity) {
 				//HACK: Since this is potentially expensive, we don't do this in simulation mode.
 				if (cfg->simulate) return; //TODO: Maybe have it always use the broadcaster as the sole chatter?
 				mapping tok = G->G->user_credentials[(int)voice];
-				get_helix_paginated(
+				users = await(get_helix_paginated(
 					"https://api.twitch.tv/helix/chat/chatters",
 					(["broadcaster_id": (string)userid, "moderator_id": (string)voice]),
 					(["Authorization": "Bearer " + tok->token]),
-				)->then() {
-					cfg |= (["users": cfg->users | (["each": "0"])]);
-					//Now that we've disconnected both cfg and cfg->users, it's okay to mutate.
-					foreach (__ARGS__[0], mapping user) {
-						cfg->users->each = user->user_id;
-						_send_recursive(person, msg, vars, cfg);
-					}
-				};
+				));
 			}
 			cfg |= (["users": cfg->users | (["each": "0"])]);
-			//Ditto, mutation is okay now.
+			//Now that we've disconnected both cfg and cfg->users, it's okay to mutate.
 			foreach (users, cfg->users->each) _send_recursive(person, msg, vars, cfg);
 			return;
 		}
 
-		if (mappingp(msg)) {_send_recursive(person, (["conditional": 0]) | msg, vars, cfg); return;} //CJA 20230623: See other of this datemark.
+		if (mappingp(msg)) {await(_send_recursive(person, (["conditional": 0]) | msg, vars, cfg)); return;} //CJA 20230623: See other of this datemark.
 
 		if (arrayp(msg))
 		{
@@ -722,10 +717,10 @@ class channel(mapping identity) {
 				//needed, it may be better to whitelist attributes to retain, rather
 				//than blacklisting those to remove.
 				foreach (msg, echoable_message m)
-					_send_recursive(person, m, vars, cfg);
+					await(_send_recursive(person, m, vars, cfg));
 				return;
 			}
-			_send_recursive(person, (["conditional": 0, "message": msg]), vars, cfg); //CJA 20230623: See other.
+			await(_send_recursive(person, (["conditional": 0, "message": msg]), vars, cfg)); //CJA 20230623: See other.
 			return;
 		}
 
@@ -755,8 +750,8 @@ class channel(mapping identity) {
 			//destination, etc - is reset to defaults as per the normal start of a
 			//command. This does mean that a "User Vars" with no keyword will carry,
 			//where one with a keyword won't. Unsure if this is good or bad.
-			_send_recursive(person, cmd, vars | (["%s": destcfg]),
-				(["users": (["": cfg->users[""]]), "chaindepth": cfg->chaindepth + 1]));
+			await(_send_recursive(person, cmd, vars | (["%s": destcfg]),
+				(["users": (["": cfg->users[""]]), "chaindepth": cfg->chaindepth + 1])));
 			return;
 		}
 
@@ -766,7 +761,7 @@ class channel(mapping identity) {
 		{
 			if (target == "") return; //Attempting to send to a borked destination just silences it
 			if (cfg->simulate) cfg->simulate(sprintf("[Private to %s]: %s", target - "@", msg));
-			else send_private_message(target - "@", msg, destcfg);
+			else await(send_private_message(target - "@", msg, destcfg));
 			return; //Nothing more to send here.
 		}
 
@@ -784,7 +779,8 @@ class channel(mapping identity) {
 			//Attempt to send the message(s) via the Twitch APIs if they have slash commands
 			//Any that can't be sent that way will be sent the usual way.
 			string|Concurrent.Future handled = G->G->send_chat_command(this, voice, msg);
-			if (!stringp(handled)) return; //Can optionally await the Future
+			if (objectp(handled) && handled->on_await) await(handled);
+			if (!stringp(handled)) return; //Promises have no meaningful response, and null means there's nothing to do
 			msg = handled;
 		}
 
@@ -839,14 +835,14 @@ class channel(mapping identity) {
 	//for single-message sends, and if multiple messages are sent, it will only be
 	//called once). Example: void cb(mapping vars, mapping params) --> params->id is
 	//the message ID that just got sent.
-	void send(mapping person, echoable_message message, mapping|void vars, function|void callback)
+	Concurrent.Future send(mapping person, echoable_message message, mapping|void vars, function|void callback)
 	{
 		if (!is_active) Stdio.append_file("inactivebot.log", sprintf(#"==================\n%sInactive bot sending message:\nperson %O\nmessage %O\nvars %O\n%s\n",
 			ctime(time()), person, message, vars, describe_backtrace(backtrace())));
 		vars = get_channel_variables(person->uid) | (vars || ([]));
 		vars["$$"] = person->displayname || person->user;
 		vars["{uid}"] = (string)person->uid; //Will be "0" if no UID known
-		_send_with_catch(person, message, vars, (["callback": callback, "users": (["": (string)person->uid])]));
+		return _send_with_catch(person, message, vars, (["callback": callback, "users": (["": (string)person->uid])]));
 	}
 
 	//Expand all channel variables, except for {participant} which usually won't
