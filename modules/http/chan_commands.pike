@@ -138,17 +138,16 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			vars["$$"] = u->display_name;
 			vars["{uid}"] = (string)person->uid; //Will be "0" if no UID known
 			array capture = ({ });
-			c->_send_with_catch(person, message, vars, ([
+			await(c->_send_with_catch(person, message, vars, ([
 				"users": (["": (string)person->uid]),
 				"simulate": lambda(string m) {capture += ({m});},
-			]));
+			])));
 			mapping stats = ([]);
 			int num = (int)req->variables->num || 100;
-			for (int i = 0; i < num; ++i) c->_send_with_catch(person, message, vars, ([
+			for (int i = 0; i < num; ++i) await(c->_send_with_catch(person, message, vars, ([
 				"users": (["": (string)person->uid]),
 				"simulate": lambda(string m) {stats[m]++;},
-			]));
-			sleep(2); //Hack upon hack: Wait till it's probably done sending.*/
+			])));
 			array lines = indices(stats), counts = -values(stats)[*];
 			sort(counts, lines);
 			int tot = 0;
