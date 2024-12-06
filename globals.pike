@@ -1020,8 +1020,10 @@ class Renderer
 		if (sscanf(href, "%s :%s", string dest, string att) && _parse_attrs("{:" + att + "}", token)) {
 			//Usage: [Text](https://link.example/destination/ :attr=value)
 			string tag = m_delete(token, "attr_tag") || "a";
+			if (options->extlinktarget && has_value(dest, "://")) token->attr_target = "_blank";
 			return sprintf("<%s%s>%s</%[0]s>", tag, attrs(token, (["href": dest])), text);
 		}
+		if (options->extlinktarget && has_value(href, "://")) token->attr_target = "_blank";
 		return ::link(href, title, text, token);
 	}
 
