@@ -31,7 +31,7 @@ loading... | - | - | - | - | -
 <tr><td><label for=ccls>Classification:</label></td><td><input id=ccls name=ccls size=118 readonly> <button id=pick_ccls type=button>Pick</button></td></tr>
 <tr><td><label for=title>Stream title:</label></td><td><input id=title name=title size=125></td></tr>
 <tr><td>Tags:</td><td><input id=tags name=tags size=125></td></tr>
-<tr><td colspan=2>Separate multiple tags/CCLs with commas.</td></tr>
+<tr><td colspan=2>Separate multiple tags with commas.</td></tr>
 <tr><td><label for=comments>Comments:</td><td><textarea id=comments name=comments rows=5 cols=80></textarea></td></tr>
 </table>
 <button type=submit>Update stream info</button> <button type=button id=save>Save this setup</button>
