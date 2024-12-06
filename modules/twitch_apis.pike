@@ -336,10 +336,11 @@ __async__ void warn(object channel, string voiceid, string msg, mapping tok) {
 }
 
 //Process a slash command and return a promise when it will be done, or return any
-//non-command chat message for direct delivery.
+//non-command chat message for direct delivery. Note that the Future returned does
+//not have any useful data in it (it's probably just a status report from an API
+//call or something).
 string|Concurrent.Future send_chat_command(object channel, string voiceid, string msg) {
 	if (!has_prefix(msg, "/")) return msg;
-	werror("send_chat_command %O\n", msg);
 	sscanf(msg, "/%[^ ] %s", string cmd, string param);
 	if (!need_scope[cmd]) return " " + msg; //Return "/asdf" as " /asdf" so it gets output correctly
 	mapping tok = G->G->user_credentials[(int)voiceid];
