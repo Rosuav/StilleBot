@@ -782,6 +782,14 @@ class channel(mapping identity) {
 		//slash commands. TODO: Include the voice at the beginning of the message?
 		if (cfg->simulate) {cfg->simulate(prefix + msg); return;}
 
+		if (G->G->send_chat_command) {
+			//Attempt to send the message(s) via the Twitch APIs if they have slash commands
+			//Any that can't be sent that way will be sent the usual way.
+			string|Concurrent.Future handled = G->G->send_chat_command(this, voice, msg);
+			if (!stringp(handled)) return; //Can optionally await the Future
+			msg = handled;
+		}
+
 		//Wrap to 500 characters to fit inside the Twitch limit
 		array msgs = ({ });
 		while (sizeof(msg) > 500)
@@ -791,15 +799,10 @@ class channel(mapping identity) {
 			if (!pos) pos = 500 - sizeof(prefix);
 			msgs += ({prefix + String.trim(msg[..pos-1])});
 			msg = String.trim(msg[pos+1..]);
+			if (has_prefix(msg, "/")) msg = " " + msg; //Prevent slash commands from being treated as commands
 		}
 		msgs += ({prefix + msg});
 
-		if (G->G->send_chat_commands) {
-			//Attempt to send the message(s) via the Twitch APIs if they have slash commands
-			//Any that can't be sent that way will be sent the usual way.
-			msgs = G->G->send_chat_commands(this, voice, msgs);
-			if (!sizeof(msgs)) return;
-		}
 		mapping tags = ([]);
 		if (dest == "/reply") tags->reply_parent_msg_id = target;
 		if (cfg->callback) {

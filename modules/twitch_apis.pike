@@ -335,29 +335,28 @@ __async__ void warn(object channel, string voiceid, string msg, mapping tok) {
 	));
 }
 
-//Send a series of chat slash commands, and return any non-command chat messages for subsequent delivery
-array(string) send_chat_commands(object channel, string voiceid, array(string) msgs) {
-	array rest = ({ });
-	foreach (msgs, string msg) {
-		sscanf(msg, "/%[^ ] %s", string cmd, string param);
-		if (!need_scope[cmd]) {rest += ({msg}); continue;}
-		mapping tok = G->G->user_credentials[(int)voiceid];
-		if (!voiceid || voiceid == "0") {
-			voiceid = (string)G->G->bot_uid;
-			tok = (["token": G->G->dbsettings->credentials->token,
-				"scopes": G->G->dbsettings->credentials->scopes || ({"whispers:edit"})]);
-		}
-		if (!has_value(tok->scopes, need_scope[cmd])) {
-			channel->report_error("ERROR", "This command requires " + need_scope[cmd] + " permission", msg);
-			return 0; //Note that this will still suppress the chat message.
-		}
-		this[cmd](channel, voiceid, param || "", tok);
+//Process a slash command and return a promise when it will be done, or return any
+//non-command chat message for direct delivery.
+string|Concurrent.Future send_chat_command(object channel, string voiceid, string msg) {
+	if (!has_prefix(msg, "/")) return msg;
+	werror("send_chat_command %O\n", msg);
+	sscanf(msg, "/%[^ ] %s", string cmd, string param);
+	if (!need_scope[cmd]) return " " + msg; //Return "/asdf" as " /asdf" so it gets output correctly
+	mapping tok = G->G->user_credentials[(int)voiceid];
+	if (!voiceid || voiceid == "0") {
+		voiceid = (string)G->G->bot_uid;
+		tok = (["token": G->G->dbsettings->credentials->token,
+			"scopes": G->G->dbsettings->credentials->scopes || ({"whispers:edit"})]);
 	}
-	return rest;
+	if (!has_value(tok->scopes, need_scope[cmd])) {
+		channel->report_error("ERROR", "This command requires " + need_scope[cmd] + " permission", msg);
+		return Concurrent.resolve(1); //Note that this will still suppress the chat message.
+	}
+	return this[cmd](channel, voiceid, param || "", tok);
 }
 
 protected void create(string name) {
-	G->G->send_chat_commands = send_chat_commands;
+	G->G->send_chat_command = send_chat_command;
 	mapping voice_scopes = ([]), scope_commands = ([]);
 	mapping slashcommands = (["me": "Describe an action -> msg"]);
 	foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
