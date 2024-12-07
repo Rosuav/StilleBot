@@ -10,7 +10,7 @@ constant hypetrain = replace(#"
 ### Unlockable via Shared Chat during holidays
 May:<br>SSSsssplode<br>
 October:<br>TreatCorn TrickCorn<br>
-December:<br>LightsSwirl LightsBlink LightsTwinkle<br>
+December:<br>LightsSwirl LightsBlink LightsTwinkle CatintheChat<br>
 
 ## Hype Train set eight
 ### Unlockable May 2024 to current
@@ -224,6 +224,7 @@ constant emoteids = ([
 	"LightsSwirl": "emotesv2_beda979b077141acaa5fb0196e52a544",
 	"LightsBlink": "emotesv2_f1337249b2ac4482ad1a9318bf2018f2",
 	"LightsTwinkle": "emotesv2_2d3b718f2de34770ba2e61cfbc270a58",
+	"CatintheChat": "emotesv2_a7768ce4552c4a3abdd0404f556f958e",
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
