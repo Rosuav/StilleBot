@@ -98,6 +98,10 @@ textarea {
 	font-size: larger;
 	padding: 0.8em;
 }
+button img {
+	height: 1.5em;
+	vertical-align: bottom;
+}
 </style>
 " + shared_styles;
 
@@ -371,17 +375,17 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 							elem = sprintf("You are currently logged in as ![(avatar)](%s) %s.",
 								user->profile_image_url, user->display_name);
 						else if (user)
-							elem = sprintf("You are currently logged in as ![(avatar)](%s) %s. This form was granted to another user. [Change user](:.twitchlogin)",
+							elem = sprintf("You are currently logged in as ![(avatar)](%s) %s. This form was granted to another user. [![Twitch logo](https://static-cdn.jtvnw.net/emoticons/v2/112290/default/light/1.0)  Change user](:.twitchlogin)",
 								user->profile_image_url, user->display_name);
 						else
-							elem = "This form was granted to a specific Twitch user; you are not currently logged in. [Confirm identity](:.twitchlogin)";
+							elem = "This form was granted to a specific Twitch user; you are not currently logged in. [![Twitch logo](https://static-cdn.jtvnw.net/emoticons/v2/112290/default/light/1.0)  Confirm identity](:.twitchlogin)";
 					} else if (user)
-						elem = sprintf("You are currently logged in as ![(avatar)](%s) %s. Not you? [Change user](:.twitchlogin)",
+						elem = sprintf("You are currently logged in as ![(avatar)](%s) %s. Not you? [![Twitch logo](https://static-cdn.jtvnw.net/emoticons/v2/112290/default/light/1.0)  Change user](:.twitchlogin)",
 							user->profile_image_url || "", user->display_name);
 					else if (el->required)
-						elem = "You are not currently logged in. [Confirm identity](:.twitchlogin) to submit this form.";
+						elem = "You are not currently logged in. [![Twitch logo](https://static-cdn.jtvnw.net/emoticons/v2/112290/default/light/1.0) Confirm identity](:.twitchlogin) to submit this form.";
 					else
-						elem = "You are not currently logged in. If you wish, [confirm identity](:.twitchlogin) to include this with the form.";
+						elem = "You are not currently logged in. If you wish, [![Twitch logo](https://static-cdn.jtvnw.net/emoticons/v2/112290/default/light/1.0) confirm identity](:.twitchlogin) to include this with the form.";
 					break;
 				}
 				case "simple":
