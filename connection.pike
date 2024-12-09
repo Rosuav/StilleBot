@@ -778,7 +778,7 @@ class channel(mapping identity) {
 		if (G->G->send_chat_command) {
 			//Attempt to send the message(s) via the Twitch APIs if they have slash commands
 			//Any that can't be sent that way will be sent the usual way.
-			string|Concurrent.Future handled = G->G->send_chat_command(this, voice, msg);
+			string|Concurrent.Future handled = G->G->send_chat_command(this, voice, prefix + msg);
 			if (objectp(handled) && handled->on_await) await(handled);
 			if (!stringp(handled)) return; //Promises have no meaningful response, and null means there's nothing to do
 			msg = handled;
