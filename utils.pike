@@ -159,6 +159,38 @@ __async__ void script() {
 	foreach (G->G->args[Arg.REST], string arg) await(mustard->run_test(arg, G->G->args->q));
 }
 
+__async__ void sublist() {
+	int uid = (int)await(get_user_id("profoundrice"));
+	array subs = await(get_helix_paginated("https://api.twitch.tv/helix/subscriptions",
+		(["broadcaster_id": (string)uid]),
+		(["Authorization": uid])));
+	array follows = await(get_helix_paginated("https://api.twitch.tv/helix/channels/followers",
+		(["broadcaster_id": (string)uid]),
+		(["Authorization": uid])));
+	werror("Total: %d subs, %d followers\n", sizeof(subs), sizeof(follows));
+	multiset following = (multiset)follows->user_id;
+	array foll = ({ }), nonfoll = ({ });
+	foreach (subs, mapping user) {
+		if (following[user->user_id]) foll += ({user->user_name});
+		else nonfoll += ({user->user_name});
+	}
+	werror("Search complete. %d following, %d not following.\n", sizeof(foll), sizeof(nonfoll));
+	Stdio.write_file("following.txt", string_to_utf8(foll * "\n"));
+	Stdio.write_file("notfollowing.txt", string_to_utf8(nonfoll * "\n"));
+	following = (multiset)follows->user_login;
+	array lines = Stdio.read_file("../Downloads/subscriber-list.csv") / "\n";
+	int nfoll, nnotfoll;
+	foreach (lines; int i; string l) {
+		if (!i) {lines[i] += ",Following"; continue;}
+		if (l == "") continue;
+		sscanf(l, "%[^,],", string user);
+		if (following[user]) {nfoll++; lines[i] += ",true";}
+		else {nnotfoll++; lines[i] += ",false";}
+	}
+	Stdio.write_file("subscriber-list-annotated.csv", lines * "\n");
+	write("Foll %d, not foll %d\n", nfoll, nnotfoll);
+}
+
 @"This help information":
 void help() {
 	write("\nUSAGE: pike stillebot --exec=ACTION\nwhere ACTION is one of the following:\n");
