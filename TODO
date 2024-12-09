@@ -244,3 +244,11 @@
     use hacks instead in some places. (Any left after simulate is redone?)
   - An error thrown from a slash command should block subsequent text from being sent
   - What are the consequences? CHECK EVERYWHERE.
+* Calendar sync
+  - https://developers.google.com/calendar/api/guides/push
+  - Update your Twitch schedule based on your calendar
+  - Choose exactly which aspects are important - start/end time, title, etc
+* Form submissions display
+  - Show Archived Only
+  - Select All
+  - See All Fields
