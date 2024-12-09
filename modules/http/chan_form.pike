@@ -102,6 +102,13 @@ button img {
 	height: 1.5em;
 	vertical-align: bottom;
 }
+.errorbanner {
+	background: #ffdddd;
+	border: 1px solid #ff0000;
+	width: 100%;
+	text-align: center;
+	padding: 0.4em;
+}
 </style>
 " + shared_styles;
 
@@ -379,9 +386,27 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 								user->profile_image_url, user->display_name);
 						else
 							elem = "This form was granted to a specific Twitch user; you are not currently logged in. [![Twitch logo](https://static-cdn.jtvnw.net/emoticons/v2/112290/default/light/1.0)  Confirm identity](:.twitchlogin)";
-					} else if (user)
+					} else if (user) {
+						//TODO: Deduplicate these checks with the above, esp if repopulating the form
 						elem = sprintf("You are currently logged in as ![(avatar)](%s) %s. Not you? [![Twitch logo](https://static-cdn.jtvnw.net/emoticons/v2/112290/default/light/1.0)  Change user](:.twitchlogin)",
 							user->profile_image_url || "", user->display_name);
+						if (el->require_follower && user && (int)user->id != req->misc->channel->userid) {
+							//You don't follow yourself, so we'll arbitrarily permit self-fill-out
+							mapping info = await(twitch_api_request(sprintf(
+								"https://api.twitch.tv/helix/channels/followers?broadcaster_id=%d&user_id=%d",
+								req->misc->channel->userid, (int)user->id),
+								(["Authorization": req->misc->channel->userid])));
+							if (!sizeof(info->data)) elem += "<div class=errorbanner>Only followers of " + req->misc->channel->display_name + " may fill out this form.</div>";
+						}
+						if (el->require_subscriber && user && (int)user->id != req->misc->channel->userid) {
+							//But you DO subscribe to yourself, so we could skip that check.
+							mapping info = await(twitch_api_request(sprintf(
+								"https://api.twitch.tv/helix/subscriptions?broadcaster_id=%d&user_id=%d",
+								req->misc->channel->userid, (int)user->id),
+								(["Authorization": req->misc->channel->userid])));
+							if (!sizeof(info->data)) elem += "<div class=errorbanner>Only subscribers to " + req->misc->channel->display_name + " may fill out this form.</div>";
+						}
+					}
 					else if (el->required)
 						elem = "You are not currently logged in. [![Twitch logo](https://static-cdn.jtvnw.net/emoticons/v2/112290/default/light/1.0) Confirm identity](:.twitchlogin) to submit this form.";
 					else
