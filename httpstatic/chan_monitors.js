@@ -34,7 +34,7 @@ const preset_defaults = {
 	format: "plain",
 	bit: "", tip: "", follow: "",
 	sub_t1: "", sub_t2: "", sub_t3: "",
-	kofi_dono: "", kofi_member: "", kofi_renew: "", kofi_shop: "",
+	kofi_dono: "", kofi_member: "", kofi_renew: "", kofi_shop: "", kofi_commission: "",
 	fw_dono: "", fw_member: "", fw_shop: "", fw_gift: "",
 };
 const presets = {
@@ -53,7 +53,7 @@ const presets = {
 		format: "currency",
 		bit: 1, tip: 1,
 		sub_t1: 500, sub_t2: 1000, sub_t3: 2500,
-		kofi_dono: 1, kofi_member: 1, kofi_shop: 1,
+		kofi_dono: 1, kofi_member: 1, kofi_shop: 1, kofi_commission: 1,
 		fw_dono: 1, fw_member: 1, fw_shop: 1, fw_gift: 1,
 	},
 	Followers: {...preset_defaults,
@@ -214,6 +214,7 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 			FIELDSET([LEGEND("Membership"), INPUT({type: "number", name: "kofi_member", "data-nocopy": 1})]),
 			FIELDSET([LEGEND("Renewal"), INPUT({type: "number", name: "kofi_renew", "data-nocopy": 1})]),
 			FIELDSET([LEGEND("Shop sale"), INPUT({type: "number", name: "kofi_shop", "data-nocopy": 1})]),
+			FIELDSET([LEGEND("Commission"), INPUT({type: "number", name: "kofi_commission", "data-nocopy": 1})]),
 		]),
 		"And for Fourth Wall support (all scaled by number of cents)",
 		DIV({className: "optionset"}, [
