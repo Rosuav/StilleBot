@@ -352,6 +352,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 					if (!resp[formid]) resp[formid] = ([]);
 					if (mapping p = resp[formid]->permissions[?nonce]) {
 						//The permission is no longer available.
+						if (p->used) {
+							werror("FORM REUSED %O\n", nonce);
+							return; //Silently ignore the second one (for now)
+						}
 						p->used = 1;
 					}
 					resp[formid]->responses += ({response});
