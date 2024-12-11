@@ -278,6 +278,9 @@ void notify_settings_change(int pid, string cond, string extra, string host) {
 @"stillebot.http_sessions":
 void notify_session_gone(int pid, string cond, string extra, string host) {
 	G->G->http_sessions_deleted[extra] = 1;
+	//If there are any session decryption keys for that session (at any channel), purge them too
+	array purge = filter(indices(G->G->session_decryption_key), has_suffix, ":" + extra);
+	if (sizeof(purge)) m_delete(G->G->session_decryption_key, purge[*]);
 }
 
 @"stillebot.conduit_broken":

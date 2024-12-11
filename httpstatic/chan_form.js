@@ -284,13 +284,13 @@ export function sockmsg_download_csv(msg) {
 }
 
 let decryption = [], decrypted = { };
-function decrypt(txt) {
-	if (typeof txt === "string") return txt; //Not encrypted, easy
+function decrypt(txt, cb) {
+	if (typeof txt === "string") return cb(txt); //Not encrypted, easy
 	//TODO maybe: Put an actual implementation of RSA private key decryption here, so it doesn't
 	//have to go back to the server
-	if (decrypted[txt]) return decrypted[txt];
+	if (decrypted[txt]) return cb(decrypted[txt]);
 	decryption.push(txt); //Pending!
-	return "(encrypted)";
+	return cb(null);
 }
 
 const view_element = { //Matches _element_types (see Pike code)
@@ -298,11 +298,11 @@ const view_element = { //Matches _element_types (see Pike code)
 	simple: (el, r) => [LABEL(SPAN(el.label)), PRE(r.fields[el.name])],
 	url: (el, r) => [LABEL(SPAN(el.label)), A({href: r.fields[el.name]}, r.fields[el.name])],
 	paragraph: (el, r) => [LABEL(SPAN(el.label)), BR(), PRE(r.fields[el.name])],
-	address: (el, r) => DIV({class: "twocol"}, [
-		PRE(decrypt(r.fields[el.name])),
+	address: (el, r) => decrypt(r.fields[el.name], txt => txt ? DIV({class: "twocol"}, [
+		PRE(txt),
 		DIV({class: "column"}, BUTTON({class: "clipbtn", "data-copyme": r.fields[el.name],
 			title: "Click to copy address"}, "📋")),
-	]),
+	]) : DIV(["Encrypted ", BUTTON({class: "showdlg", "data-dlg": "passworddlg"}, "Enter password")])),
 	checkbox: (el, r) => UL([
 		(el.label || []).map((l, i) => LI({class: r.fields[el.name + (-i || "")] ? "checkbox-checked" : "checkbox-unchecked"}, [
 			LABEL(SPAN(r.fields[el.name + (-i || "")] ? "Selected" : "Unselected")),
