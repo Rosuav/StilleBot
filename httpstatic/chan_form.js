@@ -1,6 +1,6 @@
 import {choc, lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, BR, BUTTON, DIV, IMG, INPUT, LABEL, LI, OPTION, P, PRE, SPAN, TD, TEXTAREA, TIME, TR, UL} = lindt; //autoimport
-import {simpleconfirm} from "$$static||utils.js$$";
+import {simpleconfirm, simplemessage} from "$$static||utils.js$$";
 
 function format_time(ts) {
 	if (!ts) return "";
@@ -140,6 +140,7 @@ const groupable = { //_element_types that can be used for grouping
 	//checkbox might be nice, but you'd have to choose which one (if there are multiple)
 };
 const grouptypes = { }; //Map element name to the groupable type
+let decrypting = false;
 export function render(data) {
 	if (data.forms) data.forms.forEach(f => f.id === editing && openform(f));
 	if (data.forminfo) replace_content("#groupfield", [
@@ -180,9 +181,29 @@ export function render(data) {
 			]);
 		}));
 	}
+	if (data.encryption) {
+		console.log("Floomp", data.encryption.active, decrypting)
+		DOM("[name=decrypt]").closest("li").hidden = !data.encryption.active;
+		DOM("[name=encrypt]").closest("li").hidden = data.encryption.active && !decrypting;
+		DOM("[name=confirm]").closest("li").hidden = data.encryption.active && !decrypting;
+		DOM("#encrypt").closest("li").hidden = data.encryption.active && !decrypting;
+		DOM("#decrypt").closest("li").hidden = !data.encryption.active || decrypting;
+	}
 }
 
 on("change", "#groupfield", e => ws_sync.send({cmd: "refresh"})); //me is lazy
+
+on("click", "#decrypt", e => {decrypting = true; render({encryption: {active: 1}});}); //me is still lazy
+on("click", "#encrypt", e => {
+	const password = DOM("[name=encrypt]").value;
+	if (password !== DOM("[name=confirm]").value) return simplemessage("Passwords don't match, please recheck", "Cannot encrypt");
+	simpleconfirm(
+		password === "" ? "Removing the password will decrypt all addresses. You will no longer be asked for a password."
+		: "Are you SURE you want to encrypt addresses? You will lose access to them if you forget the password!",
+		e => ws_sync.send({cmd: "encrypt", password}))();
+	e.match.closest("dialog").close();
+});
+on("click", "#submitpwd", e => ws_sync.send({cmd: "set_decryption_password", password: DOM("[name=decrypt]").value}));
 
 on("change", ".formmeta", e => ws_sync.send({cmd: "form_meta", id: editing, [e.match.name]: e.match.type === "checkbox" ? e.match.checked : e.match.value}));
 
@@ -262,13 +283,23 @@ export function sockmsg_download_csv(msg) {
 	link.remove();
 }
 
+let decryption = [], decrypted = { };
+function decrypt(txt) {
+	if (typeof txt === "string") return txt; //Not encrypted, easy
+	//TODO maybe: Put an actual implementation of RSA private key decryption here, so it doesn't
+	//have to go back to the server
+	if (decrypted[txt]) return decrypted[txt];
+	decryption.push(txt); //Pending!
+	return "(encrypted)";
+}
+
 const view_element = { //Matches _element_types (see Pike code)
 	twitchid: (el, r) => format_user(r.submitted_by || r.authorized_for),
 	simple: (el, r) => [LABEL(SPAN(el.label)), PRE(r.fields[el.name])],
 	url: (el, r) => [LABEL(SPAN(el.label)), A({href: r.fields[el.name]}, r.fields[el.name])],
 	paragraph: (el, r) => [LABEL(SPAN(el.label)), BR(), PRE(r.fields[el.name])],
 	address: (el, r) => DIV({class: "twocol"}, [
-		PRE(r.fields[el.name]),
+		PRE(decrypt(r.fields[el.name])),
 		DIV({class: "column"}, BUTTON({class: "clipbtn", "data-copyme": r.fields[el.name],
 			title: "Click to copy address"}, "📋")),
 	]),
@@ -280,8 +311,10 @@ const view_element = { //Matches _element_types (see Pike code)
 	]),
 };
 
-on("click", ".showresponse", e => {
-	const r = e.match.resp_data;
+on("click", ".showresponse", e => show_response(e.match.resp_data));
+let decryption_needed = null;
+function show_response(r) {
+	decryption.length = 0;
 	["permitted", "timestamp"].forEach(key => {
 		const el = DOM("#responsedlg [name=" + key + "]");
 		if (r[key]) {
@@ -306,4 +339,13 @@ on("click", ".showresponse", e => {
 	DOM("#formresponse").hidden = !r.fields
 	DOM("#formdesc").hidden = !!r.fields
 	DOM("#responsedlg").showModal();
-});
+	if (decryption.length) {
+		ws_sync.send({cmd: "decrypt", data: decryption});
+		decryption_needed = r;
+	}
+}
+
+export function sockmsg_decrypted(msg) {
+	msg.decryption.forEach(d => decrypted[d.enc] = d.dec);
+	show_response(decryption_needed);
+}

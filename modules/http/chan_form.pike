@@ -24,7 +24,7 @@ constant markdown = #"# Forms for $$channel$$
 * loading...
 {:#forms}
 
-[Create form](:#createform)
+[Create form](:#createform) [Manage encryption](:.opendlg data-dlg=encryptiondlg)
 
 > ### Edit form
 >
@@ -62,7 +62,31 @@ constant markdown = #"# Forms for $$channel$$
 	display: flex;
 	justify-content: space-between;
 }
+#encryptiondlg label span {
+	/* These ones are wider */
+	min-width: 17em;
+}
+#encryptiondlg li {
+	list-style-type: none;
+}
 </style>
+
+> ### Encryption
+>
+> For added security, particularly if you allow your mods to view form responses, you may<br>
+> encrypt addresses. This affects only the email address and street address field types.<br>
+> Once encryption is enabled, all current and future form responses will be protected.
+>
+> **CAUTION:** If you lose the password, there is no way to recover the addresses!
+>
+> * <label><span>Enter password to view addresses:</span> <input type=password autocomplete=current-password size=20 name=decrypt></label> [Show addresses](:#submitpwd)
+> * <label><span>Enter a password to encrypt with:</span> <input type=password autocomplete=new-password size=20 name=encrypt></label>
+> * <label><span>Enter it again:</span> <input type=password autocomplete=new-password size=20 name=confirm></label>
+> * [Decrypt or change password](:#decrypt)
+> * [ENCRYPT ADDRESSES](:#encrypt)
+>
+> [Close](:.dialog_close)
+{: tag=formdialog #encryptiondlg}
 " + shared_styles;
 
 constant formview = #"# $$formtitle$$
@@ -232,6 +256,8 @@ array address_parts = ({
 	({"country", "Country"}),
 });
 constant address_required = ({"name", "street", "city", "country"}); //If an address field is required, which parts are?
+
+@retain: mapping session_decryption_key = ([]);
 
 mapping mods_see_responses = ([]); //Map a group (eg "7957ea32#49497888", encoding both the form ID and channel) to the timestamp it was last seen as having this status
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
@@ -529,8 +555,10 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "forms"));
 	if (grp == "") {
 		//List of forms, and form editing (for any form)
-		if (!cfg->forms) return (["forms": ({ })]);
-		return (["forms": cfg->forms[cfg->formorder[*]]]);
+		return ([
+			"forms": cfg->forms ? cfg->forms[cfg->formorder[*]] : ({ }),
+			"encryption": (["active": !!cfg->encryptkey]), //In the future, may configure which fields get affected (currently always and only addresses)
+		]);
 	}
 	//Form responses (single form)
 	mapping resp = await(G->G->DB->load_config(channel->userid, "formresponses"))[grp];
@@ -687,6 +715,106 @@ __async__ void wscmd_delete_element(object channel, mapping(string:mixed) conn, 
 		}
 	});
 	send_updates_all(channel, "");
+}
+
+Crypto.RSA generate_keypair(string pwd) {
+	//This isn't meant to be 100% secure, but it should be better than clear text.
+	string state = "MustardMine simple password encryption";
+	string rnd = "";
+	//Use SHA256 as a PRNG. Repeatedly hash the password to generate more random bytes.
+	string hash_based_random(int sz) {
+		while (sz > sizeof(rnd)) {
+			state = Crypto.SHA256.hash(state + pwd);
+			rnd += state;
+		}
+		string ret = rnd[..sz-1];
+		rnd = rnd[sz..];
+		return ret;
+	}
+	//Basically, what we do is use a reproducible PRNG in place of the normal source of random bytes,
+	//then use keypair generation to come up with two large primes in the normal way. (We then reset
+	//the object to use proper randomness, although it's unlikely to matter.) We store the product of
+	//the two primes (called "n" in RSA literature and retrieved via the get_n() method) - the public
+	//key - and only retain the actual RSA object (which contains the private key - the two primes p
+	//and q) in local memory. I would *love* to be able to do the decryption work on the client, but
+	//that would require a full RSA decryption implementation in JavaScript, and I'm not willing to
+	//bet everything on that. Might be worth looking into later though.
+	return Crypto.RSA()->set_random(hash_based_random)->generate_key(1024)->set_random(random_string);
+}
+
+void wscmd_set_decryption_password(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	session_decryption_key[channel->userid + ":" + conn->session->nonce] = generate_keypair(msg->password);
+}
+
+__async__ void wscmd_encrypt(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!stringp(msg->password)) return;
+	object prevkey, newkey;
+	int(1bit) reencrypt;
+	mapping cfg = await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
+		//First make sure you entered the correct previous password (if any).
+		if (cfg->encryptkey) {
+			prevkey = session_decryption_key[channel->userid + ":" + conn->session->nonce];
+			if (!prevkey || prevkey->get_n() != cfg->encryptkey) return;
+		}
+		if (msg->password == "") m_delete(cfg, "encryptkey");
+		else {
+			newkey = session_decryption_key[channel->userid + ":" + conn->session->nonce] = generate_keypair(msg->password);
+			cfg->encryptkey = newkey->get_n();
+		}
+		reencrypt = 1;
+	});
+	if (reencrypt) await(G->G->DB->mutate_config(channel->userid, "formresponses") {mapping resp = __ARGS__[0];
+		foreach (resp; string formid; mapping frm) {
+			mapping form = cfg->forms[formid];
+			foreach (frm->responses || ({ }), mapping response) {
+				//Decrypt everything first.
+				mapping fields = response->fields;
+				if (!fields) continue;
+				if (prevkey) {
+					foreach (fields; string k; string|array v)
+						if (arrayp(v)) fields[k] = utf8_to_string(prevkey->decrypt(String.hex2string(v[*])[*]) * "");
+					if (arrayp(response->ip)) response->ip = utf8_to_string(prevkey->decrypt(String.hex2string(response->ip[*])[*]) * "");
+				}
+				void encrypt(string key) {
+					if (!fields[key] || fields[key] == "") return; //No need to encrypt blank entries
+					if (!newkey) return; //Decrypting without encrypting
+					string clear = string_to_utf8(fields[key]);
+					//The block size given requires 8 bytes of chunk overhead
+					fields[key] = String.string2hex(newkey->encrypt((clear / (newkey->block_size() - 8.0))[*])[*]);
+					//After it's encrypted, we store it as an array of hex strings, eg
+					//({"221933daa9451fb56f3...", "472efdc635e657bd91d..."})
+					//There is a small amount of information in the number of blocks, but with a 1024-bit key
+					//you get 117-byte blocks. That means anything up to 117 bytes (in UTF-8) will be stored
+					//as a single block, giving little useful information - maybe you could figure out that
+					//someone has a long street address or something. This would be further obscured by moving
+					//to a 2048-bit key and getting 245-byte blocks; very few inputs would need a second chunk.
+				}
+				foreach (form->elements, mapping el) switch (el->type) { //_element_types
+					case "address": {
+						encrypt(el->name); //The combined version
+						foreach (address_parts, [string name, string lbl])
+							encrypt(el->name + "-" + name);
+						break;
+					}
+					case "email": encrypt(el->name); break; //TODO
+					default: break;
+				}
+			}
+		}
+	});
+	send_updates_all(channel, "");
+}
+
+mapping|zero wscmd_decrypt(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!arrayp(msg->data)) return 0;
+	object key = session_decryption_key[channel->userid + ":" + conn->session->nonce];
+	if (!key) return 0;
+	array decrypted = ({ });
+	foreach (msg->data, array txt) decrypted += ({([
+		"enc": txt,
+		"dec": utf8_to_string(key->decrypt(String.hex2string(txt[*])[*]) * ""),
+	])});
+	return (["cmd": "decrypted", "decryption": decrypted]);
 }
 
 bool type_string(string value) {return 1;}
