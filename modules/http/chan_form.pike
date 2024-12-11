@@ -268,6 +268,20 @@ constant address_required = ({"name", "street", "city", "country"}); //If an add
 
 @retain: mapping session_decryption_key = ([]);
 
+//Encrypt a string and return an array of blocks, or leave it cleartext and return as-is
+string|array(string) encrypt_with_key(object rsakey, string text) {
+	if (!rsakey || !text || text == "") return text;
+	//The block size given requires 8 bytes of chunk overhead
+	return String.string2hex(rsakey->encrypt((string_to_utf8(text) / (rsakey->block_size() - 8.0))[*])[*]);
+	//After it's encrypted, we store it as an array of hex strings, eg
+	//({"221933daa9451fb56f3...", "472efdc635e657bd91d..."})
+	//There is a small amount of information in the number of blocks, but with a 1024-bit key
+	//you get 117-byte blocks. That means anything up to 117 bytes (in UTF-8) will be stored
+	//as a single block, giving little useful information - maybe you could figure out that
+	//someone has a long street address or something. This would be further obscured by moving
+	//to a 2048-bit key and getting 245-byte blocks; very few inputs would need a second chunk.
+}
+
 mapping mods_see_responses = ([]); //Map a group (eg "7957ea32#49497888", encoding both the form ID and channel) to the timestamp it was last seen as having this status
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	string|zero formid = req->variables->form;
@@ -308,6 +322,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 				"ip": req->get_ip(),
 			]);
 			mapping fields = ([]);
+			object rsakey = cfg->encryptkey && Crypto.RSA()->set_public_key(cfg->encryptkey, 65537);
 			foreach (form->elements, mapping el) {
 				switch (el->type) { //_element_types
 					case "twitchid": {
@@ -363,14 +378,14 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 							int reqd = el->required && has_value(address_required, name);
 							string|zero val = req->variables["field-" + field];
 							if (reqd && (!val || val == "")) missing[field] = 1;
-							else fields[field] = parts[name] = val;
+							else fields[field] = encrypt_with_key(rsakey, parts[name] = val);
 						}
 						//Also save the address as a single piece
-						fields[el->name] = sprintf("%s\n%s\n%s %s  %s\n%s\n",
+						fields[el->name] = encrypt_with_key(rsakey, sprintf("%s\n%s\n%s %s  %s\n%s\n",
 							parts->name || "",
 							parts->street || "",
 							parts->city || "", parts->state || "", parts->postalcode || "",
-							parts->country || "");
+							parts->country || ""));
 						break;
 					}
 					default: {
@@ -787,16 +802,7 @@ __async__ void wscmd_encrypt(object channel, mapping(string:mixed) conn, mapping
 				void encrypt(string key) {
 					if (!fields[key] || fields[key] == "") return; //No need to encrypt blank entries
 					if (!newkey) return; //Decrypting without encrypting
-					string clear = string_to_utf8(fields[key]);
-					//The block size given requires 8 bytes of chunk overhead
-					fields[key] = String.string2hex(newkey->encrypt((clear / (newkey->block_size() - 8.0))[*])[*]);
-					//After it's encrypted, we store it as an array of hex strings, eg
-					//({"221933daa9451fb56f3...", "472efdc635e657bd91d..."})
-					//There is a small amount of information in the number of blocks, but with a 1024-bit key
-					//you get 117-byte blocks. That means anything up to 117 bytes (in UTF-8) will be stored
-					//as a single block, giving little useful information - maybe you could figure out that
-					//someone has a long street address or something. This would be further obscured by moving
-					//to a 2048-bit key and getting 245-byte blocks; very few inputs would need a second chunk.
+					fields[key] = encrypt_with_key(newkey, fields[key]);
 				}
 				foreach (form->elements, mapping el) switch (el->type) { //_element_types
 					case "address": {
