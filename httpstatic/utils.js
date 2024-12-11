@@ -43,6 +43,17 @@ function ensure_simpleconfirm_dlg() {
 	])));
 }
 
+function ensure_simplemessage_dlg() {
+	//Testing out NOT having the z-index on this
+	if (!DOM("#simplemessagedlg")) document.body.appendChild(DIALOG({id: "simplemessagedlg"}, SECTION([
+		HEADER([H3("Hello!"), DIV(BUTTON({type: "button", class: "dialog_cancel"}, "x"))]),
+		DIV([
+			P({id: "simplemessagetext"}, "Hello there."),
+			P([BUTTON({class: "dialog_close"}, "OK")]),
+		]),
+	])));
+}
+
 let simpleconfirm_callback = null, simpleconfirm_arg = null, simpleconfirm_match;
 //Simple confirmation dialog. If you need more than just a text string in the
 //confirmdesc, provide a function; it can return any Choc Factory content.
@@ -64,6 +75,14 @@ on("click", "#simpleconfirmyes", e => {
 	if (cb) cb(arg);
 	DOM("#simpleconfirmdlg").close();
 })
+
+//Fire-and-forget. There's no callback when the user dismisses the dialog.
+export function simplemessage(messagetext, messagetitle) {
+	ensure_simplemessage_dlg();
+	set_content("#simplemessagetext", messagetext);
+	set_content("#simplemessagedlg h3", messagetitle);
+	DOM("#simplemessagedlg").showModal();
+}
 
 on("click", ".twitchlogin", async e => {
 	const scopes = e.match.dataset.scopes || ""; //Buttons may specify their scopes-required, otherwise assume just identity is needed
