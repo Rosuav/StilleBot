@@ -207,6 +207,15 @@ tr.row-alternate {background: #efe;}
 	justify-content: space-around;
 }
 </style>
+
+> ### Encrypted addresses
+>
+> Content in this channel's forms is encrypted with a password.
+>
+> <label><span>Enter password to view addresses:</span> <input type=password autocomplete=current-password size=20 name=decrypt></label> [Show addresses](:#submitpwd .dialog_close)
+>
+> [Cancel](:.dialog_close)
+{: tag=formdialog #passworddlg}
 " + shared_styles;
 
 array formfields = ({
@@ -810,11 +819,11 @@ mapping|zero wscmd_decrypt(object channel, mapping(string:mixed) conn, mapping(s
 	object key = session_decryption_key[channel->userid + ":" + conn->session->nonce];
 	if (!key) return 0;
 	array decrypted = ({ });
-	foreach (msg->data, array txt) decrypted += ({([
-		"enc": txt,
-		"dec": utf8_to_string(key->decrypt(String.hex2string(txt[*])[*]) * ""),
-	])});
-	return (["cmd": "decrypted", "decryption": decrypted]);
+	foreach (msg->data, array txt) {
+		string dec = utf8_to_string(key->decrypt(String.hex2string(txt[*])[*]) * "");
+		if (dec != "") decrypted += ({(["enc": txt, "dec": dec])});
+	}
+	if (sizeof(decrypted)) return (["cmd": "decrypted", "decryption": decrypted]);
 }
 
 bool type_string(string value) {return 1;}

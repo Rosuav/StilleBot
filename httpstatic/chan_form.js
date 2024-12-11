@@ -203,7 +203,6 @@ on("click", "#encrypt", e => {
 		e => ws_sync.send({cmd: "encrypt", password}))();
 	e.match.closest("dialog").close();
 });
-on("click", "#submitpwd", e => ws_sync.send({cmd: "set_decryption_password", password: DOM("[name=decrypt]").value}));
 
 on("change", ".formmeta", e => ws_sync.send({cmd: "form_meta", id: editing, [e.match.name]: e.match.type === "checkbox" ? e.match.checked : e.match.value}));
 
@@ -302,7 +301,7 @@ const view_element = { //Matches _element_types (see Pike code)
 		PRE(txt),
 		DIV({class: "column"}, BUTTON({class: "clipbtn", "data-copyme": r.fields[el.name],
 			title: "Click to copy address"}, "📋")),
-	]) : DIV(["Encrypted ", BUTTON({class: "showdlg", "data-dlg": "passworddlg"}, "Enter password")])),
+	]) : DIV(["Encrypted ", BUTTON({class: "opendlg", "data-dlg": "passworddlg"}, "Enter password")])),
 	checkbox: (el, r) => UL([
 		(el.label || []).map((l, i) => LI({class: r.fields[el.name + (-i || "")] ? "checkbox-checked" : "checkbox-unchecked"}, [
 			LABEL(SPAN(r.fields[el.name + (-i || "")] ? "Selected" : "Unselected")),
@@ -349,3 +348,8 @@ export function sockmsg_decrypted(msg) {
 	msg.decryption.forEach(d => decrypted[d.enc] = d.dec);
 	show_response(decryption_needed);
 }
+
+on("click", "#submitpwd", e => {
+	ws_sync.send({cmd: "set_decryption_password", password: DOM("[name=decrypt]").value});
+	if (decryption_needed) show_response(decryption_needed);
+});
