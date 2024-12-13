@@ -1,4 +1,8 @@
 inherit http_endpoint;
+//Distinct from chan_calendar in that this can be used by any viewer of any channel, without
+//interaction from the broadcaster (as it's just public information from Twitch), and without
+//any connection to Google. Using chan_calendar requires the broadcaster's permission as its
+//primary goal is to update the Twitch schedule.
 
 constant form = #"
 <form method=get>
