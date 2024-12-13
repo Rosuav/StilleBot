@@ -22,6 +22,10 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		return "Passing it along.";
 	}
 	//TODO: Handle webhooks, notably sending updates all any time the calendar changes
+	if (req->request_type == "POST") {
+		werror("POSSIBLE CALENDAR WEBHOOK\nHeaders %O\nBody: %O\n", req->request_headers, req->body_raw);
+		return "Okay.";
+	}
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo);
 	return render(req, ([
 		"vars": (["ws_group": ""]),
