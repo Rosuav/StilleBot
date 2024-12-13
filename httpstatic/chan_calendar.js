@@ -41,3 +41,6 @@ function backtofetch() {
 on("input", "[name=calendarid]", backtofetch);
 on("change", "[name=calendarid]", backtofetch);
 on("paste", "[name=calendarid]", backtofetch);
+
+on("click", "#googleoauth", e => ws_sync.send({cmd: "googlelogin"}));
+export function sockmsg_googlelogin(msg) {window.open(msg.uri, "login");}
