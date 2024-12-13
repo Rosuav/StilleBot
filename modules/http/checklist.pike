@@ -6,6 +6,15 @@ inherit annotated;
 //be greyed out if not available.
 //NOTE: The display is aimed at no more than six emotes across.
 constant hypetrain = replace(#"
+## Hype Train set nine
+### Unlockable Dec 2024
+### These are rereleases from older sets.
+HypeCute HypeYummy HypeKEKW HypeNoods HypeOho<br>
+HypeHi HypeChill HypeMyHeart HypeWarm HypeFist<br>
+HypeCries HypeGGEyes HypeAwh HypeElf HypeDelight<br>
+HypeNotLikeSnow HypePls HypeMelt HypeCocoa HypeConfetti<br>
+HypeSanta HypePeek HypeOhDeer HypeUwu HypeLick<br>
+
 ## Holidays 2024
 ### Unlockable via Shared Chat during holidays
 May:<br>SSSsssplode<br>
@@ -13,7 +22,7 @@ October:<br>TreatCorn TrickCorn<br>
 December:<br>LightsSwirl LightsBlink LightsTwinkle CatintheChat<br>
 
 ## Hype Train set eight
-### Unlockable May 2024 to current
+### Unlockable May 2024 to Dec 2024 (and maybe again?)
 FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume<br>
 AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat<br>
 MegaMlep RawkOut FallDamage RedCard ApplauseBreak TouchOfSalt<br>
