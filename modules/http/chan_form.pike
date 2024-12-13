@@ -767,7 +767,7 @@ Crypto.RSA generate_keypair(string pwd) {
 }
 
 void wscmd_set_decryption_password(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	session_decryption_key[channel->userid + ":" + conn->session->nonce] = generate_keypair(msg->password);
+	session_decryption_key[channel->userid + ":" + conn->session->cookie] = generate_keypair(msg->password);
 }
 
 __async__ void wscmd_encrypt(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -777,12 +777,12 @@ __async__ void wscmd_encrypt(object channel, mapping(string:mixed) conn, mapping
 	mapping cfg = await(G->G->DB->mutate_config(channel->userid, "forms") {mapping cfg = __ARGS__[0];
 		//First make sure you entered the correct previous password (if any).
 		if (cfg->encryptkey) {
-			prevkey = session_decryption_key[channel->userid + ":" + conn->session->nonce];
+			prevkey = session_decryption_key[channel->userid + ":" + conn->session->cookie];
 			if (!prevkey || prevkey->get_n() != cfg->encryptkey) return;
 		}
 		if (msg->password == "") m_delete(cfg, "encryptkey");
 		else {
-			newkey = session_decryption_key[channel->userid + ":" + conn->session->nonce] = generate_keypair(msg->password);
+			newkey = session_decryption_key[channel->userid + ":" + conn->session->cookie] = generate_keypair(msg->password);
 			cfg->encryptkey = newkey->get_n();
 		}
 		reencrypt = 1;
@@ -822,7 +822,7 @@ __async__ void wscmd_encrypt(object channel, mapping(string:mixed) conn, mapping
 
 mapping|zero wscmd_decrypt(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!arrayp(msg->data)) return 0;
-	object key = session_decryption_key[channel->userid + ":" + conn->session->nonce];
+	object key = session_decryption_key[channel->userid + ":" + conn->session->cookie];
 	if (!key) return 0;
 	array decrypted = ({ });
 	foreach (msg->data, array txt) {
