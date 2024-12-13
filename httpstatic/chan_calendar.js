@@ -1,20 +1,43 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, H3, LI, P, UL} = lindt; //autoimport
+const {A, BUTTON, H2, LI, P, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
-export function render(data) {
-	//
-}
-
-on("click", "#calsync", e => ws_sync.send({cmd: "fetchcal", calendarid: DOM("[name=calendarid]").value}));
-
-export function sockmsg_showcalendar(msg) {
+function show_calendar(events, pfx) {
+	console.log("Events", events);
 	replace_content("#calendar", [
-		H3("Calendar: " + msg.events.summary),
-		P(msg.events.description),
-		UL(msg.events.items.map(item => LI([
+		H2([pfx, events.summary]),
+		P(events.description),
+		UL(events.items.map(item => LI([
 			"From " + item.start.dateTime + " to " + item.end.dateTime + ": ",
 			A({href: item.htmlLink}, item.summary),
 		]))),
 	]);
 }
+
+export function sockmsg_showcalendar(msg) {
+	show_calendar(msg.events, "PREVIEW: ");
+	if (msg.calendarid === DOM("[name=calendarid]").value)
+		replace_content("#calsync", "Synchronize").dataset.calendarid = msg.calendarid;
+}
+
+export function render(data) {
+	//
+}
+
+on("click", "#calsync", e => {
+	const calendarid = DOM("[name=calendarid]").value;
+	ws_sync.send({cmd: (e.match.dataset.calendarid === calendarid) ? "synchronize" : "fetchcal", calendarid});
+});
+
+function backtofetch() {
+	const calendarid = DOM("[name=calendarid]").value;
+	const btn = DOM("#calsync");
+	const previd = btn.dataset.calendarid;
+	if (previd && calendarid !== previd) {
+		delete btn.dataset.calendarid;
+		replace_content(btn, "Preview");
+	}
+}
+on("input", "[name=calendarid]", backtofetch);
+on("change", "[name=calendarid]", backtofetch);
+on("paste", "[name=calendarid]", backtofetch);
