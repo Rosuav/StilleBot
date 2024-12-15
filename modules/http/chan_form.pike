@@ -879,6 +879,13 @@ void wscmd_unarchive_responses(object channel, mapping(string:mixed) conn, mappi
 	manipulate_responses(channel, conn, msg) {m_delete(__ARGS__[0], "archived");};
 }
 
+string decrypt(object key, string|array|zero data) {
+	if (stringp(data)) return data;
+	if (!data) return "";
+	if (!key) return "(encrypted)";
+	return utf8_to_string(key->decrypt(String.hex2string(data[*])[*]) * "");
+}
+
 __async__ void wscmd_download_csv(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!arrayp(msg->nonces)) return;
 	multiset nonces = (multiset)msg->nonces;
@@ -889,15 +896,20 @@ __async__ void wscmd_download_csv(object channel, mapping(string:mixed) conn, ma
 	mapping form = cfg->forms[formid];
 	if (!form) return;
 	array(string) headers = ({"datetime"});
+	object key = session_decryption_key[channel->userid + ":" + conn->session->cookie];
 	foreach (form->elements, mapping el) switch (el->type) { //_element_types
-		case "twitchid": case "simple": case "url": case "paragraph": case "email":
+		case "twitchid": case "simple": case "url": case "paragraph":
 			headers += ({el->name});
 			break;
 		case "address":
 			//Provide the individual parts, plus the combined one
 			//TODO: When the user asks for CSV download, prompt for some options, including address
 			//format: "Combined", "Parts", "Parts + Combined", "Parts + Spreadsheet Formula"
-			headers += (el->name + "-" + address_parts[*][0][*]) + ({el->name});
+			if (key) headers += (el->name + "-" + address_parts[*][0][*]) + ({el->name});
+			break;
+		case "email":
+			//If you've entered a password, include the column. Otherwise, quietly omit it.
+			if (key) headers += ({el->name});
 			break;
 		case "checkbox":
 			foreach (el->label || ({ }); int i;) headers += ({el->name + (-i || "")});
@@ -911,13 +923,16 @@ __async__ void wscmd_download_csv(object channel, mapping(string:mixed) conn, ma
 			case "twitchid":
 				row += ({r->submitted_by ? r->submitted_by->display_name : ""});
 				break;
-			case "simple": case "url": case "paragraph": case "email":
+			case "simple": case "url": case "paragraph":
 				row += ({r->fields[el->name]});
+				break;
+			case "email":
+				if (key) row += ({decrypt(key, r->fields[el->name])});
 				break;
 			case "address":
 				//Addresses are a bit weird. You might be able to make this work with just the combined field,
 				//or maybe it works better like this.
-				row += r->fields[(el->name + "-" + address_parts[*][0][*])[*]] + ({sprintf(
+				if (key) row += decrypt(key, (r->fields[(el->name + "-" + address_parts[*][0][*])[*]] + ({sprintf(
 					"=%c%d&CHAR(13)&%c%[1]d&CHAR(13)&%c%[1]d&\" \"&%c%[1]d&\"  \"&%c%[1]d&CHAR(13)&%c%[1]d",
 					'A' + sizeof(row),
 					1 + sizeof(rows),
@@ -926,7 +941,7 @@ __async__ void wscmd_download_csv(object channel, mapping(string:mixed) conn, ma
 					'D' + sizeof(row),
 					'E' + sizeof(row),
 					'F' + sizeof(row),
-				)});
+				)}))[*]);
 				break;
 			case "checkbox":
 				foreach (el->label || ({ }); int i;) row += ({r->fields[el->name + (-i || "")] ? "yes" : "no"});
