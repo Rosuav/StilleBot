@@ -231,6 +231,7 @@ array _element_types = ({ //Search for _element_types in this and the JS to find
 	({"url", "URL (web address)"}),
 	({"paragraph", "Paragraph input"}),
 	({"address", "Street address"}),
+	({"email", "Email address"}),
 	//({"radio", "Selection (radio) buttons"}), //Should generally be made mandatory
 	({"checkbox", "Check box(es)"}), //If mandatory, at least one checkbox must be selected (but more than one may be)
 	({"text", "Informational text"}),
@@ -253,6 +254,7 @@ mapping element_attributes = ([ //Matches _element_types
 		"label-postalcode": type_string,
 		"label-country": type_string,
 	]),
+	"email": (["label": type_string]),
 	"checkbox": (["label[]": type_string]),
 	"text": ([]), //No special attributes, only the universal ones
 ]);
@@ -388,6 +390,12 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 							parts->country || ""));
 						break;
 					}
+					case "email": {
+						string|zero val = req->variables["field-" + el->name];
+						if (el->required && (!val || val == "")) missing[el->name] = 1;
+						else fields[el->name] = encrypt_with_key(rsakey, val);
+						break;
+					}
 					default: {
 						string|zero val = req->variables["field-" + el->name];
 						if (el->required && (!val || val == "")) missing[el->name] = 1;
@@ -505,6 +513,14 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 								reqd ? " <span class=required title=Required>\\*</span>" : "",
 						);
 					}
+					break;
+				case "email":
+					elem = sprintf("<label><span>%s</span> <input type=email name=%q%s>%s</label>",
+						el->label || "", "field-" + el->name,
+						el->required ? " required" : "",
+						missing[el->name] ? " <span class=required title=Required>\\* Please enter an email address</span>" :
+							el->required ? " <span class=required title=Required>\\*</span>" : "",
+					);
 					break;
 				case "checkbox": {
 					elem = "<ul>";
@@ -811,7 +827,7 @@ __async__ void wscmd_encrypt(object channel, mapping(string:mixed) conn, mapping
 							encrypt(el->name + "-" + name);
 						break;
 					}
-					case "email": encrypt(el->name); break; //TODO
+					case "email": encrypt(el->name); break;
 					default: break;
 				}
 			}
@@ -874,7 +890,7 @@ __async__ void wscmd_download_csv(object channel, mapping(string:mixed) conn, ma
 	if (!form) return;
 	array(string) headers = ({"datetime"});
 	foreach (form->elements, mapping el) switch (el->type) { //_element_types
-		case "twitchid": case "simple": case "url": case "paragraph":
+		case "twitchid": case "simple": case "url": case "paragraph": case "email":
 			headers += ({el->name});
 			break;
 		case "address":
@@ -895,7 +911,7 @@ __async__ void wscmd_download_csv(object channel, mapping(string:mixed) conn, ma
 			case "twitchid":
 				row += ({r->submitted_by ? r->submitted_by->display_name : ""});
 				break;
-			case "simple": case "url": case "paragraph":
+			case "simple": case "url": case "paragraph": case "email":
 				row += ({r->fields[el->name]});
 				break;
 			case "address":
