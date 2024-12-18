@@ -39,7 +39,7 @@ __async__ mapping parse_hype_status(mapping data)
 		"cooldown": cooldown, "expires": expires,
 		"level": (int)data->level, "goal": (int)data->goal,
 		"total": data->progress || (int)data->total, //Different format problems. Sigh.
-		"is_golden_kappa_train": data->is_golden_kappa_train,
+		"is_golden_kappa_train": data->is_golden_kappa_train, //Note that this isn't available when you first load the page, only in the eventsub messages. Sigh.
 	]);
 	//The API has one format, the eventsub notification has another. Sigh. Synchronize manually.
 	foreach (data->top_contributions + ({data->last_contribution}) - ({0}), mapping user) {
