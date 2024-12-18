@@ -94,7 +94,10 @@ export let render = (state) => {
 	check_interaction();
 	//Show the emotes that we could win (or could have won last hype train)
 	const lvl = state.cooldown && state.level; //If not active or cooling down, hide 'em all
-	//TODO: If state.is_golden_kappa_train, replace all the emotes with the golden Kappa
+	//TODO: If state.is_golden_kappa_train, also show the golden Kappa
+	//Might need some magic handling (on the back end) to remember that it's a golden Kappa train
+	//and keep the golden Kappa visible even if you refresh the page.
+	//Image for the golden Kappa: https://static-cdn.jtvnw.net/emoticons/v2/80393/default/light/3.0
 	document.querySelectorAll("#emotes li").forEach((li, idx) => li.className =
 		lvl >= idx + 2 || state.total >= state.goal ? "available" :
 		state.expires && lvl === idx + 1 ? "next" : ""); //Only show "next" during active hype trains
