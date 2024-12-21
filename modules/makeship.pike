@@ -5,13 +5,15 @@ __async__ void pingmakeship() {
 	object channel = G->G->irc->channels["#devicat"];
 	if (n != channel->expand_variables("$pledges$")) {
 		channel->set_variable("pledges", n);
+		mapping prev = await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid,
+			(["Authorization": channel->userid])));
 		channel->send((["user": "devicat", "uid": channel->userid]), ({
 			"devicatAww Thank you! We now have $pledges$ pledges!! devicatBless",
 			([
 				"builtin": "chan_streamsetup",
 				"builtin_param": ({
 					"title",
-					'\U0001f534 $pledges$ / 200 Plushie Petition \u2022 ENDS IN 6 DAYS \u2605\u5f61 makeship.com/petitions/candicat-cozy \u2022 !plushie !hoodie'
+					Regexp.replace("([0-9]+) / 200", prev->data[0]->title, n + " / 200"),
 				}),
 				"message": "",
 			]),
