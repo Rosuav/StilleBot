@@ -122,6 +122,7 @@ export function TEXTFORMATTING(cfg) {
 		SELECT({name: "strokewidth"}, [cfg.blank_opts && OPTION(), "None 0.25px 0.5px 0.75px 1px 2px 3px 4px 5px 7px 9px 12px".split(" ").map(o => OPTION(o))]),
 		INPUT({name: "strokecolor", type: "color"}),
 		" Note: Outline works only in Chrome (including OBS)",
+		//TODO at some point: Add a "stroke inside/outside" option. Works only in Chrome v123 eg OBS 31.0, very new as of 20241222.
 	])]),
 	cfg.use_preview && TR([TH("Preview bg"), TD(INPUT({name: "previewbg", type: "color"}))]), //Should this one be non-copiable? It's not quite a style, but not quite NOT a style either.
 	TR([TH("Border"), TD([
