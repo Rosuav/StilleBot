@@ -123,6 +123,8 @@ export function TEXTFORMATTING(cfg) {
 		INPUT({name: "strokecolor", type: "color"}),
 		" Note: Outline works only in Chrome (including OBS)",
 		//TODO at some point: Add a "stroke inside/outside" option. Works only in Chrome v123 eg OBS 31.0, very new as of 20241222.
+		//Alternate stroke style is done with "paint-order: stroke fill;" which will work really nicely for some fonts and such,
+		//but not for others. So maybe not call it "inside" and "outside" but just "alternate stroke style"??
 	])]),
 	cfg.use_preview && TR([TH("Preview bg"), TD(INPUT({name: "previewbg", type: "color"}))]), //Should this one be non-copiable? It's not quite a style, but not quite NOT a style either.
 	TR([TH("Border"), TD([
