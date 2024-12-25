@@ -17,6 +17,7 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 	array users = ({ });
 	foreach (G_G_("participants", channel->name[1..]); string name; mapping info)
 		if (info->lastnotice >= limit) users += ({info->userid});
+	werror("Chat participant! %O %O --> %O\n", channel, person, users);
 	if (!sizeof(users)) return (["{chat1name}": "", "{chat1uid}": "0"]); //Unlike $participant$, this will not fall back on self.
 	int n = (int)param[1];
 	array sel;
