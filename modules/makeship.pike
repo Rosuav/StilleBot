@@ -13,7 +13,7 @@ __async__ void pingmakeship() {
 				"builtin": "chan_streamsetup",
 				"builtin_param": ({
 					"title",
-					Regexp.replace("([0-9]+) Pledged", prev->data[0]->title, n + " / 200"),
+					Regexp.replace("([0-9]+) for CandiCat Cozy", prev->data[0]->title, n + " / 200"),
 				}),
 				"message": "",
 			]),
