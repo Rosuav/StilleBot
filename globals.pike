@@ -1190,8 +1190,8 @@ mapping(string:mixed) render_template(string template, mapping(string:string) re
 //** NOTE ** Always ensure that every attribute in this array is handled by both
 //textformatting_css and textformatting_validate. Both of them will happily accept
 //mappings with other attributes, but must poke every textformatting attribute.
-array TEXTFORMATTING_ATTRS = ("font fontweight fontstyle fontsize fontfamily whitespace css "
-			"color strokewidth strokecolor borderwidth bordercolor borderradius "
+array TEXTFORMATTING_ATTRS = ("font fontweight fontstyle fontsize fontfamily whitespace css color "
+			"strokewidth strokecolor strokeorder borderwidth bordercolor borderradius "
 			"bgcolor bgalpha padvert padhoriz textalign "
 			"shadowx shadowy shadowcolor shadowalpha") / " ";
 string textformatting_css(mapping cfg) {
@@ -1207,6 +1207,8 @@ string textformatting_css(mapping cfg) {
 	if ((float)cfg->padhoriz) css += sprintf("padding-left: %gem; padding-right: %<gem;", (float)cfg->padhoriz);
 	if (cfg->strokewidth && cfg->strokewidth != "None")
 		css += sprintf("-webkit-text-stroke: %s %s;", cfg->strokewidth, cfg->strokecolor || "black");
+	if (cfg->strokeorder == "outside")
+		css += sprintf("paint-order: stroke;"); //Requires Chromium 123 (OBS 31) but often makes stroked text look better
 	if (int alpha = (int)cfg->shadowalpha) {
 		//NOTE: If we do more than one filter, make sure we combine them properly here on the back end.
 		string col = cfg->shadowcolor || "";
@@ -1239,6 +1241,7 @@ constant _textformatting_kwdattr = ([
 	"whitespace": ({"normal", "nowrap", "pre", "pre-wrap", "pre-line", "break-spaces"}),
 	"textalign": ({"start", "end", "center", "justify"}), //There are other options, but not all formalized. This may need to support a fill character some day.
 	"fontfamily": ({"serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "emoji", "math", "fangsong"}),
+	"strokeorder": ({"symmetric", "outside"}),
 ]);
 int(1bit) textformatting_validate(mapping cfg) {
 	int ok = 1;
