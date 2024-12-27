@@ -13,7 +13,7 @@ __async__ void pingmakeship() {
 				"builtin": "chan_streamsetup",
 				"builtin_param": ({
 					"title",
-					Regexp.replace("([0-9]+) for CandiCat Cozy", prev->data[0]->title, n + " / 200"),
+					Regexp.replace("([0-9]+) Pledges", prev->data[0]->title, n + " Pledges"),
 				}),
 				"message": "",
 			]),
@@ -23,5 +23,5 @@ __async__ void pingmakeship() {
 
 protected void create(string name) {
 	remove_call_out(G->G->makeship_call_out);
-	G->G->makeship_call_out = call_out(pingmakeship, 60);
+	//G->G->makeship_call_out = call_out(pingmakeship, 60);
 }
