@@ -248,6 +248,8 @@
   - https://developers.google.com/calendar/api/guides/push
   - Update your Twitch schedule based on your calendar
   - Choose exactly which aspects are important - start/end time, title, etc
+  - Will probably require a lot of hassle on the Google end, unless the docs are correct
+    and the experimentation wrong. It's demanding more scope than it should.
 * Form submissions display
   - Show Archived Only
   - Select All
