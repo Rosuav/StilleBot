@@ -1145,7 +1145,7 @@ mapping(string:mixed)|string render_template(string template, mapping replacemen
 			if (dflt) pieces[i] = dflt;
 			else error("Token %O not found in templates/%s\n", "$$" + token + "$$", template);
 		}
-		else if (callablep(repl)) pieces[i] = repl(dflt);
+		else if (callablep(repl)) pieces[i] = ((function)repl)(dflt);
 		else pieces[i] = repl;
 		if (pieces[i] == "")
 		{
