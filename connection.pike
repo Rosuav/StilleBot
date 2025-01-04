@@ -1230,7 +1230,7 @@ __async__ void http_request(Protocols.HTTP.Server.Request req)
 		//This check shouldn't be necessary; the session value can't easily be set except on this one host.
 		string host = deduce_host(req->request_headers);
 		if (host == "sikorsky.rosuav.com") {
-			req->response_and_finish(redirect("https://" + dest + req->full_query));
+			req->response_and_finish(redirect("https://" + dest + req->full_query, 301));
 			return;
 		}
 		//Otherwise carry on as if the autoxfr marker wasn't there. (This also applies to non-GET requests.)
