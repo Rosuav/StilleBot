@@ -1236,6 +1236,65 @@ constant cutewords = "puppy kitten crumpet tutu butterscotch flapjack pilliwiggi
 	"blueberry rainbow treasure princess cutie shiny dance bread sakura train "
 	"gift art flag candle heart love magic save tada hug cool party plush star "
 	"donut teacup cat purring flower sugar biscuit pillow banana berry " / " ";
+__async__ string filter_bad_words(string text, string mode) {
+	if (tts_config->badwordlist_fetchtime < time() - 86400) {
+		object res = await(Protocols.HTTP.Promise.get_url(
+			"https://raw.githubusercontent.com/coffee-and-fun/google-profanity-words/main/data/list.txt"
+		));
+		tts_config->badwordlist_fetchtime = time();
+		tts_config->badwordlist = (multiset)String.trim((res->get() / "\n")[*]);
+	}
+	array words = text / " ";
+	multiset bad = tts_config->badwordlist;
+	foreach (words; int i; string w) {
+		//For the purposes of badword filtering, ignore all non-alphabetics.
+		//TODO: Handle "abc123qwe" by checking both abc and qwe?
+		sscanf(w, "%*[^A-Za-z]%[A-Za-z]", w);
+		if (w == "" || !bad[w]) continue;
+		if (mode == "message") return "";
+		switch (mode) {
+			case "skip": words[i] = ""; break;
+			case "replace": words[i] = random(cutewords); break;
+			default: break;
+		}
+	}
+	return words * " ";
+}
+
+__async__ string|zero text_to_speech(string text, array voice, string origin) {
+	string token = tts_config->?access_token;
+	if (!token) return 0;
+	object reqargs = Protocols.HTTP.Promise.Arguments((["headers": ([
+			"Authorization": "Bearer " + token,
+			"Content-Type": "application/json; charset=utf-8",
+		]), "data": string_to_utf8(Standards.JSON.encode(([
+			"input": (["text": text]),
+			"voice": ([
+				"languageCode": voice[0],
+				"name": voice[1],
+				"ssmlGender": voice[2],
+			]),
+			"audioConfig": (["audioEncoding": "OGG_OPUS"]),
+		])))]));
+	System.Timer tm = System.Timer();
+	object res = await(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
+	float delay = tm->get();
+	Stdio.append_file("tts_stats.log", sprintf("%s text %O fetch time %.3f\n", origin, text, delay));
+	mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
+	if (mappingp(data) && data->error->?details[?0]->?reason == "ACCESS_TOKEN_EXPIRED") {
+		Stdio.append_file("tts_error.log", sprintf("%sTTS access key expired after %d seconds\n",
+			ctime(time()), time() - tts_config->access_token_fetchtime));
+		await(fetch_tts_credentials(1));
+		reqargs->headers->Authorization = "Bearer " + tts_config->access_token;
+		object res = await(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
+		catch {data = Standards.JSON.decode_utf8(res->get());};
+		//Exactly one retry attempt; if it fails, fall through and report a generic error.
+	}
+	if (mappingp(data) && stringp(data->audioContent))
+		return "data:audio/ogg;base64," + data->audioContent;
+	Stdio.append_file("tts_error.log", sprintf("%sBad TTS response: %O\n-------------\n", ctime(time()), data));
+}
+
 __async__ void send_with_tts(object channel, mapping args, string|void destgroup, mapping cfg) {
 	if (!cfg->alertconfigs[args->send_alert]) return 0; //On replay, if the alert doesn't exist, do nothing. TODO: Replay a base alert if variant deleted?
 	mapping inh = G_G_("alertbox_resolved", (string)channel->userid, args->send_alert);
@@ -1257,30 +1316,7 @@ __async__ void send_with_tts(object channel, mapping args, string|void destgroup
 					else if (has_value(part->img, "emoticons/v2")) replacement += part->title;
 				}
 			}
-			if (inh->tts_filter_badwords != "none") {
-				if (tts_config->badwordlist_fetchtime < time() - 86400) {
-					object res = await(Protocols.HTTP.Promise.get_url(
-						"https://raw.githubusercontent.com/coffee-and-fun/google-profanity-words/main/data/list.txt"
-					));
-					tts_config->badwordlist_fetchtime = time();
-					tts_config->badwordlist = (multiset)String.trim((res->get() / "\n")[*]);
-				}
-				array words = replacement / " ";
-				multiset bad = tts_config->badwordlist;
-				foreach (words; int i; string w) {
-					//For the purposes of badword filtering, ignore all non-alphabetics.
-					//TODO: Handle "abc123qwe" by checking both abc and qwe?
-					sscanf(w, "%*[^A-Za-z]%[A-Za-z]", w);
-					if (w == "" || !bad[w]) continue;
-					if (inh->tts_filter_badwords == "message") {words = ({ }); break;}
-					switch (inh->tts_filter_badwords) {
-						case "skip": words[i] = ""; break;
-						case "replace": words[i] = random(cutewords); break;
-						default: break;
-					}
-				}
-				replacement = words * " ";
-			}
+			if (inh->tts_filter_badwords != "none") replacement = await(filter_bad_words(replacement, inh->tts_filter_badwords));
 		}
 		else if (tok == "" || tok[0] == '_') replacement = "";
 		text += before + replacement;
@@ -1289,37 +1325,7 @@ __async__ void send_with_tts(object channel, mapping args, string|void destgroup
 	text += fmt;
 	array voice = (inh->tts_voice || "") / "/";
 	if (sizeof(voice) != 3) voice = tts_config->default_voice / "/";
-	if (string token = text != "" && tts_config->?access_token) {
-		object reqargs = Protocols.HTTP.Promise.Arguments((["headers": ([
-				"Authorization": "Bearer " + token,
-				"Content-Type": "application/json; charset=utf-8",
-			]), "data": string_to_utf8(Standards.JSON.encode(([
-				"input": (["text": text]),
-				"voice": ([
-					"languageCode": voice[0],
-					"name": voice[1],
-					"ssmlGender": voice[2],
-				]),
-				"audioConfig": (["audioEncoding": "OGG_OPUS"]),
-			])))]));
-		System.Timer tm = System.Timer();
-		object res = await(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
-		float delay = tm->get();
-		Stdio.append_file("tts_stats.log", sprintf("Channel %O text %O fetch time %.3f\n", channel->name, text, delay));
-		mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
-		if (mappingp(data) && data->error->?details[?0]->?reason == "ACCESS_TOKEN_EXPIRED") {
-			Stdio.append_file("tts_error.log", sprintf("%sTTS access key expired after %d seconds\n",
-				ctime(time()), time() - tts_config->access_token_fetchtime));
-			await(fetch_tts_credentials(1));
-			reqargs->headers->Authorization = "Bearer " + tts_config->access_token;
-			object res = await(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
-			catch {data = Standards.JSON.decode_utf8(res->get());};
-			//Exactly one retry attempt; if it fails, fall through and report a generic error.
-		}
-		if (mappingp(data) && stringp(data->audioContent))
-			args->tts = "data:audio/ogg;base64," + data->audioContent;
-		else Stdio.append_file("tts_error.log", sprintf("%sBad TTS response: %O\n-------------\n", ctime(time()), data));
-	}
+	if (string tts = text != "" && await(text_to_speech(text, voice, sprintf("Channel %O", channel->name)))) args->tts = tts;
 	send_updates_all((destgroup || cfg->authkey) + "#" + channel->userid, args);
 }
 
