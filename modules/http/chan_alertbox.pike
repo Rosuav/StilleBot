@@ -1261,18 +1261,19 @@ __async__ string filter_bad_words(string text, string mode) {
 	return words * " ";
 }
 
-__async__ string|zero text_to_speech(string text, array voice, string origin) {
+__async__ string|zero text_to_speech(string text, string voice, string origin) {
 	string token = tts_config->?access_token;
 	if (!token) return 0;
+	array v = voice / "/";
 	object reqargs = Protocols.HTTP.Promise.Arguments((["headers": ([
 			"Authorization": "Bearer " + token,
 			"Content-Type": "application/json; charset=utf-8",
 		]), "data": string_to_utf8(Standards.JSON.encode(([
 			"input": (["text": text]),
 			"voice": ([
-				"languageCode": voice[0],
-				"name": voice[1],
-				"ssmlGender": voice[2],
+				"languageCode": v[0],
+				"name": v[1],
+				"ssmlGender": v[2],
 			]),
 			"audioConfig": (["audioEncoding": "OGG_OPUS"]),
 		])))]));
@@ -1323,8 +1324,8 @@ __async__ void send_with_tts(object channel, mapping args, string|void destgroup
 		fmt = after;
 	}
 	text += fmt;
-	array voice = (inh->tts_voice || "") / "/";
-	if (sizeof(voice) != 3) voice = tts_config->default_voice / "/";
+	string voice = inh->tts_voice || "";
+	if (sizeof(voice / "/") != 3) voice = tts_config->default_voice;
 	if (string tts = text != "" && await(text_to_speech(text, voice, sprintf("Channel %O", channel->name)))) args->tts = tts;
 	send_updates_all((destgroup || cfg->authkey) + "#" + channel->userid, args);
 }
