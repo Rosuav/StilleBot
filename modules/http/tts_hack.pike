@@ -27,6 +27,7 @@ __async__ mapping|zero websocket_cmd_speak(mapping(string:mixed) conn, mapping(s
 	if (!text || text == "") return 0;
 	object alertbox = G->G->websocket_types->chan_alertbox;
 	text = await(alertbox->filter_bad_words(text, "replace"));
+	werror("TTS Hack %O -> %O\n", msg->voice, msg->text);
 	string tts = await(alertbox->text_to_speech(text, msg->voice || "en-GB/en-GB-Standard-A/FEMALE", "tts_hack"));
 	return (["cmd": "speak", "text": text, "tts": tts]);
 }
