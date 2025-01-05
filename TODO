@@ -254,3 +254,5 @@
   - Show Archived Only
   - Select All
   - See All Fields
+* Bit Boss - support from current boss - "heals the boss" is capped at max HP
+  - Add a new option "overheals the boss" that will increase max HP as needed
