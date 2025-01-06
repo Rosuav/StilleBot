@@ -13,9 +13,23 @@ export function render(data) {
 	}
 }
 
+const queue = [];
+DOM("#player").onended = e => {
+	if (queue.length) {
+		e.target.src = queue.shift();
+		e.target.play();
+	}
+};
 export function sockmsg_speak(msg) {
-	DOM("#player").src = msg.tts;
-	DOM("#player").play();
+	const pl = DOM("#player");
+	if (!pl.paused) {
+		//There's already something playing. Add this one to the queue.
+		queue.push(msg.tts);
+	} else {
+		//Nothing currently playing. Play this immediately.
+		pl.src = msg.tts;
+		pl.play();
+	}
 }
 
 on("submit", "#send", e => {
