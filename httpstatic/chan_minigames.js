@@ -1,12 +1,13 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, BR, BUTTON, CODE, INPUT, LABEL, LI, OPTION, SELECT, SPAN, UL} = lindt; //autoimport
+import {simpleconfirm} from "./utils.js";
 
 export function render(data) {
 	const boss = {...sections.boss, ...(data.boss || { })};
 	replace_content("#boss", UL([
 		LI([
 			"Enabled? ",
-			SELECT({name: "enabled", value: boss.enabled}, [
+			SELECT({name: "enabled", value: boss.enabled, "data-dangerous": boss.enabled ? "Are you sure you want to disable the stream boss entirely?" : ""}, [
 				OPTION({value: "0"}, "No"),
 				OPTION({value: "1"}, "Yes"),
 			]),
@@ -52,7 +53,7 @@ export function render(data) {
 	replace_content("#crown", UL([
 		LI([
 			"Enabled? ",
-			SELECT({name: "enabled", value: crown.enabled}, [
+			SELECT({name: "enabled", value: crown.enabled, "data-dangerous": crown.enabled ? "Are you sure you want to disable crown seizing entirely?" : ""}, [
 				OPTION({value: "0"}, "No"),
 				OPTION({value: "1"}, "Yes"),
 			]),
@@ -92,12 +93,15 @@ export function render(data) {
 	]));
 }
 
-on("change", "input,select", e => {
+function update_all(e) {
 	const sec = e.match.closest(".game");
 	if (!sec) return;
 	const params = { };
 	sec.querySelectorAll("input,select").forEach(el => params[el.name] = el.type === "checkbox" ? el.checked : el.value);
 	ws_sync.send({cmd: "configure", section: sec.id, params});
+}
+on("change", "input,select", e => {
+	if (e.match.dataset.dangerous) simpleconfirm(e.match.dataset.dangerous, update_all)(e); else update_all(e);
 });
 
 on("dragstart", ".monitorlink", e => {
