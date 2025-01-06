@@ -23,9 +23,11 @@ Need to reset the key? [Reset key](:#resetkey) will disable any previous link an
 
 constant builtin_name = "OBS Studio";
 constant builtin_description = "Manage OBS Studio";
-constant builtin_param = ({"/Action/Get scene/Switch scene", "Parameter"});
+constant builtin_param = ({"/Action/Status/Get scene/Switch scene", "Parameter"});
 constant vars_provided = ([
-	"{scenename}": "Current scene name",
+	"{scenename}": "Current scene name (get/switch scene)",
+	"{streaming}": "1 if streaming, 0 if not (status)",
+	"{recording}": "1 if recording, 0 if not (status)",
 ]);
 
 @retain: mapping obsstudio_inflight_messages = ([]);
@@ -42,8 +44,15 @@ __async__ mapping send_obs_signal(object channel, mapping msg) {
 }
 
 __async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
-	//TODO: If no client connected, immediate error
 	switch (param[0]) {
+		case "Status": {
+			mapping info = await(send_obs_signal(channel, (["cmd": "get_status"])));
+			//Also available, if of interest: recordingPaused, replaybuffer, virtualcam
+			return ([
+				"{streaming}": (string)(int)info->streaming,
+				"{recording}": (string)(int)info->recording,
+			]);
+		}
 		case "Get scene": {
 			mapping info = await(send_obs_signal(channel, (["cmd": "get_scene"])));
 			return (["{scenename}": (string)info->scenename]);
