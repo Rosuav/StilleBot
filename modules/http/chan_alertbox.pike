@@ -16,6 +16,9 @@ inherit enableable_module;
 * The first 1M or 4M characters per month are free, then 4 USD or 16 USD per
   million characters. Since I disable Wavenet voices here, it's 4M then 4 USD,
   but removing that check would make it more expensive (fine if low throughput).
+* In addition to WaveNet, there are a bunch of options for pricier TTS. Is it
+  worth enabling some of them as paid features?
+  https://cloud.google.com/text-to-speech/pricing?hl=en
 The credentials file will be automatically loaded on code update, and should be used thereafter.
 */
 constant markdown = #"# Alertbox management for channel $$channel$$
