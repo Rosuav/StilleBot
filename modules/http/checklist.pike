@@ -7,13 +7,6 @@ inherit annotated;
 //NOTE: The display is aimed at no more than six emotes across.
 constant hypetrain = replace(#"
 ## Hype Train set nine
-### Unlockable Dec 2024
-### These are rereleases from older sets.
-HypeCute HypeYummy HypeKEKW HypeNoods HypeOho<br>
-HypeHi HypeChill HypeMyHeart HypeWarm HypeFist<br>
-HypeCries HypeGGEyes HypeAwh HypeElf HypeDelight<br>
-HypeNotLikeSnow HypePls HypeMelt HypeCocoa HypeConfetti<br>
-HypeSanta HypePeek HypeOhDeer HypeUwu HypeLick<br>
 
 ## Holidays 2024
 ### Unlockable via Shared Chat during holidays
@@ -22,7 +15,7 @@ October:<br>TreatCorn TrickCorn<br>
 December:<br>LightsSwirl LightsBlink LightsTwinkle CatintheChat<br>
 
 ## Hype Train set eight
-### Unlockable May 2024 to Dec 2024 (and maybe again?)
+### Unlockable May 2024 to Dec 2024 and Jan 2025 to current
 FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume<br>
 AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat<br>
 MegaMlep RawkOut FallDamage RedCard ApplauseBreak TouchOfSalt<br>
@@ -42,7 +35,7 @@ RPGAyaya HahaCat RPGGhosto PrideWingR PrideWingL<br>
 PrideUwu PrideLaugh PrideCute PridePog PrideFloat<br>
 
 ## Hype Train set six
-### Unlockable Dec 2023 to Jan 2024
+### Unlockable Dec 2023 to Jan 2024 and Dec 2024 to Jan 2025
 HypeCute HypeYummy HypeKEKW HypeNoods HypeOho<br>
 HypeHi HypeChill HypeMyHeart HypeWarm HypeFist<br>
 HypeCries HypeGGEyes HypeAwh HypeElf HypeDelight<br>
