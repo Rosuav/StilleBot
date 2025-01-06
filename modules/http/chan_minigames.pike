@@ -59,7 +59,7 @@ constant sections = ([
 		"hpgrowth": 0, //0 for static, positive numbers for fixed growth, -1 for overkill
 		"autoreset": 1, //Reset at end of stream automatically. There'll be a mod command to reset regardless.
 		"giftrecipient": 0,
-		"selfheal": 1,
+		"selfheal": 1, //0 lets current boss damage themselves (phoenix mode), 1 self-heal up to current max HP, 2 self-heal unlimited
 	]),
 	"crown": ([
 		"enabled": 0,

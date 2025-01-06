@@ -31,6 +31,7 @@ export function render(data) {
 			SELECT({name: "selfheal", value: boss.selfheal}, [
 				OPTION({value: "0"}, "Deals damage as normal"),
 				OPTION({value: "1"}, "Heals the boss"),
+				OPTION({value: "2"}, "Overheals the boss"),
 			]),
 		]),
 		LI([

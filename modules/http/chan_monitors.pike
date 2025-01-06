@@ -286,7 +286,10 @@ void advance_goalbar(object channel, mapping|string info, mapping person, int ad
 	if (string recip = info->boss_giftrecipient && extra->msg_param_recipient_display_name) from_name = recip;
 	if (info->boss_selfheal && lower_case(from_name) == lower_case(channel->expand_variables("$bossname$"))) {
 		int dmg = (int)channel->expand_variables("$bossdmg$");
-		if (advance > dmg) advance = dmg; //No healing past your max HP
+		if (advance > dmg) {
+			if (info->boss_selfheal == 2) channel->set_variable("bossmaxhp", dmg - advance, "add"); //Overheal: Healing can increase max HP
+			else advance = dmg; //Normal heal: No healing past your max HP
+		}
 		advance = -advance; //Heal rather than hurt.
 	}
 	int total = (int)channel->set_variable(varname, advance, "add"); //Abuse the fact that it'll take an int just fine for add :)
