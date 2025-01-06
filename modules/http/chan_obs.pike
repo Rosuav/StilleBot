@@ -2,6 +2,15 @@ inherit http_websocket;
 inherit builtin_command;
 inherit annotated;
 
+/* TODO maybe: Event signals from OBS
+
+Will require some sort of special trigger or equivalent.
+
+Page uses addEventListener to get the event, then passes it along to the bot
+
+See https://github.com/obsproject/obs-browser?tab=readme-ov-file#available-events
+*/
+
 constant markdown = #"# OBS Studio Integration
 
 To enable integration, add [this page](obs?key=loading :#obslink) to OBS as a browser source,
@@ -14,15 +23,37 @@ Need to reset the key? [Reset key](:#resetkey) will disable any previous link an
 
 constant builtin_name = "OBS Studio";
 constant builtin_description = "Manage OBS Studio";
-constant builtin_param = ({"/Action/Select scene/Get scene"});
+constant builtin_param = ({"/Action/Get scene/Switch scene", "Parameter"});
 constant vars_provided = ([
 	"{scenename}": "Current scene name",
 ]);
 
+@retain: mapping obsstudio_inflight_messages = ([]);
+__async__ mapping send_obs_signal(object channel, mapping msg) {
+	mapping cfg = await(G->G->DB->load_config(channel->userid, "obsstudio"));
+	string grp = cfg->nonce + "#" + channel->userid;
+	array socks = websocket_groups[grp] || ({ });
+	if (!sizeof(socks)) error("Not connected to OBS");
+	msg->key = String.string2hex(random_string(6));
+	object prom = obsstudio_inflight_messages[msg->key] = Concurrent.Promise();
+	socks->send_text(Standards.JSON.encode(msg, 4));
+	return await(prom->future()->timeout(5)); //Five seconds should be enough for a response. Otherwise assume the other end is gone.
+	//TODO: If anything goes wrong, m_delete the promise from inflight_messages
+}
+
 __async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
-	//TODO: Poke a signal out to the local websocket
-	return ([
-	]);
+	//TODO: If no client connected, immediate error
+	switch (param[0]) {
+		case "Get scene": {
+			mapping info = await(send_obs_signal(channel, (["cmd": "get_scene"])));
+			return (["{scenename}": (string)info->scenename]);
+		}
+		case "Switch scene": {
+			mapping info = await(send_obs_signal(channel, (["cmd": "set_scene", "scenename": param[1]])));
+			return (["{scenename}": (string)info->scenename]);
+		}
+		default: error("Unknown subcommand"); //Shouldn't happen if using the GUI to edit commands
+	}
 }
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
@@ -78,6 +109,14 @@ __async__ void wscmd_logme(object channel, mapping(string:mixed) conn, mapping(s
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "obsstudio"));
 	if (conn->group != cfg->nonce + "#" + channel->userid) return;
 	werror("OBS LOGME: %O\n", msg);
+}
+
+__async__ void wscmd_response(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping cfg = await(G->G->DB->load_config(channel->userid, "obsstudio"));
+	if (conn->group != cfg->nonce + "#" + channel->userid) return;
+	object prom = m_delete(obsstudio_inflight_messages, msg->key);
+	if (!prom) return; //Other end has given up on us
+	prom->success(msg);
 }
 
 protected void create(string name) {::create(name);}
