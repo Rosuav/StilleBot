@@ -108,11 +108,11 @@ void probe_hype_train(int channel) {
 	get_user_info(channel)->then() {send_updates_all(__ARGS__[0]->login);};
 }
 
-constant emotes = #"HypeCute HypeYummy HypeKEKW HypeNoods HypeOho
-HypeHi HypeChill HypeMyHeart HypeWarm HypeFist
-HypeCries HypeGGEyes HypeAwh HypeElf HypeDelight
-HypeNotLikeSnow HypePls HypeMelt HypeCocoa HypeConfetti
-HypeSanta HypePeek HypeOhDeer HypeUwu HypeLick";
+constant emotes = #"FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume
+AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat
+MegaMlep RawkOut FallDamage RedCard ApplauseBreak TouchOfSalt
+KittyLove TurnUp CatScare LateSave NoTheyDidNot BeholdThis
+RaccoonPop GoblinJam YouMissed GriddyGoose CheersToThat StirThePot";
 string avail_emotes = "";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
