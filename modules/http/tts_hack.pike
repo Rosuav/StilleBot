@@ -19,7 +19,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 mapping get_state(string group) {
-	return (["voices": G->G->tts_config->avail_voices || ({ })]);
+	return (["voices": G->G->tts_config->avail_voices[?0] || ({ })]); //0 == RATE_STANDARD
 }
 
 __async__ mapping|zero websocket_cmd_speak(mapping(string:mixed) conn, mapping(string:mixed) msg) {

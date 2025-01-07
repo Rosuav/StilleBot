@@ -513,6 +513,9 @@ constant COMPAT_VERSION = 1; //If the change definitely requires a refresh, bump
 @retain: mapping tts_config = ([]);
 mapping stock_alerts; // == DB->load_config(0, "alertbox")->alertconfigs; cached, fetched on code reload only.
 
+//Text-to-speech rate schedule. RATE_MAX is one higher than the highest defined rate.
+enum {RATE_STANDARD, RATE_PREMIUM, RATE_MAX};
+
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (string key = req->variables->key) {
@@ -557,7 +560,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	return render(req, ([
 		"vars": (["ws_group": "control",
 			"maxfilesize": MAX_PER_FILE, "maxtotsize": MAX_TOTAL_STORAGE,
-			"avail_voices": tts_config->avail_voices || ({ }),
+			"avail_voices": tts_config->avail_voices[?RATE_STANDARD] || ({ }), //For now, only expose standard rate
 			"follower_alert_scopes": req->misc->channel->name != "#!demo" && ensure_bcaster_token(req, "moderator:read:followers"),
 		]),
 	]) | req->misc->chaninfo);
@@ -1268,6 +1271,8 @@ __async__ string|zero text_to_speech(string text, string voice, string origin) {
 	string token = tts_config->?access_token;
 	if (!token) return 0;
 	array v = voice / "/";
+	//TODO: Allow different whitelists for different origins
+	if (!tts_config->voices[RATE_STANDARD][v[1]]) return 0;
 	object reqargs = Protocols.HTTP.Promise.Arguments((["headers": ([
 			"Authorization": "Bearer " + token,
 			"Content-Type": "application/json; charset=utf-8",
@@ -1668,14 +1673,17 @@ __async__ void fetch_tts_credentials(int fast) {
 		])]))));
 	mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
 	if (!mappingp(data) || !data->voices) return 0;
-	mapping languages = ([]);
+	//Rate 0 is standard, rate 1 is premium. Maybe add even higher rates in the future??
+	array(mapping) language_rates = allocate(RATE_MAX, ([]));
+	tts_config->voices = allocate(RATE_MAX, (<>));
 	foreach (data->voices, mapping v) {
 		//For now, I'm excluding all the premium Wavenet voices. Depending on usage,
 		//these might be able to be reenabled, or I could make them a premium feature
 		//from my end (ie people who contribute to the costs of TTS can use them).
-		if (has_value(v->name, "Wavenet")) continue;
-		//The "Neural" voices seem locked - I get Forbiddens. Same with the test voice.
-		if (!has_value(v->name, "Standard")) continue;
+		int rate;
+		if (has_value(v->name, "Standard")) rate = 0;
+		else if (has_value(v->name, "Wavenet")) rate = 1;
+		else continue; //Completely exclude all the other types, some of which are VERY pricey
 		//It seems that every voice supports just one language. If this is ever not
 		//the case, then hopefully the first one listed is the most important.
 		string langcode = m_delete(v, "languageCodes")[0];
@@ -1689,19 +1697,25 @@ __async__ void fetch_tts_credentials(int fast) {
 			"cmn": "Chinese (Mandarin)",
 			"yue": "Chinese (Yue)", //Or should these be inverted ("Yue Chinese")?
 		])[lang] || Standards.ISO639_2.get_language(lang) || lang;
-		languages[langname + " (" + cc + ")"] += ({v});
+		for (int r = rate; r < RATE_MAX; ++r) {
+			tts_config->voices[r][v->name] = 1;
+			language_rates[r][langname + " (" + cc + ")"] += ({v});
+		}
 	}
-	foreach (languages; string lang; array voices) sort(voices->name, voices);
-	//Just to make sure the selection isn't completely empty, have a final fallback
-	//This is the language code used in the docs (as of 20220519). It shouldn't be
-	//used, like, ever, but if TTS isn't available for whatever reason, this means
-	//we won't just fail hard.
-	if (!sizeof(languages)) languages["en-GB"] = ({(["selector": "en-GB/en-GB-Standard-A/FEMALE", "desc": "Default Voice"])});
-	array fallback = languages["en-US"] || languages["en-GB"] || values(languages)[0];
-	tts_config->default_voice = fallback[0]->selector;
-	array all_voices = (array)languages;
-	sort(indices(languages), all_voices);
-	tts_config->avail_voices = all_voices;
+	foreach (language_rates; int rate; mapping languages) {
+		foreach (languages; string lang; array voices) sort(voices->name, voices);
+		//Just to make sure the selection isn't completely empty, have a final fallback
+		//This is the language code used in the docs (as of 20220519). It shouldn't be
+		//used, like, ever, but if TTS isn't available for whatever reason, this means
+		//we won't just fail hard.
+		if (!sizeof(languages)) languages["en-GB"] = ({(["selector": "en-GB/en-GB-Standard-A/FEMALE", "desc": "Default Voice"])});
+		array fallback = languages["en-US"] || languages["en-GB"] || values(languages)[0];
+		tts_config->default_voice = fallback[0]->selector;
+		array all_voices = (array)languages;
+		sort(indices(languages), all_voices);
+		language_rates[rate] = all_voices;
+	}
+	tts_config->avail_voices = language_rates;
 }
 
 __async__ void initialize_inherits() {
@@ -1723,7 +1737,7 @@ __async__ void initialize_inherits() {
 protected void create(string name) {
 	::create(name);
 	//See if we have a credentials file. If so, get local credentials via gcloud.
-	if (file_stat("tts-credentials.json") && !tts_config->access_token) spawn_task(fetch_tts_credentials(0));
+	if (file_stat("tts-credentials.json") /*&& !tts_config->access_token*/) spawn_task(fetch_tts_credentials(0));
 	initialize_inherits();
 	G->G->send_alert = send_alert;
 	ensure_tts_credentials(0);
