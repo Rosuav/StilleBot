@@ -148,6 +148,27 @@ __async__ void lookup() {
 	}
 }
 
+@"Watch a channel for setup changes (currently just cat/title)":
+__async__ void watch() {
+	array(string) names = G->G->args[Arg.REST];
+	if (!sizeof(names)) {werror("Need a username\n"); return;}
+	array ids = await(Concurrent.all(get_user_id(names[*])));
+	array prev = allocate(sizeof(ids));
+	while (1) {
+		foreach (ids; int i; int id) {
+			mapping data = await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + id));
+			mapping setup = data->data[0];
+			string cur = setup->game_name + ": " + setup->title;
+			if (cur != prev[i]) {
+				write(names[i] + ": " + string_to_utf8(cur) + "\n");
+				if (prev[i]) Process.create_process(({"vlc", "/home/rosuav/Music/The Kick-Q3Kvu6Kgp88.webm"}));
+				prev[i] = cur;
+			}
+		}
+		sleep(60);
+	}
+}
+
 @"Test MustardScript parsing and reconstitution":
 __async__ void script() {
 	//Rather than actually load up all the builtins, just make sure the names can be validated.
