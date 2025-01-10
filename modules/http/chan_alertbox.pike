@@ -557,10 +557,12 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"personals": cfg->personals || ({ }),
 		]));
 	}
+	mapping premium = await(G->G->DB->load_config(0, "premium_accounts"));
+	mapping prem = premium[(string)req->misc->channel->userid] || ([]);
 	return render(req, ([
 		"vars": (["ws_group": "control",
 			"maxfilesize": MAX_PER_FILE, "maxtotsize": MAX_TOTAL_STORAGE,
-			"avail_voices": tts_config->avail_voices[?RATE_STANDARD] || ({ }), //For now, only expose standard rate
+			"avail_voices": tts_config->avail_voices[?prem->tts_rate] || ({ }),
 			"follower_alert_scopes": req->misc->channel->name != "#!demo" && ensure_bcaster_token(req, "moderator:read:followers"),
 		]),
 	]) | req->misc->chaninfo);
@@ -1267,12 +1269,14 @@ __async__ string filter_bad_words(string text, string mode) {
 	return words * " ";
 }
 
-__async__ string|zero text_to_speech(string text, string voice, string origin) {
+__async__ string|zero text_to_speech(string text, string voice, int|void userid) {
 	string token = tts_config->?access_token;
 	if (!token) return 0;
 	array v = voice / "/";
-	//TODO: Allow different whitelists for different origins
-	if (!tts_config->voices[RATE_STANDARD][v[1]]) return 0;
+	//Different whitelists for different userids (default to rate 0 aka Standard if not recognized)
+	mapping premium = await(G->G->DB->load_config(0, "premium_accounts"));
+	mapping prem = premium[(string)userid] || ([]);
+	if (!tts_config->voices[prem->tts_rate][v[1]]) return 0;
 	object reqargs = Protocols.HTTP.Promise.Arguments((["headers": ([
 			"Authorization": "Bearer " + token,
 			"Content-Type": "application/json; charset=utf-8",
@@ -1288,7 +1292,7 @@ __async__ string|zero text_to_speech(string text, string voice, string origin) {
 	System.Timer tm = System.Timer();
 	object res = await(Protocols.HTTP.Promise.post_url("https://texttospeech.googleapis.com/v1/text:synthesize", reqargs));
 	float delay = tm->get();
-	Stdio.append_file("tts_stats.log", sprintf("%s text %O fetch time %.3f\n", origin, text, delay));
+	Stdio.append_file("tts_stats.log", sprintf("User %d text %O fetch time %.3f\n", userid, text, delay));
 	mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
 	if (mappingp(data) && data->error->?details[?0]->?reason == "ACCESS_TOKEN_EXPIRED") {
 		Stdio.append_file("tts_error.log", sprintf("%sTTS access key expired after %d seconds\n",
@@ -1334,7 +1338,7 @@ __async__ void send_with_tts(object channel, mapping args, string|void destgroup
 	text += fmt;
 	string voice = inh->tts_voice || "";
 	if (sizeof(voice / "/") != 3) voice = tts_config->default_voice;
-	if (string tts = text != "" && await(text_to_speech(text, voice, sprintf("Channel %O", channel->name)))) args->tts = tts;
+	if (string tts = text != "" && await(text_to_speech(text, voice, channel->userid))) args->tts = tts;
 	send_updates_all((destgroup || cfg->authkey) + "#" + channel->userid, args);
 }
 
