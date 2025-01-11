@@ -287,8 +287,8 @@ void advance_goalbar(object channel, mapping|string info, mapping person, int ad
 	if (info->boss_selfheal && lower_case(from_name) == lower_case(channel->expand_variables("$bossname$"))) {
 		int dmg = (int)channel->expand_variables("$bossdmg$");
 		if (advance > dmg) {
-			if (info->boss_selfheal == 2) channel->set_variable("bossmaxhp", dmg - advance, "add"); //Overheal: Healing can increase max HP
-			else advance = dmg; //Normal heal: No healing past your max HP
+			if (info->boss_selfheal == 2) channel->set_variable("bossmaxhp", advance - dmg, "add"); //Overheal: Healing can increase max HP
+			advance = dmg; //No healing past your max HP. Increasing max HP leaves you at zero net damage.
 		}
 		advance = -advance; //Heal rather than hurt.
 	}
