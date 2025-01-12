@@ -30,3 +30,5 @@ Quick links:
 * [Emote checklist](/checklist)
 * [An alternate view to your follow list, good for picking raid targets](/raidfinder)
 * [OAuth scope trimmer to help you tame the wild mess of permissions that sites ask for](/scopetrim)
+
+<footer style="font-size: smaller"><a href="/privacytos">Privacy policy and TOS</a></footer>
