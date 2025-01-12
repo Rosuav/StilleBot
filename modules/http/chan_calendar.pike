@@ -10,6 +10,9 @@ Enter the calendar ID directly, or [log in with Google](:#googleoauth) to select
 <section id=calendar></section>
 ";
 
+// Click on the calendar, get "Public URL for this calendar", paste that in.
+// https://calendar.google.com/calendar/embed?src=mocg6ocjcsdb817iko3eh63pq8%40group.calendar.google.com&ctz=Australia%2FSydney
+
 __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req) {
 	if (string other = req->request_type == "POST" && !is_active_bot() && get_active_bot()) {
 		//POST requests are likely to be webhooks. Forward them to the active bot, including whichever
@@ -42,9 +45,17 @@ __async__ mapping get_chan_state(object channel, string grp) {
 
 __async__ mapping|zero wscmd_fetchcal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!stringp(msg->calendarid)) return 0;
-	sscanf(msg->calendarid, "%*[A-Za-z0-9@.]%s", string residue); if (residue != "") return 0;
+	string calendarid = msg->calendarid;
+	if (has_prefix(calendarid, "https://")) {
+		//The user posted the full URL. Grab the src query parameter.
+		//Example: https://calendar.google.com/calendar/embed?src=mocg6ocjcsdb817iko3eh63pq8%40group.calendar.google.com&ctz=Australia%2FSydney
+		calendarid = Standards.URI(calendarid)->get_query_variables()->src;
+		if (!calendarid) return 0;
+		calendarid = Protocols.HTTP.uri_decode(calendarid);
+	}
+	sscanf(calendarid, "%*[A-Za-z0-9@.]%s", string residue); if (residue != "") return 0;
 	string apikey = await(G->G->DB->load_config(0, "googlecredentials"))->calendar;
-	object res = await(Protocols.HTTP.Promise.get_url("https://www.googleapis.com/calendar/v3/calendars/" + msg->calendarid + "/events",
+	object res = await(Protocols.HTTP.Promise.get_url("https://www.googleapis.com/calendar/v3/calendars/" + calendarid + "/events",
 		Protocols.HTTP.Promise.Arguments((["headers": ([
 			"X-goog-api-key": apikey,
 		])]))
