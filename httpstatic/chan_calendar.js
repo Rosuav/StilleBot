@@ -7,7 +7,7 @@ function show_calendar(events, pfx) {
 	replace_content("#calendar", [
 		H2([pfx, events.summary]),
 		P(events.description),
-		UL(events.items.map(item => LI([
+		UL(events.items.map(item => item.status !== "cancelled" && LI([ //TODO: Or should it check that status *does* equal confirmed?
 			"From " + item.start.dateTime + " to " + item.end.dateTime + ": ",
 			A({href: item.htmlLink}, item.summary),
 		]))),
