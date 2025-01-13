@@ -22,7 +22,7 @@ export function render(data) {
 		IMG({src: data.google_profile_pic || "", alt: "[profile pic]", style: "height: 1.5em; vertical-align: bottom;"}),
 		data.google_name,
 	]);
-	replace_content("#calendarlist", UL(data.calendars.map(cal => LI({"data-id": cal.id}, [
+	if (data.calendars) replace_content("#calendarlist", UL(data.calendars.map(cal => LI({"data-id": cal.id}, [
 		cal.selected ? "Selected" : "Unselected", //TODO: Have an option to show unselected, otherwise suppress them
 		" ",
 		cal.accessRole, //TODO: Show a little icon instead of the word
