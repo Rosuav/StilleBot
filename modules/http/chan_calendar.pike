@@ -15,16 +15,24 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	if (string other = req->request_type == "POST" && !is_active_bot() && get_active_bot()) {
 		//POST requests are likely to be webhooks. Forward them to the active bot, including whichever
 		//of the relevant headers we spot. Add headers to this as needed.
-		constant headers = (<"content-type">);
+		constant headers = (<"content-type", "x-goog-resource-id", "x-goog-channel-expiration">);
 		werror("Forwarding calendar webhook...\n");
 		Concurrent.Future fwd = Protocols.HTTP.Promise.post_url("https://" + other + req->not_query,
 			Protocols.HTTP.Promise.Arguments((["headers": req->request_headers & headers, "data": req->body_raw])));
 		//As elsewhere, not currently awaiting the promise. Should we?
 		return "Passing it along.";
 	}
-	//TODO: Handle webhooks, notably sending updates all any time the calendar changes
+	//TODO: Handle webhooks, notably updating the Twitch schedule any time the calendar changes
 	if (string calid = req->request_type == "POST" && req->request_headers["x-goog-resource-id"]) {
+		//TODO: What is x-goog-channel-expiration and how do we extend it? It starts out just one week ahead.
 		werror("CALENDAR WEBHOOK\nHeaders %O\nBody: %O\n", req->request_headers, req->body_raw);
+		string resource = req->request_headers["x-goog-resource-id"];
+		mapping cfg = await(G->G->DB->load_config(req->misc->channel->userid, "calendar"));
+		if (resource != cfg->gcal_resource_id) {
+			//TODO: Delete the old and unneeded webhook; this signal came from a calendar
+			//that we're no longer synchronizing with.
+			return "Ehh whatever, thanks anyway";
+		}
 		//Note that the webhook doesn't actually say what changed, just that a change happened.
 		//So the easiest thing here will be to trigger a full resync as soon as any change occurs.
 		return "Okay.";
