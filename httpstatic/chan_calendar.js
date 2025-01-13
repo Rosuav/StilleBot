@@ -2,22 +2,17 @@ import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/fac
 const {A, BUTTON, H2, IMG, LI, P, SPAN, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
-function show_calendar(events, pfx) {
-	console.log("Events", events);
+export function sockmsg_showcalendar(msg) {
+	console.log("Events", msg.events);
 	replace_content("#calendar", [
-		H2([pfx, events.summary]),
-		P(events.description),
-		UL(events.items.map(item => item.status !== "cancelled" && LI([ //TODO: Or should it check that status *does* equal confirmed?
+		H2(["Calendar: ", msg.events.summary]),
+		P(msg.events.description),
+		P(BUTTON({id: "calsync", "data-id": msg.calendarid}, "Synchronize with Twitch")),
+		UL(msg.events.items.map(item => item.status !== "cancelled" && LI([ //TODO: Or should it check that status *does* equal confirmed?
 			"From " + item.start.dateTime + " to " + item.end.dateTime + ": ",
 			A({href: item.htmlLink}, item.summary),
 		]))),
 	]);
-}
-
-export function sockmsg_showcalendar(msg) {
-	show_calendar(msg.events, "PREVIEW: ");
-	if (msg.calendarid === DOM("[name=calendarid]").value)
-		replace_content("#calsync", "Synchronize").dataset.calendarid = msg.calendarid;
 }
 
 export function render(data) {
@@ -38,15 +33,8 @@ export function render(data) {
 	]))));
 }
 
-on("click", ".showcal", e => {
-	const calendarid = e.match.closest_data("id");
-	ws_sync.send({cmd: "fetchcal", calendarid});
-});
-
-on("click", "#calsync", e => {
-	const calendarid = DOM("[name=calendarid]").value;
-	ws_sync.send({cmd: (e.match.dataset.calendarid === calendarid) ? "synchronize" : "fetchcal", calendarid});
-});
+on("click", ".showcal", e => ws_sync.send({cmd: "fetchcal", calendarid: e.match.closest_data("id")}));
+on("click", "#calsync", e => ws_sync.send({cmd: "synchronize", calendarid: e.match.closest_data("id")}));
 
 on("click", "#googleoauth", e => ws_sync.send({cmd: "googlelogin"}));
 export function sockmsg_googlelogin(msg) {window.open(msg.uri, "login");}
