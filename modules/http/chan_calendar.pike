@@ -6,7 +6,7 @@ constant markdown = #"# Synchronize Google and Twitch calendars
 [Log in with Google](:#googleoauth) to select from your calendars.
 {:#googlestatus}
 
-<input name=calendarid size=80> [Preview](:#calsync)
+<section id=calendarlist></section>
 
 <section id=calendar></section>
 ";

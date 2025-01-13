@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, H2, IMG, LI, P, UL} = lindt; //autoimport
+const {A, BUTTON, H2, IMG, LI, P, SPAN, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 function show_calendar(events, pfx) {
@@ -26,27 +26,27 @@ export function render(data) {
 		"You are logged in as ",
 		IMG({src: data.google_profile_pic || "", alt: "[profile pic]", style: "height: 1.5em; vertical-align: bottom;"}),
 		data.google_name,
-		" You have " + data.calendars.length + " calendars.",
 	]);
+	replace_content("#calendarlist", UL(data.calendars.map(cal => LI({"data-id": cal.id}, [
+		cal.selected ? "Selected" : "Unselected", //TODO: Have an option to show unselected, otherwise suppress them
+		" ",
+		cal.accessRole, //TODO: Show a little icon instead of the word
+		" ",
+		SPAN({title: cal.description || ""}, cal.summary),
+		" ",
+		BUTTON({class: "showcal"}, "Show"),
+	]))));
 }
+
+on("click", ".showcal", e => {
+	const calendarid = e.match.closest_data("id");
+	ws_sync.send({cmd: "fetchcal", calendarid});
+});
 
 on("click", "#calsync", e => {
 	const calendarid = DOM("[name=calendarid]").value;
 	ws_sync.send({cmd: (e.match.dataset.calendarid === calendarid) ? "synchronize" : "fetchcal", calendarid});
 });
-
-function backtofetch() {
-	const calendarid = DOM("[name=calendarid]").value;
-	const btn = DOM("#calsync");
-	const previd = btn.dataset.calendarid;
-	if (previd && calendarid !== previd) {
-		delete btn.dataset.calendarid;
-		replace_content(btn, "Preview");
-	}
-}
-on("input", "[name=calendarid]", backtofetch);
-on("change", "[name=calendarid]", backtofetch);
-on("paste", "[name=calendarid]", backtofetch);
 
 on("click", "#googleoauth", e => ws_sync.send({cmd: "googlelogin"}));
 export function sockmsg_googlelogin(msg) {window.open(msg.uri, "login");}
