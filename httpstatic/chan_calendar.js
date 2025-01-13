@@ -2,19 +2,6 @@ import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/fac
 const {A, BUTTON, H2, IMG, LI, P, SPAN, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
-export function sockmsg_showcalendar(msg) {
-	console.log("Events", msg.events);
-	replace_content("#calendar", [
-		H2(["Calendar: ", msg.events.summary]),
-		P(msg.events.description),
-		P(BUTTON({id: "calsync", "data-id": msg.calendarid}, "Synchronize with Twitch")),
-		UL(msg.events.items.map(item => item.status !== "cancelled" && LI([ //TODO: Or should it check that status *does* equal confirmed?
-			"From " + item.start.dateTime + " to " + item.end.dateTime + ": ",
-			A({href: item.htmlLink}, item.summary),
-		]))),
-	]);
-}
-
 export function render(data) {
 	//If you're logged in, replace the login button with your pfp and name.
 	if (data.google_id) replace_content("#googlestatus", [
@@ -31,6 +18,27 @@ export function render(data) {
 		" ",
 		BUTTON({class: "showcal"}, "Show"),
 	]))));
+}
+
+export function sockmsg_showcalendar(msg) {
+	console.log("Events", msg.events);
+	replace_content("#calendar", [
+		H2(["Calendar: ", msg.events.summary]),
+		P(msg.events.description),
+		P(BUTTON({id: "calsync", "data-id": msg.calendarid}, "Synchronize with Twitch")),
+		UL(msg.events.items.map(item => item.status !== "cancelled" && LI([ //TODO: Or should it check that status *does* equal confirmed?
+			"From " + item.start.dateTime + " to " + item.end.dateTime + ": ",
+			A({href: item.htmlLink}, item.summary),
+		]))),
+	]);
+}
+export function sockmsg_privatecalendar(msg) {
+	//You tried to query a calendar, probably a valid one, but it's private
+	replace_content("#calendar", [
+		H2("Calendar is private"),
+		P("In order to synchronize your Google Calendar with Twitch, the calendar must be flagged as public."),
+		P("TODO: Include instructions on how to do this."),
+	]);
 }
 
 on("click", ".showcal", e => ws_sync.send({cmd: "fetchcal", calendarid: e.match.closest_data("id")}));

@@ -25,7 +25,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	//TODO: Handle webhooks, notably updating the Twitch schedule any time the calendar changes
 	if (string calid = req->request_type == "POST" && req->request_headers["x-goog-resource-id"]) {
 		//TODO: What is x-goog-channel-expiration and how do we extend it? It starts out just one week ahead.
-		werror("CALENDAR WEBHOOK\nHeaders %O\nBody: %O\n", req->request_headers, req->body_raw);
+		werror("CALENDAR WEBHOOK %O\nHeaders %O\nBody: %O\n", req->misc->channel, req->request_headers, req->body_raw);
 		string resource = req->request_headers["x-goog-resource-id"];
 		mapping cfg = await(G->G->DB->load_config(req->misc->channel->userid, "calendar"));
 		if (resource != cfg->gcal_resource_id) {
@@ -77,13 +77,7 @@ __async__ mapping get_chan_state(object channel, string grp) {
 __async__ mapping|zero wscmd_fetchcal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!stringp(msg->calendarid)) return 0;
 	string calendarid = msg->calendarid;
-	if (has_prefix(calendarid, "https://")) {
-		//The user posted the full URL. Grab the src query parameter.
-		//Example: https://calendar.google.com/calendar/embed?src=mocg6ocjcsdb817iko3eh63pq8%40group.calendar.google.com&ctz=Australia%2FSydney
-		calendarid = Standards.URI(calendarid)->get_query_variables()->src;
-		if (!calendarid) return 0;
-		calendarid = Protocols.HTTP.uri_decode(calendarid);
-	}
+	//TODO: Allow hash in calendar ID, and properly encode
 	sscanf(calendarid, "%*[A-Za-z0-9@.]%s", string residue); if (residue != "") return 0;
 	string apikey = await(G->G->DB->load_config(0, "googlecredentials"))->calendar;
 	object res = await(Protocols.HTTP.Promise.get_url("https://www.googleapis.com/calendar/v3/calendars/" + calendarid + "/events",
@@ -96,6 +90,15 @@ __async__ mapping|zero wscmd_fetchcal(object channel, mapping(string:mixed) conn
 		])]))
 	));
 	mapping events = Standards.JSON.decode_utf8(res->get());
+	if (events->error) {
+		if (events->error->code == 404) {
+			//Either you hacked around in the page, or you tried to query a private calendar.
+			//Assume the latter and report it accordingly.
+			return (["cmd": "privatecalendar", "calendarid": msg->calendarid]);
+		}
+		werror("ERROR FETCHING CALENDAR %O %O %O\n", channel, msg, events);
+		return 0;
+	}
 	return (["cmd": "showcalendar", "calendarid": msg->calendarid, "events": events]);
 }
 
@@ -121,6 +124,11 @@ __async__ mapping|zero wscmd_synchronize(object channel, mapping(string:mixed) c
 		cfg->gcal_resource_id = resp->resourceId;
 	});
 	send_updates_all(channel, "");
+}
+
+void wscmd_force_resync(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//No button to do this, but you can cause it from the console if needed.
+	fetch_calendar_info(channel->userid);
 }
 
 @retain: mapping google_logins_pending = ([]);
