@@ -3,15 +3,13 @@ inherit http_websocket;
 
 constant markdown = #"# Synchronize Google and Twitch calendars
 
-Enter the calendar ID directly, or [log in with Google](:#googleoauth) to select from your calendars (not yet available).
+[Log in with Google](:#googleoauth) to select from your calendars.
+{:#googlestatus}
 
 <input name=calendarid size=80> [Preview](:#calsync)
 
 <section id=calendar></section>
 ";
-
-// Click on the calendar, get "Public URL for this calendar", paste that in.
-// https://calendar.google.com/calendar/embed?src=mocg6ocjcsdb817iko3eh63pq8%40group.calendar.google.com&ctz=Australia%2FSydney
 
 __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req) {
 	if (string other = req->request_type == "POST" && !is_active_bot() && get_active_bot()) {
@@ -39,8 +37,20 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 
 bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp) {
-	//TODO: Show the current calendar
-	return ([]);
+	mapping cfg = await(G->G->DB->load_config(channel->userid, "calendar"));
+	string token = cfg->oauth->?access_token;
+	if (!token) return ([]);
+	object res = await(Protocols.HTTP.Promise.get_url("https://www.googleapis.com/calendar/v3/users/me/calendarList",
+		Protocols.HTTP.Promise.Arguments((["headers": ([
+			"Authorization": "Bearer " + token,
+		])]))
+	));
+	mapping resp = Standards.JSON.decode_utf8(res->get());
+	return ([
+		"google_name": cfg->google_name || "",
+		"google_profile_pic": cfg->google_profile_pic || "",
+		"calendars": resp->items || ({ }),
+	]);
 }
 
 __async__ mapping|zero wscmd_fetchcal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -56,7 +66,11 @@ __async__ mapping|zero wscmd_fetchcal(object channel, mapping(string:mixed) conn
 	sscanf(calendarid, "%*[A-Za-z0-9@.]%s", string residue); if (residue != "") return 0;
 	string apikey = await(G->G->DB->load_config(0, "googlecredentials"))->calendar;
 	object res = await(Protocols.HTTP.Promise.get_url("https://www.googleapis.com/calendar/v3/calendars/" + calendarid + "/events",
-		Protocols.HTTP.Promise.Arguments((["headers": ([
+		Protocols.HTTP.Promise.Arguments((["variables": ([
+			"singleEvents": "true", "orderBy": "startTime",
+			"timeMin": strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(time())),
+			"timeMax": strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(time() + 604800)), //Give us one week's worth of events
+		]), "headers": ([
 			"X-goog-api-key": apikey,
 		])]))
 	));
@@ -81,7 +95,6 @@ __async__ mapping|zero wscmd_synchronize(object channel, mapping(string:mixed) c
 		]), 1)]))
 	));
 	mapping resp = Standards.JSON.decode_utf8(res->get());
-	werror("RESPONSE: %O\n", resp);
 	await(G->G->DB->mutate_config(channel->userid, "calendar") {mapping cfg = __ARGS__[0];
 		cfg->gcal_sync = msg->calendarid;
 		cfg->gcal_resource_id = resp->resourceId;
@@ -96,7 +109,11 @@ __async__ mapping wscmd_googlelogin(object channel, mapping(string:mixed) conn, 
 	google_logins_pending[state] = (["time": time(), "channel": channel->userid, "redirect_uri": redirect_uri]);
 	mapping cred = await(G->G->DB->load_config(0, "googlecredentials"));
 	string uri = "https://accounts.google.com/o/oauth2/auth? " + Protocols.HTTP.http_encode_query(([
-		"scope": "https://www.googleapis.com/auth/calendar.readonly",
+		"scope": ({
+			"https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+			"https://www.googleapis.com/auth/calendar.events.public.readonly",
+			"https://www.googleapis.com/auth/userinfo.profile",
+		}) * " ",
 		"client_id": cred->client_id,
 		"redirect_uri": redirect_uri,
 		"response_type": "code", "access_type": "offline", "include_granted_scopes": "true",

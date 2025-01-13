@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BUTTON, H2, LI, P, UL} = lindt; //autoimport
+const {A, H2, IMG, LI, P, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 function show_calendar(events, pfx) {
@@ -21,7 +21,12 @@ export function sockmsg_showcalendar(msg) {
 }
 
 export function render(data) {
-	//
+	//If you're logged in, replace the login button with your pfp and name.
+	if (data.google_name) replace_content("#googlestatus", [
+		"You are logged in as ",
+		IMG({src: data.google_profile_pic || "", alt: "[profile pic]", style: "height: 1.5em; vertical-align: bottom;"}),
+		data.google_name,
+	]);
 }
 
 on("click", "#calsync", e => {

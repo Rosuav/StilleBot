@@ -13,7 +13,7 @@ __async__ void confirm_conduit_active() {
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	//Hack: Using this for Google oauth for the timebeing
-	if (req->variables->code && has_prefix(req->variables->scope || "??", "https://www.googleapis.com/auth/")) {
+	if (req->variables->code && has_value(req->variables->scope || "??", "https://www.googleapis.com/auth/")) {
 		mapping state = m_delete(G->G->google_logins_pending, req->variables->state);
 		if (!state || state->time < time() - 86400) return redirect("/c/calendar");
 		mapping cred = await(G->G->DB->load_config(0, "googlecredentials"));
@@ -28,11 +28,17 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				"redirect_uri": state->redirect_uri,
 			]))]))
 		));
-		werror("OAUTH HEADERS %O\n", res->headers);
 		mapping oauth = Standards.JSON.decode_utf8(res->get());
-		werror("OAUTH GET %O\n", oauth);
-		G->G->DB->mutate_config(state->channel, "calendar") {
-			__ARGS__[0]->oauth = oauth;
+		res = await(Protocols.HTTP.Promise.get_url("https://people.googleapis.com/v1/people/me?personFields=names,photos",
+			Protocols.HTTP.Promise.Arguments((["headers": ([
+				"Authorization": "Bearer " + oauth->access_token,
+			])]))
+		));
+		mapping profile = Standards.JSON.decode_utf8(res->get());
+		G->G->DB->mutate_config(state->channel, "calendar") { mapping cfg = __ARGS__[0];
+			cfg->oauth = oauth;
+			catch {cfg->google_name = profile->names[0]->unstructuredName;};
+			catch {cfg->google_profile_pic = profile->photos[0]->url;};
 		};
 		//Redirecting back to the calendar page probably means people will have two tabs open.
 		//Probably not worth the hassle though. They can always close this one anyway.
