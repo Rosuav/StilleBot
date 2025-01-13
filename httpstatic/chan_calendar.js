@@ -22,10 +22,11 @@ export function sockmsg_showcalendar(msg) {
 
 export function render(data) {
 	//If you're logged in, replace the login button with your pfp and name.
-	if (data.google_name) replace_content("#googlestatus", [
+	if (data.google_id) replace_content("#googlestatus", [
 		"You are logged in as ",
 		IMG({src: data.google_profile_pic || "", alt: "[profile pic]", style: "height: 1.5em; vertical-align: bottom;"}),
 		data.google_name,
+		" You have " + data.calendars.length + " calendars.",
 	]);
 }
 

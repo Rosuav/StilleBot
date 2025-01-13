@@ -35,21 +35,34 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	]) | req->misc->chaninfo);
 }
 
+@retain: mapping calendar_cache = ([]);
+__async__ void fetch_calendar_info(int userid) {
+	mapping cfg = await(G->G->DB->load_config(userid, "calendar"));
+	object res = await(Protocols.HTTP.Promise.get_url("https://www.googleapis.com/calendar/v3/users/me/calendarList",
+		Protocols.HTTP.Promise.Arguments((["headers": ([
+			"Authorization": "Bearer " + cfg->oauth->?access_token,
+		])]))
+	));
+	mapping resp = Standards.JSON.decode_utf8(res->get());
+	calendar_cache[cfg->google_id] = ([
+		"expires": time() + 300, //Fairly conservative expiration here, it'd be fine longer if we had an explicit refresh action
+		"calendars": resp->items,
+	]);
+	send_updates_all("#" + userid);
+}
+
 bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp) {
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "calendar"));
 	string token = cfg->oauth->?access_token;
 	if (!token) return ([]);
-	object res = await(Protocols.HTTP.Promise.get_url("https://www.googleapis.com/calendar/v3/users/me/calendarList",
-		Protocols.HTTP.Promise.Arguments((["headers": ([
-			"Authorization": "Bearer " + token,
-		])]))
-	));
-	mapping resp = Standards.JSON.decode_utf8(res->get());
+	mapping cals = calendar_cache[cfg->google_id];
+	if (cals->?expires < time()) fetch_calendar_info(channel->userid);
 	return ([
+		"google_id": cfg->google_id || "",
 		"google_name": cfg->google_name || "",
 		"google_profile_pic": cfg->google_profile_pic || "",
-		"calendars": resp->items || ({ }),
+		"calendars": cals->?calendars || ({ }),
 	]);
 }
 

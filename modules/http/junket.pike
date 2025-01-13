@@ -37,6 +37,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		mapping profile = Standards.JSON.decode_utf8(res->get());
 		G->G->DB->mutate_config(state->channel, "calendar") { mapping cfg = __ARGS__[0];
 			cfg->oauth = oauth;
+			cfg->google_id = profile->resourceName; //User ID prefixed with "people/"
 			catch {cfg->google_name = profile->names[0]->unstructuredName;};
 			catch {cfg->google_profile_pic = profile->photos[0]->url;};
 		};
