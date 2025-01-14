@@ -77,11 +77,16 @@ __async__ mapping get_chan_state(object channel, string grp) {
 __async__ mapping|zero wscmd_fetchcal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!stringp(msg->calendarid)) return 0;
 	string calendarid = msg->calendarid;
-	//TODO: Allow hash in calendar ID, and properly encode
+	//TODO: Allow hash character in calendar ID, and properly encode. Probably not common but we should allow all valid calendar IDs.
 	sscanf(calendarid, "%*[A-Za-z0-9@.]%s", string residue); if (residue != "") return 0;
 	string apikey = await(G->G->DB->load_config(0, "googlecredentials"))->calendar;
 	object res = await(Protocols.HTTP.Promise.get_url("https://www.googleapis.com/calendar/v3/calendars/" + calendarid + "/events",
 		Protocols.HTTP.Promise.Arguments((["variables": ([
+			//Using singleEvents: true makes it much easier to query the current schedule, as without this
+			//the events are given at the time that the recurrence began (maybe years ago). But we don't get
+			//the actual recurrence rule this way, so it may instead be better to calculate recurrences
+			//ourselves and calculate the current equivalent. Alternatively, fetch BOTH ways, as the single
+			//events carry a recurringEventId that links with the id of the original recurring one.
 			"singleEvents": "true", "orderBy": "startTime",
 			"timeMin": strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(time())),
 			"timeMax": strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(time() + 604800)), //Give us one week's worth of events
