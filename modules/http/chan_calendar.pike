@@ -43,15 +43,27 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	]) | req->misc->chaninfo);
 }
 
+__async__ mapping google_api(string url, string auth, mapping params) {
+	if (!params->headers) params->headers = ([]);
+	if (auth == "apikey") params->headers["X-goog-api-key"] = await(G->G->DB->load_config(0, "googlecredentials"))->calendar;
+	else params->headers->Authorization = "Bearer " + auth;
+	if (params->json) {
+		params->data = Standards.JSON.encode(m_delete(params, "json"), 1);
+		params->headers["Content-Type"] = "application/json; charset=utf-8";
+	}
+	object res = await(Protocols.HTTP.Promise.do_method(
+		params->data ? "POST" : "GET",
+		"https://www.googleapis.com/" + url,
+		Protocols.HTTP.Promise.Arguments(params),
+	));
+	//TODO: If not HTTP 200, throw.
+	return Standards.JSON.decode_utf8(res->get());
+}
+
 @retain: mapping calendar_cache = ([]);
 __async__ void fetch_calendar_info(int userid) {
 	mapping cfg = await(G->G->DB->load_config(userid, "calendar"));
-	object res = await(Protocols.HTTP.Promise.get_url("https://www.googleapis.com/calendar/v3/users/me/calendarList",
-		Protocols.HTTP.Promise.Arguments((["headers": ([
-			"Authorization": "Bearer " + cfg->oauth->?access_token,
-		])]))
-	));
-	mapping resp = Standards.JSON.decode_utf8(res->get());
+	mapping resp = await(google_api("calendar/v3/users/me/calendarList", cfg->oauth->?access_token, ([])));
 	calendar_cache[cfg->google_id] = ([
 		"expires": time() + 300, //Fairly conservative expiration here, it'd be fine longer if we had an explicit refresh action
 		"calendars": resp->items,
@@ -74,14 +86,21 @@ __async__ mapping get_chan_state(object channel, string grp) {
 	]);
 }
 
+__async__ void synchronize(int userid) {
+	mapping cfg = await(G->G->DB->load_config(userid, "calendar"));
+	//Updating your Twitch schedule from your Google calendar is done in two parts: Weekly
+	//and non-weekly events. Twitch doesn't have recurrence rules for anything other than
+	//weekly, so if your Gcal specifies "every second Tuesday" or "first Thursday of the
+	//month" or something, we will turn those into individual (non-recurring) events.
+}
+
 __async__ mapping|zero wscmd_fetchcal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!stringp(msg->calendarid)) return 0;
 	string calendarid = msg->calendarid;
 	//TODO: Allow hash character in calendar ID, and properly encode. Probably not common but we should allow all valid calendar IDs.
 	sscanf(calendarid, "%*[A-Za-z0-9@.]%s", string residue); if (residue != "") return 0;
-	string apikey = await(G->G->DB->load_config(0, "googlecredentials"))->calendar;
-	object res = await(Protocols.HTTP.Promise.get_url("https://www.googleapis.com/calendar/v3/calendars/" + calendarid + "/events",
-		Protocols.HTTP.Promise.Arguments((["variables": ([
+	mapping events = await(google_api("calendar/v3/calendars/" + calendarid + "/events", "apikey", ([
+		"variables": ([
 			//Using singleEvents: true makes it much easier to query the current schedule, as without this
 			//the events are given at the time that the recurrence began (maybe years ago). But we don't get
 			//the actual recurrence rule this way, so it may instead be better to calculate recurrences
@@ -90,11 +109,8 @@ __async__ mapping|zero wscmd_fetchcal(object channel, mapping(string:mixed) conn
 			"singleEvents": "true", "orderBy": "startTime",
 			"timeMin": strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(time())),
 			"timeMax": strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(time() + 604800)), //Give us one week's worth of events
-		]), "headers": ([
-			"X-goog-api-key": apikey,
-		])]))
+		])]),
 	));
-	mapping events = Standards.JSON.decode_utf8(res->get());
 	if (events->error) {
 		if (events->error->code == 404) {
 			//Either you hacked around in the page, or you tried to query a private calendar.
@@ -112,23 +128,19 @@ __async__ mapping|zero wscmd_synchronize(object channel, mapping(string:mixed) c
 	sscanf(msg->calendarid, "%*[A-Za-z0-9@.]%s", string residue); if (residue != "") return 0;
 	string|zero token = await(G->G->DB->load_config(channel->userid, "calendar"))->oauth->?access_token;
 	if (!token) return 0;
-	string apikey = await(G->G->DB->load_config(0, "googlecredentials"))->calendar;
-	object res = await(Protocols.HTTP.Promise.post_url("https://www.googleapis.com/calendar/v3/calendars/" + msg->calendarid + "/events/watch",
-		Protocols.HTTP.Promise.Arguments((["headers": ([
-			"Authorization": "Bearer " + token,
-			"Content-Type": "application/json; charset=utf-8",
-		]), "data": Standards.JSON.encode(([
+	mapping resp = await(google_api("calendar/v3/calendars/" + msg->calendarid + "/events/watch", token, ([
+		"json": ([
 			"id": MIME.encode_base64(random_string(9)),
 			"type": "webhook",
 			"address": G->G->instance_config->http_address + "/channels/" + channel->login + "/calendar",
-		]), 1)]))
+		])])
 	));
-	mapping resp = Standards.JSON.decode_utf8(res->get());
 	await(G->G->DB->mutate_config(channel->userid, "calendar") {mapping cfg = __ARGS__[0];
 		cfg->gcal_sync = msg->calendarid;
 		cfg->gcal_resource_id = resp->resourceId;
 	});
 	send_updates_all(channel, "");
+	synchronize(channel->userid);
 }
 
 void wscmd_force_resync(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -146,6 +158,7 @@ __async__ mapping wscmd_googlelogin(object channel, mapping(string:mixed) conn, 
 		"scope": ({
 			"https://www.googleapis.com/auth/calendar.calendarlist.readonly",
 			"https://www.googleapis.com/auth/calendar.events.public.readonly",
+			//Need this scope to query the user's profile or see the id token
 			"https://www.googleapis.com/auth/userinfo.profile",
 		}) * " ",
 		"client_id": cred->client_id,

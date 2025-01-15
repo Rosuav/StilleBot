@@ -29,6 +29,9 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			]))]))
 		));
 		mapping oauth = Standards.JSON.decode_utf8(res->get());
+		//TODO: Decode the id token (a JWT) rather than doing another query, should be faster.
+		//Note that the id token is absent unless we request the same scope that lets us do the
+		//query, so there's no difference in permissions requested.
 		res = await(Protocols.HTTP.Promise.get_url("https://people.googleapis.com/v1/people/me?personFields=names,photos",
 			Protocols.HTTP.Promise.Arguments((["headers": ([
 				"Authorization": "Bearer " + oauth->access_token,
@@ -36,7 +39,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		));
 		mapping profile = Standards.JSON.decode_utf8(res->get());
 		G->G->DB->mutate_config(state->channel, "calendar") { mapping cfg = __ARGS__[0];
-			cfg->oauth = oauth;
+			cfg->oauth |= oauth; //Keep anything previously stored, such as a refresh token
+			//Thank you for coming on such short notice (one hour).
+			//That's okay, I tend to be bad at predicting deaths too.
+			cfg->oauth->expires = time() + oauth->expires_in; //Predicted time of death.
 			cfg->google_id = profile->resourceName; //User ID prefixed with "people/"
 			catch {cfg->google_name = profile->names[0]->unstructuredName;};
 			catch {cfg->google_profile_pic = profile->photos[0]->url;};
