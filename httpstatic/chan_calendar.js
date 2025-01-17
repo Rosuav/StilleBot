@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BUTTON, H2, IMG, LI, P, SPAN, UL} = lindt; //autoimport
+const {A, BUTTON, H2, H3, IMG, LI, P, SPAN, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 export function render(data) {
@@ -14,15 +14,26 @@ export function render(data) {
 			" to select from your calendars.",
 		],
 	]);
-	if (data.calendars) replace_content("#calendarlist", UL(data.calendars.map(cal => LI({"data-id": cal.id}, [
-		cal.selected ? "Selected" : "Unselected", //TODO: Have an option to show unselected, otherwise suppress them
-		" ",
-		cal.accessRole, //TODO: Show a little icon instead of the word
-		" ",
-		SPAN({title: cal.description || ""}, cal.summary),
-		" ",
-		BUTTON({class: "showcal"}, "Show"),
-	]))));
+	if (data.calendars) replace_content("#calendarlist", [
+		H2("Available calendars"),
+		UL(data.calendars.map(cal => LI({"data-id": cal.id}, [
+			cal.selected ? "Selected" : "Unselected", //TODO: Have an option to show unselected, otherwise suppress them
+			" ",
+			cal.accessRole, //TODO: Show a little icon instead of the word
+			" ",
+			SPAN({title: cal.description || ""}, cal.summary),
+			" ",
+			BUTTON({class: "showcal"}, "Show"),
+		]))),
+	]);
+	if (data.synchronized_calendar) replace_content("#synchronization", [
+		H2("Synchronization active"),
+		H3(["Google Calendar: ", data.synchronized_calendar]),
+		//TODO: Show current calendar events
+		P(["Timezone: ", data.synchronized_calendar_timezone]),
+		H3("Twitch schedule"),
+		//TODO: Show current schedule segments
+	]);
 }
 
 export function sockmsg_showcalendar(msg) {

@@ -6,6 +6,8 @@ constant markdown = #"# Synchronize Google and Twitch calendars
 [Log in with Google](:#googleoauth) to select from your calendars.
 {:#googlestatus}
 
+<section id=synchronization></section>
+
 <section id=calendarlist></section>
 
 <section id=calendar></section>
@@ -95,6 +97,8 @@ __async__ mapping get_chan_state(object channel, string grp) {
 		"google_profile_pic": cfg->google_profile_pic || "",
 		"have_credentials": !!cfg->oauth->?access_token,
 		"calendars": cals->?calendars || ({ }),
+		"synchronized_calendar": cfg->gcal_calendar_name,
+		"synchronized_calendar_timezone": cfg->gcal_time_zone,
 	]);
 }
 
@@ -211,16 +215,22 @@ __async__ mapping|zero wscmd_synchronize(object channel, mapping(string:mixed) c
 	sscanf(msg->calendarid, "%*[A-Za-z0-9@.]%s", string residue); if (residue != "") return 0;
 	string|zero token = await(G->G->DB->load_config(channel->userid, "calendar"))->oauth->?access_token;
 	if (!token) return 0;
+	string now = strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(time()));
+	mapping details = await(google_api("calendar/v3/calendars/" + msg->calendarid + "/events", token, ([
+		"variables": (["timeMin": now, "timeMax": now]), //Don't actually need any events, just metadata
+	])));
 	mapping resp = await(google_api("calendar/v3/calendars/" + msg->calendarid + "/events/watch", token, ([
 		"json": ([
 			"id": MIME.encode_base64(random_string(9)),
 			"type": "webhook",
 			"address": G->G->instance_config->http_address + "/channels/" + channel->login + "/calendar",
-		])])
-	));
+		]),
+	])));
 	await(G->G->DB->mutate_config(channel->userid, "calendar") {mapping cfg = __ARGS__[0];
 		cfg->gcal_sync = msg->calendarid;
 		cfg->gcal_resource_id = resp->resourceId;
+		cfg->gcal_calendar_name = details->summary;
+		cfg->gcal_time_zone = details->timeZone;
 	});
 	send_updates_all(channel, "");
 	synchronize(channel->userid);
