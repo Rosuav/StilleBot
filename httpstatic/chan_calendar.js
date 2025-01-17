@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BUTTON, H2, IMG, LI, P, SPAN, TABLE, TBODY, TD, TH, THEAD, TR, UL} = lindt; //autoimport
+const {A, BUTTON, H2, IMG, LI, P, SPAN, TABLE, TBODY, TD, TH, THEAD, TIME, TR, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 //Given two sorted lists of events, return an array of pairs. If two events have the same
@@ -26,6 +26,34 @@ function pair_events(arr1, arr2) {
 	for (let i = d2; i < s2; ++i)
 		ret.push([arr2[i].time_t, null, arr2[i]]);
 	return ret;
+}
+
+function ordinal(n) {
+	switch (n) {
+		case 1: return "1st";
+		case 2: return "2nd";
+		case 3: return "3rd";
+		default:
+			if (n > 20) return Math.floor(n / 10) + ordinal(n % 10);
+			return n + "th";
+	}
+}
+
+function RELATIVETIME(time_t) {
+	const when = new Date(time_t * 1000);
+	//Would be nice to do this in the timezone of the calendar, but for simplicity, we
+	//show it in the user's timezone.
+	return TIME({datetime: when.toISOString()}, [
+		//I would LOVE to have a really good strftime, but we don't have one. Ugh.
+		"Sun Mon Tue Wed Thu Fri Sat".split(" ")[when.getDay()],
+		" ",
+		ordinal(when.getDate()),
+		", ",
+		//Would it be better to move the time to the front? "8pm Fri 17th" vs "Fri 17th, 8pm"?
+		when.getHours() % 12 || 12,
+		when.getMinutes() && ":" + ("0" + when.getMinutes()).slice(-2), //Won't be common; most people start streams on the hour.
+		when.getHours() > 12 ? "pm" : "am",
+	]);
 }
 
 export function render(data) {
@@ -60,7 +88,7 @@ export function render(data) {
 				TH("Twitch schedule"),
 			])),
 			TBODY(pair_events(data.sync?.events, data.sync?.segments).map(([ts, ev, seg]) => TR([
-				TD(ts), //TODO: Format nicely eg "Mon 17th 10AM"
+				TD(RELATIVETIME(ts)),
 				TD(ev ? A({href: ev.htmlLink}, ev.summary) : "-"),
 				TD(seg ? seg.title : "-"),
 			]))),
