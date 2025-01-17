@@ -160,6 +160,7 @@ __async__ void synchronize(int userid) {
 		//Twitch gives us UTC start times eg "2025-01-19T23:00:00Z", but Google gives us local
 		//start times eg "2025-01-20T10:00:00+11:00". Convert both into time_t.
 		int start = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", ev->start_time)->unix_time();
+		ev->time_t = start;
 
 		//werror("Twitch schedule %O id %s\n", ev->start_time, MIME.decode_base64(ev->id));
 		existing_schedule[start] = ev;
@@ -172,11 +173,13 @@ __async__ void synchronize(int userid) {
 	mapping singles = await(google_api("calendar/v3/calendars/" + cfg->gcal_sync + "/events", "apikey", ([
 		"variables": timespan | (["singleEvents": "true", "orderBy": "startTime"]),
 	])));
-	foreach (singles->items || ({ }), mapping ev) {
+	array events = singles->items || ({ });
+	foreach (events, mapping ev) {
 		string|zero rr = recurrence_rule[ev->recurringEventId];
 		//Note that we assume that an event starts and ends in the same timezone (eg Australia/Melbourne).
 		//Twitch only allows one timezone per event anyway.
 		int start = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", ev->start->dateTime)->unix_time(); //Can't shortcut by comparing the text strings as these ones are in local time
+		ev->time_t = start;
 		mapping tw = m_delete(existing_schedule, start);
 		//For now, assume that once we've seen one event from a recurring set, we've seen 'em all.
 		//TODO: Handle single-instance deletion or moving of an event.
@@ -186,9 +189,14 @@ __async__ void synchronize(int userid) {
 		if (rr) recurrence_rule[ev->recurringEventId] = "*Done*";
 	}
 	if (sizeof(existing_schedule)) werror("Delete me: %O\n", existing_schedule);
+	//Guarantee that events are sorted by timestamp
+	sort(events->time_t, events);
+	sort(twitch->time_t, twitch);
 	synchronization_cache[userid] = ([
 		"expires": time() + 3600,
 		"synctime": ctime(time()), //TODO format on front end, can't be bothered now
+		"events": events,
+		"segments": twitch,
 	]);
 	send_updates_all("#" + userid);
 }
