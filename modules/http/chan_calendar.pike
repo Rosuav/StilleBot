@@ -175,6 +175,7 @@ __async__ void synchronize(int userid) {
 		"variables": timespan | (["singleEvents": "true", "orderBy": "startTime"]),
 	])));
 	array events = singles->items || ({ });
+	mapping timeslots = ([]);
 	foreach (events, mapping ev) {
 		string|zero rr = recurrence_rule[ev->recurringEventId];
 		//Note that we assume that an event starts and ends in the same timezone (eg Australia/Melbourne).
@@ -184,20 +185,36 @@ __async__ void synchronize(int userid) {
 		mapping tw = m_delete(existing_schedule, start);
 		//For now, assume that once we've seen one event from a recurring set, we've seen 'em all.
 		//TODO: Handle single-instance deletion or moving of an event.
+		string action = "OK"; //No action needed
+		if (!tw) action = "New";
+		//TODO: See if the event fully matches; if it doesn't, action = "Update"
+		timeslots[start] = ([
+			"action": action,
+			"time_t": start,
+			"twitch": tw,
+			"google": ev,
+		]);
 		if (rr == "*Done*") continue;
 		werror("%s EVENT %O->%O %O %O %s\n", tw ? "EXISTING" : "NEW", ev->start->dateTime, ev->end->dateTime, ev->start->timeZone, rr, ev->summary);
 		//TODO: If "Category: ...." is in ev->description, set the category_id for the Twitch event
 		if (rr) recurrence_rule[ev->recurringEventId] = "*Done*";
 	}
-	if (sizeof(existing_schedule)) werror("Delete me: %O\n", existing_schedule);
+	foreach (existing_schedule; int start; mapping tw) timeslots[start] = ([
+		"action": "Delete",
+		"time_t": start,
+		"twitch": tw,
+		"google": 0,
+	]);
 	//Guarantee that events are sorted by timestamp
 	sort(events->time_t, events);
 	sort(twitch->time_t, twitch);
+	array paired_events = values(timeslots); sort(indices(timeslots), paired_events);
 	synchronization_cache[userid] = ([
 		"expires": time() + 3600,
 		"synctime": ctime(time()), //TODO format on front end, can't be bothered now
 		"events": events,
 		"segments": twitch,
+		"paired_events": paired_events,
 	]);
 	send_updates_all("#" + userid);
 }

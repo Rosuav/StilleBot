@@ -2,32 +2,6 @@ import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/fac
 const {A, BUTTON, H2, IMG, LI, P, SPAN, TABLE, TBODY, TD, TH, THEAD, TIME, TR, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
-//Given two sorted lists of events, return an array of pairs. If two events have the same
-//time_t, return [time_t, ev1, ev2]; otherwise return [time_t, ev1, null] or [time_t, null, ev2]
-//as required. The resultant array will be in time_t order.
-//This is largely a merge operation, but with matching timestamps merging the elements instead
-//of zipping them together.
-function pair_events(arr1, arr2) {
-	arr1 = arr1 || []; arr2 = arr2 || [];
-	const ret = [];
-	let d1 = 0, d2 = 0, s1 = arr1.length, s2 = arr2.length;
-	while (d1 < s1 && d2 < s2) {
-		const t1 = arr1[d1].time_t, t2 = arr2[d2].time_t;
-		if (t1 === t2)
-			ret.push([t1, arr1[d1++], arr2[d2++]]);
-		else if (t1 < t2)
-			ret.push([t1, arr1[d1++], null]);
-		else
-			ret.push([t2, arr2[d2++], null]);
-	}
-	//And collect any residue. One of these loops won't have any content to process.
-	for (let i = d1; i < s1; ++i)
-		ret.push([arr1[i].time_t, arr1[i], null]);
-	for (let i = d2; i < s2; ++i)
-		ret.push([arr2[i].time_t, null, arr2[i]]);
-	return ret;
-}
-
 function ordinal(n) {
 	switch (n) {
 		case 1: return "1st";
@@ -84,13 +58,15 @@ export function render(data) {
 		TABLE([
 			THEAD(TR([
 				TH("Date/time"),
+				TH("Status"),
 				TH(data.synchronized_calendar || "Google Calendar"),
 				TH("Twitch schedule"),
 			])),
-			TBODY(pair_events(data.sync?.events, data.sync?.segments).map(([ts, ev, seg]) => TR([
-				TD(RELATIVETIME(ts)),
-				TD(ev ? A({href: ev.htmlLink}, ev.summary) : "-"),
-				TD(seg ? seg.title : "-"),
+			TBODY((data.sync.paired_events || []).map(ev => TR([
+				TD(RELATIVETIME(ev.time_t)),
+				TD(ev.action),
+				TD(ev.google ? A({href: ev.google.htmlLink}, ev.google.summary) : "-"),
+				TD(ev.twitch ? ev.twitch.title : "-"),
 			]))),
 		]),
 		P([
