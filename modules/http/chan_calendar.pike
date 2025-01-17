@@ -37,6 +37,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		}
 		//Note that the webhook doesn't actually say what changed, just that a change happened.
 		//So the easiest thing here will be to trigger a full resync as soon as any change occurs.
+		synchronize(req->misc->channel->userid);
 		return "Okay.";
 	}
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo);
