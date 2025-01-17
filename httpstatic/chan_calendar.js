@@ -32,6 +32,10 @@ export function render(data) {
 		P(["Timezone: ", data.synchronized_calendar_timezone]),
 		H3("Twitch schedule"),
 		//TODO: Show current schedule segments
+		P([
+			BUTTON({id: "force_resync"}, "Resynchronize"),
+			SPAN({id: "lastsync"}, [" Last synchronized at ", data.sync.synctime]),
+		]),
 	]);
 }
 
@@ -58,6 +62,11 @@ export function sockmsg_privatecalendar(msg) {
 
 on("click", ".showcal", e => ws_sync.send({cmd: "fetchcal", calendarid: e.match.closest_data("id")}));
 on("click", "#calsync", e => ws_sync.send({cmd: "synchronize", calendarid: e.match.closest_data("id")}));
+
+on("click", "#force_resync", e => {
+	ws_sync.send({cmd: "force_resync"});
+	set_content("#lastsync", " Synchronizing..."); //Bit hacky but whatever. The server doesn't need to tell us this way.
+});
 
 on("click", "#googleoauth", e => ws_sync.send({cmd: "googlelogin"}));
 export function sockmsg_googlelogin(msg) {window.open(msg.uri, "login");}

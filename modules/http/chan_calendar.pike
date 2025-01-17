@@ -62,6 +62,8 @@ __async__ mapping google_api(string url, string auth, mapping params) {
 	return Standards.JSON.decode_utf8(res->get());
 }
 
+@retain: mapping synchronization_cache = ([]);
+
 @retain: mapping calendar_cache = ([]);
 __async__ void fetch_calendar_info(int userid) {
 	mapping cfg = await(G->G->DB->load_config(userid, "calendar"));
@@ -99,6 +101,7 @@ __async__ mapping get_chan_state(object channel, string grp) {
 		"calendars": cals->?calendars || ({ }),
 		"synchronized_calendar": cfg->gcal_calendar_name,
 		"synchronized_calendar_timezone": cfg->gcal_time_zone,
+		"sync": synchronization_cache[channel->userid] || ([]),
 	]);
 }
 
@@ -183,6 +186,11 @@ __async__ void synchronize(int userid) {
 		if (rr) recurrence_rule[ev->recurringEventId] = "*Done*";
 	}
 	if (sizeof(existing_schedule)) werror("Delete me: %O\n", existing_schedule);
+	synchronization_cache[userid] = ([
+		"expires": time() + 3600,
+		"synctime": ctime(time()), //TODO format on front end, can't be bothered now
+	]);
+	send_updates_all("#" + userid);
 }
 
 __async__ mapping|zero wscmd_fetchcal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -232,13 +240,14 @@ __async__ mapping|zero wscmd_synchronize(object channel, mapping(string:mixed) c
 		cfg->gcal_calendar_name = details->summary;
 		cfg->gcal_time_zone = details->timeZone;
 	});
-	send_updates_all(channel, "");
 	synchronize(channel->userid);
 }
 
+//Shouldn't normally be necessary (the webhook will trigger resyncs as needed), but people can push a
+//"make me feel comfortable" button. Also good for testing.
 void wscmd_force_resync(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	//No button to do this, but you can cause it from the console if needed.
-	fetch_calendar_info(channel->userid);
+	fetch_calendar_info(channel->userid); //Skipped if we don't have the right auth
+	synchronize(channel->userid);
 }
 
 @retain: mapping google_logins_pending = ([]);
