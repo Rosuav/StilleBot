@@ -182,12 +182,33 @@ __async__ void synchronize(int userid) {
 		//Twitch only allows one timezone per event anyway.
 		int start = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", ev->start->dateTime)->unix_time(); //Can't shortcut by comparing the text strings as these ones are in local time
 		ev->time_t = start;
+
+		//Parse out RFC822-style directives from the description
+		mapping params = ([
+			//All valid keys must be included here (case insensitive)
+			"category": "",
+			"title": ev->summary,
+		]);
+		//The description is HTML. We do a VERY rudimentary HTML-to-text conversion.
+		foreach (ev->description / "<br>", string line) {
+			while (sscanf(line, "%s<%*s>%s", string a, string b)) line = a + b;
+			line = replace(Parser.parse_html_entities(line), "\xA0", " "); //Replace non-breaking spaces with regular ones
+			if (sscanf(line, "%s:%s", string kw, string val) && val && has_index(params, lower_case(kw)))
+				params[lower_case(kw)] = String.trim(val);
+		}
+
 		mapping tw = m_delete(existing_schedule, start);
 		//For now, assume that once we've seen one event from a recurring set, we've seen 'em all.
 		//TODO: Handle single-instance deletion or moving of an event.
 		string action = "OK"; //No action needed
 		if (!tw) action = "New";
-		//TODO: See if the event fully matches; if it doesn't, action = "Update"
+		else {
+			//TODO: See if the event fully matches; if it doesn't, action = "Update"
+			if (!!rr != !!tw->is_recurring) action = "Update"; //Either have to both recur or both not recur
+			if (params->title != tw->title) {werror("Update title %O %O\n", params->title, tw->title); action = "Update";}
+			//TODO: What if the category given is invalid? Don't want to constantly try to update it.
+			if (params->category != tw->category->name && params->category != "") action = "Update";
+		}
 		timeslots[start] = ([
 			"action": action,
 			"time_t": start,
@@ -217,6 +238,8 @@ __async__ void synchronize(int userid) {
 		"paired_events": paired_events,
 	]);
 	send_updates_all("#" + userid);
+	//TODO: If we are not in dry-run mode (TODO: make that a thing),
+	//go through values(timeslots) and make the required changes.
 }
 
 __async__ mapping|zero wscmd_fetchcal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
