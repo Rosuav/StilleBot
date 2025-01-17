@@ -3,6 +3,19 @@ inherit http_websocket;
 
 constant markdown = #"# Synchronize Google and Twitch calendars
 
+> <summary>How to set up your calendar</summary>
+>
+> Your calendar must be public in order for the bot to be able to synchronize it
+> with your Twitch schedule. Events can recur weekly or be one-offs; if they recur
+> on any other pattern, the Twitch schedule will show individual events for each
+> instance.
+>
+> In the event description, you can customize the scheduled stream category and/or
+> title with a line saying 'Title: Stream Title Goes Here' etc.
+>
+> The calendar's registered timezone will be used for all Twitch schedule events.
+{:tag=details}
+
 <section id=synchronization></section>
 
 [Log in with Google](:#googleoauth) to select from your calendars.
