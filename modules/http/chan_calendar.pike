@@ -3,10 +3,10 @@ inherit http_websocket;
 
 constant markdown = #"# Synchronize Google and Twitch calendars
 
+<section id=synchronization></section>
+
 [Log in with Google](:#googleoauth) to select from your calendars.
 {:#googlestatus}
-
-<section id=synchronization></section>
 
 <section id=calendarlist></section>
 

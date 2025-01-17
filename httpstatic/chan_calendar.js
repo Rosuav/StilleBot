@@ -17,10 +17,9 @@ export function render(data) {
 	if (data.calendars) replace_content("#calendarlist", [
 		H2("Available calendars"),
 		UL(data.calendars.map(cal => LI({"data-id": cal.id}, [
-			cal.selected ? "Selected" : "Unselected", //TODO: Have an option to show unselected, otherwise suppress them
-			" ",
-			cal.accessRole, //TODO: Show a little icon instead of the word
-			" ",
+			cal.selected ? "" : "(unselected) ", //TODO: Have an option to show unselected, otherwise suppress them
+			/*cal.accessRole, //TODO: Show a little icon instead of the word
+			" ",*/
 			SPAN({title: cal.description || ""}, cal.summary),
 			" ",
 			BUTTON({class: "showcal"}, "Show"),
