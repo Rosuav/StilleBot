@@ -63,8 +63,21 @@ __async__ mapping google_api(string url, string auth, mapping params) {
 @retain: mapping calendar_cache = ([]);
 __async__ void fetch_calendar_info(int userid) {
 	mapping cfg = await(G->G->DB->load_config(userid, "calendar"));
+	if (!cfg->oauth->?access_token) return;
 	mapping resp = await(google_api("calendar/v3/users/me/calendarList", cfg->oauth->?access_token, ([])));
-	calendar_cache[cfg->google_id] = ([
+	if (resp->error->?status == "UNAUTHENTICATED") {
+		//Since you seem to have lost auth, clear the oauth. This may or may not be ideal, but
+		//it's probably easier than messing with refresh tokens. In fact, we may not even need
+		//to bother storing ANY credentials in persistent storage, and just use them for the
+		//session; once a calendar has been activated and the watch begun, everything can be
+		//done with the API key.
+		await(G->G->DB->mutate_config(userid, "calendar") {m_delete(__ARGS__[0]->oauth, "access_token");});
+		calendar_cache[cfg->google_id] = ([
+			"expires": 0, //Don't cache this, re-fetch as soon as we have credentials.
+			"calendars": ({ }),
+		]);
+	}
+	else calendar_cache[cfg->google_id] = ([
 		"expires": time() + 300, //Fairly conservative expiration here, it'd be fine longer if we had an explicit refresh action
 		"calendars": resp->items,
 	]);
@@ -74,14 +87,13 @@ __async__ void fetch_calendar_info(int userid) {
 bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp) {
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "calendar"));
-	string token = cfg->oauth->?access_token;
-	if (!token) return ([]);
 	mapping cals = calendar_cache[cfg->google_id];
 	if (cals->?expires < time()) fetch_calendar_info(channel->userid);
 	return ([
 		"google_id": cfg->google_id || "",
 		"google_name": cfg->google_name || "",
 		"google_profile_pic": cfg->google_profile_pic || "",
+		"have_credentials": !!cfg->oauth->?access_token,
 		"calendars": cals->?calendars || ({ }),
 	]);
 }
@@ -225,7 +237,7 @@ __async__ mapping wscmd_googlelogin(object channel, mapping(string:mixed) conn, 
 	string redirect_uri = "https://" + G->G->instance_config->local_address + "/junket";
 	google_logins_pending[state] = (["time": time(), "channel": channel->userid, "redirect_uri": redirect_uri]);
 	mapping cred = await(G->G->DB->load_config(0, "googlecredentials"));
-	string uri = "https://accounts.google.com/o/oauth2/auth? " + Protocols.HTTP.http_encode_query(([
+	string uri = "https://accounts.google.com/o/oauth2/auth?" + Protocols.HTTP.http_encode_query(([
 		"scope": ({
 			"https://www.googleapis.com/auth/calendar.calendarlist.readonly",
 			"https://www.googleapis.com/auth/calendar.events.public.readonly",

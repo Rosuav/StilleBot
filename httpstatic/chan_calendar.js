@@ -8,6 +8,11 @@ export function render(data) {
 		"You are logged in as ",
 		IMG({src: data.google_profile_pic || "", alt: "[profile pic]", style: "height: 1.5em; vertical-align: bottom;"}),
 		data.google_name,
+		!data.have_credentials && [
+			". ",
+			BUTTON({id: "googleoauth"}, "Re-log in with Google"),
+			" to select from your calendars.",
+		],
 	]);
 	if (data.calendars) replace_content("#calendarlist", UL(data.calendars.map(cal => LI({"data-id": cal.id}, [
 		cal.selected ? "Selected" : "Unselected", //TODO: Have an option to show unselected, otherwise suppress them
