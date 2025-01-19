@@ -441,6 +441,7 @@ class channel(mapping identity) {
 	__async__ void _send_recursive(mapping person, echoable_message message, mapping vars, mapping cfg) {
 		if (!message) return;
 		if (!mappingp(message)) message = (["message": message]);
+		if (message->builtin == "participant") werror("_send_recursive %O\n", message);
 		if (message->dest == "//") return; //Comments are ignored. Not even side effects.
 
 		if (message->delay && message->delay != "") {
