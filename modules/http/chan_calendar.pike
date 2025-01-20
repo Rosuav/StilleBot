@@ -1,6 +1,8 @@
 inherit annotated;
 inherit http_websocket;
 
+//TODO: Synchronize once a week for every channel that has an active calendar
+
 constant markdown = #"# Synchronize Google and Twitch calendars
 
 > <summary>How to set up your calendar</summary>
@@ -23,7 +25,30 @@ constant markdown = #"# Synchronize Google and Twitch calendars
 
 <section id=calendarlist></section>
 
+> ### Automatic Synchronization
+>
+> Your Google calendar and Twitch schedule are synchronized. Any change made on<br>
+> the calendar will be promptly reflected in your schedule. If this is no longer<br>
+> your intention, you can [disable automatic synchronization](:#autosyncoff .dialog_close) here.
+>
+> This will halt all automated updates, but this page will continue to show the<br>
+> comparison, and you can manually trigger an update at any time.
+>
+> [Close](:.dialog_close)
+{: tag=dialog #autosyncoffdlg}
+
 <section id=calendar></section>
+
+> ### Automatic Synchronization
+>
+> Once you are confident that the Google calendar and the Twitch schedule are<br>
+> correctly aligned, you can [enable automatic synchronization](:#autosyncon .dialog_close) here.
+>
+> Note that this will update your Twitch schedule immediately, and continue to<br>
+> do so every time any change occurs on your Google calendar.
+>
+> [Close](:.dialog_close)
+{: tag=dialog #autosyncondlg}
 ";
 
 __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req) {
@@ -54,6 +79,8 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		return "Okay.";
 	}
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo);
+	if (string scopes = ensure_bcaster_token(req, "channel:manage:schedule"))
+		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
 	return render(req, ([
 		"vars": (["ws_group": ""]),
 	]) | req->misc->chaninfo);
@@ -116,10 +143,13 @@ __async__ mapping get_chan_state(object channel, string grp) {
 		"synchronized_calendar": cfg->gcal_calendar_name,
 		"synchronized_calendar_timezone": cfg->gcal_time_zone,
 		"sync": synchronization_cache[channel->userid] || ([]),
+		"autosync": cfg->autosync,
 	]);
 }
 
-__async__ void synchronize(int userid) {
+//force == 1 when the user explicitly asked for a resync and update
+//force == -1 when we just did an update and don't want hysteresis
+__async__ void synchronize(int userid, int(-1..1)|void force) {
 	mapping cfg = await(G->G->DB->load_config(userid, "calendar"));
 	//TODO: If the token has expired, refresh it. Or maybe do that inside google_api?
 	//werror("Token expires in %d seconds.\n", cfg->oauth->expires - time());
@@ -189,15 +219,19 @@ __async__ void synchronize(int userid) {
 	])));
 	array events = singles->items || ({ });
 	mapping timeslots = ([]);
+	int now = time();
 	foreach (events, mapping ev) {
 		string|zero rr = recurrence_rule[ev->recurringEventId];
 		//Note that we assume that an event starts and ends in the same timezone (eg Australia/Melbourne).
 		//Twitch only allows one timezone per event anyway.
 		int start = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", ev->start->dateTime)->unix_time(); //Can't shortcut by comparing the text strings as these ones are in local time
+		if (start < now) continue; //Twitch doesn't give us schedule segments for currently-running streams, so skip the Google equivalents.
 		ev->time_t = start;
+		int end = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", ev->end->dateTime)->unix_time();
+		ev->duration = end - start;
 
 		//Parse out RFC822-style directives from the description
-		mapping params = ([
+		mapping params = ev->params = ([
 			//All valid keys must be included here (case insensitive)
 			"category": "",
 			"title": ev->summary,
@@ -214,19 +248,30 @@ __async__ void synchronize(int userid) {
 		//For now, assume that once we've seen one event from a recurring set, we've seen 'em all.
 		//TODO: Handle single-instance deletion or moving of an event.
 		string action = "OK"; //No action needed
+		mapping changes = ([]);
 		if (!tw) action = "New";
 		else {
 			//TODO: See if the event fully matches; if it doesn't, action = "Update"
-			if (!!rr != !!tw->is_recurring) action = "Update"; //Either have to both recur or both not recur
-			if (params->title != tw->title) {werror("Update title %O %O\n", params->title, tw->title); action = "Update";}
+			if (!!rr != !!tw->is_recurring) {
+				//Either have to both recur or both not recur.
+				//This cannot be updated for a Twitch schedule segment though,
+				//so if you change an event so it no longer recurs weekly, we
+				//need to delete and recreate it.
+				action = "Replace";
+			}
+			if (params->title != tw->title) changes->title = params->title;
 			//TODO: What if the category given is invalid? Don't want to constantly try to update it.
-			if (params->category != tw->category->name && params->category != "") action = "Update";
+			if (params->category != tw->category->name && params->category != "") ;//TODO: changes->category_id = lookup_category_id(params->category);
+			if (end != Calendar.parse("%Y-%M-%DT%h:%m:%s%z", tw->end_time)->unix_time()) changes->duration = ev->duration / 60;
 		}
+		if (action == "OK" && sizeof(changes)) action = "Update";
+		ev->recurrence = rr;
 		timeslots[start] = ([
 			"action": action,
 			"time_t": start,
 			"twitch": tw,
 			"google": ev,
+			"changes": changes,
 		]);
 		if (rr == "*Done*") continue;
 		werror("%s EVENT %O->%O %O %O %s\n", tw ? "EXISTING" : "NEW", ev->start->dateTime, ev->end->dateTime, ev->start->timeZone, rr, ev->summary);
@@ -251,8 +296,54 @@ __async__ void synchronize(int userid) {
 		"paired_events": paired_events,
 	]);
 	send_updates_all("#" + userid);
-	//TODO: If we are not in dry-run mode (TODO: make that a thing),
-	//go through values(timeslots) and make the required changes.
+
+	//Normally (in dry-run mode), this is the end of the job. But if auto-synchronization
+	//is active, or if the user clicked the "update once" button, it's time to actually
+	//make some changes!
+	if (force == -1 || (!force && !cfg->autosync)) return;
+	int need_update = 0;
+	foreach (values(timeslots), mapping ev) switch (ev->action) {
+		case "OK": break; //Nothing to do!
+		case "Delete": case "Replace": {
+			mapping info = await(twitch_api_request("https://api.twitch.tv/helix/schedule/segment?broadcaster_id=" + userid
+				+ "&id=" + ev->twitch->id,
+				(["Authorization": userid]), (["method": "DELETE", "return_errors": 1])));
+			//TODO: If error, report it??
+			need_update = 1;
+			if (ev->action != "Replace") break; //Replace = Delete + New
+		}
+		case "New": {
+			//This may or may not be correct. How do we handle recurring events with
+			//small changes?
+			if (ev->google->recurrence == "*Done*") continue;
+			mapping info = await(twitch_api_request("https://api.twitch.tv/helix/schedule/segment?broadcaster_id=" + userid,
+				(["Authorization": userid]), (["method": "POST", "return_errors": 1, "json": ([
+					"start_time": ev->google->start->dateTime, //Note that this is not in Zulu time
+					"timezone": ev->google->start->timeZone,
+					"duration": ev->google->duration / 60,
+					"is_recurring": ev->google->recurrence ? Val.true : Val.false,
+					//TODO: category_id
+					"title": ev->google->params->title,
+				])])));
+			break;
+		}
+		case "Update": {
+			//Again, this may or may not be the correct way to handle recurring events
+			if (ev->google->recurrence == "*Done*") continue;
+			mapping info = await(twitch_api_request("https://api.twitch.tv/helix/schedule/segment?broadcaster_id=" + userid
+				+ "&id=" + ev->twitch->id,
+				(["Authorization": userid]), (["method": "PATCH", "return_errors": 1, "json": ev->changes])));
+			//TODO: If error, report it??
+			need_update = 1;
+			break;
+		}
+		default: break;
+	}
+	if (need_update) {
+		//Recurse, but only once - update is explicitly blocked here
+		sleep(5); //Hopefully enough for Twitch to update its schedule? Without this I saw a lack of new event.
+		await(synchronize(userid, -1));
+	}
 }
 
 __async__ mapping|zero wscmd_fetchcal(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -305,11 +396,23 @@ __async__ mapping|zero wscmd_synchronize(object channel, mapping(string:mixed) c
 	synchronize(channel->userid);
 }
 
+__async__ mapping|zero wscmd_autosync(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	await(G->G->DB->mutate_config(channel->userid, "calendar") {mapping cfg = __ARGS__[0];
+		cfg->autosync = !!msg->active;
+	});
+	if (msg->active) synchronize(channel->userid);
+	else send_updates_all(conn->group);
+}
+
 //Shouldn't normally be necessary (the webhook will trigger resyncs as needed), but people can push a
 //"make me feel comfortable" button. Also good for testing.
 void wscmd_force_resync(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	fetch_calendar_info(channel->userid); //Skipped if we don't have the right auth
 	synchronize(channel->userid);
+}
+
+void wscmd_updateschedule(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	synchronize(channel->userid, 1);
 }
 
 @retain: mapping google_logins_pending = ([]);

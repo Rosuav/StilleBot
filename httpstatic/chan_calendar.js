@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BUTTON, H2, IMG, LI, P, SPAN, TABLE, TBODY, TD, TH, THEAD, TIME, TR, UL} = lindt; //autoimport
+const {A, ABBR, BUTTON, H2, IMG, LI, P, SPAN, TABLE, TBODY, TD, TH, THEAD, TIME, TR, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 function ordinal(n) {
@@ -30,6 +30,13 @@ function RELATIVETIME(time_t) {
 	]);
 }
 
+function describe_updates(chg) {
+	return "Changes required: " + Object.entries(chg).map(([attr, val]) => {
+		//TODO: Format more nicely, maybe special-casing each attr
+		return attr + " -> " + val;
+	}).join(", ");
+}
+
 export function render(data) {
 	//If you're logged in, replace the login button with your pfp and name.
 	if (data.google_id) replace_content("#googlestatus", [
@@ -55,6 +62,10 @@ export function render(data) {
 	]);
 	if (data.synchronized_calendar) replace_content("#synchronization", [
 		H2("Synchronization active"),
+		P([
+			BUTTON({id: "force_resync"}, "Resynchronize"),
+			SPAN({id: "lastsync"}, [" Last synchronized at ", data.sync.synctime]),
+		]),
 		TABLE([
 			THEAD(TR([
 				TH("Date/time"),
@@ -64,14 +75,15 @@ export function render(data) {
 			])),
 			TBODY((data.sync.paired_events || []).map(ev => TR([
 				TD(RELATIVETIME(ev.time_t)),
-				TD(ev.action),
+				TD(ev.action === "Update" ? ABBR({title: describe_updates(ev.changes)}, "Update") : ev.action),
 				TD(ev.google ? A({href: ev.google.htmlLink}, ev.google.summary) : "-"),
 				TD(ev.twitch ? ev.twitch.title : "-"),
 			]))),
 		]),
 		P([
-			BUTTON({id: "force_resync"}, "Resynchronize"),
-			SPAN({id: "lastsync"}, [" Last synchronized at ", data.sync.synctime]),
+			BUTTON({id: "updateonce"}, "Apply changes"),
+			" ",
+			BUTTON({class: "opendlg", "data-dlg": data.autosync ? "autosyncoffdlg" : "autosyncondlg"}, "Manage automatic synchronization"),
 		]),
 	]);
 }
@@ -104,6 +116,10 @@ on("click", "#force_resync", e => {
 	ws_sync.send({cmd: "force_resync"});
 	set_content("#lastsync", " Synchronizing..."); //Bit hacky but whatever. The server doesn't need to tell us this way.
 });
+
+on("click", "#updateonce", e => ws_sync.send({cmd: "updateschedule"}));
+on("click", "#autosyncon", e => ws_sync.send({cmd: "autosync", active: true}));
+on("click", "#autosyncoff", e => ws_sync.send({cmd: "autosync", active: false}));
 
 on("click", "#googleoauth", e => ws_sync.send({cmd: "googlelogin"}));
 export function sockmsg_googlelogin(msg) {window.open(msg.uri, "login");}
