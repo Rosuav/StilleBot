@@ -199,13 +199,6 @@ void wscmd_delsetup(object channel, mapping(string:mixed) conn, mapping(string:m
 	}->then() {send_updates_all(channel, "");};
 }
 
-__async__ string get_category_id(string name) {
-	//TODO: Cache for performance. It's highly likely this will be called with known categories.
-	array ret = await(twitch_api_request("https://api.twitch.tv/helix/games?name=" + Protocols.HTTP.uri_encode(name)))->data;
-	if (!ret || !sizeof(ret)) return "";
-	return ret[0]->id;
-}
-
 __async__ void wscmd_applysetup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Note that this does NOT apply a setup by ID; it sets all the specifics.
 	mapping params = ([]);

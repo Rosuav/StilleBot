@@ -458,6 +458,14 @@ __async__ void channel_setup_changed1(object channel, mapping info) {
 	return events;
 }
 
+@retain: mapping twitch_category_cache = ([]);
+@export: __async__ string get_category_id(string name) {
+	//Cached for performance. It's highly likely this will be called with known categories.
+	if (string id = twitch_category_cache[name]) return id;
+	array ret = await(twitch_api_request("https://api.twitch.tv/helix/games?name=" + Protocols.HTTP.uri_encode(name)))->data;
+	return twitch_category_cache[name] = (ret && sizeof(ret) && ret[0]->id) || "";
+}
+
 @create_hook:
 constant follower = ({"object channel", "mapping follower"});
 
