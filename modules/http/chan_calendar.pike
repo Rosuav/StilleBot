@@ -237,7 +237,7 @@ __async__ void synchronize(int userid, int(-1..1)|void force) {
 			"title": ev->summary,
 		]);
 		//The description is HTML. We do a VERY rudimentary HTML-to-text conversion.
-		foreach (ev->description / "<br>", string line) {
+		foreach ((ev->description || "") / "<br>", string line) {
 			while (sscanf(line, "%s<%*s>%s", string a, string b)) line = a + b;
 			line = replace(Parser.parse_html_entities(line), "\xA0", " "); //Replace non-breaking spaces with regular ones
 			if (sscanf(line, "%s:%s", string kw, string val) && val && has_index(params, lower_case(kw)))
@@ -260,8 +260,15 @@ __async__ void synchronize(int userid, int(-1..1)|void force) {
 				action = "Replace";
 			}
 			if (params->title != tw->title) changes->title = params->title;
-			//TODO: What if the category given is invalid? Don't want to constantly try to update it.
-			if (params->category != tw->category->name && params->category != "") ;//TODO: changes->category_id = lookup_category_id(params->category);
+			if (params->category != tw->category->name && params->category != "") {
+				//If the category given is spelled slightly differently but still matches (eg
+				//letter case differences), there's no change to be made. If the category is
+				//invalid, we don't want to constantly try to update it, so assume here that
+				//Twitch is correct.
+				string catid = await(get_category_id(params->category));
+				if (catid != "" && catid != "0" && catid != tw->category->id)
+					changes->category_id = catid;
+			}
 			if (end != Calendar.parse("%Y-%M-%DT%h:%m:%s%z", tw->end_time)->unix_time()) changes->duration = ev->duration / 60;
 		}
 		if (action == "OK" && sizeof(changes)) action = "Update";
@@ -274,8 +281,7 @@ __async__ void synchronize(int userid, int(-1..1)|void force) {
 			"changes": changes,
 		]);
 		if (rr == "*Done*") continue;
-		werror("%s EVENT %O->%O %O %O %s\n", tw ? "EXISTING" : "NEW", ev->start->dateTime, ev->end->dateTime, ev->start->timeZone, rr, ev->summary);
-		//TODO: If "Category: ...." is in ev->description, set the category_id for the Twitch event
+		//werror("%s EVENT %O->%O %O %O %s\n", tw ? "EXISTING" : "NEW", ev->start->dateTime, ev->end->dateTime, ev->start->timeZone, rr, ev->summary);
 		if (rr) recurrence_rule[ev->recurringEventId] = "*Done*";
 	}
 	foreach (existing_schedule; int start; mapping tw) timeslots[start] = ([
@@ -322,7 +328,7 @@ __async__ void synchronize(int userid, int(-1..1)|void force) {
 					"timezone": ev->google->start->timeZone,
 					"duration": ev->google->duration / 60,
 					"is_recurring": ev->google->recurrence ? Val.true : Val.false,
-					//TODO: category_id
+					"category_id": await(get_category_id(ev->google->params->category)),
 					"title": ev->google->params->title,
 				])])));
 			break;
@@ -341,7 +347,7 @@ __async__ void synchronize(int userid, int(-1..1)|void force) {
 	}
 	if (need_update) {
 		//Recurse, but only once - update is explicitly blocked here
-		sleep(5); //Hopefully enough for Twitch to update its schedule? Without this I saw a lack of new event.
+		sleep(10); //Hopefully enough for Twitch to update its schedule? Without this I saw a lack of new event.
 		await(synchronize(userid, -1));
 	}
 }
