@@ -188,7 +188,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 void wscmd_newsetup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	G->G->DB->mutate_config(channel->userid, "streamsetups") {
 		if (!stringp(msg->id)) msg->id = MIME.encode_base64(random_string(9)); //Allow the user to specify an ID, otherwise autogenerate
-		__ARGS__[0]->setups = filter(__ARGS__[0]->setups) {return __ARGS__[0]->id != msg->id;}
+		__ARGS__[0]->setups = filter(__ARGS__[0]->setups || ({ })) {return __ARGS__[0]->id != msg->id;}
 			+ ({msg & (<"id", "category", "title", "tags", "ccls", "comments">)});
 	}->then() {send_updates_all(channel, "");};
 }
