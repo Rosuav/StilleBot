@@ -177,20 +177,25 @@ __async__ void synchronize(int userid, int(-1..1)|void force) {
 	mapping recurring = await(google_api("calendar/v3/calendars/" + cfg->gcal_sync + "/events", "apikey", ([
 		"variables": timespan,
 	])));
-	mapping recurrence_rule = ([]);
+	mapping recurrence_rule = ([]), mutated_recurrence = ([]);
 	foreach (recurring->items || ({ }), mapping ev) catch {
+		if (ev->recurringEventId) mutated_recurrence[ev->recurringEventId] = ev->id;
 		string rr = ev->recurrence[0]; //If it's absent or empty, bail.
-		//For now, a very strict and simplistic way to recognize recurring events.
-		//TODO: What happens if you delete one instance of a recurring event? We need to cancel
-		//the corresponding slot in Twitch, but ideally, we want to retain the record that it's
-		//a weekly event.
+		//We use a very strict and simplistic way to recognize recurring events. An event MUST:
+		//  - Recur weekly, not on any other schedule (TODO: Make sure that this is strictly enforced here)
+		//  - Use the same timezone for all instances of the event, and for both the start and end times (not currently enforced)
+		//  - Have no variations, eg an instance that has been moved or edited, within the update period (currently four weeks)
+		//Otherwise, the events will be split out into individual non-recurring events and
+		//will be pushed out to Twitch separately.
+		//TODO: Allow the update period to be expanded? Maybe someone might need to make updates more than a month in advance?
 		if (has_prefix(rr, "RRULE:FREQ=WEEKLY;")) recurrence_rule[ev->id] = rr;
 	};
+	recurrence_rule -= mutated_recurrence;
 
 	//Query the current Twitch schedule. Twitch (currently) does not allow you to update the start time
 	//for a recurring event, and I don't think there's a way to cancel just one instance. So if you move
-	//one instance of a recurrer, we'll have to create that one as a one-off, and probably cancel the old
-	//recurrer and create a brand new one starting the following week? I think?? Incidentally, one-offs
+	//one instance of a recurrer, we'll have to create them all as a one-offs, and cancel the old
+	//recurrer. (It'll be recreated once the moved event is in the past.) Incidentally, one-offs
 	//are only available to affiliates and partners. Not sure why, but it's something I'll have to test,
 	//probably on the Mustard Mine's account.
 	array twitch = await(get_stream_schedule(userid, 0, 1000, 604800 * 4));
@@ -280,7 +285,11 @@ __async__ void synchronize(int userid, int(-1..1)|void force) {
 			"google": ev,
 			"changes": changes,
 		]);
-		if (rr == "*Done*") continue;
+		if (rr) {
+			if (rr == "*Done*") {timeslots[start]->recurring = "repeated"; continue;}
+			else timeslots[start]->recurring = "yes";
+		}
+		else if (tw->?is_recurring) timeslots[start]->recurring = "twitchonly";
 		//werror("%s EVENT %O->%O %O %O %s\n", tw ? "EXISTING" : "NEW", ev->start->dateTime, ev->end->dateTime, ev->start->timeZone, rr, ev->summary);
 		if (rr) recurrence_rule[ev->recurringEventId] = "*Done*";
 	}

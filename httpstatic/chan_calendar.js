@@ -37,6 +37,13 @@ function describe_updates(chg) {
 	}).join(", ");
 }
 
+const recurrence_icons = {
+	yes: ev => SPAN({title: "Recurring event"}, "📅"),
+	twitchonly: ev => SPAN({title: "Recurs on Twitch only"}, "T"), //TODO: Stick a Twitch logo in there?
+	repeated: ev => SPAN({title: "Additional recurring event"}, "⟳"),
+	none: ev => "", //Or should there be an icon for non-recurring?
+};
+
 export function render(data) {
 	//If you're logged in, replace the login button with your pfp and name.
 	if (data.google_id) replace_content("#googlestatus", [
@@ -69,12 +76,14 @@ export function render(data) {
 		TABLE([
 			THEAD(TR([
 				TH("Date/time"),
+				TH(),
 				TH("Status"),
 				TH(data.synchronized_calendar || "Google Calendar"),
 				TH("Twitch schedule"),
 			])),
 			TBODY((data.sync.paired_events || []).map(ev => TR([
 				TD(RELATIVETIME(ev.time_t)),
+				TD((recurrence_icons[ev.recurring] || recurrence_icons.none)(ev)),
 				TD(ev.action === "Update" ? ABBR({title: describe_updates(ev.changes)}, "Update") : ev.action),
 				TD(ev.google ? A({href: ev.google.htmlLink}, ev.google.summary) : "-"),
 				TD(ev.twitch ? ev.twitch.title : "-"),
