@@ -112,6 +112,10 @@ viewership stats to some other broadcaster. FIXME: Explain what does and doesn't
 This requires no special permissions and can be used for any broadcaster who has set up
 an on-Twitch schedule.
 
+Prefer to manage your schedule on Google Calendar and have your Twitch schedule reflect
+that? [We can do that too!](/c/calendar) Requires authentication from the broadcaster
+and calendar owner, but is then fully automated.
+
 ## Bug reports
 
 Found an issue somewhere? Contact Rosuav (the bot author) via Twitch, Discord, or GitHub.
