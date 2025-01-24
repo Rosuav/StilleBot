@@ -31,6 +31,8 @@ $$greeting||$$
 * [Art Sharing](share) - if enabled, viewers (or raiders) can share their art with chat
 * [Shop integrations](integrations) - connect your online shops and have the bot respond to
   purchases/donations
+* [Calendar synchronization](calendar) - manage your Twitch streaming schedule through a
+  Google calendar, with changes updating your Twitch schedule within seconds
 * [Ads and Snoozes](snoozeads) - integrate with the Twitch ad scheduler
 * [Minigames](minigames) - easy and fun minigames for your channel
 * [Error log](errors) - if anything goes wrong, it'll be listed here

@@ -13,7 +13,7 @@ constant markdown = #"# Synchronize Google and Twitch calendars
 > instance.
 >
 > In the event description, you can customize the scheduled stream category and/or
-> title with a line saying 'Title: Stream Title Goes Here' etc.
+> title with a line saying 'Title: Stream Title Goes Here' or 'Category: Art'.
 >
 > The calendar's registered timezone will be used for all Twitch schedule events.
 {:tag=details}
