@@ -99,7 +99,7 @@ void find_builtins() {
 		mapping cmds = handler->command_suggestions || ([]);
 		foreach (cmds; string cmd; mapping info) {
 			templates += ({sprintf("%s | %s", cmd, info->_description || handler->command_description)});
-			complex_templates[cmd] = info - (<"_description">);
+			complex_templates[cmd] = info - (<"_description", "_hidden">);
 		}
 		builtins[name] = (["desc": handler->builtin_description, "name": handler->builtin_name, "param": handler->builtin_param]) | handler->vars_provided;
 		if (builtins[name]->desc == "") builtins[name]->desc = handler->command_description;

@@ -8,6 +8,11 @@ $$quotes$$
 Record fun quotes from the channel's broadcaster and/or community! Alongside
 Twitch Clips, quotes are a great way to remember those fun moments forever.
 
+To manage and view quotes from the channel, three commands are available.
+[Activate](:#activatecommands) [Deactivate](:#deactivatecommands)
+<code>!quote</code>, <code>!addquote</code>, and <code>!delquote</code>.
+{:#managequotes hidden=true}
+
 > ### Edit !quote <span id=idx></span>
 > Make changes sensitively. Don't change other people's words :)
 >
@@ -75,7 +80,11 @@ bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	array quotes = await(G->G->DB->load_config(channel->userid, "quotes", ({ })));
 	if (id) return (int)id < sizeof(quotes) && quotes[(int)id];
-	return (["items": quotes]);
+	return ([
+		"items": quotes,
+		"can_activate": !channel->commands->quote || !channel->commands->addquote || !channel->commands->delquote,
+		"can_deactivate": channel->commands->quote || channel->commands->addquote || channel->commands->delquote,
+	]);
 }
 
 __async__ void wscmd_edit_quote(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -88,4 +97,10 @@ __async__ void wscmd_edit_quote(object channel, mapping(string:mixed) conn, mapp
 	quotes[idx - 1]->emoted = deduce_emoted_text(msg->msg, botemotes);
 	await(G->G->DB->save_config(channel->userid, "quotes", quotes));
 	send_updates_all(channel, ""); //No update_one support at the moment
+}
+
+void wscmd_managecommands(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	foreach (({"!quote", "!addquote", "!delquote"}), string id)
+		G->G->enableable_modules->chan_commands->enable_feature(channel, id, !!msg->state);
+	send_updates_all(channel, "");
 }

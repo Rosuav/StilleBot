@@ -11,6 +11,9 @@ Feature | Description | Manager | Status
 (loading...) | - | - | -
 {: #enableables}
 
+Additional enableable features may be found on various configuration pages - browse the
+sidebar for more cool ideas!
+
 ## Channel configuration
 
 Timezone: <input name=timezone size=30> [Set](:#settimezone)
@@ -80,6 +83,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	object mod = G->G->enableable_modules->chan_commands; //Note that the command module handles enabling/disabling suggested commands
 	foreach (G->G->builtins; string name; object blt)
 		foreach (blt->command_suggestions || ([]); string cmd; mapping resp) {
+			if (resp->_hidden) continue;
 			enableables[cmd] = ([
 				"module": "chan_commands", "fragment": "#" + (cmd - "!") + "/",
 				"manageable": mod->can_manage_feature(channel, cmd),

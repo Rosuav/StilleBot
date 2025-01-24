@@ -32,6 +32,10 @@ $$login$$
 > Giveaway notifications are handled through [special triggers](specials#Giveaways) and can be customized there.<br>
 > [Create default notifications (replacing existing ones)](: #makenotifs)
 >
+> To allow users to check and/or refund their tickets via chat, two commands are available.
+> [Activate](:#activatecommands) [Deactivate](:#deactivatecommands)
+> <code>!tickets</code>, <code>!refund</code>.
+>
 > </form>
 {: tag=details .modonly}
 
@@ -303,6 +307,8 @@ __async__ mapping get_chan_state(object channel, string grp)
 		"rewards": rewards, "tickets": tickets_in_order(chan),
 		"is_open": givcfg->is_open, "end_time": givcfg->end_time,
 		"last_winner": givcfg->last_winner,
+		"can_activate": !channel->commands->tickets || !channel->commands->refund,
+		"can_deactivate": channel->commands->tickets || channel->commands->refund,
 	]);
 }
 
@@ -496,6 +502,12 @@ __async__ mapping|zero websocket_cmd_master(mapping(string:mixed) conn, mapping(
 	}
 }
 
+@"is_mod": void wscmd_managecommands(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	foreach (({"!tickets", "!refund"}), string id)
+		G->G->enableable_modules->chan_commands->enable_feature(channel, id, !!msg->state);
+	send_updates_all(channel, "control");
+}
+
 //TODO: Migrate the dynamic reward management to pointsrewards, keeping the giveaway management here
 __async__ void channel_on_off(string channel, int just_went_online, int broadcaster_id) {
 	if (!is_active_bot()) return 0;
@@ -555,12 +567,12 @@ constant vars_provided = ([
 ]);
 constant command_suggestions = ([
 	"!tickets": ([
-		"_description": "Giveaways - show number of tickets you have (any user)",
+		"_description": "Giveaways - show number of tickets you have (any user)", "_hidden": 1,
 		"builtin": "chan_giveaway", "builtin_param": ({"status"}),
 		"message": "@$$: You have {tickets} tickets.",
 	]),
 	"!refund": ([
-		"_description": "Giveaways - refund all your tickets (any user)",
+		"_description": "Giveaways - refund all your tickets (any user)", "_hidden": 1,
 		"builtin": "chan_giveaway", "builtin_param": ({"refund"}),
 		"message": "@$$: All your tickets have been refunded.",
 	]),

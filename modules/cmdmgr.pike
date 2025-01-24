@@ -671,7 +671,7 @@ constant builtin_param = ({"/Action/Automate/Create/Delete", "Command name", "Ti
 constant vars_provided = ([]);
 constant command_suggestions = ([
 	"!addcmd": ([
-		"_description": "Commands - Create a simple command",
+		"_description": "Commands - Create a simple command", "_hidden": 1,
 		"conditional": "regexp", "expr1": "^[!]*([^ ]+) (.*)$", "expr2": "{param}",
 		"message": ([
 			"conditional": "catch",
@@ -684,7 +684,7 @@ constant command_suggestions = ([
 		"otherwise": "@$$: Try !addcmd !newcmdname response-message",
 	]),
 	"!delcmd": ([
-		"_description": "Commands - Delete a simple command",
+		"_description": "Commands - Delete a simple command", "_hidden": 1,
 		"conditional": "catch",
 		"message": ([
 			"builtin": "cmdmgr", "builtin_param": ({"Delete", "{param}"}),

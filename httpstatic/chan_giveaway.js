@@ -67,6 +67,8 @@ export function render(state) {
 			]) : "",
 		]).classList.toggle("is_open", !!state.is_open); //ensure that undefined becomes false :|
 	}
+	DOM("#activatecommands").disabled = !state.can_activate;
+	DOM("#deactivatecommands").disabled = !state.can_deactivate;
 }
 if (config.cost) {
 	const el = DOM("#configform").elements;
@@ -90,3 +92,6 @@ on("submit", "#configform", async e => {
 on("click", ".master", e => ws_sync.send({cmd: "master", action: e.match.id}));
 
 on("click", "#makenotifs", simpleconfirm("Create commands? Will overwrite any that exist!", e => ws_sync.send({cmd: "makenotifs"})));
+
+on("click", "#activatecommands", e => ws_sync.send({cmd: "managecommands", state: 1}));
+on("click", "#deactivatecommands", e => ws_sync.send({cmd: "managecommands", state: 0}));
