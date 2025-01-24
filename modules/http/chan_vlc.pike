@@ -1,6 +1,10 @@
 inherit http_websocket;
 inherit hook;
 inherit annotated;
+
+//TODO: Have buttons to enable/disable chan_commands::!song and chan_specials::songannounce from
+//here, but only if integration has been enabled.
+
 constant markdown = #"# VLC integration
 
 (loading...)

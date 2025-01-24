@@ -3,27 +3,8 @@ inherit enableable_module;
 
 //To make cooperative subtriggers work, we'll need something like the way triggers are done.
 constant ENABLEABLE_FEATURES = ([
-	/*"transcoding": ([
-		"description": "Greet the new stream with an announcement of transcoding availability",
-		"special": "!channelonline",
-		"fragment": "#!channelonline/",
-		"response": ([
-			"builtin": "transcoding",
-			"message": ([
-				"conditional": "number",
-				"expr1": "{uptime} < 600",
-				"message": ([
-					"conditional": "string",
-					"expr1": "{qualities}",
-					"message": "Welcome to the stream! View this stream in glorious {resolution}!",
-					"otherwise": "Welcome to the stream! View this stream in glorious {resolution}! Or any of its other resolutions: {qualities}",
-				]),
-				"otherwise": "",
-			]),
-		]),
-	]),*/
 	"songannounce": ([
-		"description": "Announce songs in chat (see VLC integration)",
+		"description": "Announce songs in chat (see VLC integration)", "_hidden": 1,
 		"special": "!musictrack",
 		"fragment": "#!musictrack/",
 		"response": (["delay": 2, "message": ([
