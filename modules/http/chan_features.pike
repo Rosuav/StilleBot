@@ -76,6 +76,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping enableables = ([]);
 	foreach (G->G->enableable_modules; string name; object mod) {
 		foreach (mod->ENABLEABLE_FEATURES; string kwd; mapping info) {
+			if (info->_hidden) continue;
 			enableables[kwd] = info | (["module": name, "manageable": mod->can_manage_feature(channel, kwd)]);
 		}
 	}
