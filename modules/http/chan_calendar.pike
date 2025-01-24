@@ -62,7 +62,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		//As elsewhere, not currently awaiting the promise. Should we?
 		return "Passing it along.";
 	}
-	//TODO: Handle webhooks, notably updating the Twitch schedule any time the calendar changes
+	//Whenever a webhook comes in, update the Twitch schedule. Note that the hook itself has very little info, so we just requery.
 	if (string calid = req->request_type == "POST" && req->request_headers["x-goog-resource-id"]) {
 		//TODO: What is x-goog-channel-expiration and how do we extend it? It starts out just one week ahead.
 		werror("CALENDAR WEBHOOK %O\nHeaders %O\nBody: %O\n", req->misc->channel, req->request_headers, req->body_raw);
@@ -79,7 +79,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		return "Okay.";
 	}
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo);
-	if (string scopes = ensure_bcaster_token(req, "channel:manage:schedule"))
+	if (string scopes = !req->misc->session->fake && ensure_bcaster_token(req, "channel:manage:schedule"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
 	return render(req, ([
 		"vars": (["ws_group": ""]),
@@ -132,6 +132,13 @@ __async__ void fetch_calendar_info(int userid) {
 bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp) {
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "calendar"));
+	if (!channel->userid) cfg = ([
+		"google_id": "people/0", "google_name": "The Mustard Mine",
+		"google_profile_pic": "/static/MustardMineSquavatar.png",
+		"gcal_calendar_name": "Demo Cal",
+		"gcal_time_zone": "Australia/Melbourne",
+	]);
+
 	mapping cals = calendar_cache[cfg->google_id];
 	if (cals->?expires < time()) fetch_calendar_info(channel->userid);
 	return ([
@@ -142,7 +149,7 @@ __async__ mapping get_chan_state(object channel, string grp) {
 		"calendars": cals->?calendars || ({ }),
 		"synchronized_calendar": cfg->gcal_calendar_name,
 		"synchronized_calendar_timezone": cfg->gcal_time_zone,
-		"sync": synchronization_cache[channel->userid] || ([]),
+		"sync": synchronization_cache[channel->userid || G->G->bot_uid] || ([]),
 		"autosync": cfg->autosync,
 	]);
 }
