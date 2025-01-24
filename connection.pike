@@ -1231,7 +1231,11 @@ __async__ void http_request(Protocols.HTTP.Server.Request req)
 		//This check shouldn't be necessary; the session value can't easily be set except on this one host.
 		string host = deduce_host(req->request_headers);
 		if (host == "sikorsky.rosuav.com") {
-			req->response_and_finish(redirect("https://" + dest + req->full_query, 301));
+			mapping resp = redirect("https://" + dest + req->full_query, 301);
+			resp->extra_heads = ([]);
+			resp->extra_heads["Set-Cookie"] = "session=" + req->misc->session->cookie + "; Path=/; Max-Age=604800; SameSite=Lax; HttpOnly"
+				+ (has_suffix(host, "mustardmine.com") ? "; Domain=mustardmine.com" : "");
+			req->response_and_finish(resp);
 			return;
 		}
 		//Otherwise carry on as if the autoxfr marker wasn't there. (This also applies to non-GET requests.)
