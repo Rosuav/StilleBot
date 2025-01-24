@@ -692,27 +692,6 @@ constant command_suggestions = ([
 		]),
 		"otherwise": "@$$: {error}",
 	]),
-	"!repeat": ([
-		"_description": "Commands - Automate a simple command",
-		"builtin": "argsplit", "builtin_param": ({"{param}"}),
-		"message": ([
-			"conditional": "catch",
-			"message": ([
-				"builtin": "cmdmgr", "builtin_param": ({"Automate", "{arg2}", "{arg1}"}),
-				"message": "@$$: {result}",
-			]),
-			"otherwise": "@$$: {error}",
-		]),
-	]),
-	"!unrepeat": ([
-		"_description": "Commands - Cancel automation of a command",
-		"conditional": "catch",
-		"message": ([
-			"builtin": "cmdmgr", "builtin_param": ({"Automate", "{param}", "-1"}),
-			"message": "@$$: {result}",
-		]),
-		"otherwise": "@$$: {error}",
-	]),
 ]);
 
 mapping message_params(object channel, mapping person, array param) {
