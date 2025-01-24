@@ -170,7 +170,7 @@ __async__ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, 
 mapping(string:mixed) redirect_no_slash(Protocols.HTTP.Server.Request req, string chan)
 {
 	//Redirect /channels/?chan=rosuav to /channels/rosuav/
-	if (chan == "" && req->variables->chan) chan = req->variables->chan;
+	if (chan == "") chan = req->variables->chan || "demo";
 	//Redirect /channels/rosuav to /channels/rosuav/
 	return redirect(sprintf("/channels/%s/", chan), 301);
 }
