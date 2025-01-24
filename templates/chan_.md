@@ -24,10 +24,12 @@ $$greeting||$$
 * [Giveaways](giveaway) - run a raffle using channel points
 * [Alert Box](alertbox) - configure alerts for follows, subs, cheers, etc
 * [Minigames](minigames) - easy and fun minigames for your channel
-* [Monitors and goal bars](monitors)
+* [Monitors and goal bars](monitors) <!-- TODO: Also mention /c/labels here? -->
 * [Art Sharing](share) - if enabled, viewers (or raiders) can share their creations with chat
 * [Messages](messages) - private messaging system eg for giveaway rewards
 * [Raid Train](raidtrain) - if one is organized by this streamer
+* [Leaderboard and VIP badges](vipleaders) - subgifting and cheering leaderboards, with option
+  to grant VIP badges to your top-N
 
 ## Keep you organized
 * [Stream setup](streamsetup) - prepare your title, category, tags, etc
@@ -44,6 +46,7 @@ $$extralinks||$$
   Google calendar, with changes updating your Twitch schedule within seconds
 * [Ads and Snoozes](snoozeads) - integrate with the Twitch ad scheduler
 * [VLC integration](vlc) - link to VLC Media Player for "currently playing" etc
+* [OBS Studio integration](obs) - connect to OBS Studio for scene management via commands
 
 $$uptime$$
 
