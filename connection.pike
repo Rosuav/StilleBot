@@ -1287,6 +1287,10 @@ __async__ void http_request(Protocols.HTTP.Server.Request req)
 		resp->extra_heads["Set-Cookie"] = "session=" + sess->cookie + "; Path=/; Max-Age=604800; SameSite=Lax; HttpOnly"
 			+ (has_suffix(host, "mustardmine.com") ? "; Domain=mustardmine.com" : "");
 	}
+	//Indicate to servers which URL is the canonical one. TODO: Should the ?mtime cachebusters be
+	//removed from the canonical URL? With JS files, they may potentially include chained lookups
+	//with corresponding chained cachebusters, so does this affect canonicalization?
+	resp->extra_heads->Link = sprintf("<%s%s>; rel=\"canonical\"", G->G->instance_config->http_address, req->full_query);
 	req->response_and_finish(resp);
 	// *********** Current issue under investigation ************ //
 	//For some reason, open files are accumulating, sometimes reaching critical levels,
