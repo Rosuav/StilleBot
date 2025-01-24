@@ -272,7 +272,8 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 				if (!arrayp(data)) title = "Unable to fetch";
 				else {
 					title = "Active Pixel Plush streamers";
-					foreach (data, mapping strm) annotations[strm->stream->userId] += ({strm->theme});
+					foreach (data, mapping strm)
+						if (strm->platform == "twitch") annotations[strm->stream->userId] += ({strm->theme});
 					foreach (annotations; string uid; array anno)
 						annotations[uid] = Array.uniq(anno);
 					args->user_id = indices(annotations);
