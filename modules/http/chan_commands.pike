@@ -56,6 +56,7 @@ constant ENABLEABLE_FEATURES = ([
 		"description": "Show the currently-playing song (see VLC integration)", "_hidden": 1,
 		"fragment": "#song/",
 	]),
+	//TODO: Have enableable features for some common commands eg !love, !hype, !raid(?)
 ]);
 
 int can_manage_feature(object channel, string kwd) {return channel->commands[kwd - "!"] ? 2 : 1;} //Should it check if it's the right thing, and if not, return 3?

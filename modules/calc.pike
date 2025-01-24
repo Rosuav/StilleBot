@@ -1,3 +1,4 @@
+#charset utf-8
 #if constant(G)
 inherit builtin_command;
 #else
@@ -120,15 +121,29 @@ constant builtin_param = "Expression";
 constant vars_provided = ([
 	"{result}": "The result of the calculation",
 ]);
-constant command_suggestions = (["!calc": ([
-	"_description": "Calculate a simple numeric expression/formula",
-	"conditional": "catch",
-	"message": ([
-		"builtin": "calc", "builtin_param": ({"%s"}),
-		"message": "@$$: {result}",
+constant command_suggestions = ([
+	"!calc": ([
+		"_description": "Calculate a simple numeric expression/formula",
+		"conditional": "catch",
+		"message": ([
+			"builtin": "calc", "builtin_param": ({"%s"}),
+			"message": "@$$: {result}",
+		]),
+		"otherwise": "@$$: {error}",
 	]),
-	"otherwise": "@$$: {error}",
-])]);
+	"!c2f": ([
+		"_description": "Convert Celsius to Fahrenheit",
+		"builtin": "calc",
+		"builtin_param": ({"{param} * 9 / 5 + 32"}),
+		"message": "{param}°C is {result}°F.",
+	]),
+	"!f2c": ([
+		"_description": "Convert Fahrenheit to Celsius",
+		"builtin": "calc",
+		"builtin_param": ({"({param} - 32) * 5 / 9"}),
+		"message": "{param}°F is {result}°C.",
+	]),
+]);
 mapping message_params(object channel, mapping person, array params, mapping cfg) {
 	string param = params[0];
 	if (param == "") error("Usage: !calc 1+2\n");
