@@ -1232,7 +1232,6 @@ __async__ void http_request(Protocols.HTTP.Server.Request req)
 		string host = deduce_host(req->request_headers);
 		if (host == "sikorsky.rosuav.com") {
 			mapping resp = redirect("https://" + dest + req->full_query, 301);
-			resp->extra_heads = ([]);
 			resp->extra_heads["Set-Cookie"] = "session=" + req->misc->session->cookie + "; Path=/; Max-Age=604800; SameSite=Lax; HttpOnly"
 				+ (has_suffix(host, "mustardmine.com") ? "; Domain=mustardmine.com" : "");
 			req->response_and_finish(resp);
