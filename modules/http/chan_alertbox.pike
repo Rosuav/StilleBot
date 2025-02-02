@@ -1383,7 +1383,7 @@ __async__ int(1bit) send_alert(object channel, string alerttype, mapping args, m
 		//does not affect alert filtering.
 		switch (alert["condoper-text"]) {
 			//Note that comparisons are currently case insensitive and there's no way to configure that. Should there be?
-			case "==": if (lower_case(val) != lower_case(comp)) return 0;
+			case "==": if (lower_case(String.trim(val)) != lower_case(String.trim(comp))) return 0;
 			//TODO: Need incl operator as above
 			default: break;
 		}
