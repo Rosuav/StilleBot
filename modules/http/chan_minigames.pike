@@ -56,7 +56,7 @@ constant sections = ([
 		"enabled": 0,
 		"initialhp": 1000,
 		"initialboss": 279141671, //Mustard Mine himself. Note that if this ID isn't an available voice (see http_request), it'll actually be rejected as invalid.
-		"hpgrowth": 0, //0 for static, positive numbers for fixed growth, -1 for overkill
+		"hpgrowth": 0, //0 for stable, positive numbers for fixed growth, -1/-2/-3 for overkill/static
 		"autoreset": 1, //Reset at end of stream automatically. There'll be a mod command to reset regardless.
 		"giftrecipient": 0,
 		"selfheal": 1, //0 lets current boss damage themselves (phoenix mode), 1 self-heal up to current max HP, 2 self-heal unlimited
@@ -452,13 +452,32 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 			return ([]);
 		} else if (param[1] == "slay") {
 			int hpgrowth = cfg->hpgrowth;
-			if (hpgrowth < 0) {
-				//Overkill. The growth is the excess damage. Unfortunately we're called
-				//asynchronously so we actually have lost the damage at this point, so
-				//this doesn't work. Will need to carry that info around somewhere.
-				hpgrowth = (int)channel->expand_variables("$bossdmg$") - (int)channel->expand_variables("$bossmaxhp$");
+			switch (hpgrowth) {
+				case -1:
+					//Overkill. The growth is the excess damage. Due to asynchronicity,
+					//multiple damage events in very quick succession may cause weird
+					//issues. CHECK ME.
+					return (["{newhp}": (string)(
+						(int)channel->expand_variables("$bossmaxhp$")
+						+ (int)channel->expand_variables("$bossdmg$")
+						- (int)channel->expand_variables("$bossmaxhp$")
+					)]);
+					break;
+				case -2:
+					//Static. Reset the boss to original HP.
+					return (["{newhp}": (string)cfg->initialhp]);
+				case -3:
+					//Static + overkill. Reset to original, then apply overkill damage.
+					//As in regular overkill mode, asynchronicity may cause issues.
+					return (["{newhp}": (string)(
+						cfg->initialhp
+						+ (int)channel->expand_variables("$bossdmg$")
+						- (int)channel->expand_variables("$bossmaxhp$")
+					)]);
+				default:
+					//Stable or simple increase. Add a fixed value (maybe zero) to the existing HP.
+					return (["{newhp}": (string)((int)channel->expand_variables("$bossmaxhp$") + hpgrowth)]);
 			}
-			return (["{newhp}": (string)((int)channel->expand_variables("$bossmaxhp$") + hpgrowth)]);
 		}
 	}
 	return ([]);
