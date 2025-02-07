@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, CODE, INPUT, LABEL, LI, OPTION, SELECT, SPAN, UL} = lindt; //autoimport
+const {A, BR, BUTTON, CODE, INPUT, LABEL, LI, OPTION, SELECT, SPAN, STYLE, UL} = lindt; //autoimport
 import {simpleconfirm} from "./utils.js";
 
 export function render(data) {
@@ -45,7 +45,19 @@ export function render(data) {
 			BUTTON({".onclick": () => ws_sync.send({cmd: "resetboss"})}, "Reset boss"),
 		]),
 		LI(["Initial HP ", INPUT({type: "number", name: "initialhp", value: boss.initialhp})]),
-		LI(["Increase per victory ", INPUT({type: "number", name: "hpgrowth", value: boss.hpgrowth}), " or -1 for overkill mode"]),
+		LI([
+			"On victory, boss health growth: ",
+			SELECT({name: "hpgrowth", value: +boss.hpgrowth > 0 ? "1" : ""+boss.hpgrowth}, [
+				OPTION({value: "0"}, "Stable - boss health does not change"),
+				OPTION({value: "-1"}, "Overkill - excess damage makes the new boss stronger"),
+				OPTION({value: "-2"}, "Static - boss health is reset to the initial HP"),
+				OPTION({value: "-3"}, "Reset and overkill - back to the initial, plus any overkill"),
+				OPTION({value: "1"}, "Increase by a fixed amount of..."),
+			]),
+			INPUT({type: "number", name: "hpgrowth", value: +boss.hpgrowth > 0 ? ""+boss.hpgrowth : "100"}),
+			//If the select isn't on "increase by...", hide the input :)
+			STYLE("select[name=hpgrowth]:not(:has( option[value=\"1\"]:checked )) ~ input[name=hpgrowth] {display: none;}"),
+		]),
 		boss.monitorid && LI(["To see the bar, ", A({class: "monitorlink", href: "monitors?view=" + boss.monitorid}, "drag this to OBS")]),
 		boss.monitorid && LI(["Further configuration (colour, font, etc) can be done ", A({href: "monitors"}, "by editing the bar itself"), "."]),
 		boss.monitorid && LI(["For testing purposes, you may ", BUTTON({id: "dealdamage"}, "deal some damage to the boss")]),
@@ -98,7 +110,13 @@ function update_all(e) {
 	const sec = e.match.closest(".game");
 	if (!sec) return;
 	const params = { };
-	sec.querySelectorAll("input,select").forEach(el => params[el.name] = el.type === "checkbox" ? el.checked : el.value);
+	sec.querySelectorAll("input,select").forEach(el => {
+		//Special case: hpgrowth has two ways to select it. So if the second one is hidden, don't use it.
+		if (el.name in params) {
+			if (getComputedStyle(el).display === "none") return;
+		}
+		params[el.name] = el.type === "checkbox" ? el.checked : el.value;
+	});
 	ws_sync.send({cmd: "configure", section: sec.id, params});
 }
 on("change", "input,select", e => {
