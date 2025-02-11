@@ -149,7 +149,14 @@ export function connect(group, handler)
 			return;
 		}
 		const f = handler["sockmsg_" + data.cmd] || callbacks[callback_pfx + data.cmd] || callbacks[data.cmd];
-		if (f) {f(data); unknown = "";}
+		if (f) {
+			try {f(data);} catch (e) {
+				console.warn("Exception during processing of message:", data);
+				console.error(e);
+				return;
+			}
+			unknown = "";
+		}
 		verbose(unknown ? "unkmsg" : "msg", "Got " + unknown + "message from server:", data);
 	};
 }
