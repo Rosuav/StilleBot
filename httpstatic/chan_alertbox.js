@@ -194,6 +194,7 @@ function alert_name(id) {
 const replay_details = {
 	cheer: r => [r.bits, " bits - ", CODE(r.msg)],
 	personal: r => CODE(r.text),
+	kofi: r => [r.amount, " - ", CODE(r.msg)],
 }
 
 let wanted_variant = null; //Unlike wanted_tab, this won't be loadable on startup (no need).
