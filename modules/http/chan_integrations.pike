@@ -150,6 +150,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		} else if (data->type == "Commission") {
 			//TODO maybe: Switch to looking at data->type for most things?
 			special = "!kofi_commission"; //TODO: Actually make this special (currently just does the goal bar)
+			alertparams->is_commission = "1";
 		} else special = "!kofi_dono";
 		if (special) {
 			//TODO: Replace the others with hooks
