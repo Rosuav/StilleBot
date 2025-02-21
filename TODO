@@ -254,3 +254,5 @@
   - Show Archived Only
   - Select All
   - See All Fields
+* Possible bug: If ws_type is set on a module, it is still storing itself into
+  websockets_types[] and websockets_groups[] by name. Check for consequences.
