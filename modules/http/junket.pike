@@ -39,6 +39,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		));
 		mapping profile = Standards.JSON.decode_utf8(res->get());
 		G->G->DB->mutate_config(state->channel, "calendar") { mapping cfg = __ARGS__[0];
+			if (!cfg->oauth) cfg->oauth = ([]);
 			cfg->oauth |= oauth; //Keep anything previously stored, such as a refresh token
 			//Thank you for coming on such short notice (one hour).
 			//That's okay, I tend to be bad at predicting deaths too.
