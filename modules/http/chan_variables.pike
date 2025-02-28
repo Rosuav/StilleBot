@@ -142,7 +142,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		m_delete(rawdata, var);
 		changed = 1;
 	}
-	if (req->misc->is_mod && !req->misc->session->fake && sscanf(req->variables->newcounter || "", "%[a-zA-Z]", string counter) && counter != "")
+	if (req->misc->is_mod && !req->misc->session->fake && sscanf(req->variables->newcounter || "!", "%[a-zA-Z]", string counter) && counter != "")
 	{
 		//Create some simple commands. This isn't designed for editing, although
 		//it will overwrite if given a duplicate name. TODO: Replace the CGI form

@@ -153,6 +153,7 @@ void autospam(string|int chanid, string cmd) {
 	echoable_message response = channel->commands[?cmd];
 	int|array(int) mins = mappingp(response) && response->automate;
 	if (!mins) return; //Autocommand disabled
+	remove_call_out(autocommands[chanid + "!" + cmd]);
 	autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(mins, channel->config->timezone), chanid, cmd);
 	string me = channel->config->display_name || channel->name[1..]; //If you use $$ in an autocommand, use the broadcaster's name.
 	channel->send((["nick": me, "user": me]), response);
