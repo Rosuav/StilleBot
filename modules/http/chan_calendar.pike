@@ -1,8 +1,6 @@
 inherit annotated;
 inherit http_websocket;
 
-//TODO: Synchronize once a week for every channel that has an active calendar
-
 constant markdown = #"# Synchronize Google and Twitch calendars
 
 > <summary>How to set up your calendar</summary>
@@ -458,4 +456,19 @@ __async__ mapping wscmd_googlelogin(object channel, mapping(string:mixed) conn, 
 	return (["cmd": "googlelogin", "uri": uri]);
 }
 
-protected void create(string name) {::create(name); /*synchronize(49497888);*/}
+void autosync() {
+	remove_call_out(G->G->calendar_autosync);
+	G->G->calendar_autosync = call_out(autosync, 86400*7); //In stable state, run autosync once a week.
+	G->G->DB->load_all_configs("calendar")->then() {
+		foreach (__ARGS__[0]; int userid; mapping cfg)
+			if (cfg->autosync) synchronize(userid); //It's gonna requery the config, but whatevs
+	};
+}
+
+protected void create(string name) {
+	::create(name);
+	//synchronize(49497888);
+	remove_call_out(G->G->calendar_autosync);
+	if (G->G->calendar_last_autosync < time() - 86400) autosync(); //On code update, do a sync if it's been more than a day
+	else G->G->calendar_autosync = call_out(autosync, 86400*3); //Otherwise just start one in a few days (after that, they'll be weekly).
+}
