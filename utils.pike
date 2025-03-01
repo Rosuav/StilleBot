@@ -126,8 +126,9 @@ __async__ void fix_kofi_name() {
 	foreach (stats->allkofi, mapping gift) {
 		if (gift->giver->user_id == "email@address.example") {
 			write("Found %O\n", gift);
-			gift->giver->user_id = "12345678";
-			gift->giver->login = gift->giver->displayname = "some_user_name";
+			mapping user = await(get_user_info("actualusername", "login"));
+			gift->giver->user_id = user->id;
+			gift->giver->login = gift->giver->displayname = user->display_name;
 		}
 	}
 	await(G->G->DB->save_config(54212603, "subgiftstats", stats));
