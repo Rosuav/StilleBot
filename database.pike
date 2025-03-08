@@ -590,6 +590,7 @@ __async__ string generate_session_cookie() {
 		//TODO: If it wasn't a PK conflict, let the exception bubble up
 		werror("COOKIE INSERTION\n%s\n", describe_backtrace(ex));
 		await(task_sleep(1));
+		if (G->G->DB != this) return await(G->G->DB->generate_session_cookie());
 	}
 }
 
