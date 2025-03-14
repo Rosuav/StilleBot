@@ -72,5 +72,25 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 }
 
 mapping get_state(string group) {
-	return ([]);
+	return (["updating": G->G->admin_updating]);
+}
+
+void codeupdate_done(int errors) {
+	G->G->admin_updating = 0;
+	send_updates_all("");
+	send_updates_all("", (["update_complete": errors]));
+	werror("-- Code update complete --\n");
+}
+
+void websocket_cmd_codeupdate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	werror("-- Code update signalled from console --\n");
+	G->G->admin_updating = 1;
+	send_updates_all("");
+	int errors = G->bootstrap_all();
+	call_out(codeupdate_done, 0, errors);
+}
+
+void report(string lines, string|void type) {
+	if (has_suffix(lines, "\n")) lines = lines[..<1]; //Trim off the last newline, which we expect is present normally
+	send_updates_all("", (["consolemsg": (lines / "\n")[*], "type": type || "plain"])[*]);
 }

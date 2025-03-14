@@ -225,11 +225,15 @@ int update() {
 		sscanf(listen, "%d", listen_port);
 	}
 	object sock = Protocols.WebSocket.Connection();
-	sock->onopen = lambda() {sock->send_text(Standards.JSON.encode((["cmd": "init", "type": "admin", "group": ""])));};
+	sock->onopen = lambda() {
+		sock->send_text(Standards.JSON.encode((["cmd": "init", "type": "admin", "group": ""])));
+		sock->send_text(Standards.JSON.encode((["cmd": "codeupdate"])));
+	};
 	sock->onmessage = lambda(Protocols.WebSocket.Frame frm) {
 		mapping data;
 		if (catch {data = Standards.JSON.decode(frm->text);}) return;
-		write("Got message %O\n", data);
+		if (!undefinedp(data->update_complete)) {werror("Update complete with %d errors.\n", data->update_complete); exit(0);};
+		if (data->consolemsg) werror("%s\n", data->consolemsg); //TODO: If type == "warning"/"error", colorize
 	};
 	sock->onclose = lambda() {exit(0);};
 	sock->connect(sprintf("%s://127.0.0.1:%d/ws", use_https ? "wss" : "ws", listen_port));
