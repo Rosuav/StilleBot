@@ -1341,8 +1341,8 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 	if (!stringp(data->cmd)) return;
 	if (data->cmd == "init")
 	{
-		//HACK: Allow serverstatus to query a non-active bot.
-		if (string other = data->type != "serverstatus" && !is_active && get_active_bot()) {
+		//HACK: Allow a select few types of queries on a non-active bot.
+		if (string other = !(<"serverstatus", "admin">)[data->type] && !is_active && get_active_bot()) {
 			//If we are definitely not active and there's someone who is,
 			//send the request over there instead. Browsers don't all follow
 			//302 redirects for websockets, and even if they did, session and
