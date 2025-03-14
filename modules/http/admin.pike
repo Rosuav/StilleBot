@@ -1,6 +1,6 @@
 //Local admin actions eg message sending
 //Unauthenticated, but can only be used from localhost
-inherit http_endpoint;
+inherit http_websocket;
 
 mapping handle_send_message(mapping body, object req) {
 	if (!body->channel || !body->msg) return 0;
@@ -65,4 +65,12 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		default: break; //TODO: Allow selection of a specific save file? Maybe?
 	}
 	return (["error": 403, "data": "Nope"]);
+}
+
+string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!NetUtils.is_local_host(conn->remote_ip)) return "You're not me, I'm not you";
+}
+
+mapping get_state(string group) {
+	return ([]);
 }

@@ -214,6 +214,28 @@ __async__ void sublist() {
 	write("Foll %d, not foll %d\n", nfoll, nnotfoll);
 }
 
+@"Update the bot (from localhost only)":
+int update() {
+	int use_https = has_prefix(G->G->instance_config->http_address, "https://");
+	int listen_port = use_https ? 443 : 80; //Default port from protocol
+	sscanf(G->G->instance_config->http_address, "http%*[s]://%*s:%d", listen_port); //If one is set for the dest addr, use that
+	if (string listen = G->G->instance_config->listen_address) {
+		if (sscanf(listen, "http://%s", listen)) use_https = 0; //Use this when encryption is done outside of the bot (no cert here, but external addresses still use https).
+		sscanf(listen, "%*s:%s", listen);
+		sscanf(listen, "%d", listen_port);
+	}
+	object sock = Protocols.WebSocket.Connection();
+	sock->onopen = lambda() {sock->send_text(Standards.JSON.encode((["cmd": "init", "type": "admin", "group": ""])));};
+	sock->onmessage = lambda(Protocols.WebSocket.Frame frm) {
+		mapping data;
+		if (catch {data = Standards.JSON.decode(frm->text);}) return;
+		write("Got message %O\n", data);
+	};
+	sock->onclose = lambda() {exit(0);};
+	sock->connect(sprintf("%s://127.0.0.1:%d/ws", use_https ? "wss" : "ws", listen_port));
+	return -1;
+}
+
 @"This help information":
 void help() {
 	write("\nUSAGE: pike stillebot --exec=ACTION\nwhere ACTION is one of the following:\n");
