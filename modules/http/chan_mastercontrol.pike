@@ -57,8 +57,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		object channel = req->misc->channel;
 		mapping cfg = channel->config;
 		mapping ret = ([]);
-		foreach ("autoban timezone" / " ", string key) //TODO: Anything else? Or should we just make botconfig exportable?
-			if (cfg[key] && sizeof(cfg[key])) ret[key] = cfg[key];
 		//Save any exportable configs. This will cover a lot of things, but not those that
 		//are in separate tables.
 		foreach (await(G->G->DB->query_ro(#"select * from stillebot.config
