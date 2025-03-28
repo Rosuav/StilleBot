@@ -117,7 +117,7 @@ __async__ void wscmd_new_dynamic(object channel, mapping(string:mixed) conn, map
 		foreach (G->G->pointsrewards[broadcaster_id] || ({ }), mapping r) if (r->id == body->id) rew = r;
 		if (rew && rew->can_manage && !rew->is_dynamic) {
 			dyn[rew->id] = ([
-				"basecost": rew->cost || 1000, "availability": "{online}", "formula": "PREV",
+				"basecost": rew->cost || 1000, "availability": "1", "formula": "PREV",
 			]);
 			await(G->G->DB->save_config(channel->userid, "dynamic_rewards", dyn));
 			//As below, might be worth pushing out the update immediately (rather than waiting for Twitch to notify us)
@@ -129,7 +129,7 @@ __async__ void wscmd_new_dynamic(object channel, mapping(string:mixed) conn, map
 	//Titles must be unique (among all rewards). To simplify rapid creation of
 	//multiple rewards, add a numeric disambiguator on conflict.
 	string deftitle = copyfrom->title || "Example Dynamic Reward";
-	mapping rwd = (["basecost": copyfrom->cost || 1000, "availability": "{online}", "formula": "PREV"]);
+	mapping rwd = (["basecost": copyfrom->cost || 1000, "availability": "1", "formula": "PREV"]);
 	array have = filter((G->G->pointsrewards[broadcaster_id]||({}))->title, has_prefix, deftitle);
 	copyfrom |= (["title": deftitle + " #" + (sizeof(have) + 1), "cost": rwd->basecost]);
 	mapping info = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,

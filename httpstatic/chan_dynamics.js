@@ -14,16 +14,14 @@ const availability_choices = {
 export const autorender = {
 	dynreward_parent: DOM("#rewards tbody"),
 	dynreward(r) { //extcall
-		const av = r.availability || "{online}";
+		const av = r.availability || "1";
 		return TR({"data-id": r.id}, [
 			TD(FORM({id: r.id, className: "editreward"}, INPUT({name: "title", value: r.title, "size": 30}))),
 			TD(INPUT({name: "prompt", form: r.id, value: r.prompt, size: 30})),
 			TD(INPUT({name: "basecost", form: r.id, type: "number", value: r.basecost})),
 			TD([
 				SELECT({name: "availability-choices", form: r.id, value: availability_choices[av] ? av : ""}, [
-					OPTION({value: "1"}, "Always"),
-					OPTION({value: "0"}, "Never"),
-					OPTION({value: "{online}"}, "While you're live"),
+					Object.entries(availability_choices).map(([value, lbl]) => OPTION({value}, lbl)),
 					OPTION({value: ""}, "Custom..."),
 				]),
 				BR(), INPUT({name: "availability", form: r.id, value: av}),
