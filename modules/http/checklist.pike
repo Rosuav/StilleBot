@@ -7,6 +7,14 @@ inherit annotated;
 //NOTE: The display is aimed at no more than six emotes across.
 constant hypetrain = replace(#"
 ## Hype Train set nine
+### Unlockable Apr 2025 to current
+SpillTheTea ThatsAServe WhosThisDiva<br>
+RespectfullyNo ThatsIconique HerMind<br>
+NoComment DownBad UghMood<br>
+TheyAte PlotTwist AnActualQueen<br>
+PackItUp InTheirBag SpitTheTruth<br>
+(10) BleedPurpleHD (25) HeyHeyGuys (50) PogChomp (100) KappaInfinite<br>
+(111) ShouldICelebrate<br>
 
 ## Holidays 2024
 ### Unlockable via Shared Chat during holidays
@@ -15,7 +23,7 @@ October:<br>TreatCorn TrickCorn<br>
 December:<br>LightsSwirl LightsBlink LightsTwinkle CatintheChat<br>
 
 ## Hype Train set eight
-### Unlockable May 2024 to Dec 2024 and Jan 2025 to current
+### Unlockable May 2024 to Dec 2024 and Jan 2025 to Mar 2025
 FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume<br>
 AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat<br>
 MegaMlep RawkOut FallDamage RedCard ApplauseBreak TouchOfSalt<br>
@@ -227,6 +235,23 @@ constant emoteids = ([
 	"LightsBlink": "emotesv2_f1337249b2ac4482ad1a9318bf2018f2",
 	"LightsTwinkle": "emotesv2_2d3b718f2de34770ba2e61cfbc270a58",
 	"CatintheChat": "emotesv2_a7768ce4552c4a3abdd0404f556f958e",
+	//Hype train set 9
+	"SpillTheTea": "emotesv2_3f209a93967a4f53909b3e83932eb883",
+	"ThatsAServe": "emotesv2_71276b021c024affa2a4ffab59d32c56",
+	"WhosThisDiva": "emotesv2_fdd2673444124ccb95745918e6946ebc",
+	"RespectfullyNo": "emotesv2_8c5bc9cb160640c29423076da8cf692d",
+	"ThatsIconique": "emotesv2_df29fd5cc4f8436a90c0f782d828b366",
+	"HerMind": "emotesv2_2eb03cdc9a6240d4bf71d44bfbfdcbd3",
+	"NoComment": "emotesv2_9d63f5aa1af3476b86b9c20a6e747dc2",
+	"DownBad": "emotesv2_33cd123685f84ecb9899838472c55391",
+	"UghMood": "emotesv2_393644bfc50c49498152f75b56f0ce22",
+	"TheyAte": "emotesv2_f47a86e7457e440ab3fff868b2d5186e",
+	"PlotTwist": "emotesv2_2a1863780183434da7beeb7e9a42eb34",
+	"AnActualQueen": "emotesv2_5e4904678f50485aaac4fca44f03b570",
+	"PackItUp": "emotesv2_2789bf0b8a4346a6900f24265733439b",
+	"InTheirBag": "emotesv2_84f6901b23f54c5fbd9cdcc0ba66cb93",
+	"SpitTheTruth": "emotesv2_a5df5c36d31640659aba8fe8641e0ba8",
+	"ShouldICelebrate": "emotesv2_3cef4c51d4aa45be822ee327f97650a0",
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
