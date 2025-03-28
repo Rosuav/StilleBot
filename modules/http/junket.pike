@@ -75,6 +75,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	array|mapping data = mappingp(body) && body->event;
 	if (!data) return (["error": 400, "data": "Unrecognized body type"]);
 	werror("Conduit broken! %O\n", data); //Probably a non-event if we're active??
+	Stdio.append_file("conduit_reconnect.log", sprintf("%sJUNKET CONDUIT BROKEN: %O\n", ctime(time()), data));
 	if (is_active_bot()) G->G->setup_conduit();
 	else if (string other = get_active_bot()) {
 		//Forward the request to the other bot.

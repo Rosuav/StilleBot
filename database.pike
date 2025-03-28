@@ -286,6 +286,7 @@ void notify_session_gone(int pid, string cond, string extra, string host) {
 @"stillebot.conduit_broken":
 void notify_conduit_broken(int pid, string cond, string extra, string host) {
 	werror("Conduit broken, signalled via database - %O\n", extra);
+	Stdio.append_file("conduit_reconnect.log", sprintf("%sDATABASE CONDUIT BROKEN: %O\n", ctime(time()), (["host": host, "extra": extra])));
 	if (is_active_bot()) G->G->setup_conduit();
 	else werror("Not active bot, ignoring (active is %O)\n", get_active_bot());
 }
