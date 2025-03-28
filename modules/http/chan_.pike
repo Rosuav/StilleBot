@@ -138,15 +138,25 @@ __async__ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, 
 		}
 	}
 	else req->misc->chaninfo->save_or_login = "[Mods, login to make changes](:.twitchlogin)";
-	mapping profile = channel->userid ? await(get_user_info(channel->userid))
-		: ([ //For the demo channel, provide some basic information.
-			"display_name": "!Demo",
-			"email": "demo@mustardmine.com",
-			"id": "0",
-			"login": "!demo",
-			"profile_image_url": "/static/MustardMineSquavatar.png",
-			"link_override": "https://mustardmine.com/activate",
+	mapping profile;
+	if (channel->userid) {
+		if (catch {profile = await(get_user_info(channel->userid));}) profile = ([
+			//Couldn't get the user info? Possibly a deleted account. Provide some stubs.
+			"display_name": channel->login || "unknown user",
+			"email": "deletedaccount@mustardmine.com",
+			"id": (string)channel->userid,
+			"login": channel->login || "unknown user",
+			//A default-looking profile image
+			"profile_image_url": "https://static-cdn.jtvnw.net/user-default-pictures-uv/294c98b5-e34d-42cd-a8f0-140b72fba9b0-profile_image-70x70.png",
 		]);
+	} else profile = ([ //For the demo channel, provide some basic information.
+		"display_name": "!Demo",
+		"email": "demo@mustardmine.com",
+		"id": "0",
+		"login": "!demo",
+		"profile_image_url": "/static/MustardMineSquavatar.png",
+		"link_override": "https://mustardmine.com/activate",
+	]);
 	req->misc->chaninfo->menunav = sprintf(
 		"<nav id=sidebar><ul>%{<li><a href=%q>%s</a></li>%}%s</ul>"
 		"<a href=%q target=_blank><img src=%q alt=\"Channel avatar\" title=%q></a></nav>",
