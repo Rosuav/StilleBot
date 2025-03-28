@@ -17,7 +17,12 @@ constant PREFERENCE_MAGIC_SCORES = ({
 	-1000, -250, -50, //Negative ratings
 });
 
-multiset(string) creative_names = (<"Art", "Science & Technology", "Software and Game Development", "Food & Drink", "Music", "Makers & Crafting", "Beauty & Body Art">);
+multiset(string) creative_names = (<
+	"Art", "Software and Game Development", "Food & Drink", "Music", "DJs",
+	"Makers & Crafting", "Miniatures & Models", "Writing & Reading",
+	"Lego & Brickbuilding",
+	"Beauty & Body Art", //Is this still a thing? Not seeing it, maybe got folded back into Art.
+>);
 multiset(int) creatives = (<>);
 @retain: mapping raid_suggestions = ([]);
 @retain: mapping raidfinder_cache = ([]);
