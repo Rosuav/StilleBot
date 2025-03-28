@@ -363,6 +363,7 @@ __async__ void connect(string host) {
 
 __async__ void reconnect(int force, int|void both) {
 	if (force) {
+		fastdb = livedb = 0; //Signal that we have no databases (they'll be made available again after reconnection)
 		foreach (pg_connections; string host; mapping db) {
 			if (!db->connected) {werror("Still connecting to %s...\n", host); continue;} //Will probably need a timeout somewhere
 			werror("Closing connection to %s.\n", host);
