@@ -30,6 +30,7 @@ To have dynamic pricing carry from one stream to another, set the base cost to z
 
 <style>
 code {background: #ffe;}
+[name=availability-choices]:not(:has( [value=\"\"]:checked)) ~ [name=availability] {display: none;}
 </style>
 ";
 
