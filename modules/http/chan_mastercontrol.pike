@@ -63,6 +63,12 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			where twitchid = :twitchid", (["twitchid": channel->userid]))), mapping cfg)
 				if (sizeof(cfg->data)) ret[cfg->keyword] = cfg->data;
 		mapping commands = ([]), specials = ([]);
+		//TODO: Load these directly from the database, thus disconnecting us from the channel object
+		//TODO: Move the generation of this data blob elsewhere, and then make a utils function that
+		//generates a data dump for any given user. This can then be used even if the user is unable
+		//to log in, either because of lack of credentials or because the whole account has been
+		//deleted, and thus can be used with some out-of-band authentication to provide someone with
+		//their data.
 		foreach (channel->commands || ([]); string cmd; echoable_message response) {
 			if (mappingp(response) && response->alias_of) continue;
 			if (has_prefix(cmd, "!")) specials[cmd] = response;
