@@ -55,16 +55,14 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	) return render_template("login.md", (["msg": "that the broadcaster use it. It contains settings so dangerous they are not available to mods. Sorry! If you ARE the broadcaster, please reauthenticate"]) | req->misc->chaninfo);
 	if (req->request_type == "POST" && req->variables->export) {
 		object channel = req->misc->channel;
-		mapping cfg = channel->config;
 		mapping ret = ([]);
 		//Save any exportable configs. This will cover a lot of things, but not those that
 		//are in separate tables.
 		foreach (await(G->G->DB->query_ro(#"select * from stillebot.config
-			join stillebot.config_exportable on stillebot.config.keyword = stillebot.config_exportable.keyword
+			join stillebot.config_exportable using (keyword)
 			where twitchid = :twitchid", (["twitchid": channel->userid]))), mapping cfg)
 				if (sizeof(cfg->data)) ret[cfg->keyword] = cfg->data;
 		mapping commands = ([]), specials = ([]);
-		string chan = channel->name[1..];
 		foreach (channel->commands || ([]); string cmd; echoable_message response) {
 			if (mappingp(response) && response->alias_of) continue;
 			if (has_prefix(cmd, "!")) specials[cmd] = response;
