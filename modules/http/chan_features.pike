@@ -31,37 +31,7 @@ $$save_or_login||$$
 </style>
 ";
 
-__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
-{
-	if (req->misc->is_mod && req->request_type == "POST" && req->variables->export) {
-		//TODO: Move this into chan_mastercontrol which is where the button is
-		object channel = req->misc->channel;
-		mapping cfg = channel->config;
-		mapping ret = ([]);
-		foreach ("autoban timezone" / " ", string key) //TODO: Anything else? Or should we just make botconfig exportable?
-			if (cfg[key] && sizeof(cfg[key])) ret[key] = cfg[key];
-		//Save any exportable configs. This will cover a lot of things, but not those that
-		//are in separate tables.
-		foreach (await(G->G->DB->query_ro(#"select * from stillebot.config
-			join stillebot.config_exportable on stillebot.config.keyword = stillebot.config_exportable.keyword
-			where twitchid = :twitchid", (["twitchid": channel->userid]))), mapping cfg)
-				if (sizeof(cfg->data)) ret[cfg->keyword] = cfg->data;
-		mapping commands = ([]), specials = ([]);
-		string chan = channel->name[1..];
-		foreach (channel->commands || ([]); string cmd; echoable_message response) {
-			if (mappingp(response) && response->alias_of) continue;
-			if (has_prefix(cmd, "!")) specials[cmd] = response;
-			else commands[cmd] = response;
-		}
-		ret->commands = commands;
-		if (array t = m_delete(specials, "!trigger"))
-			if (arrayp(t)) ret->triggers = t;
-		ret->specials = specials;
-		mapping resp = jsonify(ret, 5);
-		string fn = "stillebot-" + channel->name[1..] + ".json";
-		resp->extra_heads = (["Content-disposition": sprintf("attachment; filename=%q", fn)]);
-		return resp;
-	}
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	return render(req, ([
 		"vars": (["ws_group": req->misc->is_mod ? "control" : "view"]),
 		"chan": req->misc->channel->name[1..] - "!",

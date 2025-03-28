@@ -21,7 +21,7 @@ From here, you can make all kinds of really important changes. Maybe.
 </style>
 
 > [Export/back up all configuration](:type=submit name=export)
-{:tag=form method=post action=features}
+{:tag=form method=post}
 
 <!-- -->
 
@@ -47,11 +47,40 @@ From here, you can make all kinds of really important changes. Maybe.
 
 */
 
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "that the broadcaster use it"]) | req->misc->chaninfo);
 	if (req->misc->session->fake) return render(req, (["js": "chan_mastercontrol"]) | req->misc->chaninfo);
-	if ((int)req->misc->session->user->id != req->misc->channel->userid)
-		return render_template("login.md", (["msg": "that the broadcaster use it. It contains settings so dangerous they are not available to mods. Sorry! If you ARE the broadcaster, please reauthenticate"]) | req->misc->chaninfo);
+	if ((int)req->misc->session->user->id != req->misc->channel->userid
+		//&& !is_localhost_mod(req->misc->session->user->login, req->get_ip()) //Uncomment to allow localhost override for this page (not normally)
+	) return render_template("login.md", (["msg": "that the broadcaster use it. It contains settings so dangerous they are not available to mods. Sorry! If you ARE the broadcaster, please reauthenticate"]) | req->misc->chaninfo);
+	if (req->request_type == "POST" && req->variables->export) {
+		object channel = req->misc->channel;
+		mapping cfg = channel->config;
+		mapping ret = ([]);
+		foreach ("autoban timezone" / " ", string key) //TODO: Anything else? Or should we just make botconfig exportable?
+			if (cfg[key] && sizeof(cfg[key])) ret[key] = cfg[key];
+		//Save any exportable configs. This will cover a lot of things, but not those that
+		//are in separate tables.
+		foreach (await(G->G->DB->query_ro(#"select * from stillebot.config
+			join stillebot.config_exportable on stillebot.config.keyword = stillebot.config_exportable.keyword
+			where twitchid = :twitchid", (["twitchid": channel->userid]))), mapping cfg)
+				if (sizeof(cfg->data)) ret[cfg->keyword] = cfg->data;
+		mapping commands = ([]), specials = ([]);
+		string chan = channel->name[1..];
+		foreach (channel->commands || ([]); string cmd; echoable_message response) {
+			if (mappingp(response) && response->alias_of) continue;
+			if (has_prefix(cmd, "!")) specials[cmd] = response;
+			else commands[cmd] = response;
+		}
+		ret->commands = commands;
+		if (array t = m_delete(specials, "!trigger"))
+			if (arrayp(t)) ret->triggers = t;
+		ret->specials = specials;
+		mapping resp = jsonify(ret, 5);
+		string fn = "stillebot-" + channel->name[1..] + ".json";
+		resp->extra_heads = (["Content-disposition": sprintf("attachment; filename=%q", fn)]);
+		return resp;
+	}
 	return render(req, (["vars": (["ws_group": ""])]) | req->misc->chaninfo);
 }
 
