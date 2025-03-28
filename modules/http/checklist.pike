@@ -15,6 +15,7 @@ TheyAte PlotTwist AnActualQueen<br>
 PackItUp InTheirBag SpitTheTruth<br>
 (10) BleedPurpleHD (25) HeyHeyGuys (50) PogChomp (100) KappaInfinite<br>
 (111) ShouldICelebrate<br>
+Note that set eight may still be unlockable - unconfirmed.
 
 ## Holidays 2024
 ### Unlockable via Shared Chat during holidays
