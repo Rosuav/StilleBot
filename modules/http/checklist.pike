@@ -15,7 +15,7 @@ TheyAte PlotTwist AnActualQueen<br>
 PackItUp InTheirBag SpitTheTruth<br>
 (10) BleedPurpleHD (25) HeyHeyGuys (50) PogChomp (100) KappaInfinite<br>
 (111) ShouldICelebrate<br>
-Note that set eight may still be unlockable - unconfirmed.
+Note that set eight can also still be unlocked.
 
 ## Holidays 2024
 ### Unlockable via Shared Chat during holidays
@@ -24,7 +24,7 @@ October:<br>TreatCorn TrickCorn<br>
 December:<br>LightsSwirl LightsBlink LightsTwinkle CatintheChat<br>
 
 ## Hype Train set eight
-### Unlockable May 2024 to Dec 2024 and Jan 2025 to Mar 2025
+### Unlockable May 2024 to Dec 2024 and Jan 2025 to current
 FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume<br>
 AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat<br>
 MegaMlep RawkOut FallDamage RedCard ApplauseBreak TouchOfSalt<br>
