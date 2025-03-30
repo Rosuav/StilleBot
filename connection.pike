@@ -1605,7 +1605,7 @@ void establish_hook_notification(string|int channelid, string hook, mapping|void
 //barely necessary for fewer than about 60, but beyond that, becomes more valuable. It
 //is also completely unnecessary if the bot has Verified status, but this would need to
 //be coded in properly (to allow !demo to still have some example voices).
-array(mapping) shard_voices;
+array(mapping) shard_voices = ({0}); //For now, see what it's like if we don't shard.
 __async__ void reconnect() {
 	if (!shard_voices) {
 		//Fetch up the list of bot shard voices from the demo's available voices
