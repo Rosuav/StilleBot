@@ -835,7 +835,7 @@ __async__ mapping message_params(object channel, mapping person, array params, m
 	//them and we'll ignore them (they'll be in chat anyway)
 	string chan = params[0];
 	sscanf(chan, "%*stwitch.tv/%[^ ]", chan);
-	sscanf(chan, "%*[@]%s ", chan);
+	sscanf(chan, "%*[@]%[^ ]", chan);
 	int target;
 	if (catch (target = await(get_user_id(chan)))) error("Unknown channel name\n");
 	if (!target) error("Unknown channel name\n");
