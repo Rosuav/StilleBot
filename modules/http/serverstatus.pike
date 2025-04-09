@@ -100,6 +100,12 @@ void update() {
 		checkdb("fastdb", tm);
 		checkdb("livedb", tm);
 	}
+	//How many current websocket connections do we have?
+	int socks;
+	foreach (G->G->websocket_types;; object ws)
+		foreach (ws->websocket_groups;; array grp)
+			if (grp) socks += sizeof(grp);
+	state->socket_count = socks;
 	//If there's nobody listening, stop monitoring.
 	send_updates_all("");
 	if (!sizeof(websocket_groups[""])) G->G->serverstatus_updater = 0;

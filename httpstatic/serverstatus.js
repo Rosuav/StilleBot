@@ -13,6 +13,7 @@ set_content("#content", ["Gideon", "Sikorsky"].map(id => {
 		Object.keys(attrs[id]).map(name => attrs[id][name] !== -1 && [attrs[id][name] + ": ", SPAN({class: name + " percent"}), " "]),
 		attrs[id].enc && ["Enc: ", SPAN({class: "enc percent"}), ":", SPAN({class: "dec percent"}), " "],
 		SPAN({class: "db"}),
+		SPAN({class: "sockets"}),
 		SPAN({class: "spinner"}),
 	]);
 }));
@@ -29,6 +30,10 @@ function update(data, par) {
 	set_content("#" + par + " .db", [
 		data.livedb?.host && ["DB: ", data.livedb.host, " (" + Math.floor(data.livedb.ping * 1000) + " ms)"],
 		data.fastdb?.host && [" Alt DB: ", data.fastdb.host, " (" + Math.floor(data.fastdb.ping * 1000) + " ms)"],
+	]);
+	set_content("#" + par + " .sockets", [
+		"Users: ", data.socket_count,
+		" ",
 	]);
 }
 export function render(data) {update(data, "Sikorsky");}
