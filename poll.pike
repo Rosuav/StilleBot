@@ -19,8 +19,8 @@ __async__ void get_credentials() {
 //Place a request to the API. Returns a Future that will be resolved with a fully
 //decoded result (a mapping of Unicode text, generally), or rejects if Twitch or
 //the network failed the request.
-@export: __async__ mapping|int twitch_api_request(Protocols.HTTP.Session.URL url, mapping|void headers, mapping|void options)
-{
+@export: __async__ mapping|int twitch_api_request(Protocols.HTTP.Session.URL url, mapping|void headers, mapping|void options) {
+	G->G->serverstatus_statistics->api_request_count++;
 	if (!G->G->dbsettings->credentials) await(get_credentials());
 	headers = (headers || ([])) + ([]);
 	options = options || ([]);

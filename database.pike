@@ -142,6 +142,7 @@ mapping notify_channels = ([]);
 //a single transaction (ie if the connection fails, they will be requeued as a set). The return
 //value in this case is an array of results (not counting the implicit BEGIN and COMMIT).
 __async__ array query(mapping(string:mixed) db, string|array sql, mapping|void bindings) {
+	G->G->serverstatus_statistics->db_request_count++;
 	#if constant(SSLDatabase)
 	if (arrayp(sql)) {
 		array ret = ({ });

@@ -441,6 +441,7 @@ class websocket_handler
 	}
 }
 
+@"G->G->serverstatus_statistics";
 int concurrent_websockets() {
 	int socks;
 	foreach (G->G->websocket_types;; object ws)
@@ -723,6 +724,7 @@ class _TwitchIRC(mapping options) {
 	}
 
 	void send(string channel, string msg, mapping(string:string)|void tags) {
+		G->G->serverstatus_statistics->irc_message_count++;
 		//Tags can be client-nonce and/or reply-parent-msg-id
 		string pfx = "";
 		if (tags && sizeof(tags)) pfx = "@" + map((array)tags) {

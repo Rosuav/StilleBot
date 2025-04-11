@@ -109,23 +109,26 @@ void update() {
 }
 
 constant LOADSTATS_PERIOD = 60;
-@retain: mapping serverstatus_statistics = (["time": time()]);
 void loadstats() {
 	G->G->serverstatus_loadstats = call_out(loadstats, LOADSTATS_PERIOD);
+	mapping stats = G->G->serverstatus_statistics;
 	//Format of log:
 	//Date Time Token [token [token]]
 	//Each token (after the date and time) has an alphabetic prefix followed by a numeric value
 	//eg "WS26" means there were 26 websockets active during this time (high water mark).
 	//All queries of the server stats should be atomically destructive, ensuring that consistent
 	//numbers are used even if other operations are concurrently incrementing them.
-	Stdio.append_file("serverstatus.log", sprintf("%s D%d WS%d HTTP%d\n",
+	Stdio.append_file("serverstatus.log", sprintf("%s D%d WS%d HTTP%d API%d IRC%d DB%d\n",
 		Calendar.ISO.Second()->format_time(),
-		time() - serverstatus_statistics->time, //Duration of statistical period
-		m_delete(serverstatus_statistics, "websocket_hwm"),
-		m_delete(serverstatus_statistics, "http_request_count"),
+		stats->time && time() - stats->time, //Duration of statistical period
+		m_delete(stats, "websocket_hwm"),
+		m_delete(stats, "http_request_count"),
+		m_delete(stats, "api_request_count"),
+		m_delete(stats, "irc_message_count"),
+		m_delete(stats, "db_request_count"),
 	));
-	serverstatus_statistics->time = time();
-	serverstatus_statistics->websocket_hwm = concurrent_websockets();
+	stats->time = time();
+	stats->websocket_hwm = concurrent_websockets();
 }
 
 protected void create(string name) {
