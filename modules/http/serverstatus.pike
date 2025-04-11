@@ -171,7 +171,7 @@ void send_graph(array socks) {
 		send_msg(conn, msg);
 }
 
-constant LOADSTATS_PERIOD = 60;
+constant LOADSTATS_PERIOD = 300;
 void loadstats() {
 	G->G->serverstatus_loadstats = call_out(loadstats, LOADSTATS_PERIOD);
 	mapping stats = G->G->serverstatus_statistics;
