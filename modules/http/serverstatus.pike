@@ -128,7 +128,7 @@ constant LOAD_DEFINITIONS = ([
 
 void send_graph(array socks) {
 	//Read the log, grab the latest N entries, and plot them
-	array lines = ((Stdio.read_file("serverstatus.log") || "") / "\n")[<100..];
+	array lines = ((Stdio.read_file("serverstatus.log") || "") / "\n")[<288..]; //Assuming five-minute stats, this is a day's data.
 	array data = ({ }), colors = ({ }), defns = ({ }), peaks = ({ });
 	mapping plots = ([]);
 	foreach (lines, string line) {
