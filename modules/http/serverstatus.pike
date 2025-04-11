@@ -118,30 +118,30 @@ void update() {
 	if (!sizeof(websocket_groups[""])) G->G->serverstatus_updater = 0;
 }
 
-constant COLOR_DEFINITIONS = ([
-	"WS": ({0x66, 0x33, 0x99}),
-	"HTTP": ({0x80, 0x10, 0x10}),
-	"API": ({0x10, 0x80, 0x10}),
-	"IRC": ({0x10, 0x10, 0x80}),
-	"DB": ({0x10, 0x80, 0x80}),
+constant LOAD_DEFINITIONS = ([
+	"WS": (["color": ({0x66, 0x33, 0x99}), "unit": "peak users"]),
+	"HTTP": (["color": ({0x80, 0x10, 0x10}), "unit": "req/time"]),
+	"API": (["color": ({0x10, 0x80, 0x10}), "unit": "req/time"]),
+	"IRC": (["color": ({0x10, 0x10, 0x80}), "unit": "msg/time"]),
+	"DB": (["color": ({0x10, 0x80, 0x80}), "unit": "req/time"]),
 ]);
 
 void send_graph(array socks) {
 	//Read the log, grab the latest N entries, and plot them
 	array lines = ((Stdio.read_file("serverstatus.log") || "") / "\n")[<100..];
-	array data = ({ }), colors = ({ }), labels = ({ }), peaks = ({ });
+	array data = ({ }), colors = ({ }), defns = ({ }), peaks = ({ });
 	mapping plots = ([]);
 	foreach (lines, string line) {
 		array parts = (line / " ")[2..]; //Ignore the date and time at the start
 		foreach (parts, string part) {
 			sscanf(part, "%[A-Za-z]%d", string pfx, int val);
 			//TODO: If we have a Duration (eg "D60"), rescale everything to match that.
-			array col = COLOR_DEFINITIONS[pfx]; if (!col) continue; //If no color specified for this prefix, don't display it
+			mapping ld = LOAD_DEFINITIONS[pfx]; if (!ld) continue; //Unknowns do not get displayed
 			if (undefinedp(plots[pfx])) {
 				plots[pfx] = sizeof(data);
 				data += ({({ })});
-				colors += ({col});
-				labels += ({pfx});
+				colors += ({ld->color});
+				defns += ({ld}); ld->prefix = pfx;
 				peaks += ({val});
 			}
 			data[plots[pfx]] += ({val});
@@ -163,7 +163,7 @@ void send_graph(array socks) {
 	mapping msg = ([
 		"cmd": "graph",
 		"image": "data:image/png;base64," + MIME.encode_base64(Image.PNG.encode(img)),
-		"colors": colors, "labels": labels, "peaks": peaks,
+		"defns": defns, "peaks": peaks,
 	]);
 	foreach (socks, mapping conn)
 		send_msg(conn, msg);

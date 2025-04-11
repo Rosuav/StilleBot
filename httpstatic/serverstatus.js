@@ -47,8 +47,8 @@ export function sockmsg_graph(msg) {
 	DOM("#graph img").src = msg.image;
 	set_content("#graph figcaption", [
 		H3("Load peaks"),
-		UL(msg.labels.map((lbl, i) => LI([
-			SPAN({style: "color: rgb(" + msg.colors[i].join(",") + ")"}, lbl), " ", ""+msg.peaks[i],
+		UL(msg.defns.map((defn, i) => LI([
+			SPAN({style: "color: rgb(" + defn.color.join(",") + ")"}, defn.prefix), " ", ""+msg.peaks[i], " ", defn.unit,
 		]))),
 	]);
 }
