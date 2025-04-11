@@ -441,6 +441,14 @@ class websocket_handler
 	}
 }
 
+int concurrent_websockets() {
+	int socks;
+	foreach (G->G->websocket_types;; object ws)
+		foreach (ws->websocket_groups;; array grp)
+			if (grp) socks += sizeof(grp);
+	return socks;
+}
+
 array(string) token_for_user_login(string login) {
 	mapping cred = login && G->G->user_credentials[lower_case(login)];
 	if (cred) return ({cred->token, cred->scopes * " "});

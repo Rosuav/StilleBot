@@ -1224,8 +1224,8 @@ void session_cleanup() {
 	G->G->DB->query_rw("delete from stillebot.http_sessions where active < now () - '7 days'::interval");
 }
 
-__async__ void http_request(Protocols.HTTP.Server.Request req)
-{
+__async__ void http_request(Protocols.HTTP.Server.Request req) {
+	G->G->serverstatus_statistics->http_request_count++;
 	req->misc->session = await(G->G->DB->load_session(req->cookies->session));
 	if (string dest = req->request_type == "GET" && req->misc->session->autoxfr) {
 		//This check shouldn't be necessary; the session value can't easily be set except on this one host.
@@ -1405,6 +1405,10 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 			h->websocket_groups[conn->prefs_uid = uid] += ({conn->sock});
 			call_out(h->websocket_cmd_prefs_send, 0, conn, ([]));
 		}
+		//For statistical purposes, count concurrent websockets and establish a high water mark.
+		int socks = concurrent_websockets();
+		//NOTE: Ideally, this would be an atomic set-to-max. It currently isn't, but this is unlikely to cause issues.
+		if (socks > G->G->serverstatus_statistics->websocket_hwm) G->G->serverstatus_statistics->websocket_hwm = socks;
 	}
 	if (data->cmd == "error") {
 		//TODO: Have a way to enable and disable this so it only shows up for self
