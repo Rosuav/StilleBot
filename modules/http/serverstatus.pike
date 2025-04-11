@@ -118,9 +118,10 @@ void loadstats() {
 	//eg "WS26" means there were 26 websockets active during this time (high water mark).
 	//All queries of the server stats should be atomically destructive, ensuring that consistent
 	//numbers are used even if other operations are concurrently incrementing them.
-	Stdio.append_file("serverstatus.log", sprintf("%s D%d WS%d HTTP%d API%d IRC%d DB%d\n",
+	Stdio.append_file("serverstatus.log", sprintf("%s D%d A%d WS%d HTTP%d API%d IRC%d DB%d\n",
 		Calendar.ISO.Second()->format_time(),
 		stats->time && time() - stats->time, //Duration of statistical period
+		is_active_bot(), //Note that this does not show whether we were active DURING the time, just at the end of it.
 		m_delete(stats, "websocket_hwm"),
 		m_delete(stats, "http_request_count"),
 		m_delete(stats, "api_request_count"),
