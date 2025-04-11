@@ -7,7 +7,7 @@ constant markdown = #"# StilleBot server status
 [Mini-view](#mini)
 
 <p id=content></p>
-<img id=graph>
+<figure id=graph><img><figcaption></figcaption></figure>
 
 <style>
 .label {
@@ -25,7 +25,13 @@ constant markdown = #"# StilleBot server status
 .db {
 	margin-right: 1em;
 }
+
 #graph {
+	display: flex;
+	gap: 8px;
+	margin: 0;
+}
+#graph img {
 	max-height: 384px;
 }
 </style>
@@ -123,7 +129,7 @@ constant COLOR_DEFINITIONS = ([
 void send_graph(array socks) {
 	//Read the log, grab the latest N entries, and plot them
 	array lines = ((Stdio.read_file("serverstatus.log") || "") / "\n")[<100..];
-	array data = ({ }), colors = ({ });
+	array data = ({ }), colors = ({ }), labels = ({ }), peaks = ({ });
 	mapping plots = ([]);
 	foreach (lines, string line) {
 		array parts = (line / " ")[2..]; //Ignore the date and time at the start
@@ -131,18 +137,20 @@ void send_graph(array socks) {
 			sscanf(part, "%[A-Za-z]%d", string pfx, int val);
 			//TODO: If we have a Duration (eg "D60"), rescale everything to match that.
 			array col = COLOR_DEFINITIONS[pfx]; if (!col) continue; //If no color specified for this prefix, don't display it
-			if (!plots[pfx]) {
+			if (undefinedp(plots[pfx])) {
 				plots[pfx] = sizeof(data);
 				data += ({({ })});
 				colors += ({col});
+				labels += ({pfx});
+				peaks += ({val});
 			}
 			data[plots[pfx]] += ({val});
 		}
 	}
 	if (!sizeof(data)) return; //Nothing to plot
 	//Rescale everything to its own maximum
-	foreach (data, array plot) {
-		int peak = max(@plot);
+	foreach (data; int i; array plot) {
+		int peak = peaks[i] = max(@plot);
 		if (peak) plot[*] /= (float)peak;
 	}
 	Image.Image img = Graphics.Graph.line(([
@@ -152,7 +160,11 @@ void send_graph(array socks) {
 	]));
 	//Turn the plot into a PNG, make that PNG into a data: URI, and send it
 	//to the sockets that need it.
-	mapping msg = (["cmd": "graph", "image": "data:image/png;base64," + MIME.encode_base64(Image.PNG.encode(img))]);
+	mapping msg = ([
+		"cmd": "graph",
+		"image": "data:image/png;base64," + MIME.encode_base64(Image.PNG.encode(img)),
+		"colors": colors, "labels": labels, "peaks": peaks,
+	]);
 	foreach (socks, mapping conn)
 		send_msg(conn, msg);
 }

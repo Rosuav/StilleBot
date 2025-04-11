@@ -1,5 +1,5 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {P, SPAN} = choc; //autoimport
+const {H3, LI, P, SPAN, UL} = choc; //autoimport
 
 const sharedattrs = {cpu: "CPU", ram: "RAM", spinner: -1};
 const attrs = {
@@ -42,10 +42,16 @@ export const ws_host = "sikorsky.mustardmine.com";
 export const ws_config = {quiet: {msg: 1}};
 ws_sync.send({cmd: "graph"});
 export function sockmsg_graph(msg) {
-	const img = DOM("#graph");
-	if (img) img.src = msg.image;
+	const fig = DOM("#graph"); //Absent in mini-mode
+	if (!fig) return;
+	DOM("#graph img").src = msg.image;
+	set_content("#graph figcaption", [
+		H3("Load peaks"),
+		UL(msg.labels.map((lbl, i) => LI([
+			SPAN({style: "color: rgb(" + msg.colors[i].join(",") + ")"}, lbl), " ", ""+msg.peaks[i],
+		]))),
+	]);
 }
-//TODO: On graph click, pop up a larger version - it's been scaled down with CSS
 
 ws_sync.connect("", {
 	ws_config: {quiet: {msg: 1}},
