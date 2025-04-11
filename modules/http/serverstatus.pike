@@ -7,6 +7,7 @@ constant markdown = #"# StilleBot server status
 [Mini-view](#mini)
 
 <p id=content></p>
+<img id=graph>
 
 <style>
 .label {
@@ -23,6 +24,9 @@ constant markdown = #"# StilleBot server status
 }
 .db {
 	margin-right: 1em;
+}
+#graph {
+	max-height: 384px;
 }
 </style>
 ";
@@ -108,6 +112,51 @@ void update() {
 	if (!sizeof(websocket_groups[""])) G->G->serverstatus_updater = 0;
 }
 
+constant COLOR_DEFINITIONS = ([
+	"WS": ({0x66, 0x33, 0x99}),
+	"HTTP": ({0x80, 0x10, 0x10}),
+	"API": ({0x10, 0x80, 0x10}),
+	"IRC": ({0x10, 0x10, 0x80}),
+	"DB": ({0x10, 0x80, 0x80}),
+]);
+
+void send_graph(array socks) {
+	//Read the log, grab the latest N entries, and plot them
+	array lines = ((Stdio.read_file("serverstatus.log") || "") / "\n")[<100..];
+	array data = ({ }), colors = ({ });
+	mapping plots = ([]);
+	foreach (lines, string line) {
+		array parts = (line / " ")[2..]; //Ignore the date and time at the start
+		foreach (parts, string part) {
+			sscanf(part, "%[A-Za-z]%d", string pfx, int val);
+			//TODO: If we have a Duration (eg "D60"), rescale everything to match that.
+			array col = COLOR_DEFINITIONS[pfx]; if (!col) continue; //If no color specified for this prefix, don't display it
+			if (!plots[pfx]) {
+				plots[pfx] = sizeof(data);
+				data += ({({ })});
+				colors += ({col});
+			}
+			data[plots[pfx]] += ({val});
+		}
+	}
+	if (!sizeof(data)) return; //Nothing to plot
+	//Rescale everything to its own maximum
+	foreach (data, array plot) {
+		int peak = max(@plot);
+		if (peak) plot[*] /= (float)peak;
+	}
+	Image.Image img = Graphics.Graph.line(([
+		"data": data,
+		"xsize": 1024, "ysize": 768,
+		"datacolors": colors,
+	]));
+	//Turn the plot into a PNG, make that PNG into a data: URI, and send it
+	//to the sockets that need it.
+	mapping msg = (["cmd": "graph", "image": "data:image/png;base64," + MIME.encode_base64(Image.PNG.encode(img))]);
+	foreach (socks, mapping conn)
+		send_msg(conn, msg);
+}
+
 constant LOADSTATS_PERIOD = 60;
 void loadstats() {
 	G->G->serverstatus_loadstats = call_out(loadstats, LOADSTATS_PERIOD);
@@ -130,7 +179,11 @@ void loadstats() {
 	));
 	stats->time = time();
 	stats->websocket_hwm = concurrent_websockets();
+	array ws = websocket_groups[""] || ({ });
+	if (sizeof(ws)) send_graph(ws);
 }
+
+void websocket_cmd_graph(mapping(string:mixed) conn, mapping(string:mixed) msg) {send_graph(({conn}));}
 
 protected void create(string name) {
 	::create(name);

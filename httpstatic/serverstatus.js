@@ -31,6 +31,7 @@ function update(data, par) {
 		data.livedb?.host && ["DB: ", data.livedb.host, " (" + Math.floor(data.livedb.ping * 1000) + " ms)"],
 		data.fastdb?.host && [" Alt DB: ", data.fastdb.host, " (" + Math.floor(data.fastdb.ping * 1000) + " ms)"],
 	]);
+	//Can't shortcut sockets b/c it's not a percentage
 	set_content("#" + par + " .sockets", [
 		"Users: ", data.socket_count,
 		" ",
@@ -39,6 +40,12 @@ function update(data, par) {
 export function render(data) {update(data, "Sikorsky");}
 export const ws_host = "sikorsky.mustardmine.com";
 export const ws_config = {quiet: {msg: 1}};
+ws_sync.send({cmd: "graph"});
+export function sockmsg_graph(msg) {
+	const img = DOM("#graph");
+	if (img) img.src = msg.image;
+}
+//TODO: On graph click, pop up a larger version - it's been scaled down with CSS
 
 ws_sync.connect("", {
 	ws_config: {quiet: {msg: 1}},
