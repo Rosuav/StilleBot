@@ -119,11 +119,11 @@ void update() {
 }
 
 constant LOAD_DEFINITIONS = ([
-	"WS": (["color": ({0x66, 0x33, 0x99}), "unit": "peak users"]),
-	"HTTP": (["color": ({0x80, 0x10, 0x10}), "unit": "req/time"]),
-	"API": (["color": ({0x10, 0x80, 0x10}), "unit": "req/time"]),
-	"IRC": (["color": ({0x10, 0x10, 0x80}), "unit": "msg/time"]),
-	"DB": (["color": ({0x10, 0x80, 0x80}), "unit": "req/time"]),
+	"WS": (["color": ({0x66, 0x33, 0x99}), "unit": "concurrent users", "unscaled": 1]),
+	"HTTP": (["color": ({0x80, 0x10, 0x10}), "unit": "req/sec"]),
+	"API": (["color": ({0x10, 0x80, 0x10}), "unit": "req/sec"]),
+	"IRC": (["color": ({0x10, 0x10, 0x80}), "unit": "msgs/sec"]),
+	"DB": (["color": ({0x10, 0x80, 0x80}), "unit": "req/sec"]),
 ]);
 
 void send_graph(array socks) {
@@ -133,10 +133,12 @@ void send_graph(array socks) {
 	mapping plots = ([]);
 	foreach (lines, string line) {
 		array parts = (line / " ")[2..]; //Ignore the date and time at the start
+		float duration = 1.0;
 		foreach (parts, string part) {
-			sscanf(part, "%[A-Za-z]%d", string pfx, int val);
-			//TODO: If we have a Duration (eg "D60"), rescale everything to match that.
+			sscanf(part, "%[A-Za-z]%d", string pfx, int|float val);
+			if (pfx == "D") {if (!val) break; duration = (float)val;} //Duration zero? Ignore the line.
 			mapping ld = LOAD_DEFINITIONS[pfx]; if (!ld) continue; //Unknowns do not get displayed
+			if (!ld->unscaled) val /= duration; //Some plots are not per-second (most are)
 			if (undefinedp(plots[pfx])) {
 				plots[pfx] = sizeof(data);
 				data += ({({ })});
@@ -151,7 +153,7 @@ void send_graph(array socks) {
 	//Rescale everything to its own maximum
 	foreach (data; int i; array plot) {
 		int peak = peaks[i] = max(@plot);
-		if (peak) plot[*] /= (float)peak;
+		if (peak > 0.0) plot[*] /= (float)peak;
 	}
 	Image.Image img = Graphics.Graph.line(([
 		"data": data,

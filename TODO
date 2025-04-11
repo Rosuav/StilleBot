@@ -250,3 +250,8 @@
   - See All Fields
 * Possible bug: If ws_type is set on a module, it is still storing itself into
   websockets_types[] and websockets_groups[] by name. Check for consequences.
+* Make the serverstatus graph fully client-side interactive
+  - Look for some graphing/plotting libraries, but if not easy, make one ourselves w/ CANVAS
+  - Show separate axes (speaking of axes, off with her head!) for the different plots
+  - Remove the serverside rescaling, but rescale similarly on the client
+  - If mouse over canvas, show nearest dot to cursor w/ exact values (snap to data points)

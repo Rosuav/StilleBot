@@ -41,6 +41,14 @@ export function render(data) {update(data, "Sikorsky");}
 export const ws_host = "sikorsky.mustardmine.com";
 export const ws_config = {quiet: {msg: 1}};
 ws_sync.send({cmd: "graph"});
+
+function number(n) {
+	if (n < 0) return "-" + number(-n);
+	if (n === Math.floor(n)) return ""+Math.floor(n);
+	//Round non-integers to two decimal places
+	return ""+(Math.round(n * 100) / 100);
+}
+
 export function sockmsg_graph(msg) {
 	const fig = DOM("#graph"); //Absent in mini-mode
 	if (!fig) return;
@@ -48,7 +56,7 @@ export function sockmsg_graph(msg) {
 	set_content("#graph figcaption", [
 		H3("Load peaks"),
 		UL(msg.defns.map((defn, i) => LI([
-			SPAN({style: "color: rgb(" + defn.color.join(",") + ")"}, defn.prefix), " ", ""+msg.peaks[i], " ", defn.unit,
+			SPAN({style: "color: rgb(" + defn.color.join(",") + ")"}, defn.prefix), " ", number(msg.peaks[i]), " ", defn.unit,
 		]))),
 	]);
 }
