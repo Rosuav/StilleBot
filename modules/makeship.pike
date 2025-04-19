@@ -15,14 +15,14 @@ __async__ void pingmakeship() {
 			(["Authorization": channel->userid])));
 		channel->send((["user": "devicat", "uid": channel->userid]), ({
 			"devicatAww Thank you! We now have $pledges$ sales!! devicatBless",
-			/*([
+			([
 				"builtin": "chan_streamsetup",
 				"builtin_param": ({
 					"title",
-					Regexp.replace("([0-9]+) Pledges", prev->data[0]->title, n + " Pledges"),
+					Regexp.replace("([0-9]+) Plushies Adopted", prev->data[0]->title, n + " Plushies Adopted"),
 				}),
 				"message": "",
-			]),*/
+			]),
 		}));
 	}
 }
