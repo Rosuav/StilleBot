@@ -256,3 +256,8 @@
   - Show separate axes (speaking of axes, off with her head!) for the different plots
   - Remove the serverside rescaling, but rescale similarly on the client
   - If mouse over canvas, show nearest dot to cursor w/ exact values (snap to data points)
+* Pile of Pics
+  - https://brm.io/matter-js/
+  - Can integrate with pretty much anything
+  - Example: Every time a goal bar fills, drop another thing onto the pile
+  - Look into what it would take to make fixed items that work magically using transparency
