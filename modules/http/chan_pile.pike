@@ -26,8 +26,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		]));
 	}
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
+	array emotes = await(twitch_api_request("https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + req->misc->channel->userid))->data;
+	emotes = emotes->images->url_2x - ({0}); //Shouldn't normally be any nulls but just in case
 	return render(req, ([
-		"vars": (["ws_group": ""]),
+		"vars": (["ws_group": "", "emotes": emotes]),
 	]) | req->misc->chaninfo);
 }
 

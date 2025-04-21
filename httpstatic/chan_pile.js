@@ -19,7 +19,11 @@ export function render_item(msg, obj) {
 export function render(data) { }
 
 setInterval(() => {
-	Matter.Composite.add(engine.world, Rectangle(Math.floor(Math.random() * 600), Math.floor(Math.random() * 100 + 100), 80, 80));
+	const img = emotes[Math.floor(Math.random() * emotes.length)];
+	
+	Matter.Composite.add(engine.world, Rectangle(Math.floor(Math.random() * 600), Math.floor(Math.random() * 100 + 100), 56, 56, {
+		render: {sprite: {texture: img}},
+	}));
 }, 2000);
 //TODO: If stable mode is selected, then after adding something, set a quarter-second interval timer to
 //check the newly created thing's speed, and if it's low enough, setStatic() on it.
