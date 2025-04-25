@@ -255,6 +255,7 @@ on("click", "#createvar", e => {
 });
 
 on("submit", "dialog form", async e => {
+	if (e.submitter.value === "cancel") return; //The "Cancel" button is actually a submit-type button to make it manage the dialog, but don't actually save anything
 	const dlg = e.match.closest("dialog");
 	const body = {cmd: "updatemonitor", nonce: dlg.dataset.nonce, type: dlg.id.slice(4)};
 	for (let el of e.match.elements)
