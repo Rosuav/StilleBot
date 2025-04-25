@@ -20,9 +20,8 @@ export function render(data) { }
 
 setInterval(() => {
 	const img = emotes[Math.floor(Math.random() * emotes.length)];
-	
-	const obj = Rectangle(Math.floor(Math.random() * 600), Math.floor(Math.random() * 100 + 100), 56, 56, {
-		render: {sprite: {texture: img, xOffset: 0, yOffset: 0}},
+	const obj = Rectangle(Math.floor(Math.random() * 600), Math.floor(Math.random() * 100 + 100), img.xsize, img.ysize, {
+		render: {sprite: {texture: img.fn, xOffset: img.xoffset, yOffset: img.yoffset}},
 	});
 	//Angles are measured in radians. Angular velocity seems to be rad/frame and we're at
 	//60Hz physics rate, meaning that 0.01 will rotate you by 0.60 rad/sec (before friction is
