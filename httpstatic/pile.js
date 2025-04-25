@@ -1,6 +1,8 @@
 const engine = Matter.Engine.create();
 const width = window.innerWidth - 20, height = window.innerHeight - 20;
-console.log(width, height)
+//NOTE: For debugging and testing, background and fillStyle are both colours. For
+//production, they should probably be set to transparent, with actual elements for
+//interaction purposes.
 const renderer = Matter.Render.create({element: document.getElementById("display"), engine, options: {
 	background: "aliceblue", width, height,
 }});
@@ -32,3 +34,15 @@ setInterval(() => {
 //TODO: If stable mode is selected, then after adding something, set a quarter-second interval timer to
 //check the newly created thing's speed, and if it's low enough, setStatic() on it.
 //Alternatively, set everything to Sleeping? Wake them up when something new is added?
+/* Next steps:
+
+* Create an object type ("category", need a good name for it)
+* Upload an image for an object type - may be done more than once. If not done, will use Mustard Mine squavatar.
+* Builtin to manipulate objects
+  - Needs a type. Will only manipulate objects of that type.
+  - Add N (default to 1), remove N (default to 1), or set to N on screen
+    - "+1", "-1", "1"?
+* Handle objects falling off the bottom?
+* On the edit dlg, button to add/remove objects given a type
+
+*/
