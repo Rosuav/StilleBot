@@ -172,9 +172,9 @@ DOM("#editnotes").onclose = e => {
 }
 
 export function sockmsg_highlights(msg) {
-	highlights = response.highlights;
+	highlights = msg.highlights;
 	//The highlight IDs are there too if needed.
-	console.log(response.highlightids);
+	console.log(msg.highlightids);
 }
 
 DOM("#highlights").onclick = () => {
