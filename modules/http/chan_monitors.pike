@@ -42,6 +42,18 @@ constant monitorstyles = #"
 }
 ";
 
+/* The Pile of Stuff
+
+To update the physics engine:
+- https://brm.io/matter-js/docs/
+- Download the released version of matter-js - currently https://github.com/liabru/matter-js/releases/tag/0.20.0
+- Copy build/matter.min.js into .../httpstatic/
+It's MIT-licensed so this should be all legal.
+*/
+constant pilestyles = #"
+
+";
+
 constant builtin_name = "Monitors"; //The front end may redescribe this according to the parameters
 constant builtin_description = "Get information about a channel monitor";
 //NOTE: The labels for parameters 1 and 2 will be replaced by the GUI editor based on monitor type.
@@ -69,7 +81,52 @@ constant saveable_attributes = "previewbg barcolor fillcolor altcolor needlesize
 	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive startonscene startonscene_time record_leaderboard "
 	"twitchsched twitchsched_offset" / " " + TEXTFORMATTING_ATTRS;
 constant retained_attributes = (<"boss_selfheal", "boss_giftrecipient">); //Attributes set externally, not editable.
-constant valid_types = (<"text", "goalbar", "countdown">);
+constant valid_types = (<"text", "goalbar", "countdown", "pile">);
+
+//TODO: Any time they get updated, push out a new message to the appropriate group.
+//It's not in the regular state as this may be quite noisy.
+@retain: mapping bounding_box_cache = ([]); //Won't be necessary once proper uploading of sprites is done
+__async__ mapping get_thing_types(int userid) {
+	array emotes = await(twitch_api_request("https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + userid))->data;
+	emotes = emotes->images->url_2x - ({0}); //Shouldn't normally be any nulls but just in case
+	//Grab each image (cached if possible) and calculate the bounding box.
+	//Ultimately this will be done on upload and saved.
+	int limit = 50; //If you have more than 50 emotes, you'll have to load multiple times to see them all. Won't be an issue once sprites get uploaded.
+	foreach (emotes; int i; string fn) {
+		if (mapping em = bounding_box_cache[fn]) {emotes[i] = em; continue;}
+		if (!--limit) {write("Limit exceeded at %d/%d\n", i, sizeof(emotes)); emotes = emotes[..i-1]; break;}
+		object res = await(Protocols.HTTP.Promise.get_url(fn));
+		mapping img = Image.PNG._decode(res->get());
+		if (!img->alpha) {
+			//No alpha? Just use the box itself.
+			emotes[i] = bounding_box_cache[fn] = ([
+				"fn": fn,
+				"xsize": img->xsize, "ysize": img->ysize,
+				"xoffset": 0, "yoffset": 0,
+			]);
+			continue;
+		}
+		Image.Image searchme = img->alpha->threshold(5);
+		[int left, int top, int right, int bottom] = searchme->find_autocrop();
+		//If we need to do any more sophisticated hull-finding, here's where to do it. For now, just the box.
+		//TODO: Allow the user to choose a circular hull, specifying the size and position.
+		//If we're cropping at all, add an extra pixel of room for safety. Note that this
+		//also protects against entirely transparent images, as it'll make a tiny box in
+		//the middle instead of a degenerate non-box.
+		if (left > 0) left--;
+		if (top > 0) top--;
+		if (right < img->xsize - 1) right++;
+		if (bottom < img->ysize - 1) bottom++;
+		int wid = right - left, hgh = bottom - top;
+		emotes[i] = bounding_box_cache[fn] = ([
+			"fn": fn,
+			"xsize": wid, "ysize": hgh,
+			"xoffset": -left / (float)wid,
+			"yoffset": -top / (float)hgh,
+		]);
+	}
+	return (["emotes": emotes]);
+}
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	mapping monitors = G->G->DB->load_cached_config(req->misc->channel->userid, "monitors");
@@ -78,11 +135,20 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		string|zero nonce = req->variables->view;
 		mapping info = monitors[nonce];
 		if (!info) nonce = 0;
+		//Pile of Pics has different code, best to isolate them.
+		if (info->type == "pile") return render_template("monitor.html", ([
+			"vars": ([
+				"ws_type": ws_type, "ws_group": nonce + "#" + req->misc->channel->userid, "ws_code": "pile",
+				"thingtypes": await(get_thing_types(req->misc->channel->userid)),
+			]),
+			"styles": pilestyles,
+			//Can't use "js": "matter.min.js" because that would make a type=module script element,
+			//and matter-js as of 0.20.0 does not support module-style loading.
+			"extra_scripts": "<script src=\"" + G->G->template_defaults["static"]("matter.min.js") + "\"></script>",
+		]));
 		return render_template("monitor.html", ([
 			"vars": (["ws_type": ws_type, "ws_group": nonce + "#" + req->misc->channel->userid, "ws_code": "monitor"]),
-			//Note that $$styles$$ is used differently in chan_subpoints which reuses monitor.html.
 			"styles": monitorstyles,
-
 		]));
 	}
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);

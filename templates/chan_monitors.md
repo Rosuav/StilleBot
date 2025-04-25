@@ -28,7 +28,8 @@ loading... | - | -
 > </form>
 {: tag=dialog #editcountdown}
 
-[Add text monitor](:#add_text) [Add goal bar](:#add_goalbar) [Add countdown timer](:#add_countdown)
+[Add text monitor](:.add_monitor data-type=text) [Add goal bar](:.add_monitor data-type=goalbar)
+[Add countdown timer](:.add_monitor data-type=countdown) [Add Pile of Pics](:.add_monitor data-type=pile)
 
 > ### Edit text monitor
 >
@@ -49,3 +50,14 @@ The text can (and should!) incorporate variables, eg <code>$foo$</code>. Wheneve
 > [Save](: type=submit value=save) [Cancel](: type=submit value=cancel)
 > </form>
 {: tag=dialog #editgoalbar}
+
+Note that Piles of Pics may re-drop all objects if the page is refreshed.
+
+> ### Edit pile of pics
+>
+> <form method=dialog>
+> <div></div>
+>
+> [Save](: type=submit value=save) [Cancel](: type=submit value=cancel)
+> </form>
+{: tag=dialog #editpile}

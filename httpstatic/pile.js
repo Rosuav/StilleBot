@@ -1,7 +1,3 @@
-import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, CODE, DIV, FIELDSET, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
-
-//Physics engine. TODO: Do we need one for each page or one for each pile?
 const engine = Matter.Engine.create();
 const renderer = Matter.Render.create({element: document.body, engine, options: {
 	background: "#0000",
@@ -14,13 +10,11 @@ Matter.Runner.run(Matter.Runner.create(), engine);
 renderer.options.wireframes = false;
 window.renderer = renderer; //For debugging, eg toggle wireframes mode
 
-export const render_parent = DOM("main"); //fixme
-export function render_item(msg, obj) {
-}
 export function render(data) { }
 
 setInterval(() => {
-	const img = emotes[Math.floor(Math.random() * emotes.length)];
+	const cat = thingtypes.emotes; //TODO: User selection from the available categories
+	const img = cat[Math.floor(Math.random() * cat.length)];
 	const obj = Rectangle(Math.floor(Math.random() * 600), Math.floor(Math.random() * 100 + 100), img.xsize, img.ysize, {
 		render: {sprite: {texture: img.fn, xOffset: img.xoffset, yOffset: img.yoffset}},
 	});

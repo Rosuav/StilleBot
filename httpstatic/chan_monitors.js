@@ -258,9 +258,7 @@ on("submit", "dialog form", async e => {
 	ws_sync.send(body);
 });
 
-on("click", "#add_text", e => ws_sync.send({cmd: "addmonitor", type: "text"}));
-on("click", "#add_goalbar", e => ws_sync.send({cmd: "addmonitor", type: "goalbar"}));
-on("click", "#add_countdown", e => ws_sync.send({cmd: "addmonitor", type: "countdown"}));
+on("click", ".add_monitor", e => ws_sync.send({cmd: "addmonitor", type: e.match.dataset.type}));
 
 on("click", ".editbtn", e => {
 	const nonce = e.match.closest("tr").dataset.id;
