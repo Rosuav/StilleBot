@@ -21,9 +21,14 @@ export function render(data) { }
 setInterval(() => {
 	const img = emotes[Math.floor(Math.random() * emotes.length)];
 	
-	Matter.Composite.add(engine.world, Rectangle(Math.floor(Math.random() * 600), Math.floor(Math.random() * 100 + 100), 56, 56, {
-		render: {sprite: {texture: img}},
-	}));
+	const obj = Rectangle(Math.floor(Math.random() * 600), Math.floor(Math.random() * 100 + 100), 56, 56, {
+		render: {sprite: {texture: img, xOffset: 0, yOffset: 0}},
+	});
+	//Angles are measured in radians. Angular velocity seems to be rad/frame and we're at
+	//60Hz physics rate, meaning that 0.01 will rotate you by 0.60 rad/sec (before friction is
+	//taken into account). Provide each newly-added element with a bit of rotation, either direction.
+	Matter.Body.setAngularVelocity(obj, Math.random() * .2 - .1);
+	Matter.Composite.add(engine.world, obj);
 }, 2000);
 //TODO: If stable mode is selected, then after adding something, set a quarter-second interval timer to
 //check the newly created thing's speed, and if it's low enough, setStatic() on it.

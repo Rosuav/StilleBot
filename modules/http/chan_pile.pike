@@ -4,6 +4,7 @@ inherit annotated;
 /* The Pile of Stuff
 
 To update the physics engine:
+- https://brm.io/matter-js/docs/
 - Download the released version of matter-js - currently https://github.com/liabru/matter-js/releases/tag/0.20.0
 - Copy build/matter.min.js into .../httpstatic/
 It's MIT-licensed so this should be all legal.
