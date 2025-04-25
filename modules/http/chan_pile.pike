@@ -17,6 +17,8 @@ constant markdown = #"# Pile of Pics for $$channel$$
 
 ";
 
+@retain: mapping bounding_box_cache = ([]);
+
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	mapping pile = await(G->G->DB->load_config(req->misc->channel->userid, "pile"));
 	if (string|zero nonce = req->variables->view) {
@@ -32,6 +34,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	//Grab each image (cached if possible) and calculate the bounding box.
 	//Ultimately this will be done on upload and saved.
 	foreach (emotes; int i; string fn) {
+		if (mapping em = bounding_box_cache[fn]) {emotes[i] = em; continue;}
 		object res = await(Protocols.HTTP.Promise.get_url(fn));
 		mapping img = Image.PNG._decode(res->get());
 		Image.Image searchme = img->alpha->threshold(5);
@@ -46,7 +49,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		if (right < img->xsize - 1) right++;
 		if (bottom < img->ysize - 1) bottom++;
 		int wid = right - left, hgh = bottom - top;
-		emotes[i] = ([
+		emotes[i] = bounding_box_cache[fn] = ([
 			"fn": fn,
 			"xsize": wid, "ysize": hgh,
 			"xoffset": -left / (float)wid,
