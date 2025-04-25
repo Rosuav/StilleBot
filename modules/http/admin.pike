@@ -13,7 +13,11 @@ mapping handle_send_message(mapping body, object req) {
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
 	//These tools are only available from localhost and maybe the local network.
-	if (!NetUtils.is_local_host(req->get_ip()) && !has_prefix(req->get_ip(), "192.168.")) return (["error": 401, "data": "Nope"]);
+	if (
+		!NetUtils.is_local_host(req->get_ip())
+		&& !has_prefix(req->get_ip(), "192.168.")
+		&& !has_prefix(req->get_ip(), "2403:5803:bf48:")
+	) return (["error": 401, "data": "Nope, not from " + req->get_ip()]);
 	if (req->request_type == "POST") {
 		catch { //Any sort of error, just return a nope
 			mixed body = Standards.JSON.decode(utf8_to_string(req->body_raw || ""));
