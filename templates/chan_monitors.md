@@ -55,6 +55,8 @@ Note that Piles of Pics may re-drop all objects if the page is refreshed.
 
 > ### Edit pile of pics
 >
+> Coming soon: Create and manage the things that get dropped!
+>
 > <form method=dialog>
 > <div></div>
 >
