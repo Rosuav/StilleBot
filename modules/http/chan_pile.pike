@@ -33,10 +33,21 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	emotes = emotes->images->url_2x - ({0}); //Shouldn't normally be any nulls but just in case
 	//Grab each image (cached if possible) and calculate the bounding box.
 	//Ultimately this will be done on upload and saved.
+	int limit = 50; //If you have more than 50 emotes, you'll have to load multiple times to see them all. Won't be an issue once sprites get uploaded.
 	foreach (emotes; int i; string fn) {
 		if (mapping em = bounding_box_cache[fn]) {emotes[i] = em; continue;}
+		if (!--limit) {write("Limit exceeded at %d/%d\n", i, sizeof(emotes)); emotes = emotes[..i-1]; break;}
 		object res = await(Protocols.HTTP.Promise.get_url(fn));
 		mapping img = Image.PNG._decode(res->get());
+		if (!img->alpha) {
+			//No alpha? Just use the box itself.
+			emotes[i] = bounding_box_cache[fn] = ([
+				"fn": fn,
+				"xsize": img->xsize, "ysize": img->ysize,
+				"xoffset": 0, "yoffset": 0,
+			]);
+			continue;
+		}
 		Image.Image searchme = img->alpha->threshold(5);
 		[int left, int top, int right, int bottom] = searchme->find_autocrop();
 		//If we need to do any more sophisticated hull-finding, here's where to do it. For now, just the box.

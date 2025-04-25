@@ -12,6 +12,7 @@ Matter.Composite.add(engine.world, Rectangle(400, 610, 810, 60, {isStatic: true,
 Matter.Render.run(renderer);
 Matter.Runner.run(Matter.Runner.create(), engine);
 renderer.options.wireframes = false;
+window.renderer = renderer; //For debugging, eg toggle wireframes mode
 
 export const render_parent = DOM("main"); //fixme
 export function render_item(msg, obj) {
