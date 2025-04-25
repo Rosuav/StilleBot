@@ -17,7 +17,8 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 		!NetUtils.is_local_host(req->get_ip())
 		&& !has_prefix(req->get_ip(), "192.168.")
 		&& !has_prefix(req->get_ip(), "2403:5803:bf48:")
-	) return (["error": 401, "data": "Nope, not from " + req->get_ip()]);
+		&& !has_prefix(req->get_ip(), "fe80::")
+	) return (["error": 401, "data": "Nope"]);
 	if (req->request_type == "POST") {
 		catch { //Any sort of error, just return a nope
 			mixed body = Standards.JSON.decode(utf8_to_string(req->body_raw || ""));
