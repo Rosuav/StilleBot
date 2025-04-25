@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, CODE, DIV, FIELDSET, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
+const {A, BR, BUTTON, CODE, DIV, FIELDSET, IFRAME, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
 import {update_display, formatters} from "$$static||monitor.js$$";
 import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
 
@@ -75,7 +75,11 @@ export function render_item(msg, obj) {
 		]),
 		TD(A({className: "monitorlink", href: "monitors?view=" + nonce}, "Drag me to OBS")),
 	]);
-	update_display(el.querySelector(".preview"), editables[nonce]);
+	//HACK: For pile o' pics, the preview is actually just iframed in. Lower performance but easier.
+	if (editables[nonce].type === "pile")
+		//TODO: Get the width and height once they're configurable
+		set_content(el.querySelector(".preview"), IFRAME({src: "monitors?view=" + nonce, "width": 600, "height": 400}));
+	else update_display(el.querySelector(".preview"), editables[nonce]);
 	el.querySelector(".preview-bg").style.backgroundColor = editables[nonce].previewbg;
 	setTimeout(() => { //Wait till the preview has rendered, then measure it for the link
 		const box = el.querySelector(".preview").getBoundingClientRect();

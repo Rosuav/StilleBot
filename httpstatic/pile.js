@@ -1,10 +1,15 @@
 const engine = Matter.Engine.create();
-const renderer = Matter.Render.create({element: document.body, engine, options: {
-	background: "#0000",
+const width = window.innerWidth - 20, height = window.innerHeight - 20;
+console.log(width, height)
+const renderer = Matter.Render.create({element: document.getElementById("display"), engine, options: {
+	background: "aliceblue", width, height,
 }});
 const Rectangle = Matter.Bodies.rectangle;
-//The ground
-Matter.Composite.add(engine.world, Rectangle(400, 610, 810, 60, {isStatic: true, render: {fillStyle: "transparent", lineWidth: 0}}));
+//The ground. TODO: Size this to the available space.
+//???? The x position of this rectangle confuses me. Setting it to 0 has the floor
+//run way off the left edge, having it at (roughly) half the width works. Why?
+Matter.Composite.add(engine.world, Rectangle(width / 2, height + 10, width + 10, 60,
+	{isStatic: true, render: {fillStyle: "rebeccapurple", lineWidth: 0}}));
 Matter.Render.run(renderer);
 Matter.Runner.run(Matter.Runner.create(), engine);
 renderer.options.wireframes = false;
@@ -15,7 +20,7 @@ export function render(data) { }
 setInterval(() => {
 	const cat = thingtypes.emotes; //TODO: User selection from the available categories
 	const img = cat[Math.floor(Math.random() * cat.length)];
-	const obj = Rectangle(Math.floor(Math.random() * 600), Math.floor(Math.random() * 100 + 100), img.xsize, img.ysize, {
+	const obj = Rectangle(Math.floor(Math.random() * width), Math.floor(Math.random() * 100 + 10), img.xsize, img.ysize, {
 		render: {sprite: {texture: img.fn, xOffset: img.xoffset, yOffset: img.yoffset}},
 	});
 	//Angles are measured in radians. Angular velocity seems to be rad/frame and we're at
