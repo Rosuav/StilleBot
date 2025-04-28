@@ -248,6 +248,13 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 		"needlesize": "0.375",
 		"active": 1,
 	]);
+	if (msg->type == "pile") monitors[nonce] |= ([
+		"things": ({([
+			"id": "default",
+			"xsize": 20, "ysize": 20,
+			"images": ({"/static/MustardMineAvatar.png"}),
+		])}),
+	]);
 	mapping info = monitors[nonce];
 	//Hack: Create a new variable for a new goal bar/countdown.
 	if ((<"countdown", "goalbar">)[msg->type]) {
@@ -288,6 +295,42 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 	await(G->G->DB->save_config(channel->userid, "monitors", monitors));
 	send_updates_all(channel, nonce);
 	update_one(channel, "", nonce);
+}
+
+@"is_mod": __async__ void wscmd_managethings(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
+	mapping info = monitors[msg->nonce]; if (!info) return;
+	if (msg->remove) {
+		info->things = filter(info->things) {return __ARGS__[0]->id != msg->remove;};
+		if (!sizeof(info->things)) msg->add = 1;
+	}
+	if (msg->add) {
+		multiset ids = (multiset)info->things->id;
+		string id = "default";
+		//If you remove the last category, a new "default" category will be added.
+		//Otherwise, adding a cat will give it an id of "thing-1", "thing-2", etc.
+		//You can freely rename the categories, but we will never create a "default"
+		//if there are any other categories stored.
+		if (sizeof(ids)) for (int i = 1; ids[id = "thing-" + i]; ++i);
+		info->things += ({([
+			"id": id,
+			"xsize": 20, "ysize": 20,
+			"images": ({"/static/MustardMineAvatar.png"}),
+		])});
+	}
+	if (msg->update) {
+		int idx = search(info->things->id, msg->update);
+		if (idx >= 0) {
+			mapping thing = info->things[idx];
+			foreach (({"id"}), string key) //String attributes
+				if (msg[key]) thing[key] = msg[key];
+			foreach (({"xsize", "ysize"}), string key) //Numeric attributes
+				if (msg[key]) thing[key] = (int)msg[key];
+		}
+	}
+	await(G->G->DB->save_config(channel->userid, "monitors", monitors));
+	send_updates_all(channel, msg->nonce);
+	update_one(channel, "", msg->nonce);
 }
 
 //Delete the given monitor and return its previous config. If it didn't exist, returns 0.

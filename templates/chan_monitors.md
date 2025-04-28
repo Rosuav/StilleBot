@@ -11,6 +11,28 @@ input[type=number] {width: 4em;}
 .preview-bg {padding: 6px;}
 .optionset {display: flex; padding: 0.125em 0;}
 .optionset fieldset {padding: 0.25em; margin-left: 1em;}
+
+#pilethings {
+	display: flex;
+	overflow-x: scroll;
+	max-width: 600px;
+	gap: 10px;
+}
+.pilething {
+	min-width: 100px;
+	background-color: aliceblue;
+	display: flex;
+	flex-direction: column;
+}
+.pilething b {
+	margin: 0 auto;
+}
+.thingpreview {
+	width: 80px; height: 80px;
+	background-size: contain;
+	background-repeat: no-repeat;
+}
+
 $$styles$$
 </style>
 
@@ -55,11 +77,20 @@ Note that Piles of Pics may re-drop all objects if the page is refreshed.
 
 > ### Edit pile of pics
 >
-> Coming soon: Create and manage the things that get dropped!
+> <form method=dialog>
+> <div></div>
+>
+> [Add category](: #addpilecat) [Close](: type=submit value=cancel)
+> </form>
+{: tag=dialog #editpile}
+
+<!-- -->
+
+> ### Configure thing category
 >
 > <form method=dialog>
 > <div></div>
 >
 > [Save](: type=submit value=save) [Cancel](: type=submit value=cancel)
 > </form>
-{: tag=dialog #editpile}
+{: tag=dialog #editthingcat}

@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, CODE, DIV, FIELDSET, IFRAME, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
+const {A, B, BR, BUTTON, CODE, DIV, FIELDSET, IFRAME, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
 import {update_display, formatters} from "$$static||monitor.js$$";
 import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
 
@@ -26,6 +26,20 @@ function set_values(info, elem) {
 		update_tierpicker();
 		fixformatting();
 		update_preset();
+	}
+	if (info.type === "pile") {
+		//Instead of updating individual elements, build a set of preview tiles
+		set_content("#pilethings", info.things.map(thing => DIV({class: "pilething", "data-thingid": thing.id}, [
+			B("ID: " + thing.id),
+			DIV({class: "thingpreview", style: "background-image: url(" + (thing.images[0] || "") + ")"}),
+			DIV([
+				"Qty: ",
+				INPUT({class: "thingqty", type: "number", step: 1, value: 0}), //FIXME
+			]),
+			DIV({class: "buttonbox", style: "justify-content: space-around"}, [
+				BUTTON({type: "button", class: "editpilecat"}, "\u2699"),
+			]),
+		])));
 	}
 	return elem;
 }
@@ -254,6 +268,22 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 	TR([TH("Share styles"), TD([BUTTON({type: "button", class: "copystyles"}, "Copy to clipboard"), BUTTON({type: "button", class: "pastestyles"}, "Paste from clipboard")])]),
 ]));
 
+set_content("#editpile form div", [
+	"Thing categories:",
+	DIV({id: "pilethings"}), //Will contain a tile for every category of thing that can be dropped onto the pile
+	//Any other configuration needed?
+]);
+
+set_content("#editthingcat form div", TABLE({border: 1}, [
+	TR([TH("ID"), TD(INPUT({name: "id"}))]),
+	TR([TH("Size"), TD([
+		INPUT({name: "xsize", type: "number", step: 1}),
+		" x ",
+		INPUT({name: "ysize", type: "number", step: 1}),
+	])]),
+	TR([TH("Images"), TD("TODO")]),
+]));
+
 on("click", "#createvar", e => {
 	const varname = /^[A-Za-z]*/.exec(DOM("#newvarname").value);
 	if (!varname || varname[0] === "") return;
@@ -266,6 +296,11 @@ on("submit", "dialog form", async e => {
 	if (e.submitter.value === "cancel") return; //The "Cancel" button is actually a submit-type button to make it manage the dialog, but don't actually save anything
 	const dlg = e.match.closest("dialog");
 	const body = {cmd: "updatemonitor", nonce: dlg.dataset.nonce, type: dlg.id.slice(4)};
+	if (dlg.id === "editthingcat") {
+		//HACK: Different message for editing the subelements
+		body.cmd = "managethings";
+		body.update = dlg.dataset.originalid;
+	}
 	for (let el of e.match.elements)
 		if (el.name) body[el.name] = el.type === "checkbox" ? el.checked : el.value;
 	ws_sync.send(body);
@@ -367,6 +402,24 @@ function update_preset() {
 	DOM("[name=preset]").selectedIndex = 0;
 }
 on("change", "input", e => e.match.name in preset_defaults && update_preset());
+
+on("click", "#addpilecat", e => ws_sync.send({cmd: "managethings", "nonce": e.match.closest("dialog").dataset.nonce, "add": 1}));
+on("click", ".editpilecat", e => {
+	const nonce = e.match.closest_data("nonce"), thingid = e.match.closest_data("thingid");
+	const dlg = DOM("#editthingcat");
+	const form = DOM("#editthingcat form");
+	const mon = editables[nonce];
+	const thing = mon.things.find(t => t.id === thingid);
+	if (!thing) return;
+	for (let attr in thing) {
+		const elem = form.elements[attr]; if (!elem) continue;
+		//TODO: if elem.type === "checkbox"
+		elem.value = thing[attr];
+	}
+	dlg.dataset.nonce = nonce;
+	dlg.dataset.originalid = thingid;
+	dlg.showModal();
+});
 
 function textify(cmd) {
 	if (typeof cmd === "string") return cmd;
