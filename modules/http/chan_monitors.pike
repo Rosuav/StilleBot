@@ -91,7 +91,7 @@ __async__ mapping get_thing_types(int userid) {
 	emotes = emotes->images->url_2x - ({0}); //Shouldn't normally be any nulls but just in case
 	//Grab each image (cached if possible) and calculate the bounding box.
 	//Ultimately this will be done on upload and saved.
-	int limit = 50; //If you have more than 50 emotes, you'll have to load multiple times to see them all. Won't be an issue once sprites get uploaded.
+	int limit = 20; //If you have too many emotes, you'll have to load multiple times to see them all. Won't be an issue once sprites get uploaded.
 	foreach (emotes; int i; string fn) {
 		if (mapping em = bounding_box_cache[fn]) {emotes[i] = em; continue;}
 		if (!--limit) {write("Limit exceeded at %d/%d\n", i, sizeof(emotes)); emotes = emotes[..i-1]; break;}
