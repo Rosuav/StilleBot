@@ -1,6 +1,7 @@
 inherit http_websocket;
 inherit hook;
 inherit builtin_command;
+inherit annotated;
 
 /* TODO:
 * The "Completed" and "Inactive" states currently are fixed text only.
