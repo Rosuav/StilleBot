@@ -19,11 +19,14 @@ export function render_item(item) {
 		TD(
 			item.per_user ? "(per-user)"
 			: item.is_group ? "(group)"
+			: typeof item.curval === "object" ? "(dictionary)"
 			: INPUT({class: "value", value: item.curval})
 		),
 		TD(
 			item.per_user ? BUTTON({type: "button", class: "showuservars"}, "Show users")
 			: item.is_group ? BUTTON({type: "button", class: "showgroupvars"}, "Show vars")
+			//FIXME: Add this button's functionality
+			: typeof item.curval === "object" ? BUTTON({type: "button", class: "showdictionary"}, "Show contents")
 			: [BUTTON({type: "button", class: "setvalue"}, "Set value"),
 				BUTTON({type: "button", class: "delete"}, "Delete")]
 		),

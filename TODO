@@ -280,3 +280,21 @@
     - Builtin to remove a thing, or reduce the number of things of a given name
     - Easy way to say "I want this many of this, and that many of that" for stateful
       systems. The builtin will figure out how many to put.
+  - Have a single variable containing all thing-category-counts
+* Dictionary variables
+  - Rudimentary support is in a new builtin, dictionary
+  - Eventually need proper support with all variable management
+  - Also need proper MustardScript support
+  - Do we need arrays as well, or should this be like a Lua table?
+  - Find every place that works with variables and see if it assumes strings
+    - Some will simply replace (set_variable)
+    - Some may have to assume delete-then-act (set_variable "add" mode)
+    - Some may need to report an error
+  - Implement chan_variables editing of dictionaries
+    - Create dict???? Maybe not worth it
+    - Set existing value
+    - Create new key? Not currently possible with regular vars, so maybe not
+      worth it?
+    - Delete key
+    - If last key deleted, delete entire dictionary (same as with per-user vars)
+  - Switch bit boss to use a single dictionary variable instead of magic names
