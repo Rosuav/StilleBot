@@ -4,7 +4,7 @@ import {update_display, formatters} from "$$static||monitor.js$$";
 import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
 
 const editables = { };
-function set_values(nonce, info, elem) {
+function set_values(info, elem) {
 	if (!info) return 0;
 	for (let attr in info) {
 		if (attr === "text" && info.type === "goalbar") {
@@ -76,11 +76,19 @@ export function render_item(msg, obj) {
 		TD(A({className: "monitorlink", href: "monitors?view=" + nonce}, "Drag me to OBS")),
 	]);
 	//HACK: For pile o' pics, the preview is actually just iframed in. Lower performance but easier.
+	//Note that this incurs the cost of a separate websocket with (partly) duplicate signals. Review
+	//this decision once things are fully implemented and consider doing it like the others (but
+	//maybe with a different update call).
 	if (editables[nonce].type === "pile")
 		//TODO: Get the width and height once they're configurable
 		set_content(el.querySelector(".preview"), IFRAME({src: "monitors?view=" + nonce, "width": 600, "height": 400}));
 	else update_display(el.querySelector(".preview"), editables[nonce]);
 	el.querySelector(".preview-bg").style.backgroundColor = editables[nonce].previewbg;
+	const dlg = DOM("#edit" + msg.type);
+	if (dlg && dlg.dataset.nonce === nonce) {
+		//dlg.querySelector("form").reset(); //Do we need this? Would add flicker.
+		set_values(msg, dlg);
+	}
 	setTimeout(() => { //Wait till the preview has rendered, then measure it for the link
 		const box = el.querySelector(".preview").getBoundingClientRect();
 		const link = el.querySelector(".monitorlink");
@@ -270,7 +278,7 @@ on("click", ".editbtn", e => {
 	const mon = editables[nonce];
 	const dlg = DOM("#edit" + mon.type); if (!dlg) {console.error("Bad type", mon.type); return;}
 	dlg.querySelector("form").reset();
-	set_values(nonce, mon, dlg);
+	set_values(mon, dlg);
 	dlg.dataset.nonce = nonce;
 	dlg.returnValue = "close";
 	dlg.showModal();
