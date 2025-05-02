@@ -337,6 +337,7 @@ class channel(mapping identity) {
 		int ephemeral = sscanf(var, "%s?", var);
 		var = "$" + var + "?" * ephemeral + "$";
 		mapping basevars = ephemeral ? G_G_("variables", (string)userid) : G->G->DB->load_cached_config(userid, "variables");
+		//FIXME: What happens if user is (eg) "49497888" and not in the users[] mapping?
 		mapping vars = per_user ? _path(basevars, "*", (string)users[?user]) : basevars;
 		if (action == "add") {
 			//Add to a variable, REXX-style (decimal digits in strings).
@@ -356,6 +357,7 @@ class channel(mapping identity) {
 			m_delete(vars, var);
 			if (!sizeof(vars)) m_delete(basevars["*"], (string)users[?user]);
 		}
+		else if (val == "" && has_value(var, ':')) m_delete(vars, var); //Neither do grouped variables.
 		if (ephemeral) return val; //Ephemeral variables are not pushed out to listeners.
 		//Notify those that depend on this. Note that an unadorned per-user variable is
 		//probably going to behave bizarrely in a monitor, so don't do that; use either
