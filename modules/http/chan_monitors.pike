@@ -257,8 +257,8 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 		])}),
 	]);
 	mapping info = monitors[nonce];
-	//Hack: Create a new variable for a new goal bar/countdown.
-	if ((<"countdown", "goalbar">)[msg->type]) {
+	//Hack: Create a new variable for a new goal bar etc.
+	if ((<"countdown", "goalbar", "pile">)[msg->type]) {
 		if (msg->varname) info->varname = msg->varname; //TODO: Check that it exists too?
 		else {
 			mapping vars = G->G->DB->load_cached_config(channel->userid, "variables");

@@ -14,6 +14,7 @@ function set_values(info, elem) {
 			const t = elem.querySelector("[name=text]");    if (t) t.value = m[2];
 			continue;
 		}
+		elem.querySelectorAll("[data-content=" + attr + "]").forEach(el => set_content(el, info[attr]));
 		const el = elem.querySelector("[name=" + attr + "]");
 		if (!el) continue;
 		if (el.type === "checkbox") el.checked = info[attr];
@@ -269,6 +270,7 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 ]));
 
 set_content("#editpile form div", [
+	DIV(["Variable group: ", CODE({"data-content": "varname"})]),
 	"Thing categories:",
 	DIV({id: "pilethings"}), //Will contain a tile for every category of thing that can be dropped onto the pile
 	//Any other configuration needed?
