@@ -33,7 +33,7 @@ function set_values(info, elem) {
 		const qty = vargroups[info.varname + ":"] || { };
 		set_content("#pilethings", info.things.map(thing => DIV({class: "pilething", "data-thingid": thing.id}, [
 			B("ID: " + thing.id),
-			DIV({class: "thingpreview", style: "background-image: url(" + (thing.images[0] || "") + ")"}),
+			DIV({class: "thingpreview", style: "background-image: url(" + (thing.images[0].fn || "") + ")"}),
 			DIV([
 				"Qty: ",
 				INPUT({class: "thingqty", type: "number", step: 1, value: qty[thing.id] || 0}),
@@ -282,9 +282,8 @@ set_content("#editpile form div", [
 set_content("#editthingcat form div", TABLE({border: 1}, [
 	TR([TH("ID"), TD(INPUT({name: "id"}))]),
 	TR([TH("Size"), TD([
+		//Note that the height is calculated in order to preserve aspect ratio of the image.
 		INPUT({name: "xsize", type: "number", step: 1}),
-		" x ",
-		INPUT({name: "ysize", type: "number", step: 1}),
 	])]),
 	TR([TH("Images"), TD("TODO")]),
 ]));
@@ -304,7 +303,9 @@ on("submit", "dialog form", async e => {
 	if (dlg.id === "editthingcat") {
 		//HACK: Different message for editing the subelements
 		body.cmd = "managethings";
-		body.update = dlg.dataset.originalid;
+		//HACK UPON HACK: There's no remove UI at the moment, so blank the ID to remove.
+		if (e.match.elements.id.value === "") body.remove = dlg.dataset.originalid;
+		else body.update = dlg.dataset.originalid;
 	}
 	for (let el of e.match.elements)
 		if (el.name) body[el.name] = el.type === "checkbox" ? el.checked : el.value;

@@ -84,9 +84,8 @@ constant saveable_attributes = "previewbg barcolor fillcolor altcolor needlesize
 constant retained_attributes = (<"boss_selfheal", "boss_giftrecipient">); //Attributes set externally, not editable.
 constant valid_types = (<"text", "goalbar", "countdown", "pile">);
 
-//TODO: Any time they get updated, push out a new message to the appropriate group.
-//It's not in the regular state as this may be quite noisy.
-@retain: mapping bounding_box_cache = ([]); //Won't be necessary once proper uploading of sprites is done
+//TODO: Make this into some sort of "emote" magical category. Not currently in use.
+@retain: mapping bounding_box_cache = ([]);
 __async__ mapping get_thing_types(int userid) {
 	array emotes = await(twitch_api_request("https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + userid))->data;
 	emotes = emotes->images->url_2x - ({0}); //Shouldn't normally be any nulls but just in case
@@ -140,7 +139,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		if (info->type == "pile") return render_template("monitor.html", ([
 			"vars": ([
 				"ws_type": ws_type, "ws_group": nonce + "#" + req->misc->channel->userid, "ws_code": "pile",
-				"thingtypes": await(get_thing_types(req->misc->channel->userid)),
 			]),
 			"styles": pilestyles,
 			//Can't use "js": "matter.min.js" because that would make a type=module script element,
@@ -198,6 +196,8 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 			update_one(channel, "", nonce);
 			continue;
 		}
+		if (info->type == "pile" && sscanf(var, "$" + info->varname + ":%s$", string type) && type)
+			send_updates_all(channel, nonce, (["newcount": (int)newval, "thingtype": type]));
 		if (!has_value(info->text, var)) continue;
 		mapping info = (["data": (["id": nonce, "display": channel->expand_variables(info->text)])]);
 		send_updates_all(channel, nonce, info); //Send to the group for just that nonce
@@ -233,6 +233,11 @@ mapping|zero websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mix
 	channel->set_variable(msg->varname, (string)(int)msg->val, "set");
 }
 
+constant default_thing_type = ([
+	"id": "default", "xsize": 50,
+	"images": ({(["fn": "/static/MustardMineAvatar.png", "xsize": 844, "ysize": 562])}),
+]);
+
 //Create a new monitor. Must have a type; may have other attributes. If all goes well, returns ({nonce, cfg});
 //otherwise returns 0 and doesn't create anything.
 array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) msg) {
@@ -259,11 +264,7 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 		"active": 1,
 	]);
 	if (msg->type == "pile") monitors[nonce] |= ([
-		"things": ({([
-			"id": "default",
-			"xsize": 20, "ysize": 20,
-			"images": ({"/static/MustardMineAvatar.png"}),
-		])}),
+		"things": ({default_thing_type | ([])}),
 	]);
 	mapping info = monitors[nonce];
 	//Hack: Create a new variable for a new goal bar etc.
@@ -322,11 +323,7 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 		//You can freely rename the categories, but we will never create a "default"
 		//if there are any other categories stored.
 		if (sizeof(ids)) for (int i = 1; ids[id = "thing" + i]; ++i);
-		info->things += ({([
-			"id": id,
-			"xsize": 20, "ysize": 20,
-			"images": ({"/static/MustardMineAvatar.png"}),
-		])});
+		info->things += ({default_thing_type | (["id": id])});
 	}
 	if (msg->update) {
 		int idx = search(info->things->id, msg->update);
@@ -341,7 +338,7 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 			}
 			//foreach (({ }), string key) //String attributes (none currently, other than the id)
 				//if (msg[key]) thing[key] = msg[key];
-			foreach (({"xsize", "ysize"}), string key) //Numeric attributes
+			foreach (({"xsize"}), string key) //Numeric attributes
 				if (msg[key]) thing[key] = (int)msg[key];
 		}
 	}
