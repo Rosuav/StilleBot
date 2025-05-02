@@ -325,7 +325,7 @@ define("ace/mode/mustardscript", function(require, exports, module) {
 			string: [
 				{token: "string.double", regex: /\\"/}, //Escaped quote - don't end the string yet
 				{token: "string.double", regex: /"/, next: "start"}, //End of quoted string
-				{token: "variable", regex: /\$[A-Za-z0-9*?|_]*\$/},
+				{token: "variable", regex: /\$[A-Za-z0-9*?:|_]*\$/},
 				{token: "variable", regex: /{[A-Za-z0-9*?|_]+}/},
 				{token: "invalid.illegal", regex: /\$[^\s"]+/},
 				{token: "invalid.illegal", regex: /{[^\s"]+/},
