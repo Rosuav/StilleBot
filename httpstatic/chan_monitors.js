@@ -3,7 +3,7 @@ const {A, B, BR, BUTTON, CODE, DIV, FIELDSET, IFRAME, INPUT, LABEL, LEGEND, OPTG
 import {update_display, formatters} from "$$static||monitor.js$$";
 import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
 
-const editables = { };
+const editables = { }, vargroups = { };
 function set_values(info, elem) {
 	if (!info) return 0;
 	for (let attr in info) {
@@ -30,12 +30,13 @@ function set_values(info, elem) {
 	}
 	if (info.type === "pile") {
 		//Instead of updating individual elements, build a set of preview tiles
+		const qty = vargroups[info.varname + ":"] || { };
 		set_content("#pilethings", info.things.map(thing => DIV({class: "pilething", "data-thingid": thing.id}, [
 			B("ID: " + thing.id),
 			DIV({class: "thingpreview", style: "background-image: url(" + (thing.images[0] || "") + ")"}),
 			DIV([
 				"Qty: ",
-				INPUT({class: "thingqty", type: "number", step: 1, value: 0}), //FIXME
+				INPUT({class: "thingqty", type: "number", step: 1, value: qty[thing.id] || 0}),
 			]),
 			DIV({class: "buttonbox", style: "justify-content: space-around"}, [
 				BUTTON({type: "button", class: "editpilecat"}, "\u2699"),
@@ -102,7 +103,9 @@ export function render_item(msg, obj) {
 	const dlg = DOM("#edit" + msg.type);
 	if (dlg && dlg.dataset.nonce === nonce) {
 		//dlg.querySelector("form").reset(); //Do we need this? Would add flicker.
-		set_values(msg, dlg);
+		//When it's a pile of stuff, we also need to update the quantities, so query those first.
+		if (editables[nonce].type === "pile") ws_sync.send({cmd: "getgroupvars", id: editables[nonce].varname}, "chan_variables");
+		else set_values(msg, dlg);
 	}
 	setTimeout(() => { //Wait till the preview has rendered, then measure it for the link
 		const box = el.querySelector(".preview").getBoundingClientRect();
@@ -315,10 +318,16 @@ on("click", ".editbtn", e => {
 	const mon = editables[nonce];
 	const dlg = DOM("#edit" + mon.type); if (!dlg) {console.error("Bad type", mon.type); return;}
 	dlg.querySelector("form").reset();
-	set_values(mon, dlg);
 	dlg.dataset.nonce = nonce;
 	dlg.returnValue = "close";
-	dlg.showModal();
+	if (mon.type === "pile") {
+		ws_sync.send({cmd: "getgroupvars", id: mon.varname}, "chan_variables");
+		dlg.dataset.pending = "1";
+	}
+	else {
+		set_values(mon, dlg);
+		dlg.showModal();
+	}
 });
 
 on("click", ".deletebtn", simpleconfirm("Delete this monitor?", e =>
@@ -423,6 +432,12 @@ on("click", ".editpilecat", e => {
 	dlg.showModal();
 });
 
+on("change", ".thingqty", e => {
+	const nonce = e.match.closest_data("nonce"), thingid = e.match.closest_data("thingid");
+	const mon = editables[nonce];
+	ws_sync.send({cmd: "setvar", varname: mon.varname + ":" + thingid, val: e.match.value});
+});
+
 function textify(cmd) {
 	if (typeof cmd === "string") return cmd;
 	if (Array.isArray(cmd)) return cmd.map(textify).filter(x => x).join(" // ");
@@ -463,8 +478,19 @@ ws_sync.connect(ws_group, {
 });
 const variables = { };
 ws_sync.connect(ws_group, {
-	ws_type: "chan_variables",
+	ws_type: "chan_variables", ws_sendid: "chan_variables",
 	render_parent: DOM("[name=varname]"),
 	render_item: (v, obj) => obj || OPTION({"data-id": v.id}, v.id),
 	render: function(data) { },
+	sockmsg_groupvars: function(msg) {
+		vargroups[msg.prefix] = Object.fromEntries(msg.vars.map(v => [v.suffix, v.value]));
+		const dlg = DOM("#editpile");
+		const nonce = dlg.dataset.nonce;
+		const mon = editables[nonce];
+		if (mon.varname + ":" === msg.prefix) set_values(mon, dlg);
+		if (dlg.dataset.pending === "1") {
+			delete dlg.dataset.pending;
+			dlg.showModal();
+		}
+	},
 });

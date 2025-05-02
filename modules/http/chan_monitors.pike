@@ -214,13 +214,22 @@ mapping|zero websocket_cmd_createvar(mapping(string:mixed) conn, mapping(string:
 	if (var != "") channel->set_variable(var, "0", "set");
 }
 
-//Requires that the variable exist
+//Requires that the variable exist, unless it's a grouped var, in which case only a syntactic check is done.
 mapping|zero websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->session->fake) return (["cmd": "demo"]);
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "") return 0;
-	string prev = G->G->DB->load_cached_config(channel->userid, "variables")["$" + msg->varname + "$"];
-	if (!prev) return 0;
+	if (has_value(msg->varname, ':')) {
+		//Note that per-user and ephemeral variables are not supported here.
+		sscanf(msg->varname, "%[A-Za-z0-9:]", string var);
+		if (!has_value(var, ':')) return 0; //If there's a bad character before the first colon, bail.
+		//Otherwise, we can proceed, with a potentially truncated variable name. This will give odd
+		//results if you try to setvar("asdf:qwer%20zxcv"), but it will at least be sane and safe.
+		msg->varname = var;
+	} else {
+		string prev = G->G->DB->load_cached_config(channel->userid, "variables")["$" + msg->varname + "$"];
+		if (!prev) return 0;
+	}
 	channel->set_variable(msg->varname, (string)(int)msg->val, "set");
 }
 
@@ -309,10 +318,10 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 		multiset ids = (multiset)info->things->id;
 		string id = "default";
 		//If you remove the last category, a new "default" category will be added.
-		//Otherwise, adding a cat will give it an id of "thing-1", "thing-2", etc.
+		//Otherwise, adding a cat will give it an id of "thing1", "thing2", etc.
 		//You can freely rename the categories, but we will never create a "default"
 		//if there are any other categories stored.
-		if (sizeof(ids)) for (int i = 1; ids[id = "thing-" + i]; ++i);
+		if (sizeof(ids)) for (int i = 1; ids[id = "thing" + i]; ++i);
 		info->things += ({([
 			"id": id,
 			"xsize": 20, "ysize": 20,
@@ -323,8 +332,15 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 		int idx = search(info->things->id, msg->update);
 		if (idx >= 0) {
 			mapping thing = info->things[idx];
-			foreach (({"id"}), string key) //String attributes
-				if (msg[key]) thing[key] = msg[key];
+			if (msg->id) {
+				//Ensure that the ID is valid. It MAY be okay to allow a colon here as well,
+				//permitting variable names like $pileA:thing1:whatever$ but for now this is
+				//disallowed for simplicity's sake.
+				sscanf(msg->id, "%[A-Za-z0-9]", string newid);
+				if (newid == msg->id) thing->id = newid;
+			}
+			//foreach (({ }), string key) //String attributes (none currently, other than the id)
+				//if (msg[key]) thing[key] = msg[key];
 			foreach (({"xsize", "ysize"}), string key) //Numeric attributes
 				if (msg[key]) thing[key] = (int)msg[key];
 		}
