@@ -22,7 +22,11 @@ const thingcategories = { };
 //Map category ID to the server-provided information about it
 let thingtypes = { };
 export function render(data) {
-	if (data.data?.things) thingtypes = Object.fromEntries(data.data.things.map(t => [t.id, t]));
+	if (data.data?.things) {
+		thingtypes = Object.fromEntries(data.data.things.map(t => [t.id, t]));
+		//HACK HACK HACK: Create a bunch of things.
+		data.newcount = 10; data.thingtype = data.data.things[0].id;
+	}
 	if (data.newcount) {
 		const cat = thingtypes[data.thingtype];
 		if (!cat) return;
