@@ -116,16 +116,16 @@ td {vertical-align: top;}
 #uservars th.sortdesc::after {content: \" ▼\";}
 </style>
 
-> ### Per-user variables
+> ### Grouped variables
 >
-> The variable <code id=uservarname></code> is tracked per-user in this channel.
+> The variable <code id=basevarname></code> contains the following:
 >
-> User ID | User name | Value
-> --------|-----------|----------
+> ID | Name | Value
+> ---|------|----------
 > loading... |
 >
 > [Save](:type=submit) [Cancel](:#close_or_cancel .dialog_close)
-{: tag=formdialog #uservars}
+{: tag=formdialog #groupedvars}
 
 ", newcommands);
 
