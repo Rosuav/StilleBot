@@ -166,7 +166,7 @@ export function TEXTFORMATTING(cfg) {
 		"Alignment",
 		SELECT({name: "textalign"}, [cfg.blank_opts && OPTION(), "start end center justify".split(" ").map(o => OPTION(o))]),
 	])]),
-	TR([TH("Custom CSS"), TD(INPUT({name: "css", size: 60, "data-nocopy": 1}))]),
+	TR([TH("Custom CSS"), TD(INPUT({name: "css", size: 60}))]),
 	TR([TH("Share styles"), TD([BUTTON({type: "button", class: "copystyles"}, "Copy to clipboard"), BUTTON({type: "button", class: "pastestyles"}, "Paste from clipboard")])]),
     ]);
 }
@@ -214,8 +214,8 @@ on("click", ".copystyles", e => {
 	const par = e.match.closest("[data-copystyles]");
 	if (!par) return;
 	let styles = "";
-	par.querySelectorAll("input,select").forEach(inp => {
-		if (!inp.dataset.nocopy) styles += inp.name + ": " + inp.value + "\n";
+	par.querySelectorAll("input,select,textarea").forEach(inp => {
+		if (!inp.dataset.nocopy) styles += inp.name + ": " + inp.value.replace("\n", "\\n") + "\n";
 	});
 	copytext(styles);
 	notify(e.match, e.clientX, e.clientY, "Copied!");
@@ -237,8 +237,8 @@ on("click", ".pastestyles", async e => {
 	const par = elem.closest("[data-copystyles]");
 	if (!par) return;
 	let styles = "";
-	par.querySelectorAll("input,select").forEach(inp => {
-		if (!inp.dataset.nocopy && typeof values[inp.name] === "string") inp.value = values[inp.name];
+	par.querySelectorAll("input,select,textarea").forEach(inp => {
+		if (!inp.dataset.nocopy && typeof values[inp.name] === "string") inp.value = values[inp.name].replace("\\n", "\n");
 	});
 	notify(elem, e.clientX, e.clientY, "Pasted!");
 });

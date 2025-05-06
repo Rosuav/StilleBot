@@ -268,7 +268,7 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 		SELECT({name: "lvlupcmd", id: "cmdpicker", "data-nocopy": 1}, [OPTION("Loading...")]),
 		BR(), "Add and edit commands ", A({href: "commands"}, "on the Commands page"),
 	])]),
-	TR([TH("Custom CSS"), TD(TEXTAREA({name: "css", "data-nocopy": 1}))]),
+	TR([TH("Custom CSS"), TD(TEXTAREA({name: "css"}))]),
 	TR([TH("Share styles"), TD([BUTTON({type: "button", class: "copystyles"}, "Copy to clipboard"), BUTTON({type: "button", class: "pastestyles"}, "Paste from clipboard")])]),
 ]));
 
