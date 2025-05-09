@@ -4,14 +4,14 @@ const width = window.innerWidth - 20, height = window.innerHeight - 20;
 //production, they should probably be set to transparent, with actual elements for
 //interaction purposes.
 const renderer = Matter.Render.create({element: document.getElementById("display"), engine, options: {
-	background: "aliceblue", width, height,
+	background: "transparent", width, height,
 }});
 const Rectangle = Matter.Bodies.rectangle;
 //The ground. TODO: Size this to the available space.
 //???? The x position of this rectangle confuses me. Setting it to 0 has the floor
 //run way off the left edge, having it at (roughly) half the width works. Why?
 Matter.Composite.add(engine.world, Rectangle(width / 2, height + 10, width + 10, 60,
-	{isStatic: true, render: {fillStyle: "rebeccapurple", lineWidth: 0}}));
+	{isStatic: true, render: {fillStyle: "transparent", lineWidth: 0}}));
 Matter.Render.run(renderer);
 Matter.Runner.run(Matter.Runner.create(), engine);
 renderer.options.wireframes = false;
