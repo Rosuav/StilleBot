@@ -435,7 +435,10 @@ function update_thing_images(thing) {
 			BUTTON({class: "deleteimg", type: "button", "data-idx": idx}, "🗑"),
 		]))),
 		DIV([
-			"Upload new image (PNG, max 750KB): ",
+			//Note that I actually limit it to 1MB of Base64 (about 750KB raw),
+			//but something seems to discard oversized messages. In any case,
+			//this isn't intended for huge files.
+			"Upload new image (PNG, max ~100KB/500px): ",
 			INPUT({id: "thingcatimg", type: "file"}),
 		]),
 	]);
@@ -465,7 +468,7 @@ on("change", "#thingcatimg", e => {
 	for (let f of e.match.files) {
 		const reader = new FileReader();
 		reader.addEventListener("load", () => {
-			if (reader.result.length >= 1048576) return; //TODO: Report the oversize
+			if (reader.result.length > 1024*1024) return; //TODO: Report the oversize
 			ws_sync.send({cmd: "managethings", nonce, update, addimage: reader.result});
 		});
 		reader.readAsDataURL(f);

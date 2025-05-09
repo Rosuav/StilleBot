@@ -365,11 +365,13 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 				//if (msg[key]) thing[key] = msg[key];
 			foreach (({"xsize"}), string key) //Numeric attributes
 				if (msg[key]) thing[key] = (int)msg[key];
-			if (msg->addimage) {
-				Image.Image img = Image.PNG.decode(MIME.decode_base64((msg->addimage / ",")[1] || ""));
-				if (!img) {werror("NO IMAGE --> %O\n", msg); return;}
+			if (string url = msg->addimage) {
+				if (sizeof(url) > 1024*2024) return;
+				sscanf(url, "%s,%s", string header, string data);
+				//TODO: If header doesn't specify a recognized type, reject. Currently assumes/expects PNG.
+				Image.Image img = Image.PNG.decode(MIME.decode_base64(data || ""));
 				thing->images += ({([
-					"url": msg->addimage,
+					"url": url,
 					"xsize": img->xsize(),
 					"ysize": img->ysize(),
 				])});
