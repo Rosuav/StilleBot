@@ -367,7 +367,6 @@ __async__ void update_first(object channel, mapping game) {
 					"Hey, hey, no fair, {username}! You already claimed a reward this stream. Shame is yours...",
 					"Shame is upon {username} for being greedy and claiming more than one reward. Let's play nicely next time.",
 					desc->response, desc->claimed);
-				werror("CODE:\n%s\n", code);
 				G->G->cmdmgr->update_command(channel, "", "rwd" + which, code, (["language": "mustard"]));
 			}
 		} else {
