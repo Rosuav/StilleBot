@@ -205,6 +205,16 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 	}
 }
 
+mapping wscmd_querycounts(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
+	mapping info = monitors[conn->subgroup]; if (!info) return (["error": "Invalid nonce"]);
+	string pat = "$" + info->varname + ":%s$";
+	mapping vars = ([]);
+	foreach (G->G->DB->load_cached_config(channel->userid, "variables"); string var; string val)
+		if (sscanf(var, pat, string type) && type) vars[type] = (int)val;
+	return (["cmd": "update", "newcount": vars]);
+}
+
 //Can overwrite an existing variable
 mapping|zero websocket_cmd_createvar(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->session->fake) return (["cmd": "demo"]);

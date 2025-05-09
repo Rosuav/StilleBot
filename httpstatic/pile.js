@@ -48,6 +48,7 @@ export function render(data) {
 		}
 	});
 }
+ws_sync.send({cmd: "querycounts"});
 
 //Demo mode? Emote dropping mode?
 if (0) setInterval(() => {
