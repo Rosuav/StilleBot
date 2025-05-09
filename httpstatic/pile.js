@@ -38,6 +38,7 @@ export function render(data) {
 					//xOffset: cat.xoffset || 0, yOffset: cat.yoffset || 0, //Not currently configured on the back end
 					xScale: scale, yScale: scale, 
 				}},
+				restitution: 0.25, //Make 'em a little bit bouncier
 			});
 			//Angles are measured in radians. Angular velocity seems to be rad/frame and we're at
 			//60Hz physics rate, meaning that 0.01 will rotate you by 0.60 rad/sec (before friction is
