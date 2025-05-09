@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, B, BR, BUTTON, CODE, DIV, FIELDSET, IFRAME, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
+const {A, B, BR, BUTTON, CODE, DIV, FIELDSET, IFRAME, IMG, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
 import {update_display, formatters} from "$$static||monitor.js$$";
 import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
 
@@ -33,7 +33,7 @@ function set_values(info, elem) {
 		const qty = vargroups[info.varname + ":"] || { };
 		set_content("#pilethings", info.things.map(thing => DIV({class: "pilething", "data-thingid": thing.id}, [
 			B("ID: " + thing.id),
-			DIV({class: "thingpreview", style: "background-image: url(" + (thing.images[0]?.fn || "/static/MustardMineAvatar.png") + ")"}),
+			DIV({class: "thingpreview", style: "background-image: url(" + (thing.images[0]?.url || "/static/MustardMineAvatar.png") + ")"}),
 			DIV([
 				"Qty: ",
 				INPUT({class: "thingqty", type: "number", step: 1, value: qty[thing.id] || 0}),
@@ -106,6 +106,18 @@ export function render_item(msg, obj) {
 		//When it's a pile of stuff, we also need to update the quantities, so query those first.
 		if (editables[nonce].type === "pile") ws_sync.send({cmd: "getgroupvars", id: editables[nonce].varname}, "chan_variables");
 		else set_values(msg, dlg);
+	}
+	const catdlg = DOM("#editthingcat");
+	if (catdlg && catdlg.dataset.nonce === nonce) {
+		const thing = editables[nonce].things.find(t => t.id === catdlg.dataset.originalid);
+		if (thing) {
+			const form = DOM("#editthingcat form");
+			for (let attr in thing) {
+				const elem = form.elements[attr]; if (!elem) continue;
+				elem.value = thing[attr];
+			}
+			update_thing_images(thing);
+		}
 	}
 	setTimeout(() => { //Wait till the preview has rendered, then measure it for the link
 		const box = el.querySelector(".preview").getBoundingClientRect();
@@ -285,7 +297,7 @@ set_content("#editthingcat form div", TABLE({border: 1}, [
 		//Note that the height is calculated in order to preserve aspect ratio of the image.
 		INPUT({name: "xsize", type: "number", step: 1}),
 	])]),
-	TR([TH("Images"), TD("TODO")]),
+	TR([TH("Images"), TD({id: "thingcatimages"})]),
 ]));
 
 on("click", "#createvar", e => {
@@ -415,6 +427,20 @@ function update_preset() {
 }
 on("change", "input", e => e.match.name in preset_defaults && update_preset());
 
+function update_thing_images(thing) {
+	set_content("#thingcatimages", [
+		"If multiple images are available, one will be chosen at random for each thing.",
+		DIV({id: "imagetiles"}, thing.images.map((img, idx) => DIV([
+			IMG({src: img.url, style: "width: " + thing.xsize + "px"}),
+			BUTTON({class: "deleteimg", type: "button", "data-idx": idx}, "🗑"),
+		]))),
+		DIV([
+			"Upload new image (PNG, max 750KB): ",
+			INPUT({id: "thingcatimg", type: "file"}),
+		]),
+	]);
+}
+
 on("click", "#addpilecat", e => ws_sync.send({cmd: "managethings", "nonce": e.match.closest("dialog").dataset.nonce, "add": 1}));
 on("click", ".editpilecat", e => {
 	const nonce = e.match.closest_data("nonce"), thingid = e.match.closest_data("thingid");
@@ -428,10 +454,29 @@ on("click", ".editpilecat", e => {
 		//TODO: if elem.type === "checkbox"
 		elem.value = thing[attr];
 	}
+	update_thing_images(thing);
 	dlg.dataset.nonce = nonce;
 	dlg.dataset.originalid = thingid;
 	dlg.showModal();
 });
+
+on("change", "#thingcatimg", e => {
+	const nonce = e.match.closest_data("nonce"), update = e.match.closest_data("originalid");
+	for (let f of e.match.files) {
+		const reader = new FileReader();
+		reader.addEventListener("load", () => {
+			if (reader.result.length >= 1048576) return; //TODO: Report the oversize
+			ws_sync.send({cmd: "managethings", nonce, update, addimage: reader.result});
+		});
+		reader.readAsDataURL(f);
+	}
+	e.match.value = "";
+});
+
+on("click", ".deleteimg", e => ws_sync.send({cmd: "managethings",
+		nonce: e.match.closest_data("nonce"), update: e.match.closest_data("originalid"),
+		delimage: e.match.dataset.idx,
+}));
 
 on("change", ".thingqty", e => {
 	const nonce = e.match.closest_data("nonce"), thingid = e.match.closest_data("thingid");

@@ -34,7 +34,7 @@ export function render(data) {
 			const scale = cat.xsize / img.xsize;
 			const obj = Rectangle(Math.floor(Math.random() * width), Math.floor(Math.random() * 100 + 10), cat.xsize, Math.ceil(img.ysize * scale), {
 				render: {sprite: {
-					texture: img.fn,
+					texture: img.url,
 					//xOffset: cat.xoffset || 0, yOffset: cat.yoffset || 0, //Not currently configured on the back end
 					xScale: scale, yScale: scale, 
 				}},
@@ -57,7 +57,7 @@ if (0) setInterval(() => {
 	if (!cat) return;
 	const img = cat[Math.floor(Math.random() * cat.length)];
 	const obj = Rectangle(Math.floor(Math.random() * width), Math.floor(Math.random() * 100 + 10), img.xsize, img.ysize, {
-		render: {sprite: {texture: img.fn, xOffset: img.xoffset, yOffset: img.yoffset}},
+		render: {sprite: {texture: img.url, xOffset: img.xoffset, yOffset: img.yoffset}},
 	});
 	//Angles are measured in radians. Angular velocity seems to be rad/frame and we're at
 	//60Hz physics rate, meaning that 0.01 will rotate you by 0.60 rad/sec (before friction is

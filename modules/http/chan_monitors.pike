@@ -41,6 +41,19 @@ constant monitorstyles = #"
 	from {opacity: 0;}
 	to {opacity: 1;}
 }
+#imagetiles {
+	display: flex;
+	gap: 5px;
+}
+#imagetiles div {
+	display: flex;
+	flex-direction: column;
+}
+#imagetiles img {
+	border: 1px solid black;
+	padding: 1px;
+	margin: 1px;
+}
 ";
 
 /* The Pile of Stuff
@@ -84,7 +97,7 @@ constant saveable_attributes = "previewbg barcolor fillcolor altcolor needlesize
 constant retained_attributes = (<"boss_selfheal", "boss_giftrecipient">); //Attributes set externally, not editable.
 constant valid_types = (<"text", "goalbar", "countdown", "pile">);
 
-constant default_thing_image = (["fn": "/static/MustardMineAvatar.png", "xsize": 844, "ysize": 562]);
+constant default_thing_image = (["url": "/static/MustardMineAvatar.png", "xsize": 844, "ysize": 562]);
 constant default_thing_type = ([
 	"id": "default", "xsize": 50,
 	"images": ({ }),
@@ -352,6 +365,22 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 				//if (msg[key]) thing[key] = msg[key];
 			foreach (({"xsize"}), string key) //Numeric attributes
 				if (msg[key]) thing[key] = (int)msg[key];
+			if (msg->addimage) {
+				Image.Image img = Image.PNG.decode(MIME.decode_base64((msg->addimage / ",")[1] || ""));
+				if (!img) {werror("NO IMAGE --> %O\n", msg); return;}
+				thing->images += ({([
+					"url": msg->addimage,
+					"xsize": img->xsize(),
+					"ysize": img->ysize(),
+				])});
+			}
+			if (msg->delimage) {
+				int idx = (int)msg->delimage;
+				if (sizeof(thing->images) > idx) {
+					thing->images[idx] = 0;
+					thing->images -= ({0});
+				}
+			}
 		}
 	}
 	await(G->G->DB->save_config(channel->userid, "monitors", monitors));
