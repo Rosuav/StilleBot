@@ -33,7 +33,7 @@ function set_values(info, elem) {
 		const qty = vargroups[info.varname + ":"] || { };
 		set_content("#pilethings", info.things.map(thing => DIV({class: "pilething", "data-thingid": thing.id}, [
 			B("ID: " + thing.id),
-			DIV({class: "thingpreview", style: "background-image: url(" + (thing.images[0].fn || "") + ")"}),
+			DIV({class: "thingpreview", style: "background-image: url(" + (thing.images[0]?.fn || "/static/MustardMineAvatar.png") + ")"}),
 			DIV([
 				"Qty: ",
 				INPUT({class: "thingqty", type: "number", step: 1, value: qty[thing.id] || 0}),

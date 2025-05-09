@@ -84,6 +84,12 @@ constant saveable_attributes = "previewbg barcolor fillcolor altcolor needlesize
 constant retained_attributes = (<"boss_selfheal", "boss_giftrecipient">); //Attributes set externally, not editable.
 constant valid_types = (<"text", "goalbar", "countdown", "pile">);
 
+constant default_thing_image = (["fn": "/static/MustardMineAvatar.png", "xsize": 844, "ysize": 562]);
+constant default_thing_type = ([
+	"id": "default", "xsize": 50,
+	"images": ({ }),
+]);
+
 //TODO: Make this into some sort of "emote" magical category. Not currently in use.
 @retain: mapping bounding_box_cache = ([]);
 __async__ mapping get_thing_types(int userid) {
@@ -139,6 +145,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		if (info->type == "pile") return render_template("monitor.html", ([
 			"vars": ([
 				"ws_type": ws_type, "ws_group": nonce + "#" + req->misc->channel->userid, "ws_code": "pile",
+				"default_thing_image": default_thing_image,
 			]),
 			"styles": pilestyles,
 			//Can't use "js": "matter.min.js" because that would make a type=module script element,
@@ -242,11 +249,6 @@ mapping|zero websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mix
 	}
 	channel->set_variable(msg->varname, (string)(int)msg->val, "set");
 }
-
-constant default_thing_type = ([
-	"id": "default", "xsize": 50,
-	"images": ({(["fn": "/static/MustardMineAvatar.png", "xsize": 844, "ysize": 562])}),
-]);
 
 //Create a new monitor. Must have a type; may have other attributes. If all goes well, returns ({nonce, cfg});
 //otherwise returns 0 and doesn't create anything.

@@ -30,7 +30,7 @@ export function render(data) {
 		const things = thingcategories[thingtype];
 		while (things.length > newcount) Matter.Composite.remove(engine.world, things.pop());
 		while (things.length < newcount) {
-			const img = cat.images[Math.floor(Math.random() * cat.images.length)];
+			const img = cat.images[Math.floor(Math.random() * cat.images.length)] || default_thing_image;
 			const scale = cat.xsize / img.xsize;
 			const obj = Rectangle(Math.floor(Math.random() * width), Math.floor(Math.random() * 100 + 10), cat.xsize, Math.ceil(img.ysize * scale), {
 				render: {sprite: {
