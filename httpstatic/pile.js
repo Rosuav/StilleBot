@@ -22,18 +22,14 @@ const thingcategories = { };
 //Map category ID to the server-provided information about it
 let thingtypes = { };
 export function render(data) {
-	if (data.data?.things) {
-		thingtypes = Object.fromEntries(data.data.things.map(t => [t.id, t]));
-		//HACK HACK HACK: Create a bunch of things.
-		data.newcount = 10; data.thingtype = data.data.things[0].id;
-	}
-	if (data.newcount) {
-		const cat = thingtypes[data.thingtype];
+	if (data.data?.things) thingtypes = Object.fromEntries(data.data.things.map(t => [t.id, t]));
+	if (data.newcount) Object.entries(data.newcount).forEach(([thingtype, newcount]) => {
+		const cat = thingtypes[thingtype];
 		if (!cat) return;
-		if (!thingcategories[data.thingtype]) thingcategories[data.thingtype] = [];
-		const things = thingcategories[data.thingtype];
-		while (things.length > data.newcount) Matter.Composite.remove(engine.world, things.pop());
-		while (things.length < data.newcount) {
+		if (!thingcategories[thingtype]) thingcategories[thingtype] = [];
+		const things = thingcategories[thingtype];
+		while (things.length > newcount) Matter.Composite.remove(engine.world, things.pop());
+		while (things.length < newcount) {
 			const img = cat.images[Math.floor(Math.random() * cat.images.length)];
 			const scale = cat.xsize / img.xsize;
 			const obj = Rectangle(Math.floor(Math.random() * width), Math.floor(Math.random() * 100 + 10), cat.xsize, Math.ceil(img.ysize * scale), {
@@ -50,7 +46,7 @@ export function render(data) {
 			Matter.Composite.add(engine.world, obj);
 			things.push(obj);
 		}
-	}
+	});
 }
 
 //Demo mode? Emote dropping mode?

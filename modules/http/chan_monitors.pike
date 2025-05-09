@@ -197,7 +197,7 @@ mapping get_chan_state(object channel, string grp, string|void id) {
 			continue;
 		}
 		if (info->type == "pile" && sscanf(var, "$" + info->varname + ":%s$", string type) && type)
-			send_updates_all(channel, nonce, (["newcount": (int)newval, "thingtype": type]));
+			send_updates_all(channel, nonce, (["newcount": ([type: (int)newval])]));
 		if (!has_value(info->text, var)) continue;
 		mapping info = (["data": (["id": nonce, "display": channel->expand_variables(info->text)])]);
 		send_updates_all(channel, nonce, info); //Send to the group for just that nonce
