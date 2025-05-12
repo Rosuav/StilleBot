@@ -213,13 +213,6 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id, str
 	return ret;
 }
 
-__async__ void file_uploaded(mapping file) {
-	werror("File uploaded! %O\n", file);
-	if (has_prefix(file->metadata->mimetype || "*/*", "image/"))
-		send_updates_all("#" + file->channel, (["id": file->id, "data": file->metadata | (["id": file->id]), "type": "image"]));
-}
-
-
 @hook_variable_changed: void notify_monitors(object channel, string var, string newval) {
 	foreach (G->G->DB->load_cached_config(channel->userid, "monitors"); string nonce; mapping info) {
 		if (has_value(info->thresholds || "", var)) {
@@ -350,6 +343,10 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 //All the functionality for file uploads to library is identical. Should this be refactored somewhere?
 //Note that alertbox comes prior alphabetically to monitors and thus this should be available.
 @"is_mod": function wscmd_upload = G->G->websocket_types->chan_alertbox->?wscmd_upload;
+__async__ void file_uploaded(mapping file) {
+	if (has_prefix(file->metadata->mimetype || "*/*", "image/"))
+		send_updates_all("#" + file->channel, (["id": file->id, "data": file->metadata | (["id": file->id]), "type": "image"]));
+}
 
 @"is_mod": __async__ void wscmd_managethings(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");

@@ -50,8 +50,33 @@ Upload time: %s
 		}
 		file->metadata->url = sprintf("%s/upload/%s", G->G->instance_config->http_address, file->id);
 		if (mimetype) file->metadata->mimetype = mimetype;
-		file->metadata->etag = String.string2hex(Crypto.SHA1.hash(req->body_raw));
-		await(G->G->DB->update_file(file->id, file->metadata, req->body_raw));
+		string data = req->body_raw;
+		//Hack: Autocrop if it was marked for so doing
+		if (m_delete(file->metadata, "autocrop")) catch {
+			mapping img = Image.ANY._decode(data);
+			//Check the four corners. If the image is completely transparent in all four,
+			//autocrop away all transparency. TODO: If the image is transparent in any two
+			//adjacent corners, autocrop that edge, and if it is in three corners, autocrop
+			//both contained edges.
+			if (img->alpha && !sizeof((
+				img->alpha->getpixel(0, 0) +
+				img->alpha->getpixel(0, img->ysize - 1) +
+				img->alpha->getpixel(img->xsize - 1, 0) +
+				img->alpha->getpixel(img->xsize - 1, img->ysize - 1)
+			) - ({0}))) {
+				array bounds = img->alpha->find_autocrop();
+				//Should we always reencode back to the original format? For now just using WebP and PNG.
+				if (img->format == "image/webp")
+					data = Image.WebP.encode(img->image->copy(@bounds), (["alpha": img->alpha->copy(@bounds)]));
+				else {
+					data = Image.PNG.encode(img->image->copy(@bounds), (["alpha": img->alpha->copy(@bounds)]));
+					file->metadata->mimetype = "image/png";
+				}
+				//TODO: Adjust the size and allocation
+			}
+		};
+		file->metadata->etag = String.string2hex(Crypto.SHA1.hash(data));
+		await(G->G->DB->update_file(file->id, file->metadata, data));
 		return jsonify((["url": file->url]));
 	}
 	array(string) parts = fileid / "-";

@@ -798,11 +798,17 @@ __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:m
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "uploaderror", "name": msg->name, "error": error]), 4));
 		return;
 	}
-	string id = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, ([
+	mapping attrs = ([
 		"name": msg->name,
 		"size": msg->size, "allocation": allocation,
 		"mimetype": msg->mimetype,
-	]), 0));
+	]);
+	if (conn->type == "chan_monitors") {
+		//Hack: When something is uploaded via the Pile of Pics, autocrop transparency away.
+		//TODO: Provide a proper option for doing this, independently of socket type
+		attrs->autocrop = 1;
+	}
+	string id = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, attrs, 0));
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "upload", "id": id, "name": msg->name]), 4));
 	update_one(conn->group, id); //Note that the display connection doesn't need to be updated
 }
