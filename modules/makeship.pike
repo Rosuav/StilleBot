@@ -11,6 +11,10 @@ __async__ void pingmakeship() {
 	object channel = G->G->irc->channels["#devicat"];
 	if (n != channel->expand_variables("$pledges$")) {
 		channel->set_variable("pledges", n);
+		array digits = n / "";
+		channel->set_variable("pileA:hundred", digits[-3]);
+		channel->set_variable("pileA:ten", digits[-2]);
+		channel->set_variable("pileA:one", digits[-1]);
 		mapping prev = await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid,
 			(["Authorization": channel->userid])));
 		channel->send((["user": "devicat", "uid": channel->userid]), ({
