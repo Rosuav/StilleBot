@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, B, BR, BUTTON, CODE, DIV, FIELDSET, IFRAME, IMG, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
+const {A, B, BR, BUTTON, CODE, DIV, FIELDSET, FIGCAPTION, FIGURE, IFRAME, IMG, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
 import {update_display, formatters} from "$$static||monitor.js$$";
 import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
 
@@ -74,6 +74,29 @@ const presets = {
 	},
 	Followers: {...preset_defaults,
 		follow: 1,
+	},
+};
+
+const files = { };
+export const autorender = {
+	image_parent: DOM("#uploads"),
+	image(file, obj) { //extcall
+		files[file.id] = file;
+		return DIV({"data-type": file.mimetype}, [
+			FIGURE([
+				file.url ? DIV({className: "thumbnail", style: "background-image: url(" + file.url + ")"})
+					: DIV({className: "thumbnail"}, "uploading..."),
+				FIGCAPTION([
+					A({href: file.url, target: "_blank"}, file.name),
+					" ",
+					//BUTTON({type: "button", className: "renamefile", title: "Rename"}, "📝"),
+				]),
+				//TODO: Reinstate delete and rename
+				//BUTTON({type: "button", className: "confirmdelete", title: "Delete"}, "🗑"),
+			]),
+			DIV({style: "flex-grow: 1"}),
+			DIV({style: "display: flex; justify-content: space-around"}, BUTTON({type: "button", class: "chooseimage"}, "Choose")),
+		]);
 	},
 };
 
@@ -435,11 +458,7 @@ function update_thing_images(thing) {
 			BUTTON({class: "deleteimg", type: "button", "data-idx": idx}, "🗑"),
 		]))),
 		DIV([
-			//Note that I actually limit it to 1MB of Base64 (about 750KB raw),
-			//but something seems to discard oversized messages. In any case,
-			//this isn't intended for huge files.
-			"Upload new image (PNG, max ~100KB/500px): ",
-			INPUT({id: "thingcatimg", type: "file"}),
+			BUTTON({type: "button", id: "thingcatimg"}, "Choose new"),
 		]),
 	]);
 }
@@ -463,17 +482,15 @@ on("click", ".editpilecat", e => {
 	dlg.showModal();
 });
 
-on("change", "#thingcatimg", e => {
-	const nonce = e.match.closest_data("nonce"), update = e.match.closest_data("originalid");
-	for (let f of e.match.files) {
-		const reader = new FileReader();
-		reader.addEventListener("load", () => {
-			if (reader.result.length > 1024*1024) return; //TODO: Report the oversize
-			ws_sync.send({cmd: "managethings", nonce, update, addimage: reader.result});
-		});
-		reader.readAsDataURL(f);
-	}
-	e.match.value = "";
+let library_selection = { };
+on("click", "#thingcatimg", e => {
+	library_selection = {nonce: e.match.closest_data("nonce"), update: e.match.closest_data("originalid")};
+	DOM("#library").showModal();
+});
+
+on("click", ".chooseimage", e => {
+	ws_sync.send({cmd: "managethings", addimage: e.match.closest_data("id"), ...library_selection});
+	DOM("#library").close();
 });
 
 on("click", ".deleteimg", e => ws_sync.send({cmd: "managethings",

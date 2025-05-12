@@ -94,3 +94,23 @@ Note that Piles of Pics may re-drop all objects if the page is refreshed.
 > [Save](: type=submit value=save) [Cancel](: type=submit value=cancel)
 > </form>
 {: tag=dialog #editthingcat}
+
+<!-- -->
+
+> ### Library
+>
+> Use PNG or WEBP formats for best results, and keep the files fairly small. Large files
+> may cause display issues on first load.
+>
+> <div id=uploaderror class=hidden></div>
+>
+> <div id=uploadfrm class=primary><div id=uploads class=filelist></div></div>
+> &nbsp;
+>
+> <label>Upload new file: <input type=file multiple></label>
+> <div class=filedropzone>Or drop files here to upload</div>
+>
+> &nbsp;
+>
+> [Select](:#libraryselect disabled=true) [Close](:.dialog_close)
+{: tag=dialog #library .resizedlg}

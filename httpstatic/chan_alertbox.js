@@ -53,7 +53,6 @@ const freemedia_files = { };
 let freemedia_update_queue = [];
 async function populate_freemedia() {
 	const data = await (await fetch(FREEMEDIA_ROOT + "filelist.json")).json();
-	console.log("Got free media", data);
 	data.files.forEach(file => freemedia_files[file.filename] = file);
 	set_content("#freemedialibrary", data.files.map(file => LABEL({"data-type": file.mimetype}, [
 		INPUT({type: "radio", name: "chooseme", value: file.filename}),

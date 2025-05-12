@@ -135,57 +135,6 @@ $$notmod2||[Show library](:.showlibrary) [Recent events](:.opendlg data-dlg=rece
 	background: none;
 	filter: blur(2px);
 }
-#library p {margin: 0;}
-#uploadfrm {
-	border: 1px solid black;
-	background: #eee;
-	padding: 0 1em 1em 1em;
-	width: 75vw;
-}
-.filelist {
-	display: flex;
-	flex-wrap: wrap;
-}
-.filelist > label {
-	border: 1px solid black; /* TODO: Show incomplete uploads with a different border */
-	margin: 0.5em;
-	padding: 0.5em;
-	position: relative;
-}
-.filelist figure {
-	margin: 0;
-	padding: 0 1em;
-}
-.filelist input[type=radio] {
-	position: absolute;
-}
-input[name=chooseme]:checked ~ figure {
-	background: aliceblue;
-}
-.filelist .inactive {
-	display: none;
-}
-#uploads .confirmdelete {
-	position: absolute;
-	right: 0.5em; top: 0.5em;
-}
-.confirmdelete {
-	width: 20px; height: 23px;
-	padding: 0;
-}
-.thumbnail {
-	width: 150px; height: 150px;
-	background: none center/contain no-repeat;
-}
-figcaption {
-	max-width: 150px;
-	overflow-wrap: break-word;
-}
-.descr {
-	max-width: calc(150px + 2em);
-	font-size: smaller;
-}
-.thumbnail audio {max-width: 100%; max-height: 100%;}
 
 .alertconfig {
 	margin: 0 3px 3px 0;

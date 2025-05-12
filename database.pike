@@ -712,8 +712,9 @@ __async__ void notify_file_updated(int pid, string cond, string extra, string ho
 	//could be a simple metadata edit. Either way, force it out to the websockets.
 	if (!is_active_bot()) return; //Should be no websockets on an inactive bot anyway.
 	mapping file = await(get_file(extra)); if (!file) return;
-	function cb = G->G->websocket_types[file->expires ? "chan_share" : "chan_alertbox"]->file_uploaded;
-	if (cb) cb(file);
+	//Should this be done generically somehow? The callbacks can do their own filtering as needed.
+	if (function cb = G->G->websocket_types[file->expires ? "chan_share" : "chan_alertbox"]->file_uploaded) cb(file);
+	if (function cb = G->G->websocket_types->chan_monitors->file_uploaded) cb(file);
 }
 
 @"stillebot.config:botconfig":

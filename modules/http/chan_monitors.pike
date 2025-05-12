@@ -56,7 +56,7 @@ constant monitorstyles = #"
 }
 ";
 
-/* The Pile of Stuff
+/* The Pile of Pics - credit to DeviCat for claiming that name!
 
 To update the physics engine:
 - https://brm.io/matter-js/docs/
@@ -199,12 +199,26 @@ mapping _get_monitor(object channel, mapping monitors, string id) {
 }
 
 bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket
-mapping get_chan_state(object channel, string grp, string|void id) {
+__async__ mapping get_chan_state(object channel, string grp, string|void id, string|void type) {
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
 	if (grp != "") return (["data": _get_monitor(channel, monitors, grp)]);
 	if (id) return _get_monitor(channel, monitors, id);
-	return (["items": _get_monitor(channel, monitors, sort(indices(monitors))[*])]);
+	mapping ret = (["items": _get_monitor(channel, monitors, sort(indices(monitors))[*])]);
+	array files = await(G->G->DB->list_channel_files(channel->userid));
+	array images = ({ });
+	foreach (files; int i; mapping f)
+		if (has_prefix(f->metadata->mimetype || "*/*", "image/"))
+			images += ({f->metadata | (["id": f->id])});
+	ret->images = images;
+	return ret;
 }
+
+__async__ void file_uploaded(mapping file) {
+	werror("File uploaded! %O\n", file);
+	if (has_prefix(file->metadata->mimetype || "*/*", "image/"))
+		send_updates_all("#" + file->channel, (["id": file->id, "data": file->metadata | (["id": file->id]), "type": "image"]));
+}
+
 
 @hook_variable_changed: void notify_monitors(object channel, string var, string newval) {
 	foreach (G->G->DB->load_cached_config(channel->userid, "monitors"); string nonce; mapping info) {
@@ -365,16 +379,18 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 				//if (msg[key]) thing[key] = msg[key];
 			foreach (({"xsize"}), string key) //Numeric attributes
 				if (msg[key]) thing[key] = (int)msg[key];
-			if (string url = msg->addimage) {
-				if (sizeof(url) > 1024*2024) return;
-				sscanf(url, "%s,%s", string header, string data);
-				//TODO: If header doesn't specify a recognized type, reject. Currently assumes/expects PNG.
-				Image.Image img = Image.PNG.decode(MIME.decode_base64(data || ""));
-				thing->images += ({([
-					"url": url,
-					"xsize": img->xsize(),
-					"ysize": img->ysize(),
-				])});
+			if (string fileid = msg->addimage) {
+				mapping file = await(G->G->DB->get_file(fileid, 1));
+				if (file->?channel == channel->userid && has_prefix(file->metadata->?mimetype || "*/*", "image/")) {
+					mapping img; catch {img = Image.ANY._decode(file->data);};
+					//TODO maybe: Trim an all-transparent border? Would require saving back a cropped image somewhere.
+					//In case it's useful, img->alpha will be populated any time there's a valid alpha channel.
+					if (img) thing->images += ({([
+						"url": file->metadata->url,
+						"xsize": img->xsize,
+						"ysize": img->ysize,
+					])});
+				}
 			}
 			if (msg->delimage) {
 				int idx = (int)msg->delimage;
