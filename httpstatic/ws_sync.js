@@ -196,8 +196,7 @@ export function register_callback(func) {callbacks[func.name] = func;}
 //Automatically handle "not available in demo" messages. TODO: Allow a custom extra bit of information?
 let demomsg_timeout = null;
 callbacks.demo = data => {
-	console.log("Got a demo msg");
-	const elem = DOM("#unavailableindemo"); if (!elem) return;
+	const elem = document.getElementById("unavailableindemo"); if (!elem) return;
 	elem.className = "shown";
 	clearTimeout(demomsg_timeout);
 	demomsg_timeout = setTimeout(() => elem.className = "", 10000);
