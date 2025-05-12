@@ -1,17 +1,21 @@
 const engine = Matter.Engine.create();
 const width = window.innerWidth - 20, height = window.innerHeight - 20;
 //NOTE: For debugging and testing, background and fillStyle are both colours. For
-//production, they should probably be set to transparent, with actual elements for
-//interaction purposes.
+//production, they should be transparent, with actual elements for interaction purposes.
+const visible_walls = false;
 const renderer = Matter.Render.create({element: document.getElementById("display"), engine, options: {
-	background: "transparent", width, height,
+	background: visible_walls ? "aliceblue" : "transparent", width, height,
 }});
 const Rectangle = Matter.Bodies.rectangle;
-//The ground. TODO: Size this to the available space.
-//???? The x position of this rectangle confuses me. Setting it to 0 has the floor
-//run way off the left edge, having it at (roughly) half the width works. Why?
-Matter.Composite.add(engine.world, Rectangle(width / 2, height + 10, width + 10, 60,
-	{isStatic: true, render: {fillStyle: "transparent", lineWidth: 0}}));
+//The ground and walls. TODO: Add config to specify which walls should have barriers.
+//NOTE: The position appears to be the *middle* of the object, not the top-left.
+//The floor should have some thickness to it, to prevent weird bouncing.
+Matter.Composite.add(engine.world, Rectangle(width / 2, height + 28, width + 10, 60,
+	{isStatic: true, render: {fillStyle: visible_walls ? "rebeccapurple" : "transparent", lineWidth: 0}}));
+Matter.Composite.add(engine.world, Rectangle(-28, height / 2, 60, height + 10,
+	{isStatic: true, render: {fillStyle: visible_walls ? "rebeccapurple" : "transparent", lineWidth: 0}}));
+Matter.Composite.add(engine.world, Rectangle(width + 28, height / 2, 60, height + 10,
+	{isStatic: true, render: {fillStyle: visible_walls ? "rebeccapurple" : "transparent", lineWidth: 0}}));
 Matter.Render.run(renderer);
 Matter.Runner.run(Matter.Runner.create(), engine);
 renderer.options.wireframes = false;
@@ -32,7 +36,7 @@ export function render(data) {
 		while (things.length < newcount) {
 			const img = cat.images[Math.floor(Math.random() * cat.images.length)] || default_thing_image;
 			const scale = cat.xsize / img.xsize;
-			const obj = Rectangle(Math.floor(Math.random() * width), Math.floor(Math.random() * 100 + 10), cat.xsize, Math.ceil(img.ysize * scale), {
+			const obj = Rectangle(Math.floor(Math.random() * (width - cat.xsize - 30) + cat.xsize / 2 + 15), Math.floor(Math.random() * 100 + 10), cat.xsize, Math.ceil(img.ysize * scale), {
 				render: {sprite: {
 					texture: img.url,
 					//xOffset: cat.xoffset || 0, yOffset: cat.yoffset || 0, //Not currently configured on the back end
