@@ -232,7 +232,10 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id, str
 	}
 }
 
-mapping wscmd_querycounts(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+//NOTE: Don't use wscmd for this, as it also checks for and blocks demo commands
+mapping websocket_cmd_querycounts(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	[object channel, string grp] = split_channel(conn->group);
+	if (!channel) return 0;
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
 	mapping info = monitors[conn->subgroup]; if (!info) return (["error": "Invalid nonce"]);
 	string pat = "$" + info->varname + ":%s$";
