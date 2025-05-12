@@ -347,6 +347,10 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 	update_one(channel, "", nonce);
 }
 
+//All the functionality for file uploads to library is identical. Should this be refactored somewhere?
+//Note that alertbox comes prior alphabetically to monitors and thus this should be available.
+@"is_mod": function wscmd_upload = G->G->websocket_types->chan_alertbox->?wscmd_upload;
+
 @"is_mod": __async__ void wscmd_managethings(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
 	mapping info = monitors[msg->nonce]; if (!info) return;

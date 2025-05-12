@@ -1,5 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, BUTTON, DIV, FIGCAPTION, FIGURE, INPUT, LABEL, LI} = choc; //autoimport
+import {upload_to_library} from "$$static||utils.js$$";
 
 set_content("#user_types", user_types.map(([kwd, lbl, desc]) => LI(LABEL(
 	{title: desc},
@@ -72,36 +73,13 @@ export function sockmsg_uploaderror(msg) {
 	set_content("#errormsg", msg.error).classList.add("visible");
 }
 
-const uploadme = { };
-export async function sockmsg_upload(msg) {
-	const file = uploadme[msg.name];
-	if (!file) return;
-	delete uploadme[msg.name];
-	const resp = await (await fetch("/upload/" + msg.id, { //The server guarantees that the ID is URL-safe
-		method: "POST",
-		body: file,
-		credentials: "same-origin",
-	})).json();
-	if (resp.error) set_content("#errormsg", resp.error).classList.add("visible");
-	//Otherwise, there should be a signal on the websocket shortly.
-}
-
-on("change", "input[type=file]", e => {
-	set_content("#errormsg", "").classList.remove("visible");
-	for (let f of e.match.files) {
-		ws_sync.send({cmd: "upload", name: f.name, size: f.size});
-		uploadme[f.name] = f;
-	}
-	e.match.value = "";
-});
-on("dragover", ".filedropzone", e => e.preventDefault());
-on("drop", ".filedropzone", e => {
-	e.preventDefault();
-	for (let f of e.dataTransfer.items) {
-		f = f.getAsFile();
-		ws_sync.send({cmd: "upload", name: f.name, size: f.size});
-		uploadme[f.name] = f;
-	}
-});
+upload_to_library({
+	start_upload() {
+		set_content("#errormsg", "").classList.remove("visible");
+	},
+	uploaded(resp) {
+		if (resp.error) set_content("#errormsg", resp.error).classList.add("visible");
+	},
+})
 
 on("change", "#msgformat", e => ws_sync.send({cmd: "config", msgformat: e.match.value}));

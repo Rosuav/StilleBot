@@ -46,7 +46,7 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 </div>
 > &nbsp;
 >
-> <label>Upload new file: <input type=file multiple></label>
+> <label>Upload new file: <input class=fileuploader type=file multiple></label>
 > <div class=filedropzone>Or drop files here to upload</div>
 >
 > &nbsp;
@@ -772,6 +772,7 @@ __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:m
 	send_updates_all(conn->group, (["delpersonal": msg->id]));
 }
 
+//NOTE: Also invoked by chan_monitors.pike
 @"is_mod": __async__ void wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!intp(msg->size) || msg->size < 0) return; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
 	array files = await(G->G->DB->list_channel_files(channel->userid));
@@ -800,7 +801,7 @@ __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:m
 	string id = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, ([
 		"name": msg->name,
 		"size": msg->size, "allocation": allocation,
-		"mimetype": msg->mimetype, //TODO: Ensure that it's a valid type, or at least formatted correctly
+		"mimetype": msg->mimetype,
 	]), 0));
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "upload", "id": id, "name": msg->name]), 4));
 	update_one(conn->group, id); //Note that the display connection doesn't need to be updated

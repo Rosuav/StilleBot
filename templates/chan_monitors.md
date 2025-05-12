@@ -107,7 +107,7 @@ Note that Piles of Pics may re-drop all objects if the page is refreshed.
 > <div id=uploadfrm class=primary><div id=uploads class=filelist></div></div>
 > &nbsp;
 >
-> <label>Upload new file: <input type=file multiple></label>
+> <label>Upload new file: <input class=fileuploader type=file multiple></label>
 > <div class=filedropzone>Or drop files here to upload</div>
 >
 > &nbsp;

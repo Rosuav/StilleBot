@@ -1,6 +1,6 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, ABBR, AUDIO, B, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SELECT, SPAN, SUMMARY, TABLE, TD, TR, VIDEO} = choc; //autoimport
-import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
+import {simpleconfirm, TEXTFORMATTING, upload_to_library} from "$$static||utils.js$$";
 
 function THUMB(file, noautoplay) {
 	if (!file.url) return DIV({className: "thumbnail"}, "uploading...");
@@ -987,35 +987,9 @@ function update_tab_visibility(tabset) {
 on("click", ".tabset input[type=radio]", e => update_tab_visibility(e.match.name));
 update_tab_visibility("mediatab");
 
-const uploadme = { };
-export async function sockmsg_upload(msg) {
-	const file = uploadme[msg.name];
-	if (!file) return;
-	delete uploadme[msg.name];
-	const resp = await (await fetch("/upload/" + msg.id, { //The server guarantees that the ID is URL-safe
-		method: "POST",
-		body: file,
-		credentials: "same-origin",
-	})).json();
+upload_to_library({uploaded: resp => {
 	DOM("#select-personal").checked = true;
 	update_tab_visibility("mediatab");
-}
-
-on("change", "input[type=file]", e => {
-	for (let f of e.match.files) {
-		ws_sync.send({cmd: "upload", name: f.name, size: f.size, mimetype: f.type});
-		uploadme[f.name] = f;
-	}
-	e.match.value = "";
-});
-on("dragover", ".filedropzone", e => e.preventDefault());
-on("drop", ".filedropzone", e => {
-	e.preventDefault();
-	for (let f of e.dataTransfer.items) {
-		f = f.getAsFile();
-		ws_sync.send({cmd: "upload", name: f.name, size: f.size, mimetype: f.type});
-		uploadme[f.name] = f;
-	}
 });
 
 on("click", "#confirmrevokekey", e => {ws_sync.send({cmd: "revokekey"}); DOM("#revokekeydlg").close();});

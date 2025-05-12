@@ -1,7 +1,7 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, B, BR, BUTTON, CODE, DIV, FIELDSET, FIGCAPTION, FIGURE, IFRAME, IMG, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
 import {update_display, formatters} from "$$static||monitor.js$$";
-import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
+import {simpleconfirm, TEXTFORMATTING, upload_to_library} from "$$static||utils.js$$";
 
 const editables = { }, vargroups = { };
 function set_values(info, elem) {
@@ -482,6 +482,7 @@ on("click", ".editpilecat", e => {
 	dlg.showModal();
 });
 
+upload_to_library({});
 let library_selection = { };
 on("click", "#thingcatimg", e => {
 	library_selection = {nonce: e.match.closest_data("nonce"), update: e.match.closest_data("originalid")};

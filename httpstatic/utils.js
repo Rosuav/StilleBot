@@ -257,3 +257,38 @@ on("click", "#togglesidebar", e => {
 })();
 
 //window.onerror = (msg, source, line, col) => window.__socket__ && ws_sync.send({cmd: "error", msg, source, line, col});
+
+//Handle file uploads. If they don't go to the library, you'll have to handle them manually in the individual files.
+export function upload_to_library(cfg) {
+	const uploadme = { };
+	ws_sync.register_callback(async function upload(msg) {
+		const file = uploadme[msg.name];
+		if (!file) return;
+		delete uploadme[msg.name];
+		const resp = await (await fetch("/upload/" + msg.id, { //The server guarantees that the ID is URL-safe
+			method: "POST",
+			body: file,
+			credentials: "same-origin",
+		})).json();
+		if (cfg.uploaded) cfg.uploaded(resp);
+	});
+
+	on("change", ".fileuploader", e => {
+		if (cfg.start_upload) cfg.start_upload(); //Does this need params?
+		for (let f of e.match.files) {
+			ws_sync.send({cmd: "upload", name: f.name, size: f.size, mimetype: f.type});
+			uploadme[f.name] = f;
+		}
+		e.match.value = "";
+	});
+	on("dragover", ".filedropzone", e => e.preventDefault());
+	on("drop", ".filedropzone", e => {
+		e.preventDefault();
+		if (cfg.start_upload) cfg.start_upload(); //Does this need params?
+		for (let f of e.dataTransfer.items) {
+			f = f.getAsFile();
+			ws_sync.send({cmd: "upload", name: f.name, size: f.size, mimetype: f.type});
+			uploadme[f.name] = f;
+		}
+	});
+}

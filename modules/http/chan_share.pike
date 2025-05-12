@@ -16,7 +16,7 @@ Example: <code id=defaultmsg></code>
 Please note: Files are removed periodically; this is not a portfolio.
 
 <div id=uploads></div>
-<form>Upload new file: <input type=file multiple accept=\"image/*\"></form>
+<form>Upload new file: <input class=fileuploader type=file multiple accept=\"image/*\"></form>
 <div class=filedropzone>Or drop files here to upload</div>
 
 <div id=errormsg></div>
