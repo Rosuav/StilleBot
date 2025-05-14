@@ -990,7 +990,7 @@ update_tab_visibility("mediatab");
 upload_to_library({uploaded: resp => {
 	DOM("#select-personal").checked = true;
 	update_tab_visibility("mediatab");
-});
+}});
 
 on("click", "#confirmrevokekey", e => {ws_sync.send({cmd: "revokekey"}); DOM("#revokekeydlg").close();});
 
