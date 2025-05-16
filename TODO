@@ -166,11 +166,6 @@
   failure so the terminal gets an immediate response. (Failure details will of course
   be in the log.)
   - Requires systemd v253 for Type=notify-reload in order for this to work.
-* Conduits. https://dev.twitch.tv/docs/eventsub/handling-conduit-events/
-  - One shard for the active bot
-  - If active and no websocket, establish WS and update shard
-  - Hook conduit.shard.disabled on all nodes, not just active, to know when the other
-    has gone down - maybe automatically raise self? Use webhook for this one.
 * Running into weird problems with app auth. Maybe the cached G->G->app_access_token
   needs to be purged at some point?? Possibly on reauth???
 * Current limitation: Changing stream tags without changing anything else won't trigger
