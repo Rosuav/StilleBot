@@ -586,12 +586,15 @@ __async__ mapping load_session(string cookie) {
 //Generate a new session cookie that definitely doesn't exist
 __async__ string generate_session_cookie() {
 	if (!livedb) await(await_livedb());
+	int retry = 2;
 	while (1) {
 		string cookie = random(1<<64)->digits(36);
 		mixed ex = catch {await(query_rw("insert into stillebot.http_sessions (cookie, data) values(:cookie, '')",
 			(["cookie": cookie])));};
 		if (!ex) return cookie;
-		//TODO: If it wasn't a PK conflict, let the exception bubble up
+		//TODO: If it wasn't a PK conflict, let the exception bubble up. Simplified check here - if the PK is mentioned, retry.
+		if (!has_value(ex[0], "http_sessions_pkey") || !retry) throw(ex);
+		--retry;
 		werror("COOKIE INSERTION\n%s\n", describe_backtrace(ex));
 		await(task_sleep(1));
 		if (G->G->DB != this) return await(G->G->DB->generate_session_cookie());
