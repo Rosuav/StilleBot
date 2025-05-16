@@ -5,12 +5,12 @@ constant markdown = #"# Twitch Login
 
 Log in to Mustard Mine to grant the bot permission to do what it needs.
 
-[Grant permissions](:.twitchlogin #addscopes1)
+$$grantperms$$
 
 Grant the following permissions:
 $$scopelist$$
 
-[Grant permissions](:.twitchlogin #addscopes2)
+$$grantperms$$
 ";
 
 //Give additional explanatory notes for a few scopes
@@ -157,6 +157,12 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	array order = ({ }), scopelist = ({ }), retain_scopes = ({ });
 	//Have we been notified of any perms required for active features? If so, preselect them.
 	mapping need_perms = (req->misc->session->user->?id && await(G->G->DB->load_config(req->misc->session->user->?id, "userprefs"))->notif_perms) || ([]);
+	string grantperms = "[Grant permissions](:.twitchlogin .addscopes)";
+	if (req->variables->share || req->variables->shareable) { //aliases; will make it easy to create a shareable link
+		need_perms = ([]);
+		needscopes = (<>);
+		grantperms = "[Shareable link](/twitchlogin :.shareable)";
+	}
 	foreach (all_twitch_scopes; string id; string desc) {
 		if (has_prefix(desc, "Deprecated") || has_prefix(desc, "*Deprecated")) {
 			if (needscopes[id]) retain_scopes += ({id});
@@ -177,6 +183,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	return render_template(markdown, ([
 		"vars": (["retain_scopes": retain_scopes * " "]),
 		"js": "twitchlogin",
+		"grantperms": grantperms,
 		"scopelist": scopelist * "\n",
 	]));
 }

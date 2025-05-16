@@ -6,8 +6,12 @@ function update_login_button() {
 	document.querySelectorAll(".scope_cb").forEach(cb => {
 		if (cb.checked) scopes.push(cb.value);
 	});
-	DOM("#addscopes1").dataset.scopes = scopes.join(" ") + " " + retain_scopes;
-	DOM("#addscopes2").dataset.scopes = scopes.join(" ") + " " + retain_scopes;
+	document.querySelectorAll(".addscopes").forEach(el => 
+		el.dataset.scopes = scopes.join(" ") + " " + retain_scopes
+	);
+	const url = new URL("/twitchlogin", window.location);
+	url.searchParams.set("scopes", scopes.join(" "));
+	document.querySelectorAll(".shareable").forEach(el => el.href = url);
 }
 on("click", ".scope_cb", update_login_button);
 update_login_button();

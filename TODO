@@ -171,7 +171,6 @@
   - If active and no websocket, establish WS and update shard
   - Hook conduit.shard.disabled on all nodes, not just active, to know when the other
     has gone down - maybe automatically raise self? Use webhook for this one.
-* Make a shareable link feature for twitchlogin.pike
 * Running into weird problems with app auth. Maybe the cached G->G->app_access_token
   needs to be purged at some point?? Possibly on reauth???
 * Current limitation: Changing stream tags without changing anything else won't trigger
