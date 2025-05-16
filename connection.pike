@@ -1507,7 +1507,15 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
 			}
 			break;
 		case "session_reconnect": {
-			if (!is_active_bot()) werror("INACTIVE BOT session_reconnect: %O\n", data); //How did we even get here?
+			if (!is_active_bot()) {
+				//It appears that old conduit websockets are not kicked even when a replacement comes online.
+				//As such, it is entirely possible to receive a reconnect signal on an inactive bot.
+				//We ignore these messages, as they could cause partial hopping of the bot to another server;
+				//if the other server is in fact down, there will need to be a different mechanism to finish
+				//the hop.
+				Stdio.append_file("conduit_reconnect.log", sprintf("%sIGNORED RECONNECT: %O\n", ctime(time()), data));
+				break;
+			}
 			Stdio.append_file("conduit_reconnect.log", sprintf("%sRECONNECT: %O\n", ctime(time()), data));
 			setup_conduit(data->payload->?session->?reconnect_url);
 			break;
