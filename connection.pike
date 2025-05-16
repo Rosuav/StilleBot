@@ -1282,10 +1282,18 @@ __async__ void http_request(Protocols.HTTP.Server.Request req) {
 	resp->extra_heads["Access-Control-Allow-Private-Network"] = "true";
 	mapping sess = req->misc->session;
 	if (sizeof(sess) && !sess->fake) {
-		if (!sess->cookie) sess->cookie = await(G->G->DB->generate_session_cookie());
-		G->G->DB->save_session(sess);
+		//Note that we _could_ await and capture unconditionally, but if we already have a cookie
+		//(the common case), there's no need to delay HTTP response until the database returns.
+		//NOTE: There's still the potential for a race between two HTTP requests; if you start
+		//both, one of them makes a change, then end both, the second one to end will win. It may
+		//be worth having an explicit "save session" action (rather than simply mutating the
+		//mapping and returning), which won't solve all problems, but it will at least mean that
+		//the one that made the change will definitely apply it. If two pages simultaneously make
+		//changes, there's not much to do about it.
+		if (!sess->cookie) sess->cookie = await(G->G->DB->save_session(sess));
+		else G->G->DB->save_session(sess);
 		string host = deduce_host(req->request_headers);
-		resp->extra_heads["Set-Cookie"] = "session=" + sess->cookie + "; Path=/; Max-Age=604800; SameSite=Lax; HttpOnly"
+		if (sess->cookie) resp->extra_heads["Set-Cookie"] = "session=" + sess->cookie + "; Path=/; Max-Age=604800; SameSite=Lax; HttpOnly"
 			+ (has_suffix(host, "mustardmine.com") ? "; Domain=mustardmine.com" : "");
 	}
 	//Indicate to servers which URL is the canonical one. TODO: Should the ?mtime cachebusters be

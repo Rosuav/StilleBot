@@ -562,14 +562,32 @@ Concurrent.Future revert_command(string|int twitchid, string cmdname, string uui
 }
 
 //NOTE: In the future, this MAY be changed to require that data be JSON-compatible.
-//The mapping MUST include a 'cookie' which is a short string.
-Concurrent.Future save_session(mapping data) {
-	if (!stringp(data->cookie)) return Concurrent.resolve(0);
-	if (sizeof(data) == 1)
+//The mapping may include a 'cookie' which is a short string; if none is included and
+//other session data exists, one will be generated; if a cookie is included but nothing
+//else is specified, that session will be deleted.
+//The session cookie (possibly freshly generated) will be returned, unless none existed
+//and there was no data to save, in which case 0 is returned.
+__async__ string|zero save_session(mapping data) {
+	if (!data->cookie && sizeof(data)) {
+		int retry = 2;
+		while (1) {
+			data->cookie = random(1<<64)->digits(36);
+			mixed ex = catch {await(query_rw("insert into stillebot.http_sessions (cookie, data) values(:cookie, :data)",
+				(["cookie": data->cookie, "data": encode_value(data)])));};
+			if (!ex) return data->cookie;
+			//TODO: If it wasn't a PK conflict, let the exception bubble up. Simplified check here - if the PK is mentioned, retry.
+			if (!has_value(ex[0], "http_sessions_pkey") || !retry) throw(ex);
+			--retry;
+			werror("COOKIE INSERTION\n%s\n", describe_backtrace(ex));
+		}
+	}
+	if (data->cookie && sizeof(data) == 1)
 		//Saving (["cookie": "nomnom"]) with no data will delete the session.
-		return save_sql("delete from stillebot.http_sessions where cookie = :cookie", data);
-	else return save_sql("insert into stillebot.http_sessions (cookie, data) values (:cookie, :data) on conflict (cookie) do update set data=:data, active = now()",
-		(["cookie": data->cookie, "data": encode_value(data)]));
+		await(query_rw("delete from stillebot.http_sessions where cookie = :cookie", data));
+	if (sizeof(data) < 2) return 0;
+	await(query_rw("insert into stillebot.http_sessions (cookie, data) values (:cookie, :data) on conflict (cookie) do update set data=:data, active = now()",
+		(["cookie": data->cookie, "data": encode_value(data)])));
+	return data->cookie;
 }
 
 __async__ mapping load_session(string cookie) {
@@ -580,25 +598,8 @@ __async__ mapping load_session(string cookie) {
 	//For some reason, sometimes I get an array of strings instead of an array of mappings.
 	mapping|string data = rows[0];
 	if (mappingp(data)) data = data->data;
+	if (data == "") return (["cookie": cookie]); //Freshly-inserted sessions might exist but with blank data
 	return decode_value(data);
-}
-
-//Generate a new session cookie that definitely doesn't exist
-__async__ string generate_session_cookie() {
-	if (!livedb) await(await_livedb());
-	int retry = 2;
-	while (1) {
-		string cookie = random(1<<64)->digits(36);
-		mixed ex = catch {await(query_rw("insert into stillebot.http_sessions (cookie, data) values(:cookie, '')",
-			(["cookie": cookie])));};
-		if (!ex) return cookie;
-		//TODO: If it wasn't a PK conflict, let the exception bubble up. Simplified check here - if the PK is mentioned, retry.
-		if (!has_value(ex[0], "http_sessions_pkey") || !retry) throw(ex);
-		--retry;
-		werror("COOKIE INSERTION\n%s\n", describe_backtrace(ex));
-		await(task_sleep(1));
-		if (G->G->DB != this) return await(G->G->DB->generate_session_cookie());
-	}
 }
 
 //Don't use this. If you are in a proper position to violate that rule, you already know what
