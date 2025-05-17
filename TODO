@@ -251,3 +251,4 @@
   - Remove the serverside rescaling, but rescale similarly on the client
   - If mouse over canvas, show nearest dot to cursor w/ exact values (snap to data points)
 * Switch bit boss to use grouped variables $boss:avatar$ etc
+  - Don't change existing ones, just change the template for new ones
