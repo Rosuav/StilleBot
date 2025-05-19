@@ -84,6 +84,13 @@ export function sockmsg_graph(msg) {
 			}])),
 		}
 	});
+	else {
+		chart.data.datasets.forEach((ds, i) => {
+			ds.data = msg.plots[i].map((val, pos) => [pos + 1, val]);
+		});
+		chart.data.labels = msg.times;
+		chart.update();
+	}
 }
 
 ws_sync.connect("", {

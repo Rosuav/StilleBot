@@ -188,7 +188,7 @@ void loadstats() {
 	stats->time = time();
 	stats->websocket_hwm = concurrent_websockets();
 	array ws = websocket_groups[""] || ({ });
-	if (sizeof(ws)) send_graph(ws);
+	if (sizeof(ws)) send_graph(ws); //Is this functioning? Doesn't seem to be.
 }
 
 void websocket_cmd_graph(mapping(string:mixed) conn, mapping(string:mixed) msg) {send_graph(({conn}));}
