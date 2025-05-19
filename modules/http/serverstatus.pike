@@ -9,7 +9,7 @@ constant markdown = #"# StilleBot server status
 <script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>
 
 <p id=content></p>
-<figure id=graph><div style=\"width: 800px; height: 400px;\"><canvas></canvas></div><figcaption></figcaption></figure>
+<figure id=graph><div style=\"width: 900px; height: 450px;\"><canvas></canvas></div><figcaption></figcaption></figure>
 
 <style>
 .label {
@@ -30,8 +30,11 @@ constant markdown = #"# StilleBot server status
 
 #graph {
 	display: flex;
-	gap: 8px;
+	gap: 16px;
 	margin: 0;
+}
+#graph figcaption {
+	max-width: unset;
 }
 </style>
 ";
