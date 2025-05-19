@@ -67,8 +67,7 @@ export function sockmsg_graph(msg) {
 			datasets: msg.defns.map((ld, i) => ({
 				label: ld.prefix, //TODO: Have a longer label for these?
 				data: msg.plots[i].map((val, pos) => [pos + 1, val]),
-				borderColor: ld.hexcolor,
-				backgroundColor: ld.hexcolor + "80",
+				borderColor: ld.hexcolor, backgroundColor: ld.hexcolor,
 				yAxisID: ld.prefix,
 			})),
 		},
