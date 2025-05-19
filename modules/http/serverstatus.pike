@@ -127,7 +127,7 @@ constant LOAD_DEFINITIONS = ([
 
 void send_graph(array socks) {
 	//Read the log, grab the latest N entries, and plot them
-	array lines = ((Stdio.read_file("serverstatus.log") || "") / "\n")[<288..]; //Assuming five-minute stats, this is a day's data.
+	array lines = ((Stdio.read_file("serverstatus.log") || "") / "\n")[<144..]; //Assuming ten-minute stats, this is a day's data.
 	array data = ({ }), colors = ({ }), defns = ({ }), times = ({ });
 	mapping plots = ([]);
 	foreach ("WS HTTP API IRC DB" / " ", string pfx) { //Predefine the order to ensure consistency. Needs to cover everything from LOAD_DEFINITIONS.
@@ -165,7 +165,7 @@ void send_graph(array socks) {
 		send_msg(conn, msg);
 }
 
-constant LOADSTATS_PERIOD = 300;
+constant LOADSTATS_PERIOD = 600;
 void loadstats() {
 	G->G->serverstatus_loadstats = call_out(loadstats, LOADSTATS_PERIOD);
 	mapping stats = G->G->serverstatus_statistics;
