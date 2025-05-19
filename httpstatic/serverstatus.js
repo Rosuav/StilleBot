@@ -85,6 +85,10 @@ export function sockmsg_graph(msg) {
 		}
 	});
 	else {
+		//TODO: This is a bit noisy; it thinks that everything moved vertically, when
+		//actually they all moved horizontally. I can't be the first person to have a
+		//real-time update like this; what's the best way to do it?
+		//Maybe I should just disable the animation.
 		chart.data.datasets.forEach((ds, i) => {
 			ds.data = msg.plots[i].map((val, pos) => [pos + 1, val]);
 		});
