@@ -159,13 +159,13 @@ void send_graph(array socks) {
 	if (!sizeof(data)) return; //Nothing to plot
 	array peaks = ({ });
 	foreach (data, array plot) peaks += ({max(@plot)});
-	mapping msg = ([
+	string msg = Standards.JSON.encode(([
 		"cmd": "graph",
 		"defns": defns, "peaks": peaks,
 		"plots": data, "times": times,
-	]);
-	foreach (socks, mapping conn)
-		send_msg(conn, msg);
+	]), 4);
+	foreach (socks, mapping sock)
+		if (sock && sock->state == 1) sock->send_text(msg);
 }
 
 constant LOADSTATS_PERIOD = 600;
@@ -191,10 +191,10 @@ void loadstats() {
 	stats->time = time();
 	stats->websocket_hwm = concurrent_websockets();
 	array ws = websocket_groups[""] || ({ });
-	if (sizeof(ws)) send_graph(ws); //Is this functioning? Doesn't seem to be.
+	if (sizeof(ws)) send_graph(ws);
 }
 
-void websocket_cmd_graph(mapping(string:mixed) conn, mapping(string:mixed) msg) {send_graph(({conn}));}
+void websocket_cmd_graph(mapping(string:mixed) conn, mapping(string:mixed) msg) {send_graph(({conn->sock}));}
 
 protected void create(string name) {
 	::create(name);
