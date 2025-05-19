@@ -51,12 +51,24 @@ function number(n) {
 	return ""+(Math.round(n * 100) / 100);
 }
 
+let current_highlight = -1;
+function highlight(idx) {
+	if (!chart || idx === current_highlight) return;
+	current_highlight = idx;
+	chart.data.datasets.forEach((ds, i) => {
+		const col = ds.borderColor.slice(0, 7) //Remove any current alpha value
+			+ (i === current_highlight || current_highlight === -1 ? "" : "30"); //Add alpha to the ones NOT highlighted.
+		ds.borderColor = ds.backgroundColor = col;
+	});
+	chart.update();
+}
+
 export function sockmsg_graph(msg) {
 	const fig = DOM("#graph figcaption"); //Absent in mini-mode
 	if (!fig) return;
 	set_content(fig, [
 		H3("Load peaks (60 sec avg)"),
-		UL(msg.defns.map((defn, i) => LI([
+		UL({onmouseleave: e => highlight(-1)}, msg.defns.map((defn, i) => LI({onmouseenter: e => highlight(i)}, [
 			SPAN({style: "color: rgb(" + defn.color.join(",") + ")"}, defn.prefix), " ", number(msg.peaks[i]), " ", defn.unit,
 			BR(), EM(["(", defn.desc, ")"]),
 		]))),
