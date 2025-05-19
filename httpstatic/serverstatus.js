@@ -1,5 +1,5 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {H3, LI, P, SPAN, UL} = choc; //autoimport
+const {BR, EM, H3, LI, P, SPAN, UL} = choc; //autoimport
 
 const sharedattrs = {cpu: "CPU", ram: "RAM", spinner: -1};
 const attrs = {
@@ -58,6 +58,7 @@ export function sockmsg_graph(msg) {
 		H3("Load peaks (60 sec avg)"),
 		UL(msg.defns.map((defn, i) => LI([
 			SPAN({style: "color: rgb(" + defn.color.join(",") + ")"}, defn.prefix), " ", number(msg.peaks[i]), " ", defn.unit,
+			BR(), EM(["(", defn.desc, ")"]),
 		]))),
 	]);
 	if (!chart) chart = new Chart(DOM("canvas"), {
@@ -65,7 +66,7 @@ export function sockmsg_graph(msg) {
 		data: {
 			labels: msg.times,
 			datasets: msg.defns.map((ld, i) => ({
-				label: ld.prefix, //TODO: Have a longer label for these?
+				label: ld.prefix, //TODO: Use desc instead?
 				data: msg.plots[i].map((val, pos) => [pos + 1, val]),
 				borderColor: ld.hexcolor, backgroundColor: ld.hexcolor,
 				yAxisID: ld.prefix,
