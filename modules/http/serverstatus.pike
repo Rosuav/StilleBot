@@ -129,8 +129,15 @@ constant LOAD_DEFINITIONS = ([
 void send_graph(array socks) {
 	//Read the log, grab the latest N entries, and plot them
 	array lines = ((Stdio.read_file("serverstatus.log") || "") / "\n")[<288..]; //Assuming five-minute stats, this is a day's data.
-	array data = ({ }), colors = ({ }), defns = ({ }), peaks = ({ });
+	array data = ({ }), colors = ({ }), defns = ({ });
 	mapping plots = ([]);
+	foreach ("WS HTTP API IRC DB" / " ", string pfx) { //Predefine the order to ensure consistency. Needs to cover everything from LOAD_DEFINITIONS.
+		mapping ld = LOAD_DEFINITIONS[pfx];
+		plots[pfx] = sizeof(data);
+		data += ({({ })});
+		colors += ({ld->color});
+		defns += ({ld}); ld->prefix = pfx;
+	}
 	foreach (lines, string line) {
 		array parts = (line / " ")[2..]; //Ignore the date and time at the start
 		float duration = 1.0;
@@ -139,20 +146,14 @@ void send_graph(array socks) {
 			if (pfx == "D") {if (!val) break; duration = (float)val;} //Duration zero? Ignore the line.
 			mapping ld = LOAD_DEFINITIONS[pfx]; if (!ld) continue; //Unknowns do not get displayed
 			if (!ld->unscaled) val /= duration; //Some plots are not per-second (most are)
-			if (undefinedp(plots[pfx])) {
-				plots[pfx] = sizeof(data);
-				data += ({({ })});
-				colors += ({ld->color});
-				defns += ({ld}); ld->prefix = pfx;
-				peaks += ({val});
-			}
 			data[plots[pfx]] += ({val});
 		}
 	}
 	if (!sizeof(data)) return; //Nothing to plot
 	//Rescale everything to its own maximum
+	array peaks = ({ });
 	foreach (data; int i; array plot) {
-		int peak = peaks[i] = max(@plot);
+		int peak = max(@plot); peaks += ({peak});
 		if (peak > 0.0) plot[*] /= (float)peak;
 	}
 	Image.Image img = Graphics.Graph.line(([
