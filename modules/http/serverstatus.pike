@@ -6,8 +6,10 @@ constant markdown = #"# StilleBot server status
 
 [Mini-view](#mini)
 
+<script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>
+
 <p id=content></p>
-<figure id=graph><img><figcaption></figcaption></figure>
+<figure id=graph><div style=\"width: 800px\"><canvas></canvas></div><figcaption></figcaption></figure>
 
 <style>
 .label {
@@ -30,9 +32,6 @@ constant markdown = #"# StilleBot server status
 	display: flex;
 	gap: 8px;
 	margin: 0;
-}
-#graph img {
-	max-height: 384px;
 }
 </style>
 ";
@@ -129,19 +128,24 @@ constant LOAD_DEFINITIONS = ([
 void send_graph(array socks) {
 	//Read the log, grab the latest N entries, and plot them
 	array lines = ((Stdio.read_file("serverstatus.log") || "") / "\n")[<288..]; //Assuming five-minute stats, this is a day's data.
-	array data = ({ }), colors = ({ }), defns = ({ });
+	array data = ({ }), colors = ({ }), defns = ({ }), times = ({ });
 	mapping plots = ([]);
 	foreach ("WS HTTP API IRC DB" / " ", string pfx) { //Predefine the order to ensure consistency. Needs to cover everything from LOAD_DEFINITIONS.
 		mapping ld = LOAD_DEFINITIONS[pfx];
 		plots[pfx] = sizeof(data);
 		data += ({({ })});
 		colors += ({ld->color});
-		defns += ({ld}); ld->prefix = pfx;
+		defns += ({ld});
+		ld->prefix = pfx;
+		ld->hexcolor = sprintf("#%02X%02X%02X", @ld->color);
 	}
 	foreach (lines, string line) {
-		array parts = (line / " ")[2..]; //Ignore the date and time at the start
+		array parts = line / " ";
+		if (sizeof(parts) < 2) continue;
+		//parts[0] is date, parts[1] is time. We really only need the HH:MM from that.
+		times += ({parts[1][..<3]});
 		float duration = 1.0;
-		foreach (parts, string part) {
+		foreach (parts[2..], string part) {
 			sscanf(part, "%[A-Za-z]%d", string pfx, int|float val);
 			if (pfx == "D") {if (!val) break; duration = (float)val;} //Duration zero? Ignore the line.
 			mapping ld = LOAD_DEFINITIONS[pfx]; if (!ld) continue; //Unknowns do not get displayed
@@ -150,23 +154,12 @@ void send_graph(array socks) {
 		}
 	}
 	if (!sizeof(data)) return; //Nothing to plot
-	//Rescale everything to its own maximum
 	array peaks = ({ });
-	foreach (data; int i; array plot) {
-		int peak = max(@plot); peaks += ({peak});
-		if (peak > 0.0) plot[*] /= (float)peak;
-	}
-	Image.Image img = Graphics.Graph.line(([
-		"data": data,
-		"xsize": 1024, "ysize": 768,
-		"datacolors": colors,
-	]));
-	//Turn the plot into a PNG, make that PNG into a data: URI, and send it
-	//to the sockets that need it.
+	foreach (data, array plot) peaks += ({max(@plot)});
 	mapping msg = ([
 		"cmd": "graph",
-		"image": "data:image/png;base64," + MIME.encode_base64(Image.PNG.encode(img)),
 		"defns": defns, "peaks": peaks,
+		"plots": data, "times": times,
 	]);
 	foreach (socks, mapping conn)
 		send_msg(conn, msg);

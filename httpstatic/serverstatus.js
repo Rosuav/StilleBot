@@ -6,6 +6,7 @@ const attrs = {
 	Gideon: {...sharedattrs},
 	Sikorsky: {...sharedattrs, gpu: "GPU", vram: "VRAM", enc: -1, dec: -1},
 };
+let chart;
 
 set_content("#content", ["Gideon", "Sikorsky"].map(id => {
 	return P({id}, [
@@ -18,6 +19,7 @@ set_content("#content", ["Gideon", "Sikorsky"].map(id => {
 	]);
 }));
 function minify() {
+	if (chart) {chart.destroy(); chart = null;}
 	const content = DOM("#content");
 	DOM("main").replaceWith(content, DOM("main style"));
 	content.style.margin = "0";
@@ -50,15 +52,38 @@ function number(n) {
 }
 
 export function sockmsg_graph(msg) {
-	const fig = DOM("#graph"); //Absent in mini-mode
+	const fig = DOM("#graph figcaption"); //Absent in mini-mode
 	if (!fig) return;
-	DOM("#graph img").src = msg.image;
-	set_content("#graph figcaption", [
+	set_content(fig, [
 		H3("Load peaks (60 sec avg)"),
 		UL(msg.defns.map((defn, i) => LI([
 			SPAN({style: "color: rgb(" + defn.color.join(",") + ")"}, defn.prefix), " ", number(msg.peaks[i]), " ", defn.unit,
 		]))),
 	]);
+	if (!chart) chart = new Chart(DOM("canvas"), {
+		type: "line",
+		data: {
+			labels: msg.times,
+			datasets: msg.defns.map((ld, i) => ({
+				label: ld.prefix, //TODO: Have a longer label for these?
+				data: msg.plots[i].map((val, pos) => [pos + 1, val]),
+				borderColor: ld.hexcolor,
+				backgroundColor: ld.hexcolor + "80",
+				yAxisID: ld.prefix,
+			})),
+		},
+		options: {
+			responsive: true,
+			interaction: {mode: "index", intersect: false},
+			stacked: false,
+			scales: Object.fromEntries(msg.defns.map((ld, i) => [ld.prefix, {
+				type: "linear",
+				display: i < 2,
+				position: i % 2 ? "right" : "left",
+				grid: i ? {drawOnChartArea: false} : { },
+			}])),
+		}
+	});
 }
 
 ws_sync.connect("", {
