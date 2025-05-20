@@ -246,3 +246,6 @@
   websockets_types[] and websockets_groups[] by name. Check for consequences.
 * Switch bit boss to use grouped variables $boss:avatar$ etc
   - Don't change existing ones, just change the template for new ones
+* UI to allow mods to edit custom rewards
+  - Currently, you could create a command and use that to make changes, but that's tedious
+  - Allow editing of more aspects maybe? Cooldowns and such?
