@@ -65,7 +65,10 @@ To update the physics engine:
 It's MIT-licensed so this should be all legal.
 */
 constant pilestyles = #"
-
+body.invisible {
+	opacity: 0;
+	transition: opacity 60s;
+}
 ";
 
 constant builtin_name = "Monitors"; //The front end may redescribe this according to the parameters
@@ -93,8 +96,8 @@ constant saveable_attributes = "previewbg barcolor fillcolor altcolor needlesize
 	"infinitier lvlupcmd format format_style width height "
 	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip follow kofi_dono kofi_member kofi_renew kofi_shop kofi_commission "
 	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive startonscene startonscene_time record_leaderboard "
-	"twitchsched twitchsched_offset" / " " + TEXTFORMATTING_ATTRS;
-constant retained_attributes = (<"boss_selfheal", "boss_giftrecipient">); //Attributes set externally, not editable.
+	"twitchsched twitchsched_offset fadeouttime" / " " + TEXTFORMATTING_ATTRS;
+constant retained_attributes = (<"boss_selfheal", "boss_giftrecipient">); //Attributes set externally, not editable with wscmd_updatemonitor.
 constant valid_types = (<"text", "goalbar", "countdown", "pile">);
 
 constant default_thing_image = (["url": "/static/MustardMineAvatar.png", "xsize": 844, "ysize": 562]);
@@ -332,8 +335,13 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 @"is_mod": __async__ void wscmd_updatemonitor(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
 	string nonce = msg->nonce;
-	if (!stringp(msg->text) || !monitors[nonce]) return; //Monitor doesn't exist. You can't create monitors with this.
-	mapping info = monitors[nonce] = (["type": monitors[nonce]->type, "text": msg->text]) | (monitors[nonce] & retained_attributes);
+	mapping info = monitors[nonce];
+	if (!info) return; //Monitor doesn't exist. You can't create monitors with this.
+	if ((<"text", "goalbar", "countdown">)[info->type]) {
+		//Full update every time. TODO: Consider transitioning everything to partial update mode.
+		if (!stringp(msg->text)) return;
+		info = monitors[nonce] = (["type": info->type, "text": msg->text]) | (monitors[nonce] & retained_attributes);
+	}
 	foreach (saveable_attributes, string key) if (msg[key]) info[key] = msg[key];
 	if (info->needlesize == "") info->needlesize = "0";
 	if (msg->varname) info->text = sprintf("$%s$:%s", msg->varname, info->text);

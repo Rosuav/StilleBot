@@ -309,9 +309,9 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 
 set_content("#editpile form div", [
 	DIV(["Variable group: ", CODE({"data-content": "varname"})]),
+	DIV(["Fade after ", INPUT({name: "fadeouttime", type: "number"}), " minutes (0 to disable)"]),
 	"Thing categories:",
 	DIV({id: "pilethings"}), //Will contain a tile for every category of thing that can be dropped onto the pile
-	//Any other configuration needed?
 ]);
 
 set_content("#editthingcat form div", TABLE({border: 1}, [

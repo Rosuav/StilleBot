@@ -25,7 +25,9 @@ window.renderer = renderer; //For debugging, eg toggle wireframes mode
 const thingcategories = { };
 //Map category ID to the server-provided information about it
 let thingtypes = { };
+let fadeouttime = { };
 export function render(data) {
+	if (data.data?.fadeouttime) fadeouttime = +data.data?.fadeouttime;
 	if (data.data?.things) thingtypes = Object.fromEntries(data.data.things.map(t => [t.id, t]));
 	if (data.newcount) Object.entries(data.newcount).forEach(([thingtype, newcount]) => {
 		const cat = thingtypes[thingtype];
@@ -50,6 +52,9 @@ export function render(data) {
 			Matter.Body.setAngularVelocity(obj, Math.random() * .2 - .1);
 			Matter.Composite.add(engine.world, obj);
 			things.push(obj);
+			//A new thing has been added! Make the pile visible.
+			document.body.classList.remove("invisible");
+			if (fadeouttime) setTimeout(() => document.body.classList.add("invisible"), fadeouttime * 60000 - 59000);
 		}
 	});
 }

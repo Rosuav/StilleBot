@@ -80,7 +80,7 @@ Note that Piles of Pics may re-drop all objects if the page is refreshed.
 > <form method=dialog>
 > <div></div>
 >
-> [Add category](: #addpilecat) [Close](: type=submit value=cancel)
+> [Save](: type=submit value=save) [Add category](: #addpilecat) [Close](: type=submit value=cancel)
 > </form>
 {: tag=dialog #editpile}
 
