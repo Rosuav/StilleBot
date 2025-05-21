@@ -54,7 +54,7 @@ export function render(data) {
 			things.push(obj);
 			//A new thing has been added! Make the pile visible.
 			document.body.classList.remove("invisible");
-			if (fadeouttime) setTimeout(() => document.body.classList.add("invisible"), fadeouttime * 60000 - 59000);
+			if (fadeouttime) setTimeout(() => document.body.classList.add("invisible"), fadeouttime * 60000 - 5000);
 		}
 	});
 }

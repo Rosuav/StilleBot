@@ -67,7 +67,7 @@ It's MIT-licensed so this should be all legal.
 constant pilestyles = #"
 body.invisible {
 	opacity: 0;
-	transition: opacity 60s;
+	transition: opacity 5s;
 }
 ";
 
