@@ -33,5 +33,5 @@ __async__ void pingmakeship() {
 
 protected void create(string name) {
 	remove_call_out(G->G->makeship_call_out);
-	if (is_active_bot()) G->G->makeship_call_out = call_out(pingmakeship, 60);
+	//if (is_active_bot()) G->G->makeship_call_out = call_out(pingmakeship, 60);
 }
