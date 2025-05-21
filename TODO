@@ -251,3 +251,4 @@
 * UI to allow mods to edit custom rewards
   - Currently, you could create a command and use that to make changes, but that's tedious
   - Allow editing of more aspects maybe? Cooldowns and such?
+  - Allow deletion, not currently possible even using a command
