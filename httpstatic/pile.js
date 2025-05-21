@@ -25,7 +25,7 @@ window.renderer = renderer; //For debugging, eg toggle wireframes mode
 const thingcategories = { };
 //Map category ID to the server-provided information about it
 let thingtypes = { };
-let fadeouttime = { };
+let fadeouttime = 0, fader = 0;
 export function render(data) {
 	if (data.data?.fadeouttime) fadeouttime = +data.data?.fadeouttime;
 	if (data.data?.things) thingtypes = Object.fromEntries(data.data.things.map(t => [t.id, t]));
@@ -54,7 +54,8 @@ export function render(data) {
 			things.push(obj);
 			//A new thing has been added! Make the pile visible.
 			document.body.classList.remove("invisible");
-			if (fadeouttime) setTimeout(() => document.body.classList.add("invisible"), fadeouttime * 60000 - 5000);
+			clearTimeout(fader);
+			if (fadeouttime) fader = setTimeout(() => {fader = 0; document.body.classList.add("invisible")}, fadeouttime * 60000 - 5000);
 		}
 	});
 }
