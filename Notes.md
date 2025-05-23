@@ -23,3 +23,9 @@ Creating new command functionality
 * The classic editor needs to be enhanced.
   - Simple features can be added to the flags mapping at the top
   - More complicated features need ad-hoc code in render_command()
+
+
+Commonly-used emoji
+-------------------
+
+* Gear: BUTTON({type: "button", title: "Configure"}, "\u2699")
