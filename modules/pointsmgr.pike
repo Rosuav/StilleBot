@@ -56,7 +56,7 @@ mapping remap_eventsub_message(mapping info) {
 		({0, "max_per_stream", "max_per_stream_setting"}),
 		({0, "max_per_user_per_stream", "max_per_user_per_stream_setting"}),
 		({"global_cooldown_setting", "seconds", "global_cooldown_seconds"}),
-		({"max_per_stream_setting", "value", "max_per_stream_setting"}),
+		({"max_per_stream_setting", "value", "max_per_stream"}),
 		({"max_per_user_per_stream_setting", "value", "max_per_user_per_stream"}),
 	}), [string elem, string from, string to]) {
 		mapping el = elem ? info[elem] : info;

@@ -35,6 +35,13 @@ purposes).
 	margin: 0.125em 0;
 }
 </style>
+
+> ### Edit reward details
+>
+> <table border id=rewardfields></table>
+>
+> [Save](:type=submit) [Close](:.dialog_close)
+{: tag=formdialog #editrewarddlg}
 ";
 
 /* Ultimately this should be the master management for all points rewards. All shared code for
@@ -143,6 +150,27 @@ __async__ void wscmd_new_dynamic(object channel, mapping(string:mixed) conn, map
 	if (!G->G->rewards_manageable[broadcaster_id]) G->G->rewards_manageable[broadcaster_id] = (<>);
 	G->G->rewards_manageable[broadcaster_id][info->id] = 1;
 	await(G->G->DB->save_config(channel->userid, "dynamic_rewards", dyn));
+}
+
+__async__ void wscmd_update_reward(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//Able to edit more fields than update_dynamic can, but does not store placeholdered text for future changes.
+	//The edits done by this command are always immediate; note that this might result in a dynamic reward pushing
+	//out another update, overwriting your changes here.
+	multiset fields = (<
+		"title", "prompt", "cost",
+		"background_color",
+		"is_enabled", "is_paused", "is_user_input_required",
+		"should_redemptions_skip_request_queue",
+		"max_per_stream", "is_max_per_stream_enabled",
+		"max_per_user_per_stream", "is_max_per_user_per_stream_enabled",
+		"global_cooldown_seconds", "is_global_cooldown_enabled",
+	>);
+	mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+			+ channel->userid + "&id=" + msg->reward_id,
+		(["Authorization": channel->userid]),
+		(["method": "PATCH", "json": msg & fields, "return_errors": 1]),
+	));
+	werror("UPDATE REWARD %O\n", ret);
 }
 
 __async__ void wscmd_update_dynamic(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
