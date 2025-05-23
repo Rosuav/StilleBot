@@ -248,7 +248,3 @@
   - Don't change existing ones, just change the template for new ones
   - Is it worth changing it around fundamentally, or just (for now at least) changing the
     variable names used? Should varname become "boss" or "boss:dmg"?
-* UI to allow mods to edit custom rewards
-  - Currently, you could create a command and use that to make changes, but that's tedious
-  - Allow editing of more aspects maybe? Cooldowns and such?
-  - Allow deletion, not currently possible even using a command

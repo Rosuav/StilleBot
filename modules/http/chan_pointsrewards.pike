@@ -40,7 +40,7 @@ purposes).
 >
 > <table border id=rewardfields></table>
 >
-> [Save](:type=submit) [Close](:.dialog_close)
+> [Save](:type=submit) [Close](:.dialog_close) [Delete reward](:#deletereward)
 {: tag=formdialog #editrewarddlg}
 ";
 
@@ -168,9 +168,16 @@ __async__ void wscmd_update_reward(object channel, mapping(string:mixed) conn, m
 	mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 			+ channel->userid + "&id=" + msg->reward_id,
 		(["Authorization": channel->userid]),
-		(["method": "PATCH", "json": msg & fields, "return_errors": 1]),
+		(["method": "PATCH", "json": msg & fields]),
 	));
-	werror("UPDATE REWARD %O\n", ret);
+}
+
+__async__ void wscmd_delete_reward(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+			+ channel->userid + "&id=" + msg->reward_id,
+		(["Authorization": channel->userid]),
+		(["method": "DELETE"]),
+	));
 }
 
 __async__ void wscmd_update_dynamic(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {

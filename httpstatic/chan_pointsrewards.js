@@ -1,6 +1,7 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {BR, BUTTON, IMG, INPUT, LABEL, LI, OPTION, TBODY, TD, TEXTAREA, TR, UL} = choc; //autoimport
 import {commands, register_command, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
+import {simpleconfirm} from "$$static||utils.js$$";
 
 export const render_parent = DOM("#rewards tbody");
 export function render_item(rew) {
@@ -125,6 +126,11 @@ on("submit", "#editrewarddlg form", e => {
 	}
 	ws_sync.send(msg);
 });
+
+on("click", "#deletereward", simpleconfirm("Are you sure you want to delete this reward? Cannot be undone!", e => {
+	ws_sync.send({cmd: "delete_reward", reward_id: editing_reward});
+	DOM("#editrewarddlg").close();
+}));
 
 cmd_configure({
 	get_command_basis: cmd => {
