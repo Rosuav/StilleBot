@@ -62,9 +62,6 @@ mapping remap_eventsub_message(mapping info) {
 		mapping el = elem ? info[elem] : info;
 		if (el && !undefinedp(el[from])) el[to] = m_delete(el, from);
 	}
-	//There's something borked about these already, so I'm not migrating it to the new
-	//way to look up dynamic rewards. TODO: Fix this so that updating of rewards doesn't
-	//lose these "is dynamic" and "is manageable" flags.
 	if (rewards_manageable[(int)info->broadcaster_id][?info->id]) info->can_manage = 1;
 	//mapping current = G->G->irc->id[(int)info->broadcaster_id]->?config->?dynamic_rewards;
 	//if (current[?info->id]) info->is_dynamic = 1;
@@ -72,8 +69,19 @@ mapping remap_eventsub_message(mapping info) {
 }
 
 @EventNotify("channel.channel_points_custom_reward.add=1"):
-void rewardadd(object channel, mapping info) {
+__async__ void rewardadd(object channel, mapping info) {
 	if (!pointsrewards[channel->userid]) return;
+	//Before processing the addition, check to see if it's a manageable reward.
+	catch {
+		await(twitch_api_request(
+			"https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid
+			+ "&only_manageable_rewards=true&id=" + info->id,
+			(["Authorization": channel->userid])));
+		//Since we're querying a single ID, it's either going to succeed and return one value (meaning
+		//the reward IS manageable), or it's going to throw an error, which we can ignore (because the
+		//reward is NOT manageable).
+		rewards_manageable[channel->userid][info->id] = 1;
+	};
 	pointsrewards[channel->userid] += ({remap_eventsub_message(info)});
 	event_notify("reward_changed", channel, info->id);
 };
