@@ -13,9 +13,9 @@ const Rectangle = Matter.Bodies.rectangle;
 //TODO: Make the height of the side walls configurable
 Matter.Composite.add(engine.world, Rectangle(width / 2, height + 28, width + 10, 60,
 	{isStatic: true, render: {fillStyle: visible_walls ? "rebeccapurple" : "transparent", lineWidth: 0}}));
-Matter.Composite.add(engine.world, Rectangle(-28, height * 5 / 6, 60, height / 3 + 10,
+Matter.Composite.add(engine.world, Rectangle(-28, height * 7 / 8, 60, height / 4 + 10,
 	{isStatic: true, render: {fillStyle: visible_walls ? "rebeccapurple" : "transparent", lineWidth: 0}}));
-Matter.Composite.add(engine.world, Rectangle(width + 28, height * 5 / 6, 60, height / 3 + 10,
+Matter.Composite.add(engine.world, Rectangle(width + 28, height * 7 / 8, 60, height / 4 + 10,
 	{isStatic: true, render: {fillStyle: visible_walls ? "rebeccapurple" : "transparent", lineWidth: 0}}));
 Matter.Render.run(renderer);
 Matter.Runner.run(Matter.Runner.create(), engine);
