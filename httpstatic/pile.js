@@ -10,11 +10,12 @@ const Rectangle = Matter.Bodies.rectangle;
 //The ground and walls. TODO: Add config to specify which walls should have barriers.
 //NOTE: The position appears to be the *middle* of the object, not the top-left.
 //The floor should have some thickness to it, to prevent weird bouncing.
+//TODO: Make the height of the side walls configurable
 Matter.Composite.add(engine.world, Rectangle(width / 2, height + 28, width + 10, 60,
 	{isStatic: true, render: {fillStyle: visible_walls ? "rebeccapurple" : "transparent", lineWidth: 0}}));
-Matter.Composite.add(engine.world, Rectangle(-28, height / 2, 60, height + 10,
+Matter.Composite.add(engine.world, Rectangle(-28, height * 5 / 6, 60, height / 3 + 10,
 	{isStatic: true, render: {fillStyle: visible_walls ? "rebeccapurple" : "transparent", lineWidth: 0}}));
-Matter.Composite.add(engine.world, Rectangle(width + 28, height / 2, 60, height + 10,
+Matter.Composite.add(engine.world, Rectangle(width + 28, height * 5 / 6, 60, height / 3 + 10,
 	{isStatic: true, render: {fillStyle: visible_walls ? "rebeccapurple" : "transparent", lineWidth: 0}}));
 Matter.Render.run(renderer);
 Matter.Runner.run(Matter.Runner.create(), engine);
