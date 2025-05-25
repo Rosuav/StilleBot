@@ -250,3 +250,4 @@
   - Don't change existing ones, just change the template for new ones
   - Is it worth changing it around fundamentally, or just (for now at least) changing the
     variable names used? Should varname become "boss" or "boss:dmg"?
+  - Check how varname and text are used here. Consider removing the need for text altogether.
