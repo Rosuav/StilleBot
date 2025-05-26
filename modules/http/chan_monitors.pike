@@ -302,6 +302,7 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 		"active": 1,
 	]);
 	if (msg->type == "pile") monitors[nonce] |= ([
+		"wall_left": 100, "wall_right": 100, "wall_floor": 100,
 		"things": ({default_thing_type | ([])}),
 	]);
 	mapping info = monitors[nonce];
