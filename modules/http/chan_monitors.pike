@@ -387,8 +387,8 @@ __async__ void file_uploaded(mapping file) {
 				sscanf(msg->id, "%[A-Za-z0-9]", string newid);
 				if (newid == msg->id) thing->id = newid;
 			}
-			//foreach (({ }), string key) //String attributes (none currently, other than the id)
-				//if (msg[key]) thing[key] = msg[key];
+			foreach (({"shape"}), string key) //String attributes
+				if (msg[key]) thing[key] = msg[key];
 			foreach (({"xsize"}), string key) //Numeric attributes
 				if (msg[key]) thing[key] = (int)msg[key];
 			if (string fileid = msg->addimage) {

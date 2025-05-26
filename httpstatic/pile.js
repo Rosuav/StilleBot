@@ -6,7 +6,7 @@ const visible_walls = false;
 const renderer = Matter.Render.create({element: document.getElementById("display"), engine, options: {
 	background: visible_walls ? "aliceblue" : "transparent", width, height,
 }});
-const Rectangle = Matter.Bodies.rectangle;
+const Rectangle = Matter.Bodies.rectangle, Circle = Matter.Bodies.circle;
 //TODO: Make the height of the side walls configurable
 Matter.Render.run(renderer);
 Matter.Runner.run(Matter.Runner.create(), engine);
@@ -62,14 +62,28 @@ export function render(data) {
 		while (things.length < newcount) {
 			const img = cat.images[Math.floor(Math.random() * cat.images.length)] || default_thing_image;
 			const scale = cat.xsize / img.xsize;
-			const obj = Rectangle(Math.floor(Math.random() * (width - cat.xsize - 30) + cat.xsize / 2 + 15), Math.floor(Math.random() * 100 + 10), cat.xsize, Math.ceil(img.ysize * scale), {
+			const attrs = {
 				render: {sprite: {
 					texture: img.url,
 					//xOffset: cat.xoffset || 0, yOffset: cat.yoffset || 0, //Not currently configured on the back end
 					xScale: scale, yScale: scale, 
 				}},
 				restitution: 0.25, //Make 'em a little bit bouncier
-			});
+			};
+			let obj;
+			switch (cat.shape) {
+				case "circle": obj = Circle(
+					Math.floor(Math.random() * (width - cat.xsize - 30) + cat.xsize / 2 + 15),
+					Math.floor(Math.random() * 100 + 10),
+					cat.xsize / 2, //Our idea of xsize is width, so the radius is half that
+					attrs);
+				break;
+				default: obj = Rectangle(
+					Math.floor(Math.random() * (width - cat.xsize - 30) + cat.xsize / 2 + 15),
+					Math.floor(Math.random() * 100 + 10),
+					cat.xsize, Math.ceil(img.ysize * scale),
+					attrs);
+			}
 			//Angles are measured in radians. Angular velocity seems to be rad/frame and we're at
 			//60Hz physics rate, meaning that 0.01 will rotate you by 0.60 rad/sec (before friction is
 			//taken into account). Provide each newly-added element with a bit of rotation, either direction.

@@ -335,6 +335,11 @@ set_content("#editthingcat form div", TABLE({border: 1}, [
 	TR([TH("Size"), TD([
 		//Note that the height is calculated in order to preserve aspect ratio of the image.
 		INPUT({name: "xsize", type: "number", step: 1}),
+		" Shape ",
+		SELECT({name: "shape"}, [
+			OPTION({value: ""}, "Rectangle"),
+			OPTION({value: "circle"}, "Circle"),
+		]),
 	])]),
 	TR([TH("Images"), TD({id: "thingcatimages"})]),
 ]));
