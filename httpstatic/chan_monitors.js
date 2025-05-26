@@ -320,6 +320,12 @@ set_content("#editpile form div", [
 	DIV(["Variable group: ", CODE({"data-content": "varname"})]),
 	LABEL(["Automatically reset? ", AUTO_RESET()]),
 	DIV(["Fade after ", INPUT({name: "fadeouttime", type: "number"}), " minutes (0 to disable)"]),
+	DIV({style: "margin: 12px 0"}, TABLE({border: "1"}, [
+		TR([TH("Wall"), TH("Size (%)")]),
+		TR([TD(LABEL({for: "wall_left"}, "Left")), TD(INPUT({type: "number", id: "wall_left", name: "wall_left"}))]),
+		TR([TD(LABEL({for: "wall_right"}, "Right")), TD(INPUT({type: "number", id: "wall_right", name: "wall_right"}))]),
+		TR([TD(LABEL({for: "wall_floor"}, "Floor")), TD(INPUT({type: "number", id: "wall_floor", name: "wall_floor"}))]),
+	])),
 	"Thing categories:",
 	DIV({id: "pilethings"}), //Will contain a tile for every category of thing that can be dropped onto the pile
 ]);
