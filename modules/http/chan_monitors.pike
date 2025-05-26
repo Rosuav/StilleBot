@@ -96,7 +96,7 @@ constant saveable_attributes = "previewbg barcolor fillcolor altcolor needlesize
 	"infinitier lvlupcmd format format_style width height "
 	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip follow kofi_dono kofi_member kofi_renew kofi_shop kofi_commission "
 	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive startonscene startonscene_time record_leaderboard "
-	"twitchsched twitchsched_offset fadeouttime" / " " + TEXTFORMATTING_ATTRS;
+	"twitchsched twitchsched_offset fadeouttime autoreset" / " " + TEXTFORMATTING_ATTRS;
 constant retained_attributes = (<"boss_selfheal", "boss_giftrecipient">); //Attributes set externally, not editable with wscmd_updatemonitor.
 constant valid_types = (<"text", "goalbar", "countdown", "pile">);
 
@@ -618,6 +618,74 @@ mapping message_params(object channel, mapping person, array param) {
 		default: return (["{type}": info->type]); //Should be "text".
 	}
 }
+
+@retain: mapping queued_offline_resets = ([]);
+void reset_goal_bar(int broadcaster_id, string id) {
+	object channel = G->G->irc->id[broadcaster_id]; if (!channel) return;
+	remove_call_out(m_delete(queued_offline_resets, id + "#" + channel->userid));
+	mapping info = G->G->DB->load_cached_config(channel->userid, "monitors")[id];
+	switch (info->type) {
+		case "pile": {
+			//Zero out the variables for each active thing type
+			foreach (info->things || ({ }), mapping thing)
+				channel->set_variable(info->varname + ":" + thing->id, "0", "set");
+			break;
+		}
+		case "goalbar": {
+			if (info->format == "hitpoints") {
+				//NOTE: When bit boss gets rejigged, this could look at varname for simplicity.
+				G->G->websocket_types->chan_minigames->reset_boss(channel);
+				break;
+			}
+			//Normal goal bar: Zero out the one variable that governs it.
+			channel->set_variable(info->varname, "0", "set");
+			break;
+		}
+		default: break; //No need to autoreset text or countdown.
+	}
+}
+
+//To allow autoreset on any given period (eg weekly - but watch for Sunday first vs Sunday last),
+//create a function with the name timepart_{period} which, given a timestamp, returns a string which
+//will be identical all through that period and change when the period changes.
+string timepart_monthly(object ts) {
+	return sprintf("%d-%02d", ts->year_no(), ts->month_no());
+}
+
+void check_for_resets(int broadcaster_id, int streamreset) {
+	object channel = G->G->irc->id[broadcaster_id]; if (!channel) return;
+	int changed = 0;
+	mapping mon = G->G->DB->load_cached_config(channel->userid, "monitors");
+	foreach (mon; string id; mapping info) {
+		int reset = streamreset && info->autoreset == "stream";
+		//If we're past a month end, it's time to reset (eg if you went past midnight while live,
+		//then the reset happens after the stream goes offline).
+		if (function f = this["timepart_" + info->autoreset]) {
+			string now = f(Calendar.now()->set_timezone(channel->config->timezone || "UTC"));
+			if (now != info->lastreset) {
+				info->lastreset = now;
+				reset = changed = 1;
+			}
+		}
+		if (reset) {
+			string key = id + "#" + channel->userid;
+			remove_call_out(m_delete(queued_offline_resets, key));
+			//When we go offline, delay the reset by half an hour. When online, do it as quickly as possible.
+			queued_offline_resets[key] = call_out(reset_goal_bar, streamreset && 1800, channel->userid, id);
+		}
+	}
+	if (changed) G->G->DB->save_config(channel->userid, "monitors", mon);
+}
+
+@hook_channel_online: int channel_online(string chan, int uptime, int broadcaster_id) {
+	//Since we're now online, make sure we don't do any pending just-went-offline checks.
+	foreach (indices(queued_offline_resets), string key) {
+		if (has_suffix(key, "#" + broadcaster_id)) remove_call_out(m_delete(queued_offline_resets, key));
+	}
+	check_for_resets(broadcaster_id, 0);
+}
+
+@hook_channel_offline: int channel_offline(string chan, int uptime, int broadcaster_id) {check_for_resets(broadcaster_id, 1);}
 
 protected void create(string name) {
 	::create(name);

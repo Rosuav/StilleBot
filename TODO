@@ -251,3 +251,15 @@
   - Is it worth changing it around fundamentally, or just (for now at least) changing the
     variable names used? Should varname become "boss" or "boss:dmg"?
   - Check how varname and text are used here. Consider removing the need for text altogether.
+* Document the semantics of monitor autoreset somewhere.
+  - Stream Offline seems intuitive, but explain the half-hour gap; notably, if you query the
+    monitor in a streamoffline special trigger, you will see the stream's data, guaranteed.
+  - Monthly (and any other fixed-time reset) will use your timezone and query some part of it,
+    in this case year:month, and records the last time it was reset.
+    - If you go online and the time portion has changed, reset immediately.
+    - If you go offline and the time portion has changed, queue a reset per "end of stream"
+      mode, and immediately update the recorded timepart.
+    - Otherwise, poll periodically for any that have this status. If they have changed, and
+      the stream isn't online, reset immediately; if stream IS online, flag for one EOS reset.
+  - Note that this should never reset while you are online, unless it's right at the start of
+    the stream (first few minutes), and ideally not then either.

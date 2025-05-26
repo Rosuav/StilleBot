@@ -157,6 +157,12 @@ export function render_empty() {
 }
 export function render(data) { }
 
+function AUTO_RESET() {return SELECT({name: "autoreset"}, [
+	OPTION({value: ""}, "None"),
+	OPTION({value: "stream"}, "End of stream"),
+	OPTION({value: "month"}, "Calendar month"),
+])}
+
 set_content("#edittext form div", TEXTFORMATTING({use_preview: true}));
 set_content("#editcountdown form div", [
 	TEXTFORMATTING({use_preview: true, texts: [
@@ -189,7 +195,10 @@ set_content("#editcountdown form div", [
 ]);
 
 set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
-	TR([TH("Active"), TD(LABEL([INPUT({name: "active", type: "checkbox", "data-nocopy": 1}), "Enable auto-advance and level up messages"]))]),
+	TR([TH("Active"), TD([
+		LABEL([INPUT({name: "active", type: "checkbox", "data-nocopy": 1}), "Enable auto-advance and level up messages"]),
+		BR(), LABEL(["Automatically reset? ", AUTO_RESET()]),
+	])]),
 	TR([TH("Variable"), TD([
 		SELECT({name: "varname", "data-nocopy": 1}, OPTION("loading...")),
 		" Or create a new one: ",
@@ -309,6 +318,7 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 
 set_content("#editpile form div", [
 	DIV(["Variable group: ", CODE({"data-content": "varname"})]),
+	LABEL(["Automatically reset? ", AUTO_RESET()]),
 	DIV(["Fade after ", INPUT({name: "fadeouttime", type: "number"}), " minutes (0 to disable)"]),
 	"Thing categories:",
 	DIV({id: "pilethings"}), //Will contain a tile for every category of thing that can be dropped onto the pile
