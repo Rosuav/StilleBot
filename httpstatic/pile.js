@@ -7,7 +7,6 @@ const renderer = Matter.Render.create({element: document.getElementById("display
 	background: visible_walls ? "aliceblue" : "transparent", width, height,
 }});
 const Rectangle = Matter.Bodies.rectangle, Circle = Matter.Bodies.circle;
-//TODO: Make the height of the side walls configurable
 Matter.Render.run(renderer);
 Matter.Runner.run(Matter.Runner.create(), engine);
 renderer.options.wireframes = false;
