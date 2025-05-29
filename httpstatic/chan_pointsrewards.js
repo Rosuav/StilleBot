@@ -122,7 +122,7 @@ on("submit", "#editrewarddlg form", e => {
 		const flag = "is_" + field.replace("_seconds", "") + "_enabled";
 		const val = +msg[field];
 		msg[flag] = !!val;
-		if (!val) delete msg[field]; else msg[field] = val;
+		msg[field] = val; //Note that this will set it to zero in addition to setting the enabled field to false. I don't get it, but this is what the API wants.
 	}
 	ws_sync.send(msg);
 });
