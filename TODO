@@ -264,11 +264,6 @@
   - Note that this should never reset while you are online, unless it's right at the start of
     the stream (first few minutes), and ideally not then either.
 * Emote showcase, fixed image edition
-  - Allow the selection of which group(s) to generate for
-  - Include or exclude headings
-  - Generate it at exactly 320px wide for panel usage
-  - Allow selection of emote size (from the three standard options, 112/56/28)
-  - Include or exclude names
-  - Ping Maaya when done
+  - Include or exclude names?
   - Allow drag and drop reordering of emotes
   - Fragment link for all settings except reordering
