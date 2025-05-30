@@ -32,7 +32,6 @@ on("change", "#capturedlg input,#capturedlg select", update_preview);
 
 on("click", "#capture", e => {
 	const target = DOM("#captureme");
-	console.log("CAPTURE", target);
 	const box = target.getBoundingClientRect();
 	const canvas = choc.CANVAS({width: box.width|0, height: box.height|0});
 	const ctx = canvas.getContext("2d");
@@ -41,8 +40,16 @@ on("click", "#capture", e => {
 	target.querySelectorAll("img").forEach(img => {
 		ctx.drawImage(img, img.offsetLeft, img.offsetTop);
 	});
+	ctx.fillStyle = "black";
+	ctx.textBaseline = "top"; //Measure text from the top left, not the baseline - lets us use DOM measurement for pixel positions
+	target.querySelectorAll("h2,h3").forEach(hdg => {
+		const text = hdg.innerText;
+		const styles = getComputedStyle(hdg);
+		ctx.font = styles.font;
+		ctx.fillText(text, hdg.offsetLeft, hdg.offsetTop);
+	});
 	//To quickly see the image:
-	//target.insertAdjacentElement("afterend", choc.IMG({src: canvas.toDataURL(), style: "width: " + box.width + "px; height: " + box.height + "px"}));
+	//target.closest(".twocol").append(choc.IMG({src: canvas.toDataURL(), style: "width: " + box.width + "px; height: " + box.height + "px"}));
 	canvas.toBlob(blob => {
 		choc.A({href: URL.createObjectURL(blob), download: "emotes.png"}).click();
 	});
