@@ -270,3 +270,5 @@
   - Allow selection of emote size (from the three standard options, 112/56/28)
   - Include or exclude names
   - Ping Maaya when done
+  - Allow drag and drop reordering of emotes
+  - Fragment link for all settings except reordering
