@@ -91,6 +91,37 @@ constant markdown = #"# Emote tools, showcases and checklists
 {: tag=dialog #aqdlg}
 ";
 
+constant capturedlg = #"
+[Design panel images](:#opencapturedlg)
+
+> ### Design panel images
+>
+> <div class=twocol>
+> <div>
+> <label>Heading: <input id=heading size=20>
+> <fieldset id=sections><legend>Select sections</legend></fieldset>
+> <label><input type=checkbox id=headings> Include headings</label><br>
+> Emote size: <select id=imgsize><option value=3>Large<option value=2 selected>Medium<option value=1>Small</select>
+> </div>
+> <fieldset class=scrollable><legend>Preview</legend><div style=\"position: relative\"><div id=captureme></div></div></fieldset>
+> </div>
+>
+> [Save image](:#capture) [Close](:.dialog_close)
+{: tag=dialog #capturedlg}
+
+<style>
+#sections label {display: block;}
+#captureme {width: 320px;}
+#captureme h2 {margin-bottom: 0; margin-top: 0}
+#captureme h3 {margin-bottom: 0;}
+/* A 1px gap between images still fits 11 to a row at the smallest size, and doesn't waste
+much space on any size */
+#captureme img {width: unset; height: unset; border: none; margin-right: 1px;}
+.twocol {display: flex; gap: 8px}
+.scrollable {overflow-y: scroll; height: 300px;}
+</style>
+";
+
 //Consistent display order for the well-known groups. Any group not listed here will
 //be included at the top of the page where it's easy to spot.
 constant order = ({
@@ -153,6 +184,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		array emotes = await(twitch_api_request("https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + id))->data;
 		mapping sets = ([]);
 		mapping setids = (["Subscriber badges": -1, "Bits badges": -2]); //Map description to ID for second pass
+		mapping emotes_by_set = ([]);
 		foreach (emotes, mapping em) {
 			if (em->emote_type == "bitstier") em->emote_set_id = "Bits"; //Hack - we don't get the bits levels anyway, so just group 'em.
 			if (!sets[em->emote_set_id]) {
@@ -169,6 +201,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 				sets[em->emote_set_id] = ({desc, ({ })});
 				setids[desc] = em->emote_set_id;
 			}
+			emotes_by_set[em->emote_set_id] += ({em->id});
 			sets[em->emote_set_id][1] += ({
 				sprintf("<figure>![%s](%s)"
 					"<figcaption>%[0]s</figcaption></figure>", em->name,
@@ -179,7 +212,9 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			if (string other = setids[desc - " Animated"]) {
 				//There's both "Tier 1" and "Tier 1 Animated". Fold them together.
 				sets[other][1] += sets[id][1];
+				emotes_by_set[other] += emotes_by_set[id];
 				m_delete(sets, id);
+				m_delete(emotes_by_set, id);
 			} else {
 				//There's animated but no static for this group. Just remove the tag.
 				sets[id][0] -= " Animated";
@@ -212,14 +247,25 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		array sorted = ({ });
 		foreach (order, string lbl)
 			if (array s = m_delete(sets, setids[lbl])) sorted += ({s});
+		array emoteset_order = filter(setids[order[*]], stringp); //Exclude any null entries (for sections that are absent), and the -1/-2 for badges
 		//Any that weren't found, stick at the beginning so they're obvious
+		//TODO: Is it right to cast to int here? What's the purpose of the ordering - just stability?
+		//The emote set IDs are now UUIDs instead of just integers, so this might now be invalid.
+		//TODO: Should indices(sets) also be added to emoteset_order which is used by the front end for
+		//generating the panel screenshots?
 		array emotesets = values(sets); sort((array(int))indices(sets), emotesets);
 		emotesets += sorted;
 		if (!sizeof(emotesets)) emotesets = ({({"None", ({"No emotes found for this channel. Partnered and affiliated channels have emote slots available; emotes awaiting approval may not show up here."})})});
 		return render_template("checklist.md", ([
+			"vars": ([
+				"emotes_by_set": emotes_by_set,
+				"emoteset_order": emoteset_order,
+				"emoteset_labels": mkmapping((array(string))values(setids), indices(setids)),
+			]),
+			"js": "emotes_bcaster.js",
 			"login_link": "<button id=greyscale onclick=\"document.body.classList.toggle('greyscale')\">Toggle Greyscale (value check)</button>",
 			"emotes": "img", "title": "Channel emotes: " + await(get_user_info(id))->display_name,
-			"text": sprintf("%{\n## %s\n%{%s %}\n%}", emotesets),
+			"text": sprintf("%{\n## %s\n%{%s %}\n%}" + capturedlg, emotesets),
 		]));
 	}
 	if (req->variables->available) {
