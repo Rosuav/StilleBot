@@ -283,3 +283,7 @@
   - Test it with both rectangular and circular pics
   - When it reaches the top, anything above altitude 0 is claimed. Report it in chat and remove
     that item from the pile.
+* Add Pile of Pics to minigames
+  - Some thing types with corresponding channel point redemptions to add them
+  - The claw as an option, if implemented above
+  - A redrop redemption
