@@ -272,3 +272,14 @@
   - Clear a grouped variable set
 * Unconditional triggers???
   - Currently looks very weird, with "undefined" showing up
+* Pile of Pics claw machine?
+  - It descends on a line, with infinite length above the screen
+  - A lumpy "head"
+  - Two arms coming down at a shallow angle
+  - Two claws coming back in, initially at a steep angle
+  - Claw size can be customized
+  - As soon as it finds something, move the claws in, then ascend
+  - The close point isn't fully closed
+  - Test it with both rectangular and circular pics
+  - When it reaches the top, anything above altitude 0 is claimed. Report it in chat and remove
+    that item from the pile.
