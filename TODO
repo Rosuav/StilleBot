@@ -287,3 +287,9 @@
   - Some thing types with corresponding channel point redemptions to add them
   - The claw as an option, if implemented above
   - A redrop redemption
+  - Usage patterns include:
+    - Prefill (and keep full) with items, then people can claw for them - eg "10 pushups"
+    - People get to put their names into the pool, then the streamer claws for one until
+      it succeeds?? Would require distinguishable Things, possibly including people's
+      avatars or chosen emotes.
+    - Larger/smaller Things to change the odds, eg "25 pushups" alongside "10 pushups"
