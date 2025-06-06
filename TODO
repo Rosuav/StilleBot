@@ -294,3 +294,6 @@
       it succeeds?? Would require distinguishable Things, possibly including people's
       avatars or chosen emotes.
     - Larger/smaller Things to change the odds, eg "25 pushups" alongside "10 pushups"
+* Pile of Pics edge detection
+  - What is chamfering? It can apparently provide rounded corners.
+  - Can we do everything on a rectangular hull with corners rounded off by the transparency?
