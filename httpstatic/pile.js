@@ -19,7 +19,7 @@ if (hacks) {
 		//isStatic: true,
 		render: {fillStyle: "#71797E", lineWidth: 0},
 	};
-	const armlength = 50, clawlength = 50; //TODO: Make configurable (maybe as a single size, rather than separate arm/claw lengths)
+	const armlength = 60, clawlength = 60; //TODO: Make configurable (maybe as a single size, rather than separate arm/claw lengths)
 	const armangle = 0.3; //Fairly flat angle for the fixed part of the arm
 	const clawangle = 1.65; //Initial angle - just past the vertical. This angle will change once we touch something.
 	const targetclawgap = 20; //Should still have SOME gap even when they are closed
@@ -95,25 +95,36 @@ if (hacks) {
 	});
 	Matter.Composite.translate(claw, {x: 0, y: -5000}); //Hide it way above the screen
 	Matter.Composite.add(engine.world, claw);
-	let descend = false, close = 0;
+	let mode = "", timer = 0;
 	const closedelta = (closer.length - targetclawgap) / 30, lifterdelta = 10 / 30;
 	setTimeout(() => {
 		Matter.Composite.translate(claw, {x: width / 2, y: 5000});
-		descend = true;
+		mode = "descend";
 	}, 1000);
 	setTimeout(() => {
-		closer.stiffness = 0.005; //Tighten the spring a bit
-		close = 30;
-	}, 2000);
-	Matter.Events.on(engine, "afterUpdate", e => {
-		if (descend) Matter.Composite.translate(claw, {x: 0, y: 0.5});
-		if (close) {
-			--close;
+		//TODO: Trigger this on contact rather than timer
+		closer.stiffness = 0.5; //Tighten the spring a bit
+		mode = "close"; timer = 30;
+	}, 4000);
+	Matter.Events.on(engine, "afterUpdate", e => {switch (mode) {
+		case "descend": Matter.Composite.translate(claw, {x: 0, y: 1}); break;
+		case "close":
+			if (--timer <= 0) {mode = ""; setTimeout(() => mode = "ascend", 500);}
 			closer.length -= closedelta;
 			//Allow the arms to drop a little
 			lifter1.length += lifterdelta; lifter2.length += lifterdelta;
-		}
-	});
+			break;
+		case "ascend":
+			Matter.Composite.translate(claw, {x: 0, y: -1});
+			if (head.position.y < -100) {
+				mode = "";
+				//See what's above the screen
+				let prize = null;
+				engine.world.bodies.forEach(body => body.position.y < 0 && (prize = body));
+				if (prize) console.log("CLAIMED PRIZE", prize);
+			}
+			break;
+	}});
 }
 
 //Map a category ID to the array of things
