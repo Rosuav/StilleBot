@@ -240,7 +240,7 @@ mapping|zero websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mix
 	channel->set_variable(msg->id, msg->value || "", "set");
 }
 
-__async__ void wscmd_getgroupvars(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"demo_ok": __async__ void wscmd_getgroupvars(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping vars = G->G->DB->load_cached_config(channel->userid, "variables");
 	string pfx = "$" + (msg->id - "*" - ":") + ":";
 	//Scan for every variable that starts with this prefix. They're all independent,

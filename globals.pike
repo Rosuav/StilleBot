@@ -1405,7 +1405,8 @@ class http_websocket
 		::websocket_msg(conn, msg);
 		string name = "wscmd_" + msg->?cmd;
 		function f = this[name]; if (!f) return 0;
-		if (conn->session->fake) {send_msg(conn, (["cmd": "demo"])); return;}
+		int demo_ok = annotation_lookup[name] && annotation_lookup[name]["demo_ok"];
+		if (conn->session->fake && !demo_ok) {send_msg(conn, (["cmd": "demo"])); return;}
 		[object channel, string grp] = split_channel(conn->group);
 		if (!channel) return 0;
 		if (annotation_lookup[name] && annotation_lookup[name]["is_mod"] && !conn->is_mod) return 0;
