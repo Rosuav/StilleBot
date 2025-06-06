@@ -16,37 +16,91 @@ window.renderer = renderer; //For debugging, eg toggle wireframes mode
 if (hacks) {
 	console.log("Hacks mode enabled");
 	const attrs = {
-		isStatic: true,
+		//isStatic: true,
 		render: {fillStyle: "#71797E", lineWidth: 0},
 	};
-	//The primary body of the claw is its head. Everything else is connected to that.
 	const armlength = 50, clawlength = 50; //TODO: Make configurable (maybe as a single size, rather than separate arm/claw lengths)
 	const armangle = 0.3; //Fairly flat angle for the fixed part of the arm
-	const initialclawangle = 1.65; //Just past the vertical for the claws as we descend
-	const finalclawangle = 3.05; //Nearly horizontal when the claws close (if they don't touch anything)
+	const clawangle = 1.65; //Initial angle - just past the vertical. This angle will change once we touch something.
+	const targetclawgap = 20; //Should still have SOME gap even when they are closed
+	//The primary body of the claw is its head. Everything else is connected to that.
+	const head = Matter.Bodies.fromVertices(0, 0, Matter.Vertices.fromPath("1 -12 8 5 4 10 -4 10 -8 5 -1 -12"), {...attrs, isStatic: true});
 	const leftarm = Rectangle(-8 - armlength / 2, 5, armlength, 2, attrs);
 	Matter.Body.rotate(leftarm, -armangle, {x: -8, y: 5});
 	const rightarm = Rectangle(+8 + armlength / 2, 5, armlength, 2, attrs);
 	Matter.Body.rotate(rightarm, +armangle, {x: +8, y: 5});
-	const clawx = +8 + armlength * Math.cos(armangle), clawy = 5 + armlength * Math.sin(armangle);
-	const leftclaw = Rectangle(-clawx - clawlength / 2, clawy, clawlength, 2, attrs);
-	Matter.Body.rotate(leftclaw, -initialclawangle, {x: -clawx, y: clawy});
-	const rightclaw = Rectangle(+clawx + clawlength / 2, clawy, clawlength, 2, attrs);
-	Matter.Body.rotate(rightclaw, +initialclawangle, {x: +clawx, y: clawy});
+	const armendx = armlength * Math.cos(armangle), armendy = armlength * Math.sin(armangle);
+	const leftclaw = Rectangle(-8 - armendx - clawlength / 2, 5 + armendy, clawlength, 2, attrs);
+	Matter.Body.rotate(leftclaw, -clawangle, {x: -8 - armendx, y: 5 + armendy});
+	const rightclaw = Rectangle(8 + armendx + clawlength / 2, 5 + armendy, clawlength, 2, attrs);
+	Matter.Body.rotate(rightclaw, +clawangle, {x: 8 + armendx, y: 5 + armendy});
+	const clawendx = clawlength * Math.cos(clawangle), clawendy = clawlength * Math.sin(clawangle);
+	let closer, lifter1, lifter2;
 	const claw = Matter.Composite.create({
 		bodies: [
 			//The head
-			Matter.Bodies.fromVertices(0, 0, Matter.Vertices.fromPath("1 -12 8 5 4 10 -4 10 -8 5 -1 -12"), attrs),
+			head,
 			//The tail
-			Rectangle(0, -1000, 2, 2000, attrs),
+			Rectangle(0, -1000, 2, 2000, {...attrs, isStatic: true}),
 			//Arms
 			leftarm, rightarm, leftclaw, rightclaw,
 			//Origin marker (keep last so it's on top)
 			Rectangle(0, 0, 3, 3, {isStatic: true, render: {fillStyle: "#ffff22", lineWidth: 0}}),
 		],
+		constraints: [
+			//Anchor the arms tightly at their connection points
+			Matter.Constraint.create({
+				bodyA: head, pointA: {x: -8, y: 5},
+				bodyB: leftarm, pointB: {x: -8 - leftarm.position.x, y: 5 - leftarm.position.y},
+				render: {visible: false},
+			}),
+			Matter.Constraint.create({
+				bodyA: head, pointA: {x: 8, y: 5},
+				bodyB: rightarm, pointB: {x: 8 - rightarm.position.x, y: 5 - rightarm.position.y},
+				render: {visible: false},
+			}),
+			//Link the arms to the tail
+			lifter1 = Matter.Constraint.create({
+				bodyA: head, pointA: {x: 0, y: -120},
+				bodyB: leftarm, pointB: {x: -armendx / 2, y: armendy / 2},
+				render: {visible: false},
+				//stiffness: 0.7,
+			}),
+			lifter2 = Matter.Constraint.create({
+				bodyA: head, pointA: {x: 0, y: -120},
+				bodyB: rightarm, pointB: {x: armendx / 2, y: armendy / 2},
+				render: {visible: false},
+				//stiffness: 0.7,
+			}),
+			//Link the claws to the ends of the arms
+			Matter.Constraint.create({
+				bodyA: leftarm, pointA: {x: -armendx / 2, y: armendy / 2},
+				bodyB: leftclaw, pointB: {x: clawendx / 2, y: -clawendy / 2},
+				render: {visible: false},
+			}),
+			Matter.Constraint.create({
+				bodyA: rightarm, pointA: {x: armendx / 2, y: armendy / 2},
+				bodyB: rightclaw, pointB: {x: -clawendx / 2, y: -clawendy / 2},
+				render: {visible: false},
+			}),
+			//And link the ends of the claws together.
+			closer = Matter.Constraint.create({
+				bodyA: leftclaw, pointA: {x: -clawendx / 2, y: clawendy / 2},
+				bodyB: rightclaw, pointB: {x: clawendx / 2, y: clawendy / 2},
+				render: {visible: true, strokeStyle: "rebeccapurple"},
+				stiffness: 0.0005,
+				damping: 0.1,
+			}),
+		],
 	});
 	Matter.Composite.translate(claw, {x: width / 2, y: height / 5});
 	Matter.Composite.add(engine.world, claw);
+	setTimeout(() => {
+		closer.length = targetclawgap;
+		closer.stiffness = 0.005; //Tighten the spring a bit
+		//Allow the arms to drop a little
+		lifter1.length = lifter2.length = 160;
+	}, 5000);
 }
 
 //Map a category ID to the array of things
