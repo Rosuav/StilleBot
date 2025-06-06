@@ -1,8 +1,9 @@
+const hacks = ws_group === "4OCNIkpnmXUkUF0s0SfmOuKzurlCP6mlwxeM#49497888";
 const engine = Matter.Engine.create();
 const width = window.innerWidth - 20, height = window.innerHeight - 20;
 //NOTE: For debugging and testing, background and fillStyle are both colours. For
 //production, they should be transparent, with actual elements for interaction purposes.
-const visible_walls = false;
+const visible_walls = hacks;
 const renderer = Matter.Render.create({element: document.getElementById("display"), engine, options: {
 	background: visible_walls ? "aliceblue" : "transparent", width, height,
 }});
@@ -11,6 +12,42 @@ Matter.Render.run(renderer);
 Matter.Runner.run(Matter.Runner.create(), engine);
 renderer.options.wireframes = false;
 window.renderer = renderer; //For debugging, eg toggle wireframes mode
+
+if (hacks) {
+	console.log("Hacks mode enabled");
+	const attrs = {
+		isStatic: true,
+		render: {fillStyle: "#71797E", lineWidth: 0},
+	};
+	//The primary body of the claw is its head. Everything else is connected to that.
+	const armlength = 50, clawlength = 50; //TODO: Make configurable (maybe as a single size, rather than separate arm/claw lengths)
+	const armangle = 0.3; //Fairly flat angle for the fixed part of the arm
+	const initialclawangle = 1.65; //Just past the vertical for the claws as we descend
+	const finalclawangle = 3.05; //Nearly horizontal when the claws close (if they don't touch anything)
+	const leftarm = Rectangle(-8 - armlength / 2, 5, armlength, 2, attrs);
+	Matter.Body.rotate(leftarm, -armangle, {x: -8, y: 5});
+	const rightarm = Rectangle(+8 + armlength / 2, 5, armlength, 2, attrs);
+	Matter.Body.rotate(rightarm, +armangle, {x: +8, y: 5});
+	const clawx = +8 + armlength * Math.cos(armangle), clawy = 5 + armlength * Math.sin(armangle);
+	const leftclaw = Rectangle(-clawx - clawlength / 2, clawy, clawlength, 2, attrs);
+	Matter.Body.rotate(leftclaw, -initialclawangle, {x: -clawx, y: clawy});
+	const rightclaw = Rectangle(+clawx + clawlength / 2, clawy, clawlength, 2, attrs);
+	Matter.Body.rotate(rightclaw, +initialclawangle, {x: +clawx, y: clawy});
+	const claw = Matter.Composite.create({
+		bodies: [
+			//The head
+			Matter.Bodies.fromVertices(0, 0, Matter.Vertices.fromPath("1 -12 8 5 4 10 -4 10 -8 5 -1 -12"), attrs),
+			//The tail
+			Rectangle(0, -1000, 2, 2000, attrs),
+			//Arms
+			leftarm, rightarm, leftclaw, rightclaw,
+			//Origin marker (keep last so it's on top)
+			Rectangle(0, 0, 3, 3, {isStatic: true, render: {fillStyle: "#ffff22", lineWidth: 0}}),
+		],
+	});
+	Matter.Composite.translate(claw, {x: width / 2, y: height / 5});
+	Matter.Composite.add(engine.world, claw);
+}
 
 //Map a category ID to the array of things
 const thingcategories = { };
