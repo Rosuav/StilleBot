@@ -93,14 +93,27 @@ if (hacks) {
 			}),
 		],
 	});
-	Matter.Composite.translate(claw, {x: width / 2, y: height / 5});
+	Matter.Composite.translate(claw, {x: 0, y: -5000}); //Hide it way above the screen
 	Matter.Composite.add(engine.world, claw);
+	let descend = false, close = 0;
+	const closedelta = (closer.length - targetclawgap) / 30, lifterdelta = 10 / 30;
 	setTimeout(() => {
-		closer.length = targetclawgap;
+		Matter.Composite.translate(claw, {x: width / 2, y: 5000});
+		descend = true;
+	}, 1000);
+	setTimeout(() => {
 		closer.stiffness = 0.005; //Tighten the spring a bit
-		//Allow the arms to drop a little
-		lifter1.length = lifter2.length = 160;
-	}, 5000);
+		close = 30;
+	}, 2000);
+	Matter.Events.on(engine, "afterUpdate", e => {
+		if (descend) Matter.Composite.translate(claw, {x: 0, y: 0.5});
+		if (close) {
+			--close;
+			closer.length -= closedelta;
+			//Allow the arms to drop a little
+			lifter1.length += lifterdelta; lifter2.length += lifterdelta;
+		}
+	});
 }
 
 //Map a category ID to the array of things
