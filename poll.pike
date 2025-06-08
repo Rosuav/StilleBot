@@ -384,8 +384,7 @@ void streaminfo(array data)
 	}
 }
 
-@EventNotify("channel.update=2"): void channel_setup_changed(object channel, mapping info) {channel_setup_changed1(channel, info);}
-__async__ void channel_setup_changed1(object channel, mapping info) {
+@EventNotify("channel.update=2"): __async__ void channel_setup_changed(object channel, mapping info) {
 	//As of 20240401, this notification does not include stream tags. Even worse, there's a
 	//short time delay during which the OLD tags are returned by the API. So we lag out by
 	//a bit, *then* query the tags. Can eliminate both if the notification grows tags.
