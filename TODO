@@ -298,3 +298,5 @@
   - What is chamfering? It can apparently provide rounded corners.
   - Can we do everything on a rectangular hull with corners rounded off by the transparency?
 * Countdown monitors need a UI to set them to a specific date/time or time.
+* Countdown monitors need to separate out the varname part! Completed and Inactive do NOT
+  look the same as Active at the moment! :lol:
