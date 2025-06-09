@@ -13,15 +13,35 @@ Matter.Runner.run(Matter.Runner.create(), engine);
 renderer.options.wireframes = false;
 window.renderer = renderer; //For debugging, eg toggle wireframes mode
 
+//Create a body from a set of vertices, where the body's origin is at (0,0) regardless of its centre of mass.
+//The object will be placed at the origin.
+function body_from_path(path, attrs) {
+	const verts = Matter.Vertices.fromPath(path);
+	let minx = verts[0].x, miny = verts[0].y;
+	verts.forEach(v => {
+		if (v.x < minx) minx = v.x;
+		if (v.y < miny) miny = v.y;
+	});
+	const body = Matter.Bodies.fromVertices(0, 0, verts, attrs);
+	const mins = body.bounds.min;
+	//Re-center the body around the original origin. This involves scanning the vertices to find
+	//the minimum (x, y) used, then comparing that to the resultant body's boundary, according to
+	//the docs' description of correcting the Center of Mass calculation. Is there a better way
+	//(read: simpler way) to do this?
+	Matter.Body.setCentre(body, {x: mins.x - minx, y: mins.y - miny});
+	Matter.Body.setPosition(body, {x: 0, y: 0});
+	return body;
+}
+
 if (hacks) {
 	console.log("Hacks mode enabled");
 	const attrs = {
 		//isStatic: true,
 		render: {fillStyle: "#71797E", lineWidth: 0},
 	};
-	const shoulderlength = 60, armlength = 50, talonlength = 20; //TODO: Make configurable (maybe as a single size, rather than separate lengths)
+	const shoulderlength = 60, armlength = 60, talonlength = 15; //TODO: Make configurable (maybe as a single size, rather than separate lengths)
 	const shoulderangle = 0.3; //Fairly flat angle for the fixed part of the arm
-	const armangle = 1.65, talonangle = 2.5; //Initial angles. They will change once we touch something.
+	const armangle = 0.08; //Initial angles. They will change once we touch something.
 	const targetclawgap = 20; //Should still have SOME gap even when they are closed
 	//The primary body of the claw is its head. Everything else is connected to that.
 	const head = Matter.Bodies.fromVertices(0, 0, Matter.Vertices.fromPath("1 -12 8 5 4 10 -4 10 -8 5 -1 -12"), {...attrs, isStatic: true});
@@ -30,16 +50,13 @@ if (hacks) {
 	const rightshoulder = Rectangle(+8 + shoulderlength / 2, 5, shoulderlength, 2, attrs);
 	Matter.Body.rotate(rightshoulder, +shoulderangle, {x: +8, y: 5});
 	const shoulderendx = shoulderlength * Math.cos(shoulderangle), shoulderendy = shoulderlength * Math.sin(shoulderangle);
-	const leftarm = Rectangle(-8 - shoulderendx - armlength / 2, 5 + shoulderendy, armlength, 2, attrs);
-	Matter.Body.rotate(leftarm, -armangle, {x: -8 - shoulderendx, y: 5 + shoulderendy});
-	const rightarm = Rectangle(8 + shoulderendx + armlength / 2, 5 + shoulderendy, armlength, 2, attrs);
-	Matter.Body.rotate(rightarm, +armangle, {x: 8 + shoulderendx, y: 5 + shoulderendy});
-	const armendx = armlength * Math.cos(armangle), armendy = armlength * Math.sin(armangle);
-	const lefttalon = Rectangle(-8 - shoulderendx - armendx - talonlength / 2, 5 + shoulderendy + armendy, talonlength, 2, attrs);
-	Matter.Body.rotate(lefttalon, -talonangle, {x: -8 - shoulderendx - armendx, y: 5 + shoulderendy + armendy});
-	const righttalon = Rectangle(8 + shoulderendx + armendx + talonlength / 2, 5 + shoulderendy + armendy, talonlength, 2, attrs);
-	Matter.Body.rotate(righttalon, talonangle, {x: 8 + shoulderendx + armendx, y: 5 + shoulderendy + armendy});
-	const talonendx = talonlength * Math.cos(talonangle), talonendy = talonlength * Math.sin(talonangle);
+	//Create an arm+talon combo which has its origin point at the top of the arm
+	const leftarmtalon = body_from_path(`-1 -1 -1 ${armlength+1} ${talonlength+1} ${armlength+1} ${talonlength+1} ${armlength-1} 1 ${armlength-1} 1 -1`, attrs);
+	Matter.Body.rotate(leftarmtalon, -armangle, {x: 0, y: 0});
+	Matter.Body.setPosition(leftarmtalon, {x: -8 - shoulderendx, y: 5 + shoulderendy});
+	const rightarmtalon = body_from_path(`1 -1 1 ${armlength+1} ${-talonlength-1} ${armlength+1} ${-talonlength-1} ${armlength-1} -1 ${armlength-1} -1 -1`, attrs);
+	Matter.Body.rotate(rightarmtalon, armangle, {x: 0, y: 0});
+	Matter.Body.setPosition(rightarmtalon, {x: 8 + shoulderendx, y: 5 + shoulderendy});
 	let closer, lifter1, lifter2;
 	const claw = Matter.Composite.create({
 		bodies: [
@@ -48,7 +65,7 @@ if (hacks) {
 			//The tail
 			Rectangle(0, -1000, 2, 2000, {...attrs, isStatic: true}),
 			//Arms
-			leftshoulder, rightshoulder, leftarm, rightarm, lefttalon, righttalon,
+			leftshoulder, rightshoulder, leftarmtalon, rightarmtalon,
 			//Origin marker (keep last so it's on top)
 			Rectangle(0, 0, 3, 3, {isStatic: true, render: {fillStyle: "#ffff22", lineWidth: 0}}),
 		],
@@ -80,29 +97,18 @@ if (hacks) {
 			//Link the arms to the ends of the shoulders
 			Matter.Constraint.create({
 				bodyA: leftshoulder, pointA: {x: -shoulderendx / 2, y: shoulderendy / 2},
-				bodyB: leftarm, pointB: {x: armendx / 2, y: -armendy / 2},
+				bodyB: leftarmtalon, pointB: {x: 0, y: 0},
 				render: {visible: false},
 			}),
 			Matter.Constraint.create({
 				bodyA: rightshoulder, pointA: {x: shoulderendx / 2, y: shoulderendy / 2},
-				bodyB: rightarm, pointB: {x: -armendx / 2, y: -armendy / 2},
-				render: {visible: false},
-			}),
-			//Link the talons to the ends of the arms
-			Matter.Constraint.create({
-				bodyA: leftarm, pointA: {x: -armendx / 2, y: armendy / 2},
-				bodyB: lefttalon, pointB: {x: talonendx / 2, y: -talonendy / 2},
-				render: {visible: false},
-			}),
-			Matter.Constraint.create({
-				bodyA: rightarm, pointA: {x: armendx / 2, y: armendy / 2},
-				bodyB: righttalon, pointB: {x: -talonendx / 2, y: -talonendy / 2},
+				bodyB: rightarmtalon, pointB: {x: 0, y: 0},
 				render: {visible: false},
 			}),
 			//And link the ends of the talons together.
 			closer = Matter.Constraint.create({
-				bodyA: lefttalon, pointA: {x: -talonendx / 2, y: talonendy / 2},
-				bodyB: righttalon, pointB: {x: talonendx / 2, y: talonendy / 2},
+				bodyA: leftarmtalon, pointA: Matter.Vector.rotate({x: talonlength, y: armlength}, -armangle),
+				bodyB: rightarmtalon, pointB: Matter.Vector.rotate({x: -talonlength, y: armlength}, armangle),
 				//TODO: Allow customization of the stroke colour, or make it invisible
 				render: {visible: true, strokeStyle: "rebeccapurple"},
 				stiffness: 0.0005,
