@@ -19,21 +19,21 @@ if (hacks) {
 		//isStatic: true,
 		render: {fillStyle: "#71797E", lineWidth: 0},
 	};
-	const armlength = 60, clawlength = 60; //TODO: Make configurable (maybe as a single size, rather than separate arm/claw lengths)
-	const armangle = 0.3; //Fairly flat angle for the fixed part of the arm
+	const shoulderlength = 60, clawlength = 60; //TODO: Make configurable (maybe as a single size, rather than separate lengths)
+	const shoulderangle = 0.3; //Fairly flat angle for the fixed part of the arm
 	const clawangle = 1.65; //Initial angle - just past the vertical. This angle will change once we touch something.
 	const targetclawgap = 20; //Should still have SOME gap even when they are closed
 	//The primary body of the claw is its head. Everything else is connected to that.
 	const head = Matter.Bodies.fromVertices(0, 0, Matter.Vertices.fromPath("1 -12 8 5 4 10 -4 10 -8 5 -1 -12"), {...attrs, isStatic: true});
-	const leftarm = Rectangle(-8 - armlength / 2, 5, armlength, 2, attrs);
-	Matter.Body.rotate(leftarm, -armangle, {x: -8, y: 5});
-	const rightarm = Rectangle(+8 + armlength / 2, 5, armlength, 2, attrs);
-	Matter.Body.rotate(rightarm, +armangle, {x: +8, y: 5});
-	const armendx = armlength * Math.cos(armangle), armendy = armlength * Math.sin(armangle);
-	const leftclaw = Rectangle(-8 - armendx - clawlength / 2, 5 + armendy, clawlength, 2, attrs);
-	Matter.Body.rotate(leftclaw, -clawangle, {x: -8 - armendx, y: 5 + armendy});
-	const rightclaw = Rectangle(8 + armendx + clawlength / 2, 5 + armendy, clawlength, 2, attrs);
-	Matter.Body.rotate(rightclaw, +clawangle, {x: 8 + armendx, y: 5 + armendy});
+	const leftshoulder = Rectangle(-8 - shoulderlength / 2, 5, shoulderlength, 2, attrs);
+	Matter.Body.rotate(leftshoulder, -shoulderangle, {x: -8, y: 5});
+	const rightshoulder = Rectangle(+8 + shoulderlength / 2, 5, shoulderlength, 2, attrs);
+	Matter.Body.rotate(rightshoulder, +shoulderangle, {x: +8, y: 5});
+	const shoulderendx = shoulderlength * Math.cos(shoulderangle), shoulderendy = shoulderlength * Math.sin(shoulderangle);
+	const leftclaw = Rectangle(-8 - shoulderendx - clawlength / 2, 5 + shoulderendy, clawlength, 2, attrs);
+	Matter.Body.rotate(leftclaw, -clawangle, {x: -8 - shoulderendx, y: 5 + shoulderendy});
+	const rightclaw = Rectangle(8 + shoulderendx + clawlength / 2, 5 + shoulderendy, clawlength, 2, attrs);
+	Matter.Body.rotate(rightclaw, +clawangle, {x: 8 + shoulderendx, y: 5 + shoulderendy});
 	const clawendx = clawlength * Math.cos(clawangle), clawendy = clawlength * Math.sin(clawangle);
 	let closer, lifter1, lifter2;
 	const claw = Matter.Composite.create({
@@ -43,43 +43,43 @@ if (hacks) {
 			//The tail
 			Rectangle(0, -1000, 2, 2000, {...attrs, isStatic: true}),
 			//Arms
-			leftarm, rightarm, leftclaw, rightclaw,
+			leftshoulder, rightshoulder, leftclaw, rightclaw,
 			//Origin marker (keep last so it's on top)
 			Rectangle(0, 0, 3, 3, {isStatic: true, render: {fillStyle: "#ffff22", lineWidth: 0}}),
 		],
 		constraints: [
-			//Anchor the arms tightly at their connection points
+			//Anchor the shoulders tightly to the head
 			Matter.Constraint.create({
 				bodyA: head, pointA: {x: -8, y: 5},
-				bodyB: leftarm, pointB: {x: -8 - leftarm.position.x, y: 5 - leftarm.position.y},
+				bodyB: leftshoulder, pointB: {x: -8 - leftshoulder.position.x, y: 5 - leftshoulder.position.y},
 				render: {visible: false},
 			}),
 			Matter.Constraint.create({
 				bodyA: head, pointA: {x: 8, y: 5},
-				bodyB: rightarm, pointB: {x: 8 - rightarm.position.x, y: 5 - rightarm.position.y},
+				bodyB: rightshoulder, pointB: {x: 8 - rightshoulder.position.x, y: 5 - rightshoulder.position.y},
 				render: {visible: false},
 			}),
-			//Link the arms to the tail
+			//Link the shoulders to the tail
 			lifter1 = Matter.Constraint.create({
 				bodyA: head, pointA: {x: 0, y: -120},
-				bodyB: leftarm, pointB: {x: -armendx / 2, y: armendy / 2},
+				bodyB: leftshoulder, pointB: {x: -shoulderendx / 2, y: shoulderendy / 2},
 				render: {visible: false},
 				//stiffness: 0.7,
 			}),
 			lifter2 = Matter.Constraint.create({
 				bodyA: head, pointA: {x: 0, y: -120},
-				bodyB: rightarm, pointB: {x: armendx / 2, y: armendy / 2},
+				bodyB: rightshoulder, pointB: {x: shoulderendx / 2, y: shoulderendy / 2},
 				render: {visible: false},
 				//stiffness: 0.7,
 			}),
-			//Link the claws to the ends of the arms
+			//Link the claws to the ends of the shoulders
 			Matter.Constraint.create({
-				bodyA: leftarm, pointA: {x: -armendx / 2, y: armendy / 2},
+				bodyA: leftshoulder, pointA: {x: -shoulderendx / 2, y: shoulderendy / 2},
 				bodyB: leftclaw, pointB: {x: clawendx / 2, y: -clawendy / 2},
 				render: {visible: false},
 			}),
 			Matter.Constraint.create({
-				bodyA: rightarm, pointA: {x: armendx / 2, y: armendy / 2},
+				bodyA: rightshoulder, pointA: {x: shoulderendx / 2, y: shoulderendy / 2},
 				bodyB: rightclaw, pointB: {x: -clawendx / 2, y: -clawendy / 2},
 				render: {visible: false},
 			}),
@@ -111,7 +111,7 @@ if (hacks) {
 		case "close":
 			if (--timer <= 0) {mode = ""; setTimeout(() => mode = "ascend", 500);}
 			closer.length -= closedelta;
-			//Allow the arms to drop a little
+			//Allow the shoulders to drop a little
 			lifter1.length += lifterdelta; lifter2.length += lifterdelta;
 			break;
 		case "ascend":
