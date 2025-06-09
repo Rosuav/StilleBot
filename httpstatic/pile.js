@@ -118,12 +118,25 @@ if (hacks) {
 		],
 	});
 	Matter.Composite.translate(claw, {x: 0, y: -5000}); //Hide it way above the screen
+	const initial_locations = claw.bodies.map(c => ({x: c.position.x, y: c.position.y, angle: c.angle}));
+	const initial_lengths = claw.constraints.map(c => c.length);
+	function reset_claw() {
+		Matter.Composite.translate(claw, {x: -head.position.x, y: -head.position.y - 5000}); //Hide it way above the screen
+		closer.stiffness = 0.0005;
+		claw.bodies.forEach((c, i) => {
+			const loc = initial_locations[i];
+			Matter.Body.setPosition(c, loc);
+			Matter.Body.setAngle(c, loc.angle);
+		});
+		claw.constraints.forEach((c, i) => c.length = initial_lengths[i]);
+	}
+	reset_claw();
 	Matter.Composite.add(engine.world, claw);
 	let mode = "";
 	//TODO: Close at a particular speed instead of counting off 30 frames
 	const closedelta = (closer.length - targetclawgap) / 30, lifterdelta = 10 / 30;
 	setTimeout(() => {
-		Matter.Composite.translate(claw, {x: Math.random() * width, y: 5000});
+		Matter.Composite.translate(claw, {x: Math.random() * (width - shoulderlength * 2) + shoulderlength, y: 5000});
 		mode = "descend";
 	}, 1000);
 	Matter.Events.on(engine, "collisionStart", e => mode === "descend" && e.pairs.forEach(pair => {
@@ -152,6 +165,11 @@ if (hacks) {
 				let prize = null;
 				engine.world.bodies.forEach(body => body.position.y < 0 && (prize = body));
 				if (prize) console.log("CLAIMED PRIZE", prize);
+				reset_claw();
+				setTimeout(() => {
+					Matter.Composite.translate(claw, {x: Math.random() * (width - shoulderlength * 2) + shoulderlength, y: 5000});
+					mode = "descend";
+				}, 2000);
 			}
 			break;
 	}});
