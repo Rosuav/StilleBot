@@ -118,7 +118,8 @@ if (hacks) {
 	});
 	Matter.Composite.translate(claw, {x: 0, y: -5000}); //Hide it way above the screen
 	Matter.Composite.add(engine.world, claw);
-	let mode = "", timer = 0;
+	let mode = "";
+	//TODO: Close at a particular speed instead of counting off 30 frames
 	const closedelta = (closer.length - targetclawgap) / 30, lifterdelta = 10 / 30;
 	setTimeout(() => {
 		Matter.Composite.translate(claw, {x: width / 2, y: 5000});
@@ -127,13 +128,13 @@ if (hacks) {
 	setTimeout(() => {
 		//TODO: Trigger this on contact rather than timer
 		closer.stiffness = 0.5; //Tighten the spring a bit
-		mode = "close"; timer = 30;
+		mode = "close";
 	}, 4000);
 	//setTimeout(() => Matter.Composite.translate(claw, {x: width / 2, y: 5100}), 2000);
 	Matter.Events.on(engine, "afterUpdate", e => {switch (mode) {
 		case "descend": Matter.Composite.translate(claw, {x: 0, y: 1}); break;
 		case "close":
-			if (--timer <= 0) {mode = ""; setTimeout(() => mode = "ascend", 500);}
+			if (closer.length <= targetclawgap) {mode = ""; setTimeout(() => mode = "ascend", 500);}
 			closer.length -= closedelta;
 			//Allow the shoulders to drop a little
 			lifter1.length += lifterdelta; lifter2.length += lifterdelta;
