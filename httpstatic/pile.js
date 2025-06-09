@@ -44,10 +44,11 @@ if (hacks) {
 	const armangle = 0.08; //Initial angles. They will change once we touch something.
 	const targetclawgap = 20; //Should still have SOME gap even when they are closed
 	//The primary body of the claw is its head. Everything else is connected to that.
-	const head = Matter.Bodies.fromVertices(0, 0, Matter.Vertices.fromPath("1 -12 8 5 4 10 -4 10 -8 5 -1 -12"), {...attrs, isStatic: true});
-	const leftshoulder = Rectangle(-8 - shoulderlength / 2, 5, shoulderlength, 2, attrs);
+	//Note that the labels starting "head-" are the ones which, when contacted, will trigger the closing of the claw.
+	const head = Matter.Bodies.fromVertices(0, 0, Matter.Vertices.fromPath("1 -12 8 5 4 10 -4 10 -8 5 -1 -12"), {...attrs, isStatic: true, label: "head-0"});
+	const leftshoulder = Rectangle(-8 - shoulderlength / 2, 5, shoulderlength, 2, {...attrs, label: "head-1"});
 	Matter.Body.rotate(leftshoulder, -shoulderangle, {x: -8, y: 5});
-	const rightshoulder = Rectangle(+8 + shoulderlength / 2, 5, shoulderlength, 2, attrs);
+	const rightshoulder = Rectangle(+8 + shoulderlength / 2, 5, shoulderlength, 2, {...attrs, label: "head-2"});
 	Matter.Body.rotate(rightshoulder, +shoulderangle, {x: +8, y: 5});
 	const shoulderendx = shoulderlength * Math.cos(shoulderangle), shoulderendy = shoulderlength * Math.sin(shoulderangle);
 	//Create an arm+talon combo which has its origin point at the top of the arm
@@ -125,12 +126,16 @@ if (hacks) {
 		Matter.Composite.translate(claw, {x: width / 2, y: 5000});
 		mode = "descend";
 	}, 1000);
-	setTimeout(() => {
-		//TODO: Trigger this on contact rather than timer
-		closer.stiffness = 0.5; //Tighten the spring a bit
-		mode = "close";
-	}, 4000);
-	//setTimeout(() => Matter.Composite.translate(claw, {x: width / 2, y: 5100}), 2000);
+	Matter.Events.on(engine, "collisionStart", e => mode === "descend" && e.pairs.forEach(pair => {
+		const headA = pair.bodyA.label.startsWith("head-");
+		const headB = pair.bodyB.label.startsWith("head-");
+		if (headA !== headB) {
+			//The head has touched a thing! Note that this could be the armtalon part,
+			//if it strikes something and bounces up. Not sure what to do about that.
+			closer.stiffness = 0.5; //Tighten the spring a bit
+			mode = ""; setTimeout(() => mode = "close", 500);
+		}
+	}));
 	Matter.Events.on(engine, "afterUpdate", e => {switch (mode) {
 		case "descend": Matter.Composite.translate(claw, {x: 0, y: 1}); break;
 		case "close":
