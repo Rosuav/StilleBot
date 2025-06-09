@@ -117,6 +117,16 @@ if (hacks) {
 			}),
 		],
 	});
+	/* TODO: Abandon constraints in favour of hand-coded angular movements
+
+	The constraint system is cool, but it doesn't reset easily. Also, it'll look much tidier if the
+	claws close symmetrically instead of being linked with a spring.
+
+	Each frame in the "close" phase will need to rotate several components around different points;
+	some components may need to be rotated more than once to get the correct result.
+	Every part of the claw will now become a collision trigger, so they'll all need labels of "claw-".
+	Hopefully then, the reset can simply update back to the initial_locations and it will look right.
+	*/
 	Matter.Composite.translate(claw, {x: 0, y: -5000}); //Hide it way above the screen
 	const initial_locations = claw.bodies.map(c => ({x: c.position.x, y: c.position.y, angle: c.angle}));
 	const initial_lengths = claw.constraints.map(c => c.length);
