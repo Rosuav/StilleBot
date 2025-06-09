@@ -39,7 +39,7 @@ if (hacks) {
 		//isStatic: true,
 		render: {fillStyle: "#71797E", lineWidth: 0},
 	};
-	const shoulderlength = 60, armlength = 60, talonlength = 15; //TODO: Make configurable (maybe as a single size, rather than separate lengths)
+	const shoulderlength = 120, armlength = 120, talonlength = 25; //TODO: Make configurable (maybe as a single size, rather than separate lengths)
 	const shoulderangle = 0.3; //Fairly flat angle for the fixed part of the arm
 	const armangle = 0.08; //Initial angles. They will change once we touch something.
 	const targetclawgap = 20; //Should still have SOME gap even when they are closed
@@ -160,7 +160,7 @@ if (hacks) {
 		}
 	}));
 	Matter.Events.on(engine, "afterUpdate", e => {switch (mode) {
-		case "descend": Matter.Composite.translate(claw, {x: 0, y: 1}); break;
+		case "descend": Matter.Composite.translate(claw, {x: 0, y: 2}); break;
 		case "close":
 			if (closer.length <= targetclawgap) {mode = ""; setTimeout(() => mode = "ascend", 500);}
 			closer.length -= closedelta;
