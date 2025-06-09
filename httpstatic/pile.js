@@ -19,9 +19,9 @@ if (hacks) {
 		//isStatic: true,
 		render: {fillStyle: "#71797E", lineWidth: 0},
 	};
-	const shoulderlength = 60, armlength = 60; //TODO: Make configurable (maybe as a single size, rather than separate lengths)
+	const shoulderlength = 60, armlength = 50, talonlength = 20; //TODO: Make configurable (maybe as a single size, rather than separate lengths)
 	const shoulderangle = 0.3; //Fairly flat angle for the fixed part of the arm
-	const armangle = 1.65; //Initial angle - just past the vertical. This angle will change once we touch something.
+	const armangle = 1.65, talonangle = 2.5; //Initial angles. They will change once we touch something.
 	const targetclawgap = 20; //Should still have SOME gap even when they are closed
 	//The primary body of the claw is its head. Everything else is connected to that.
 	const head = Matter.Bodies.fromVertices(0, 0, Matter.Vertices.fromPath("1 -12 8 5 4 10 -4 10 -8 5 -1 -12"), {...attrs, isStatic: true});
@@ -35,6 +35,11 @@ if (hacks) {
 	const rightarm = Rectangle(8 + shoulderendx + armlength / 2, 5 + shoulderendy, armlength, 2, attrs);
 	Matter.Body.rotate(rightarm, +armangle, {x: 8 + shoulderendx, y: 5 + shoulderendy});
 	const armendx = armlength * Math.cos(armangle), armendy = armlength * Math.sin(armangle);
+	const lefttalon = Rectangle(-8 - shoulderendx - armendx - talonlength / 2, 5 + shoulderendy + armendy, talonlength, 2, attrs);
+	Matter.Body.rotate(lefttalon, -talonangle, {x: -8 - shoulderendx - armendx, y: 5 + shoulderendy + armendy});
+	const righttalon = Rectangle(8 + shoulderendx + armendx + talonlength / 2, 5 + shoulderendy + armendy, talonlength, 2, attrs);
+	Matter.Body.rotate(righttalon, talonangle, {x: 8 + shoulderendx + armendx, y: 5 + shoulderendy + armendy});
+	const talonendx = talonlength * Math.cos(talonangle), talonendy = talonlength * Math.sin(talonangle);
 	let closer, lifter1, lifter2;
 	const claw = Matter.Composite.create({
 		bodies: [
@@ -43,7 +48,7 @@ if (hacks) {
 			//The tail
 			Rectangle(0, -1000, 2, 2000, {...attrs, isStatic: true}),
 			//Arms
-			leftshoulder, rightshoulder, leftarm, rightarm,
+			leftshoulder, rightshoulder, leftarm, rightarm, lefttalon, righttalon,
 			//Origin marker (keep last so it's on top)
 			Rectangle(0, 0, 3, 3, {isStatic: true, render: {fillStyle: "#ffff22", lineWidth: 0}}),
 		],
@@ -83,10 +88,22 @@ if (hacks) {
 				bodyB: rightarm, pointB: {x: -armendx / 2, y: -armendy / 2},
 				render: {visible: false},
 			}),
-			//And link the ends of the arms together (for now).
-			closer = Matter.Constraint.create({
+			//Link the talons to the ends of the arms
+			Matter.Constraint.create({
 				bodyA: leftarm, pointA: {x: -armendx / 2, y: armendy / 2},
-				bodyB: rightarm, pointB: {x: armendx / 2, y: armendy / 2},
+				bodyB: lefttalon, pointB: {x: talonendx / 2, y: -talonendy / 2},
+				render: {visible: false},
+			}),
+			Matter.Constraint.create({
+				bodyA: rightarm, pointA: {x: armendx / 2, y: armendy / 2},
+				bodyB: righttalon, pointB: {x: -talonendx / 2, y: -talonendy / 2},
+				render: {visible: false},
+			}),
+			//And link the ends of the talons together.
+			closer = Matter.Constraint.create({
+				bodyA: lefttalon, pointA: {x: -talonendx / 2, y: talonendy / 2},
+				bodyB: righttalon, pointB: {x: talonendx / 2, y: talonendy / 2},
+				//TODO: Allow customization of the stroke colour, or make it invisible
 				render: {visible: true, strokeStyle: "rebeccapurple"},
 				stiffness: 0.0005,
 				damping: 0.1,
@@ -106,6 +123,7 @@ if (hacks) {
 		closer.stiffness = 0.5; //Tighten the spring a bit
 		mode = "close"; timer = 30;
 	}, 4000);
+	//setTimeout(() => Matter.Composite.translate(claw, {x: width / 2, y: 5100}), 2000);
 	Matter.Events.on(engine, "afterUpdate", e => {switch (mode) {
 		case "descend": Matter.Composite.translate(claw, {x: 0, y: 1}); break;
 		case "close":
