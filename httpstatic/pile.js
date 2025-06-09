@@ -123,7 +123,7 @@ if (hacks) {
 	//TODO: Close at a particular speed instead of counting off 30 frames
 	const closedelta = (closer.length - targetclawgap) / 30, lifterdelta = 10 / 30;
 	setTimeout(() => {
-		Matter.Composite.translate(claw, {x: width / 2, y: 5000});
+		Matter.Composite.translate(claw, {x: Math.random() * width, y: 5000});
 		mode = "descend";
 	}, 1000);
 	Matter.Events.on(engine, "collisionStart", e => mode === "descend" && e.pairs.forEach(pair => {
