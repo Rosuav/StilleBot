@@ -150,21 +150,20 @@ if (hacks) {
 				mode = "";
 				//See what's above the screen. Note that there might be more than one thing,
 				//but we'll only claim one prize (chosen arbitrarily).
-				let prize = null;
+				let prize = null, prizetype = "";
 				engine.world.bodies.forEach(body => body.position.y < 0 && (prize = body));
 				if (prize) {
 					for (let thingtype in thingcategories) {
 						const things = thingcategories[thingtype];
 						things.forEach((thing, idx) => {
-							if (thing.id === prize.id) {
-								things.splice(idx, 1);
-								ws_sync.send({cmd: "prizeclaimed", thingtype, label: thing.label});
-							}
+							if (thing.id === prize.id) {things.splice(idx, 1); prizetype = thingtype;}
 						});
 					}
 					Matter.Composite.remove(engine.world, prize);
 				}
+				ws_sync.send({cmd: "clawdone", prizetype, label: prize?.label});
 				reset_claw();
+				//Autoretry. TODO: Have a mode for "retry until prize won"?
 				setTimeout(() => {
 					Matter.Composite.translate(claw, {x: Math.random() * (width - shoulderlength * 2) + shoulderlength, y: 5000});
 					mode = "descend";
