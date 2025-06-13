@@ -251,6 +251,13 @@ mapping websocket_cmd_querycounts(mapping(string:mixed) conn, mapping(string:mix
 	return (["cmd": "update", "newcount": vars]);
 }
 
+void wscmd_prizeclaimed(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
+	mapping info = monitors[conn->subgroup]; if (!info) return;
+	if (!has_value(info->things->id, msg->thingtype)) return; //Invalid thing type ID. Paranoia check even though "spend" should fail if the ID is bad.
+	channel->set_variable(info->varname + ":" + msg->thingtype, 1, "spend");
+}
+
 //Can overwrite an existing variable
 mapping|zero websocket_cmd_createvar(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->session->fake) return (["cmd": "demo"]);

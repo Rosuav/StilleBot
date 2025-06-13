@@ -13,6 +13,13 @@ Matter.Runner.run(Matter.Runner.create(), engine);
 renderer.options.wireframes = false;
 window.renderer = renderer; //For debugging, eg toggle wireframes mode
 
+//Map a category ID to the array of things
+const thingcategories = { };
+//Map category ID to the server-provided information about it
+let thingtypes = { };
+let fadeouttime = 0, fader = 0;
+let wall_sizes = { }, wall_objects = { };
+
 //Create a body from a set of vertices, where the body's origin is at (0,0) regardless of its centre of mass.
 //The object will be placed at the origin.
 function body_from_path(path, attrs) {
@@ -141,10 +148,22 @@ if (hacks) {
 			Matter.Composite.translate(claw, {x: 0, y: -1});
 			if (head.position.y < -100) {
 				mode = "";
-				//See what's above the screen
+				//See what's above the screen. Note that there might be more than one thing,
+				//but we'll only claim one prize (chosen arbitrarily).
 				let prize = null;
 				engine.world.bodies.forEach(body => body.position.y < 0 && (prize = body));
-				if (prize) console.log("CLAIMED PRIZE", prize);
+				if (prize) {
+					for (let thingtype in thingcategories) {
+						const things = thingcategories[thingtype];
+						things.forEach((thing, idx) => {
+							if (thing.id === prize.id) {
+								things.splice(idx, 1);
+								ws_sync.send({cmd: "prizeclaimed", thingtype, label: thing.label});
+							}
+						});
+					}
+					Matter.Composite.remove(engine.world, prize);
+				}
 				reset_claw();
 				setTimeout(() => {
 					Matter.Composite.translate(claw, {x: Math.random() * (width - shoulderlength * 2) + shoulderlength, y: 5000});
@@ -155,12 +174,6 @@ if (hacks) {
 	}});
 }
 
-//Map a category ID to the array of things
-const thingcategories = { };
-//Map category ID to the server-provided information about it
-let thingtypes = { };
-let fadeouttime = 0, fader = 0;
-let wall_sizes = { }, wall_objects = { };
 export function render(data) {
 	if (data.data) {
 		if (data.data.fadeouttime) fadeouttime = +data.data.fadeouttime;
