@@ -108,6 +108,8 @@ constant default_thing_type = ([
 	"id": "default", "xsize": 50,
 	"images": ({ }),
 ]);
+//Not shared across instances.
+@retain: mapping clawids_pending = ([]);
 
 //TODO: Make this into some sort of "emote" magical category. Not currently in use.
 @retain: mapping bounding_box_cache = ([]);
@@ -254,10 +256,18 @@ mapping websocket_cmd_querycounts(mapping(string:mixed) conn, mapping(string:mix
 void wscmd_clawdone(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
 	mapping info = monitors[conn->subgroup]; if (!info) return;
+	string prizetype = "";
 	if (has_value(info->things->id, msg->prizetype)) {
 		//Check for a valid thing type ID, not just the presence of one. Paranoia check even though "spend" should fail if the ID is bad.
 		channel->set_variable(info->varname + ":" + msg->prizetype, 1, "spend");
+		prizetype = msg->prizetype;
 	}
+	object prom = m_delete(clawids_pending, msg->clawid);
+	if (prom) prom->success(([
+		"{type}": "pile",
+		"{prizetype}": prizetype,
+		"{prizelabel}": msg->label || "",
+	]));
 }
 
 //Can overwrite an existing variable
@@ -578,7 +588,7 @@ array(int) calculate_current_goalbar_tier(object channel, mapping info) {
 	return ({pos, goal, tier});
 }
 
-mapping message_params(object channel, mapping person, array param) {
+mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
 	string monitor = param[0];
 	mapping info = G->G->DB->load_cached_config(channel->userid, "monitors")[monitor];
 	if (!info) error("Unrecognized monitor ID - has it been deleted?\n");
@@ -630,9 +640,13 @@ mapping message_params(object channel, mapping person, array param) {
 		}
 		case "pile": {
 			switch (sizeof(param) > 1 && param[1]) {
-				case "claw":
-					//We need to defer the execution of the subtree. TODO: Promise it. With a timeout.
-					send_updates_all(channel, monitor, (["claw": 1]));
+				case "claw": {
+					//Defer the execution of the subtree. TODO: Timeout? What if the browser source isn't active?
+					string dropid = String.string2hex(random_string(4));
+					object prom = clawids_pending[dropid] = Concurrent.Promise();
+					send_updates_all(channel, monitor, (["claw": dropid]));
+					return prom->future();
+				}
 				default: break;
 			}
 			//Nothing useful to return here.

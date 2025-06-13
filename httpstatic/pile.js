@@ -163,8 +163,8 @@ if (hacks) {
 					}
 					Matter.Composite.remove(engine.world, prize);
 				}
-				const orig = clawqueue.shift(); //TODO: Have an autoretry option, which will skip shifting the queue if there was no prize.
-				if (orig) ws_sync.send({cmd: "clawdone", prizetype, label: prize?.label, orig});
+				const clawid = clawqueue.shift(); //TODO: Have an autoretry option, which will skip shifting the queue if there was no prize.
+				if (clawid) ws_sync.send({cmd: "clawdone", prizetype, label: prize?.label, clawid});
 				reset_claw();
 				if (clawqueue.length) setTimeout(clawdrop, 2000);
 			}
@@ -250,7 +250,7 @@ export function render(data) {
 		}
 	});
 	if (data.claw && clawdrop) {
-		clawqueue.push(data);
+		clawqueue.push(data.claw);
 		if (clawqueue.length === 1) clawdrop();
 	}
 }
