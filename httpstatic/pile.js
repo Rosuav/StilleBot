@@ -42,22 +42,23 @@ if (hacks) {
 	const shoulderlength = 60, armlength = 60, talonlength = 15; //TODO: Make configurable (maybe as a single size, rather than separate lengths)
 	const shoulderangle = 0.3; //Fairly flat angle for the fixed part of the arm
 	const armangle = 0.08; //Initial angles. They will change once we touch something.
-	const shoulderangle_closed = 0.5, armangle_closed = 0.5; //Angles once the claw has fully closed (should still leave a small gap between the talons)
-	const targetclawgap = 20; //Should still have SOME gap even when they are closed
+	const shoulderangle_closed = 0.54, armangle_closed = 0.57; //Angles once the claw has fully closed (should still leave a small gap between the talons)
 	//The primary body of the claw is its head. Everything else is connected to that.
 	//Note that the labels starting "head-" are the ones which, when contacted, will trigger the closing of the claw.
 	const head = Matter.Bodies.fromVertices(0, 0, Matter.Vertices.fromPath("1 -12 8 5 4 10 -4 10 -8 5 -1 -12"), {...attrs, isStatic: true, label: "head-0"});
 	const leftshoulder = Rectangle(-8 - shoulderlength / 2, 5, shoulderlength, 2, {...attrs, label: "head-1"});
-	Matter.Body.rotate(leftshoulder, -shoulderangle, {x: -8, y: 5});
+	Matter.Body.setCentre(leftshoulder, {x: -8, y: 5});
+	Matter.Body.rotate(leftshoulder, -shoulderangle);
 	const rightshoulder = Rectangle(+8 + shoulderlength / 2, 5, shoulderlength, 2, {...attrs, label: "head-2"});
-	Matter.Body.rotate(rightshoulder, +shoulderangle, {x: +8, y: 5});
+	Matter.Body.setCentre(rightshoulder, {x: 8, y: 5});
+	Matter.Body.rotate(rightshoulder, +shoulderangle);
 	const shoulderendx = shoulderlength * Math.cos(shoulderangle), shoulderendy = shoulderlength * Math.sin(shoulderangle);
 	//Create an arm+talon combo which has its origin point at the top of the arm
 	const leftarmtalon = body_from_path(`-1 -1 -1 ${armlength+1} ${talonlength+1} ${armlength+1} ${talonlength+1} ${armlength-1} 1 ${armlength-1} 1 -1`, attrs);
-	Matter.Body.rotate(leftarmtalon, -armangle, {x: 0, y: 0});
+	Matter.Body.rotate(leftarmtalon, -armangle);
 	Matter.Body.setPosition(leftarmtalon, {x: -8 - shoulderendx, y: 5 + shoulderendy});
 	const rightarmtalon = body_from_path(`1 -1 1 ${armlength+1} ${-talonlength-1} ${armlength+1} ${-talonlength-1} ${armlength-1} -1 ${armlength-1} -1 -1`, attrs);
-	Matter.Body.rotate(rightarmtalon, armangle, {x: 0, y: 0});
+	Matter.Body.rotate(rightarmtalon, armangle);
 	Matter.Body.setPosition(rightarmtalon, {x: 8 + shoulderendx, y: 5 + shoulderendy});
 	const claw = Matter.Composite.create({
 		bodies: [
@@ -71,16 +72,6 @@ if (hacks) {
 			Rectangle(0, 0, 3, 3, {isStatic: true, render: {fillStyle: "#ffff22", lineWidth: 0}}),
 		],
 	});
-	/* TODO: Abandon constraints in favour of hand-coded angular movements
-
-	The constraint system is cool, but it doesn't reset easily. Also, it'll look much tidier if the
-	claws close symmetrically instead of being linked with a spring.
-
-	Each frame in the "close" phase will need to rotate several components around different points;
-	some components may need to be rotated more than once to get the correct result.
-	Every part of the claw will now become a collision trigger, so they'll all need labels of "claw-".
-	Hopefully then, the reset can simply update back to the initial_locations and it will look right.
-	*/
 	Matter.Composite.translate(claw, {x: 0, y: -5000}); //Hide it way above the screen
 	const initial_locations = claw.bodies.map(c => ({x: c.position.x, y: c.position.y, angle: c.angle}));
 	function reset_claw() {
@@ -94,9 +85,6 @@ if (hacks) {
 	reset_claw();
 	Matter.Composite.add(engine.world, claw);
 	let mode = "";
-	//TODO: Close at a particular speed instead of counting off 30 frames
-	const closer = {length: 100};
-	const closedelta = (closer.length - targetclawgap) / 30, lifterdelta = 10 / 30;
 	setTimeout(() => {
 		Matter.Composite.translate(claw, {x: Math.random() * (width - shoulderlength * 2) + shoulderlength, y: 5000});
 		mode = "descend";
@@ -114,6 +102,12 @@ if (hacks) {
 			mode = ""; setTimeout(() => mode = "close", 500);
 		}
 	}));
+	const steps = 30;
+	//Each step, we rotate the shoulder a little, and then the arm a little beyond that.
+	//Since the arm gets rotated around the shoulder too, the arm's own step is reduced
+	//to compensate. Otherwise it would get double the rotation.
+	const shoulderangle_step = (shoulderangle_closed - shoulderangle) / steps;
+	const armangle_step = (armangle_closed - armangle) / steps - shoulderangle_step;
 	Matter.Events.on(engine, "afterUpdate", e => {switch (mode) {
 		case "descend": Matter.Composite.translate(claw, {x: 0, y: 2}); break;
 		case "close":
@@ -121,10 +115,15 @@ if (hacks) {
 			//bring the arm-talon pairs in. This involves rotating both the
 			//shoulders and the arm-talons by the shoulder rotation, and
 			//then rotating the arm-talons alone by the arm rotation.
-			if (closer.length <= targetclawgap) {mode = ""; setTimeout(() => mode = "ascend", 500);}
-			closer.length -= closedelta;
-			//Allow the shoulders to drop a little
-			//lifter1.length += lifterdelta; lifter2.length += lifterdelta;
+			Matter.Body.rotate(leftshoulder, -shoulderangle_step);
+			Matter.Body.rotate(rightshoulder, shoulderangle_step);
+			Matter.Body.rotate(leftarmtalon, -shoulderangle_step, {x: leftshoulder.position.x, y: leftshoulder.position.y});
+			Matter.Body.rotate(leftarmtalon, -armangle_step);
+			Matter.Body.rotate(rightarmtalon, shoulderangle_step, {x: rightshoulder.position.x, y: rightshoulder.position.y});
+			Matter.Body.rotate(rightarmtalon, armangle_step);
+			if (rightshoulder.angle >= shoulderangle_closed) {
+				mode = ""; setTimeout(() => mode = "ascend", 500);
+			}
 			break;
 		case "ascend":
 			Matter.Composite.translate(claw, {x: 0, y: -1});
