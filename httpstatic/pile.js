@@ -89,6 +89,8 @@ if (hacks) {
 		Matter.Composite.translate(claw, {x: Math.random() * (width - shoulderlength * 2) + shoulderlength, y: 5000});
 		mode = "descend";
 	}, 1000);
+	const steps = 30;
+	let closing = 0;
 	Matter.Events.on(engine, "collisionStart", e => mode === "descend" && e.pairs.forEach(pair => {
 		const headA = pair.bodyA.label.startsWith("head-");
 		const headB = pair.bodyB.label.startsWith("head-");
@@ -99,32 +101,42 @@ if (hacks) {
 			//called multiple times. Ensure that it is idempotent. (Spawning multiple
 			//timeouts that have the same delay and are themselves idempotent is, in
 			//effect, idempotent.)
-			mode = ""; setTimeout(() => mode = "close", 500);
+			mode = ""; setTimeout(() => {closing = steps; mode = "close"}, 500);
 		}
 	}));
-	const steps = 30;
 	//Each step, we rotate the shoulder a little, and then the arm a little beyond that.
 	//Since the arm gets rotated around the shoulder too, the arm's own step is reduced
 	//to compensate. Otherwise it would get double the rotation.
-	const shoulderangle_step = (shoulderangle_closed - shoulderangle) / steps;
-	const armangle_step = (armangle_closed - armangle) / steps - shoulderangle_step;
 	Matter.Events.on(engine, "afterUpdate", e => {switch (mode) {
 		case "descend": Matter.Composite.translate(claw, {x: 0, y: 2}); break;
-		case "close":
+		case "close": {
 			//To close the claws, we droop the shoulders slightly and then
 			//bring the arm-talon pairs in. This involves rotating both the
 			//shoulders and the arm-talons by the shoulder rotation, and
 			//then rotating the arm-talons alone by the arm rotation.
-			Matter.Body.rotate(leftshoulder, -shoulderangle_step);
-			Matter.Body.rotate(rightshoulder, shoulderangle_step);
-			Matter.Body.rotate(leftarmtalon, -shoulderangle_step, {x: leftshoulder.position.x, y: leftshoulder.position.y});
-			Matter.Body.rotate(leftarmtalon, -armangle_step);
-			Matter.Body.rotate(rightarmtalon, shoulderangle_step, {x: rightshoulder.position.x, y: rightshoulder.position.y});
-			Matter.Body.rotate(rightarmtalon, armangle_step);
-			if (rightshoulder.angle >= shoulderangle_closed) {
+
+			//As the step counter descends from steps to zero, the angles
+			//should gently curve from their initial to final values. This
+			//is done with a cosine curve starting at -pi and going to zero,
+			//yielding positions from -1 to 1; rescaling this to be from 0
+			//to 1 makes them into a fraction of the delta.
+			--closing;
+			const pos = Math.cos((-closing / steps) * Math.PI) / 2 + 0.5; //From zero to one
+			const shouldergoal = shoulderangle + (shoulderangle_closed - shoulderangle) * pos;
+			const armgoal = armangle + (armangle_closed - armangle) * pos;
+			const shoulderstep = shouldergoal - rightshoulder.angle;
+			Matter.Body.rotate(leftshoulder, -shoulderstep);
+			Matter.Body.rotate(rightshoulder, shoulderstep);
+			Matter.Body.rotate(leftarmtalon, -shoulderstep, {x: leftshoulder.position.x, y: leftshoulder.position.y});
+			Matter.Body.rotate(rightarmtalon, shoulderstep, {x: rightshoulder.position.x, y: rightshoulder.position.y});
+			const armstep = armgoal - rightarmtalon.angle;
+			Matter.Body.rotate(leftarmtalon, -armstep);
+			Matter.Body.rotate(rightarmtalon, armstep);
+			if (!closing) {
 				mode = ""; setTimeout(() => mode = "ascend", 500);
 			}
 			break;
+		}
 		case "ascend":
 			Matter.Composite.translate(claw, {x: 0, y: -1});
 			if (head.position.y < -100) {
