@@ -42,13 +42,13 @@ function body_from_path(path, attrs) {
 	return body;
 }
 
-if (hacks) {
-	console.log("Hacks mode enabled");
+function create_claw(clawsize) {
+	//FIXME: Calling this more than once will probably break things
 	const attrs = {
 		isStatic: true,
 		render: {fillStyle: "#71797E", lineWidth: 0},
 	};
-	const shoulderlength = 60, armlength = 60, talonlength = 15; //TODO: Make configurable (maybe as a single size, rather than separate lengths)
+	const shoulderlength = +clawsize, armlength = +clawsize, talonlength = Math.floor(+clawsize / 4);
 	const shoulderangle = 0.3; //Fairly flat angle for the fixed part of the arm
 	const armangle = 0.08; //Initial angles. They will change once we touch something.
 	const shoulderangle_closed = 0.54, armangle_closed = 0.57; //Angles once the claw has fully closed (should still leave a small gap between the talons)
@@ -205,6 +205,7 @@ export function render(data) {
 		if (need_right) Matter.Composite.add(engine.world,
 			wall_objects.right = Rectangle(width / 2 + floor_size, height - height * need_right / 200, wall_thickness, height * need_right / 100 + 10,
 				{isStatic: true, render: {fillStyle: visible_walls ? "rebeccapurple" : "transparent", lineWidth: 0}}));
+		if (data.data.clawsize && !clawdrop) create_claw(data.data.clawsize);
 	}
 	if (data.newcount) Object.entries(data.newcount).forEach(([thingtype, newcount]) => {
 		const cat = thingtypes[thingtype];
