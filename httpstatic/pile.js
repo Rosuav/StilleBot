@@ -19,6 +19,8 @@ const thingcategories = { };
 let thingtypes = { };
 let fadeouttime = 0, fader = 0;
 let wall_sizes = { }, wall_objects = { };
+const clawqueue = []; //If empty, the claw isn't active. If >1 entries, after the current one, the next will autostart.
+let clawdrop;
 
 //Create a body from a set of vertices, where the body's origin is at (0,0) regardless of its centre of mass.
 //The object will be placed at the origin.
@@ -91,14 +93,14 @@ if (hacks) {
 	}
 	reset_claw();
 	Matter.Composite.add(engine.world, claw);
-	let mode = "";
-	setTimeout(() => {
+	let clawmode = "";
+	clawdrop = () => {
 		Matter.Composite.translate(claw, {x: Math.random() * (width - shoulderlength * 2) + shoulderlength, y: 5000});
-		mode = "descend";
-	}, 1000);
+		clawmode = "descend";
+	}
 	const steps = 30;
 	let closing = 0;
-	Matter.Events.on(engine, "collisionStart", e => mode === "descend" && e.pairs.forEach(pair => {
+	Matter.Events.on(engine, "collisionStart", e => clawmode === "descend" && e.pairs.forEach(pair => {
 		const headA = pair.bodyA.label.startsWith("head-");
 		const headB = pair.bodyB.label.startsWith("head-");
 		if (headA !== headB) {
@@ -108,13 +110,13 @@ if (hacks) {
 			//called multiple times. Ensure that it is idempotent. (Spawning multiple
 			//timeouts that have the same delay and are themselves idempotent is, in
 			//effect, idempotent.)
-			mode = ""; setTimeout(() => {closing = steps; mode = "close"}, 500);
+			clawmode = ""; setTimeout(() => {closing = steps; clawmode = "close"}, 500);
 		}
 	}));
 	//Each step, we rotate the shoulder a little, and then the arm a little beyond that.
 	//Since the arm gets rotated around the shoulder too, the arm's own step is reduced
 	//to compensate. Otherwise it would get double the rotation.
-	Matter.Events.on(engine, "afterUpdate", e => {switch (mode) {
+	Matter.Events.on(engine, "afterUpdate", e => {switch (clawmode) {
 		case "descend": Matter.Composite.translate(claw, {x: 0, y: 2}); break;
 		case "close": {
 			//To close the claws, we droop the shoulders slightly and then
@@ -140,14 +142,14 @@ if (hacks) {
 			Matter.Body.rotate(leftarmtalon, -armstep);
 			Matter.Body.rotate(rightarmtalon, armstep);
 			if (!closing) {
-				mode = ""; setTimeout(() => mode = "ascend", 500);
+				clawmode = ""; setTimeout(() => clawmode = "ascend", 500);
 			}
 			break;
 		}
 		case "ascend":
 			Matter.Composite.translate(claw, {x: 0, y: -1});
 			if (head.position.y < -100) {
-				mode = "";
+				clawmode = "";
 				//See what's above the screen. Note that there might be more than one thing,
 				//but we'll only claim one prize (chosen arbitrarily).
 				let prize = null, prizetype = "";
@@ -161,13 +163,10 @@ if (hacks) {
 					}
 					Matter.Composite.remove(engine.world, prize);
 				}
-				ws_sync.send({cmd: "clawdone", prizetype, label: prize?.label});
+				const orig = clawqueue.shift(); //TODO: Have an autoretry option, which will skip shifting the queue if there was no prize.
+				if (orig) ws_sync.send({cmd: "clawdone", prizetype, label: prize?.label, orig});
 				reset_claw();
-				//Autoretry. TODO: Have a mode for "retry until prize won"?
-				setTimeout(() => {
-					Matter.Composite.translate(claw, {x: Math.random() * (width - shoulderlength * 2) + shoulderlength, y: 5000});
-					mode = "descend";
-				}, 2000);
+				if (clawqueue.length) setTimeout(clawdrop, 2000);
 			}
 			break;
 	}});
@@ -250,6 +249,10 @@ export function render(data) {
 			if (fadeouttime) fader = setTimeout(() => {fader = 0; document.body.classList.add("invisible")}, fadeouttime * 60000 - 5000);
 		}
 	});
+	if (data.claw && clawdrop) {
+		clawqueue.push(data);
+		if (clawqueue.length === 1) clawdrop();
+	}
 }
 ws_sync.send({cmd: "querycounts"});
 
@@ -267,18 +270,5 @@ if (0) setInterval(() => {
 	Matter.Body.setAngularVelocity(obj, Math.random() * .2 - .1);
 	Matter.Composite.add(engine.world, obj);
 }, 2000);
-//TODO: If stable mode is selected, then after adding something, set a quarter-second interval timer to
-//check the newly created thing's speed, and if it's low enough, setStatic() on it.
-//Alternatively, set everything to Sleeping? Wake them up when something new is added?
-/* Next steps:
-
-* Create an object type ("category", need a good name for it)
-* Upload an image for an object type - may be done more than once. If not done, will use Mustard Mine squavatar.
-* Builtin to manipulate objects
-  - Needs a type. Will only manipulate objects of that type.
-  - Add N (default to 1), remove N (default to 1), or set to N on screen
-    - "+1", "-1", "1"?
-* Handle objects falling off the bottom?
-* On the edit dlg, button to add/remove objects given a type
-
-*/
+//TODO: Handle things dropping past the floor? Would need to remove them and signal the server to decrement the count.
+//Might need to be governed by a broadcaster control.

@@ -628,6 +628,15 @@ mapping message_params(object channel, mapping person, array param) {
 				"{targettime}": paused ? (string)(pos + now) : (string)pos,
 			]);
 		}
+		case "pile": {
+			switch (sizeof(param) > 1 && param[1]) {
+				case "claw":
+					//We need to defer the execution of the subtree. TODO: Promise it. With a timeout.
+					send_updates_all(channel, monitor, (["claw": 1]));
+				default: break;
+			}
+			//Nothing useful to return here.
+		}
 		default: return (["{type}": info->type]); //Should be "text".
 	}
 }
