@@ -42,8 +42,14 @@ function body_from_path(path, attrs) {
 	return body;
 }
 
+function unfade() {
+	document.body.classList.remove("invisible");
+	clearTimeout(fader);
+	if (fadeouttime) fader = setTimeout(() => {fader = 0; document.body.classList.add("invisible")}, fadeouttime * 60000 - 5000);
+}
+
 function create_claw(clawsize) {
-	//FIXME: Calling this more than once will probably break things
+	//FIXME: Calling this more than once will probably break things. Is currently blocked from re-calling.
 	const attrs = {
 		isStatic: true,
 		render: {fillStyle: "#71797E", lineWidth: 0},
@@ -95,6 +101,7 @@ function create_claw(clawsize) {
 	Matter.Composite.add(engine.world, claw);
 	let clawmode = "";
 	clawdrop = () => {
+		unfade();
 		Matter.Composite.translate(claw, {x: Math.random() * (width - shoulderlength * 2) + shoulderlength, y: 5000});
 		clawmode = "descend";
 	}
@@ -245,9 +252,7 @@ export function render(data) {
 			Matter.Composite.add(engine.world, obj);
 			things.push(obj);
 			//A new thing has been added! Make the pile visible.
-			document.body.classList.remove("invisible");
-			clearTimeout(fader);
-			if (fadeouttime) fader = setTimeout(() => {fader = 0; document.body.classList.add("invisible")}, fadeouttime * 60000 - 5000);
+			unfade();
 		}
 	});
 	if (data.claw && clawdrop) {
