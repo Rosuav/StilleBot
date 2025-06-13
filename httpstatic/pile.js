@@ -36,12 +36,13 @@ function body_from_path(path, attrs) {
 if (hacks) {
 	console.log("Hacks mode enabled");
 	const attrs = {
-		//isStatic: true,
+		isStatic: true,
 		render: {fillStyle: "#71797E", lineWidth: 0},
 	};
-	const shoulderlength = 120, armlength = 120, talonlength = 25; //TODO: Make configurable (maybe as a single size, rather than separate lengths)
+	const shoulderlength = 60, armlength = 60, talonlength = 15; //TODO: Make configurable (maybe as a single size, rather than separate lengths)
 	const shoulderangle = 0.3; //Fairly flat angle for the fixed part of the arm
 	const armangle = 0.08; //Initial angles. They will change once we touch something.
+	const shoulderangle_closed = 0.5, armangle_closed = 0.5; //Angles once the claw has fully closed (should still leave a small gap between the talons)
 	const targetclawgap = 20; //Should still have SOME gap even when they are closed
 	//The primary body of the claw is its head. Everything else is connected to that.
 	//Note that the labels starting "head-" are the ones which, when contacted, will trigger the closing of the claw.
@@ -58,7 +59,6 @@ if (hacks) {
 	const rightarmtalon = body_from_path(`1 -1 1 ${armlength+1} ${-talonlength-1} ${armlength+1} ${-talonlength-1} ${armlength-1} -1 ${armlength-1} -1 -1`, attrs);
 	Matter.Body.rotate(rightarmtalon, armangle, {x: 0, y: 0});
 	Matter.Body.setPosition(rightarmtalon, {x: 8 + shoulderendx, y: 5 + shoulderendy});
-	let closer, lifter1, lifter2;
 	const claw = Matter.Composite.create({
 		bodies: [
 			//The head
@@ -69,52 +69,6 @@ if (hacks) {
 			leftshoulder, rightshoulder, leftarmtalon, rightarmtalon,
 			//Origin marker (keep last so it's on top)
 			Rectangle(0, 0, 3, 3, {isStatic: true, render: {fillStyle: "#ffff22", lineWidth: 0}}),
-		],
-		constraints: [
-			//Anchor the shoulders tightly to the head
-			Matter.Constraint.create({
-				bodyA: head, pointA: {x: -8, y: 5},
-				bodyB: leftshoulder, pointB: {x: -8 - leftshoulder.position.x, y: 5 - leftshoulder.position.y},
-				render: {visible: false},
-			}),
-			Matter.Constraint.create({
-				bodyA: head, pointA: {x: 8, y: 5},
-				bodyB: rightshoulder, pointB: {x: 8 - rightshoulder.position.x, y: 5 - rightshoulder.position.y},
-				render: {visible: false},
-			}),
-			//Link the shoulders to the tail
-			lifter1 = Matter.Constraint.create({
-				bodyA: head, pointA: {x: 0, y: -120},
-				bodyB: leftshoulder, pointB: {x: -shoulderendx / 2, y: shoulderendy / 2},
-				render: {visible: false},
-				//stiffness: 0.7,
-			}),
-			lifter2 = Matter.Constraint.create({
-				bodyA: head, pointA: {x: 0, y: -120},
-				bodyB: rightshoulder, pointB: {x: shoulderendx / 2, y: shoulderendy / 2},
-				render: {visible: false},
-				//stiffness: 0.7,
-			}),
-			//Link the arms to the ends of the shoulders
-			Matter.Constraint.create({
-				bodyA: leftshoulder, pointA: {x: -shoulderendx / 2, y: shoulderendy / 2},
-				bodyB: leftarmtalon, pointB: {x: 0, y: 0},
-				render: {visible: false},
-			}),
-			Matter.Constraint.create({
-				bodyA: rightshoulder, pointA: {x: shoulderendx / 2, y: shoulderendy / 2},
-				bodyB: rightarmtalon, pointB: {x: 0, y: 0},
-				render: {visible: false},
-			}),
-			//And link the ends of the talons together.
-			closer = Matter.Constraint.create({
-				bodyA: leftarmtalon, pointA: Matter.Vector.rotate({x: talonlength, y: armlength}, -armangle),
-				bodyB: rightarmtalon, pointB: Matter.Vector.rotate({x: -talonlength, y: armlength}, armangle),
-				//TODO: Allow customization of the stroke colour, or make it invisible
-				render: {visible: true, strokeStyle: "rebeccapurple"},
-				stiffness: 0.0005,
-				damping: 0.1,
-			}),
 		],
 	});
 	/* TODO: Abandon constraints in favour of hand-coded angular movements
@@ -129,21 +83,19 @@ if (hacks) {
 	*/
 	Matter.Composite.translate(claw, {x: 0, y: -5000}); //Hide it way above the screen
 	const initial_locations = claw.bodies.map(c => ({x: c.position.x, y: c.position.y, angle: c.angle}));
-	const initial_lengths = claw.constraints.map(c => c.length);
 	function reset_claw() {
 		Matter.Composite.translate(claw, {x: -head.position.x, y: -head.position.y - 5000}); //Hide it way above the screen
-		closer.stiffness = 0.0005;
 		claw.bodies.forEach((c, i) => {
 			const loc = initial_locations[i];
 			Matter.Body.setPosition(c, loc);
 			Matter.Body.setAngle(c, loc.angle);
 		});
-		claw.constraints.forEach((c, i) => c.length = initial_lengths[i]);
 	}
 	reset_claw();
 	Matter.Composite.add(engine.world, claw);
 	let mode = "";
 	//TODO: Close at a particular speed instead of counting off 30 frames
+	const closer = {length: 100};
 	const closedelta = (closer.length - targetclawgap) / 30, lifterdelta = 10 / 30;
 	setTimeout(() => {
 		Matter.Composite.translate(claw, {x: Math.random() * (width - shoulderlength * 2) + shoulderlength, y: 5000});
@@ -155,17 +107,24 @@ if (hacks) {
 		if (headA !== headB) {
 			//The head has touched a thing! Note that this could be the armtalon part,
 			//if it strikes something and bounces up. Not sure what to do about that.
-			closer.stiffness = 0.5; //Tighten the spring a bit
+			//NOTE: If multiple pairs touch in a single frame, this function may be
+			//called multiple times. Ensure that it is idempotent. (Spawning multiple
+			//timeouts that have the same delay and are themselves idempotent is, in
+			//effect, idempotent.)
 			mode = ""; setTimeout(() => mode = "close", 500);
 		}
 	}));
 	Matter.Events.on(engine, "afterUpdate", e => {switch (mode) {
 		case "descend": Matter.Composite.translate(claw, {x: 0, y: 2}); break;
 		case "close":
+			//To close the claws, we droop the shoulders slightly and then
+			//bring the arm-talon pairs in. This involves rotating both the
+			//shoulders and the arm-talons by the shoulder rotation, and
+			//then rotating the arm-talons alone by the arm rotation.
 			if (closer.length <= targetclawgap) {mode = ""; setTimeout(() => mode = "ascend", 500);}
 			closer.length -= closedelta;
 			//Allow the shoulders to drop a little
-			lifter1.length += lifterdelta; lifter2.length += lifterdelta;
+			//lifter1.length += lifterdelta; lifter2.length += lifterdelta;
 			break;
 		case "ascend":
 			Matter.Composite.translate(claw, {x: 0, y: -1});
