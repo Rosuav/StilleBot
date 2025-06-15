@@ -1,4 +1,5 @@
-const hacks = ws_group === "4OCNIkpnmXUkUF0s0SfmOuKzurlCP6mlwxeM#49497888";
+//const hacks = ws_group === "4OCNIkpnmXUkUF0s0SfmOuKzurlCP6mlwxeM#49497888";
+const hacks = false;
 const engine = Matter.Engine.create();
 const width = window.innerWidth - 20, height = window.innerHeight - 20;
 //NOTE: For debugging and testing, background and fillStyle are both colours. For
