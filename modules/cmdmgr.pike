@@ -153,7 +153,6 @@ void autospam(string|int chanid, string cmd) {
 	echoable_message response = channel->commands[?cmd];
 	int|array(int) mins = mappingp(response) && response->automate;
 	if (!mins) return; //Autocommand disabled
-	werror("CMDMGR: Autospam replacing callout for %O %O\n", chanid + "!" + cmd, autocommands[chanid + "!" + cmd]);
 	remove_call_out(autocommands[chanid + "!" + cmd]);
 	autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(mins, channel->config->timezone), chanid, cmd);
 	string me = channel->config->display_name || channel->name[1..]; //If you use $$ in an autocommand, use the broadcaster's name.
@@ -168,11 +167,9 @@ void autospam(string|int chanid, string cmd) {
 		mixed id = autocommands[chanid + "!" + cmd];
 		int next = id && find_call_out(id);
 		if (undefinedp(next) || next > seconds(response->automate, channel->config->timezone)) {
-			werror("CMDMGR: Connected replacing callout for %O %O\n", chanid + "!" + cmd, id);
 			if (next) remove_call_out(id); //If you used to have it run every 60 minutes, now every 15, cancel the current and retrigger.
 			autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(response->automate, channel->config->timezone), chanid, cmd);
 		}
-		else werror("CMDMGR: Connected removing callout for %O %O\n", chanid + "!" + cmd, id);
 	}
 }
 
@@ -509,7 +506,6 @@ void purge(object channel, string cmd, multiset updates) {
 	if (prev->automate) {
 		//Clear out the timer. FIXME: Only do this if the command is really going away (not just if it's being updated).
 		mixed id = m_delete(autocommands, channel->userid + "!" + cmd);
-		werror("CMDMGR: Purge removing callout for %O %O\n", channel->userid + "!" + cmd, id);
 		if (id) remove_call_out(id);
 	}
 	if (prev->redemption) {
