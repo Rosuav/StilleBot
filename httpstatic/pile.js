@@ -126,7 +126,11 @@ function create_claw(clawsize) {
 	//Since the arm gets rotated around the shoulder too, the arm's own step is reduced
 	//to compensate. Otherwise it would get double the rotation.
 	Matter.Events.on(engine, "afterUpdate", e => {switch (clawmode) {
-		case "descend": Matter.Composite.translate(claw, {x: 0, y: 2}); break;
+		case "descend":
+			Matter.Composite.translate(claw, {x: 0, y: 2});
+			//If we hit the floor, the collision check won't detect it, so just close below the surface and pull up.
+			if (head.position.y >= height) {clawmode = ""; setTimeout(() => {closing = steps; clawmode = "close"}, 500);}
+			break;
 		case "close": {
 			//To close the claws, we droop the shoulders slightly and then
 			//bring the arm-talon pairs in. This involves rotating both the
