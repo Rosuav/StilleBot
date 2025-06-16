@@ -50,6 +50,7 @@ function unfade() {
 }
 
 function create_claw(clawsize) {
+	if (window.frameElement) return; //Don't enable the claw in preview mode
 	//FIXME: Calling this more than once will probably break things. Is currently blocked from re-calling.
 	const attrs = {
 		isStatic: true,

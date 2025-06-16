@@ -321,6 +321,7 @@ set_content("#editpile form div", [
 	LABEL(["Automatically reset? ", AUTO_RESET()]),
 	DIV(["Fade after ", INPUT({name: "fadeouttime", type: "number"}), " minutes (0 to disable)"]),
 	DIV(["Claw size ", INPUT({name: "clawsize", type: "number"}), " (0 to disable)"]),
+	DIV(["NOTE: The claw is not active on this edit", BR(), "page; open the direct link to test it."]),
 	DIV({style: "margin: 12px 0"}, TABLE({border: "1"}, [
 		TR([TH("Wall"), TH("Size (%)")]),
 		TR([TD(LABEL({for: "wall_left"}, "Left")), TD(INPUT({type: "number", id: "wall_left", name: "wall_left"}))]),
