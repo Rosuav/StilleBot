@@ -264,11 +264,11 @@ void retain(object module, string modname, string key) {
 }
 
 //Decorate a function with this to have it called once G->G->irc is populated.
-//If it's already populated (eg on code reload), function will be called immediately.
+//If it's already populated (eg on code reload), function will be called promptly.
 //NOTE: When this is called, G->G->irc will be populated, but not all configs are
 //necessarily fully populated. See G->G->irc->loading.
 void on_irc_loaded(object module, string modname, string key) {
-	if (sizeof(G->G->irc->?id || ({ }))) module[key]();
+	if (sizeof(G->G->irc->?id || ({ }))) call_out(module[key], 0);
 	else G->G->awaiting_irc_loaded += ({module[key]});
 }
 
