@@ -199,7 +199,7 @@ const builtin_validators = {
 					switch (m.type) {
 						case "goalbar": label = "Goal bar - " + /:(.*)$/.exec(m.text)[1]; break;
 						case "countdown": label = "Countdown - " + /:(.*)$/.exec(m.text)[1]; break;
-						case "pile": label = "Pile of Pics"; break; //No easy distinguishing features here
+						case "pile": label = "Pile of Pics - " + m.varname; break; //No easy distinguishing features here, just use the varname
 						default: break; //Simple text can be displayed as-is
 					}
 					return OPTION({".selected": id === val, value: id}, label);
