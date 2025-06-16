@@ -77,7 +77,7 @@ body.invisible {
 constant builtin_name = "Monitors"; //The front end may redescribe this according to the parameters
 constant builtin_description = "Get information about a channel monitor";
 //NOTE: The labels for parameters 1 and 2 will be replaced by the GUI editor based on monitor type.
-constant builtin_param = ({"/Monitor/monitor_id", "Advancement/action", "Time (countdowns only)"});
+constant builtin_param = ({"/Monitor/monitor_id", "Advancement/action", "Time/Type", "Label", "Image"});
 constant vars_provided = ([
 	"{type}": "Monitor type (text, goalbar, countdown)",
 	//NOTE: Any values not applicable to the type in question will be blank/omitted.
@@ -111,48 +111,38 @@ constant default_thing_type = ([
 //Not shared across instances.
 @retain: mapping clawids_pending = ([]);
 
-//TODO: Make this into some sort of "emote" magical category. Not currently in use.
 @retain: mapping bounding_box_cache = ([]);
-__async__ mapping get_thing_types(int userid) {
-	array emotes = await(twitch_api_request("https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + userid))->data;
-	emotes = emotes->images->url_2x - ({0}); //Shouldn't normally be any nulls but just in case
-	//Grab each image (cached if possible) and calculate the bounding box.
-	//Ultimately this will be done on upload and saved.
-	int limit = 20; //If you have too many emotes, you'll have to load multiple times to see them all. Won't be an issue once sprites get uploaded.
-	foreach (emotes; int i; string fn) {
-		if (mapping em = bounding_box_cache[fn]) {emotes[i] = em; continue;}
-		if (!--limit) {write("Limit exceeded at %d/%d\n", i, sizeof(emotes)); emotes = emotes[..i-1]; break;}
-		object res = await(Protocols.HTTP.Promise.get_url(fn));
-		mapping img = Image.PNG._decode(res->get());
-		if (!img->alpha) {
-			//No alpha? Just use the box itself.
-			emotes[i] = bounding_box_cache[fn] = ([
-				"fn": fn,
-				"xsize": img->xsize, "ysize": img->ysize,
-				"xoffset": 0, "yoffset": 0,
-			]);
-			continue;
-		}
-		Image.Image searchme = img->alpha->threshold(5);
-		[int left, int top, int right, int bottom] = searchme->find_autocrop();
-		//If we need to do any more sophisticated hull-finding, here's where to do it. For now, just the box.
-		//TODO: Allow the user to choose a circular hull, specifying the size and position.
-		//If we're cropping at all, add an extra pixel of room for safety. Note that this
-		//also protects against entirely transparent images, as it'll make a tiny box in
-		//the middle instead of a degenerate non-box.
-		if (left > 0) left--;
-		if (top > 0) top--;
-		if (right < img->xsize - 1) right++;
-		if (bottom < img->ysize - 1) bottom++;
-		int wid = right - left, hgh = bottom - top;
-		emotes[i] = bounding_box_cache[fn] = ([
-			"fn": fn,
-			"xsize": wid, "ysize": hgh,
-			"xoffset": -left / (float)wid,
-			"yoffset": -top / (float)hgh,
+__async__ mapping|zero get_image_dimensions(string url) {
+	if (mapping em = bounding_box_cache[url]) return em;
+	object res = await(Protocols.HTTP.Promise.get_url(url));
+	if (res->status >= 400) return 0; //Bad URL, or server down. Don't save into the cache in case it's temporary.
+	mapping img = Image.ANY._decode(res->get());
+	if (!img->alpha) {
+		//No alpha? Just use the box itself.
+		return bounding_box_cache[url] = ([
+			"url": url,
+			"xsize": img->xsize, "ysize": img->ysize,
+			"xoffset": 0, "yoffset": 0,
 		]);
 	}
-	return (["emotes": emotes]);
+	Image.Image searchme = img->alpha->threshold(5);
+	[int left, int top, int right, int bottom] = searchme->find_autocrop();
+	//If we need to do any more sophisticated hull-finding, here's where to do it. For now, just the box.
+	//TODO: Allow the user to choose a circular hull, specifying the size and position.
+	//If we're cropping at all, add an extra pixel of room for safety. Note that this
+	//also protects against entirely transparent images, as it'll make a tiny box in
+	//the middle instead of a degenerate non-box.
+	if (left > 0) left--;
+	if (top > 0) top--;
+	if (right < img->xsize - 1) right++;
+	if (bottom < img->ysize - 1) bottom++;
+	int wid = right - left, hgh = bottom - top;
+	return bounding_box_cache[url] = ([
+		"url": url,
+		"xsize": wid, "ysize": hgh,
+		"xoffset": -left / (float)wid,
+		"yoffset": -top / (float)hgh,
+	]);
 }
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
@@ -263,10 +253,11 @@ void wscmd_clawdone(object channel, mapping(string:mixed) conn, mapping(string:m
 		prizetype = msg->prizetype;
 	}
 	object prom = m_delete(clawids_pending, msg->clawid);
+	sscanf(msg->label || "-", "label-%s", string lbl);
 	if (prom) prom->success(([
 		"{type}": "pile",
 		"{prizetype}": prizetype,
-		"{prizelabel}": msg->label || "",
+		"{prizelabel}": lbl || "",
 	]));
 }
 
@@ -588,6 +579,57 @@ array(int) calculate_current_goalbar_tier(object channel, mapping info) {
 	return ({pos, goal, tier});
 }
 
+//Because I don't feel like making all of message_params asynchronous
+__async__ mapping pile_add(object channel, mapping info, mapping person, array param) {
+	string monitor = param[0];
+	//NOTE: set_variable synchronously pushes out socket messages to notify the pile,
+	//so multiple queued adds will all operate sequentially. The addxtra command will
+	//happen first, followed by the update to the quantity. Note that, if the quantity
+	//for some reason does NOT update (shouldn't happen!), the addxtra will linger,
+	//potentially resulting in a future change to the qty getting this xtra; but it
+	//will be overwritten by any subsequent add command.
+	string label; string|mapping|zero image;
+	if (sizeof(param) > 3 && param[3] != "") {
+		//Set the label to a piece of text, or to "emote:{@emoted}" to get the name of the
+		//first emote used. Note that, for complete reliability, set the label to "text:%s"
+		//if there is any chance that the text could contain a colon.
+		sscanf(param[3], "%s:%s", string code, string args);
+		if (!args) {code = "text"; args = param[3];}
+		switch (code) {
+			case "text": label = args; break;
+			case "emote": {
+				sscanf(args, "%*s\ufffae%s:%s\ufffb", string emoteid, label);
+				//If not found, leave label as null
+				break;
+			}
+			case "avatar":
+				mapping user = await(get_user_info((int)args, "id"));
+				break;
+		}
+	}
+	if (sizeof(param) > 4 && param[4] != "") {
+		sscanf(param[4], "%s:%s", string code, string args);
+		if (!args) {code = "text"; args = param[4];} //No useful default currently. The default is *not* URL - be explicit.
+		switch (code) {
+			case "url": image = args; break;
+			case "emote": {
+				sscanf(args, "%*s\ufffae%s:%s\ufffb", string emoteid, string label);
+				//TODO: Pick a size?? Might be better to use the 1.0 for smaller things.
+				if (emoteid) image = "https://static-cdn.jtvnw.net/emoticons/v2/" + emoteid + "/static/light/3.0";
+				break;
+			}
+			case "avatar":
+				mapping user = await(get_user_info((int)args, "id"));
+				if (user) image = user->profile_image_url;
+				break;
+		}
+		if (image) image = await(get_image_dimensions(image));
+	}
+	if (label || image) send_updates_all(channel, monitor, (["addxtra": param[2], "xtra": (["label": label, "image": image])]));
+	string newcount = channel->set_variable(info->varname + ":" + param[2], 1, "add");
+	return (["{type}": info->type, "{value}": newcount]);
+}
+
 mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
 	string monitor = param[0];
 	mapping info = G->G->DB->load_cached_config(channel->userid, "monitors")[monitor];
@@ -647,6 +689,7 @@ mapping|Concurrent.Future message_params(object channel, mapping person, array p
 					send_updates_all(channel, monitor, (["claw": dropid]));
 					return prom->future();
 				}
+				case "add": return pile_add(channel, info, person, param);
 				default: break;
 			}
 			//Nothing useful to return here.

@@ -227,11 +227,16 @@ const builtin_validators = {
 function check_monitor_params(id) {
 	const mon = monitors[id];
 	if (!mon) return; //Can only happen if it's really slow or you're fast clicking on it
-	let labels = [null, null];
-	if (mon.type === "countdown") labels = ["Action", "Time (seconds)"];
-	else if (mon.type === "goalbar") labels = ["Advance by", null];
+	let labels = [null, null, null, null];
+	//TODO: With the "Action" options, replace the input with a select, offering the exact valid actions and no others
+	//TODO: Generalize this to allow for trees of parameter meanings. Maybe if an earlier one is a mapping????
+	if (mon.type === "countdown") labels = ["Action", "Time (seconds)", null, null];
+	else if (mon.type === "goalbar") labels = ["Advance by", null, null, null];
+	else if (mon.type === "pile") labels = ["Action", "Thing", "Label", "Image"];
 	set_content('label[for="value-builtin_param1"]', labels[0] || "n/a").closest("tr").hidden = !labels[0];
 	set_content('label[for="value-builtin_param2"]', labels[1] || "n/a").closest("tr").hidden = !labels[1];
+	set_content('label[for="value-builtin_param3"]', labels[2] || "n/a").closest("tr").hidden = !labels[2];
+	set_content('label[for="value-builtin_param4"]', labels[3] || "n/a").closest("tr").hidden = !labels[3];
 }
 on("change", ".monitor-selection", e => check_monitor_params(e.match.value));
 

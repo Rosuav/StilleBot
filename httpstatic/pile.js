@@ -181,6 +181,8 @@ function create_claw(clawsize) {
 	}});
 }
 
+const addxtra = { };
+
 export function render(data) {
 	if (data.data) {
 		if (data.data.fadeouttime) fadeouttime = +data.data.fadeouttime;
@@ -216,6 +218,7 @@ export function render(data) {
 				{isStatic: true, render: {fillStyle: visible_walls ? "rebeccapurple" : "transparent", lineWidth: 0}}));
 		if (data.data.clawsize && !clawdrop) create_claw(data.data.clawsize);
 	}
+	if (data.addxtra) addxtra[data.addxtra] = data.xtra;
 	if (data.newcount) Object.entries(data.newcount).forEach(([thingtype, newcount]) => {
 		const cat = thingtypes[thingtype];
 		if (!cat) return;
@@ -223,16 +226,18 @@ export function render(data) {
 		const things = thingcategories[thingtype];
 		while (things.length > newcount) Matter.Composite.remove(engine.world, things.pop());
 		while (things.length < newcount) {
-			const img = cat.images[Math.floor(Math.random() * cat.images.length)] || default_thing_image;
+			const xtra = addxtra[thingtype] || { }; delete addxtra[thingtype];
+			const img = xtra.image || cat.images[Math.floor(Math.random() * cat.images.length)] || default_thing_image;
 			const scale = cat.xsize / img.xsize;
 			const attrs = {
 				render: {sprite: {
 					texture: img.url,
-					//xOffset: cat.xoffset || 0, yOffset: cat.yoffset || 0, //Not currently configured on the back end
+					xOffset: img.xoffset || 0, yOffset: img.yoffset || 0,
 					xScale: scale, yScale: scale, 
 				}},
 				restitution: 0.25, //Make 'em a little bit bouncier
 			};
+			if (xtra.label) attrs.label = "label-" + xtra.label; //Force a prefix so we can do hit-detection based on label category
 			let obj;
 			switch (cat.shape) {
 				case "circle": obj = Circle(
