@@ -266,6 +266,19 @@ export function render(data) {
 		clawqueue.push(data.claw);
 		if (clawqueue.length === 1) clawdrop();
 	}
+	if (data.remove) {
+		//Remove one of a thingtype, choosing based on label
+		const things = thingcategories[data.remove];
+		if (!things) return;
+		for (let i = 0; i < things.length; ++i) {
+			const thing = things[i];
+			if (thing.label !== "label-" + data.label) continue;
+			ws_sync.send({cmd: "removed", thingtype: data.remove, label: thing.label});
+			Matter.Composite.remove(engine.world, thing);
+			things.splice(i, 1);
+			return;
+		}
+	}
 }
 ws_sync.send({cmd: "querycounts"});
 

@@ -373,6 +373,13 @@ __async__ void file_uploaded(mapping file) {
 		send_updates_all("#" + file->channel, (["id": file->id, "data": file->metadata | (["id": file->id]), "type": "image"]));
 }
 
+void wscmd_removed(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
+	mapping info = monitors[conn->subgroup]; if (!info) return;
+	if (has_value(info->things->id, msg->thingtype))
+		channel->set_variable(info->varname + ":" + msg->thingtype, 1, "spend");
+}
+
 @"is_mod": __async__ void wscmd_managethings(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
 	mapping info = monitors[msg->nonce]; if (!info) return;
@@ -690,6 +697,10 @@ mapping|Concurrent.Future message_params(object channel, mapping person, array p
 					return prom->future();
 				}
 				case "add": return pile_add(channel, info, person, param);
+				case "remove": {
+					send_updates_all(channel, monitor, (["remove": param[2] || "default", "label": param[3] || ""]));
+					break;
+				}
 				default: break;
 			}
 			//Nothing useful to return here.
