@@ -256,6 +256,11 @@ export function render(data) {
 					cat.xsize, Math.ceil(img.ysize * scale),
 					attrs);
 			}
+			if (img.hull && img.hull.length >= 4) {
+				const verts = Matter.Vertices.create(img.hull.map(([x, y]) => ({x, y})), obj);
+				obj = Matter.Bodies.fromVertices(obj.position.x, obj.position.y, Matter.Vertices.hull(verts), attrs);
+				Matter.Body.scale(obj, scale, scale);
+			}
 			//Angles are measured in radians. Angular velocity seems to be rad/frame and we're at
 			//60Hz physics rate, meaning that 0.01 will rotate you by 0.60 rad/sec (before friction is
 			//taken into account). Provide each newly-added element with a bit of rotation, either direction.

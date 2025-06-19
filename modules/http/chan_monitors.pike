@@ -132,16 +132,55 @@ __async__ mapping|zero get_image_dimensions(string url) {
 	//If we're cropping at all, add an extra pixel of room for safety. Note that this
 	//also protects against entirely transparent images, as it'll make a tiny box in
 	//the middle instead of a degenerate non-box.
-	if (left > 0) left--;
-	if (top > 0) top--;
-	if (right < img->xsize - 1) right++;
-	if (bottom < img->ysize - 1) bottom++;
+	array hull;
+	int leftedge = left > 0, topedge = top > 0; //Keep track of which edges we've nudged
+	int rightedge = right < img->xsize - 1, bottomedge = bottom < img->ysize - 1;
+	left -= leftedge; top -= topedge; right += rightedge; bottom += bottomedge;
 	int wid = right - left, hgh = bottom - top;
+	if (right - left > 4 && bottom - top > 4) {
+		hull = ({ });
+		//Attempt to find a convex hull. We iterate through the original autocropped bounds,
+		//but using the coordinate space of the nudged bounds, hence offsetting by *edge.
+		//Top boundary.
+		for (int x = left + leftedge; x < right - rightedge; ++x) {
+			//Drop a vertical until we find non-transparency
+			for (int y = top + topedge; y < bottom - bottomedge; ++y) {
+				if (img->alpha->getpixel(x, y)[0] > 5) {hull += ({({x, y})}); break;}
+			}
+			//Note: If we never find any solid pixel - if there's a stripe of full
+			//transparency - just skip that one and don't add a coordinate. We'll end
+			//up scanning this one again the other direction, which is a waste, but I
+			//don't really care enough to optimize that. This should not happen at the
+			//far left/right of the image, as the autocrop would have detected this;
+			//in the case of a fully transparent image, we're already on a too-small
+			//box to be even doing this check.
+		}
+		//Right boundary. Instead of starting all the way at the top, we start at the corner
+		//we just found. This ought to be in the correct column, so we're safe.
+		for (int y = hull[-1][1] + 1; y < bottom - bottomedge; ++y) {
+			for (int x = right - rightedge - 1; x >= left + leftedge; --x) {
+				if (img->alpha->getpixel(x, y)[0] > 5) {hull += ({({x, y})}); break;}
+			}
+		}
+		//Bottom boundary
+		for (int x = hull[-1][1] - 1; x >= left + leftedge; --x) {
+			for (int y = bottom - bottomedge - 1; y >= top + topedge; --y) {
+				if (img->alpha->getpixel(x, y)[0] > 5) {hull += ({({x, y})}); break;}
+			}
+		}
+		//Right boundary. We stop when we get back to the starting corner.
+		for (int y = hull[-1][1] - 1; y > hull[0][1]; --y) {
+			for (int x = left + leftedge; x < right - rightedge; ++x) {
+				if (img->alpha->getpixel(x, y)[0] > 5) {hull += ({({x, y})}); break;}
+			}
+		}
+	}
 	return bounding_box_cache[url] = ([
 		"url": url,
 		"xsize": wid, "ysize": hgh,
 		"xoffset": -left / (float)wid,
 		"yoffset": -top / (float)hgh,
+		"hull": hull,
 	]);
 }
 
