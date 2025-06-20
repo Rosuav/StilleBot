@@ -648,9 +648,6 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 				//If not found, leave label as null
 				break;
 			}
-			case "avatar":
-				mapping user = await(get_user_info((int)args, "id"));
-				break;
 		}
 	}
 	if (sizeof(param) > 4 && param[4] != "") {
