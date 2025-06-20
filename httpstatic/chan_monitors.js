@@ -157,7 +157,7 @@ export function render_empty() {
 }
 export function render(data) { }
 
-function AUTO_RESET() {return SELECT({name: "autoreset"}, [
+function AUTO_RESET(attrs) {return SELECT({name: "autoreset", ...attrs}, [
 	OPTION({value: ""}, "None"),
 	OPTION({value: "stream"}, "End of stream"),
 	OPTION({value: "month"}, "Calendar month"),
@@ -323,11 +323,29 @@ set_content("#editpile form div", [
 		"and can be contained in a box or partial box. Objects can be provided images, or you " +
 		"can use Twitch emotes; note that BTTV, 7TV, FFZ, etc emotes will not work.",
 	]),
-	DIV(["Variable group: ", CODE({"data-content": "varname"})]),
-	LABEL(["Automatically reset? ", AUTO_RESET()]),
-	DIV(["Fade after ", INPUT({name: "fadeouttime", type: "number"}), " minutes (0 to disable)"]),
-	DIV(["Claw size ", INPUT({name: "clawsize", type: "number"}), " (0 to disable)"]),
-	DIV(["NOTE: The claw is not active on this edit", BR(), "page; open the direct link to test it."]),
+	TABLE([
+		TR([TH("Variable group"), TD(CODE({"data-content": "varname"}))]),
+		TR([TH(LABEL({for: "editpile_autoreset"}, "Auto-reset")), TD(AUTO_RESET({id: "editpile_autoreset"}))]),
+		TR([TH("Fade after"), TD([INPUT({name: "fadeouttime", type: "number"}), " minutes (0 to disable)"])]),
+		TR([TH("Background"), TD([
+			LABEL(["Color: ", INPUT({name: "bgcolor", type: "color"})]),
+			LABEL([
+				" Opacity: ",
+				INPUT({name: "bgalpha", type: "number", min: 0, max: 100, value: 0}),
+				"% (0 for invisible)",
+			]),
+		])]),
+		TR([TH("Walls"), TD([
+			LABEL(["Color: ", INPUT({name: "wallcolor", type: "color"})]),
+			LABEL([
+				" Opacity: ",
+				INPUT({name: "wallalpha", type: "number", min: 0, max: 100, value: 0}),
+				"% (0 for invisible)",
+			]),
+		])]),
+		TR([TH("Claw size"), TD([INPUT({name: "clawsize", type: "number"}), " (0 to disable)"])]),
+		TR(TD({colSpan: 2}, ["NOTE: The claw is not active on this edit page; open the direct link to test it."])),
+	]),
 	DIV({style: "margin: 12px 0"}, TABLE({border: "1"}, [
 		TR([TH("Wall"), TH("Size (%)")]),
 		TR([TD(LABEL({for: "wall_left"}, "Left")), TD(INPUT({type: "number", id: "wall_left", name: "wall_left"}))]),

@@ -99,7 +99,8 @@ constant saveable_attributes = "previewbg barcolor fillcolor altcolor needlesize
 	"infinitier lvlupcmd format format_style width height "
 	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip follow kofi_dono kofi_member kofi_renew kofi_shop kofi_commission "
 	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive startonscene startonscene_time record_leaderboard "
-	"twitchsched twitchsched_offset fadeouttime wall_left wall_right wall_floor autoreset clawsize" / " " + TEXTFORMATTING_ATTRS;
+	"twitchsched twitchsched_offset fadeouttime wall_left wall_right wall_floor autoreset clawsize "
+	"wallcolor wallalpha" / " " + TEXTFORMATTING_ATTRS;
 constant retained_attributes = (<"boss_selfheal", "boss_giftrecipient">); //Attributes set externally, not editable with wscmd_updatemonitor.
 constant valid_types = (<"text", "goalbar", "countdown", "pile">);
 

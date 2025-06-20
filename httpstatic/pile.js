@@ -1,12 +1,9 @@
-//const hacks = ws_group === "4OCNIkpnmXUkUF0s0SfmOuKzurlCP6mlwxeM#49497888";
-const hacks = false;
+const hacks = ws_group === "4OCNIkpnmXUkUF0s0SfmOuKzurlCP6mlwxeM#49497888"; //For testing, sometimes will have special code
+//const hacks = false;
 const engine = Matter.Engine.create();
 const width = window.innerWidth - 20, height = window.innerHeight - 20;
-//NOTE: For debugging and testing, background and fillStyle are both colours. For
-//production, they should be transparent, with actual elements for interaction purposes.
-const visible_walls = hacks;
 const renderer = Matter.Render.create({element: document.getElementById("display"), engine, options: {
-	background: visible_walls ? "aliceblue" : "transparent", width, height,
+	background: "transparent", width, height,
 }});
 const Rectangle = Matter.Bodies.rectangle, Circle = Matter.Bodies.circle;
 Matter.Render.run(renderer);
@@ -19,7 +16,7 @@ const thingcategories = { };
 //Map category ID to the server-provided information about it
 let thingtypes = { };
 let fadeouttime = 0, fader = 0;
-let wall_sizes = { }, wall_objects = { };
+let wall_config = { }, wall_objects = { };
 const clawqueue = []; //If empty, the claw isn't active. If >1 entries, after the current one, the next will autostart.
 let clawdrop;
 
@@ -187,16 +184,24 @@ function create_claw(clawsize) {
 
 const addxtra = { };
 
+//For a given color eg #663399 and alpha eg 100, return an eight digit hex color. Note that alpha is in the range 0-100.
+function hexcolor(color, alpha) {
+	return (color || "#000000") + ("0" + Math.floor((alpha || 0) * 2.55 + 0.5).toString(16)).slice(-2);
+}
+
 export function render(data) {
-	if (data.data) {
+	if (data.data) { //Odd name but this is the primary reconfiguration
 		if (data.data.fadeouttime) fadeouttime = +data.data.fadeouttime;
 		if (data.data.things) thingtypes = Object.fromEntries(data.data.things.map(t => [t.id, t]));
+		renderer.options.background = hexcolor(data.data.bgcolor, data.data.bgalpha);
 		//If the floor dimension changes, recreate the walls as well. Otherwise, only recreate what's changed.
 		//(Usually that'll be nothing. Changing the walls and floor is unusual.)
-		let floor_changed = data.data.wall_floor !== wall_sizes.floor;
+		const wallcolor = hexcolor(data.data.wallcolor, data.data.wallalpha);
+		const floor_changed = data.data.wall_floor !== wall_config.floor
+			|| wallcolor !== wall_config.color;
 		for (let side of ["floor", "left", "right"]) {
-			if (data.data["wall_" + side] !== wall_sizes[side] || floor_changed) {
-				wall_sizes[side] = data.data["wall_" + side];
+			if (data.data["wall_" + side] !== wall_config[side] || floor_changed) {
+				wall_config[side] = data.data["wall_" + side];
 				if (wall_objects[side]) {
 					Matter.Composite.remove(engine.world, wall_objects[side]);
 					delete wall_objects[side];
@@ -205,21 +210,21 @@ export function render(data) {
 		}
 		//The walls should have some thickness to them, to prevent weird bouncing. At 2px, there's a lot of bouncing;
 		//even at 10px there's occasional issues. However, thicker walls look weird if the floor isn't 100% size.
-		const wall_thickness = 95 < +wall_sizes.floor ? 60 : 10;
+		const wall_thickness = 95 < +wall_config.floor ? 60 : 10;
 		//The need fields are 0 if no recreation is needed, or a percentage eg 50% to create a half-size wall.
-		const need_floor = !wall_objects.floor && +wall_sizes.floor;
-		const need_left = !wall_objects.left && +wall_sizes.left;
-		const need_right = !wall_objects.right && +wall_sizes.right;
-		const floor_size = width * +wall_sizes.floor / 200 + wall_thickness / 2 - 2;
+		const need_floor = !wall_objects.floor && +wall_config.floor;
+		const need_left = !wall_objects.left && +wall_config.left;
+		const need_right = !wall_objects.right && +wall_config.right;
+		const floor_size = width * +wall_config.floor / 200 + wall_thickness / 2 - 2;
 		if (need_floor) Matter.Composite.add(engine.world,
 			wall_objects.floor = Rectangle(width / 2, height + 28, width * need_floor / 100 + 10, 60,
-				{isStatic: true, render: {fillStyle: visible_walls ? "rebeccapurple" : "transparent", lineWidth: 0}}));
+				{isStatic: true, render: {fillStyle: wallcolor, lineWidth: 0}}));
 		if (need_left) Matter.Composite.add(engine.world,
 			wall_objects.left = Rectangle(width / 2 - floor_size, height - height * need_left / 200, wall_thickness, height * need_left / 100 + 10,
-				{isStatic: true, render: {fillStyle: visible_walls ? "rebeccapurple" : "transparent", lineWidth: 0}}));
+				{isStatic: true, render: {fillStyle: wallcolor, lineWidth: 0}}));
 		if (need_right) Matter.Composite.add(engine.world,
 			wall_objects.right = Rectangle(width / 2 + floor_size, height - height * need_right / 200, wall_thickness, height * need_right / 100 + 10,
-				{isStatic: true, render: {fillStyle: visible_walls ? "rebeccapurple" : "transparent", lineWidth: 0}}));
+				{isStatic: true, render: {fillStyle: wallcolor, lineWidth: 0}}));
 		if (data.data.clawsize && !clawdrop) create_claw(data.data.clawsize);
 	}
 	if (data.addxtra) addxtra[data.addxtra] = data.xtra;
