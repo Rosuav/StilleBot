@@ -387,11 +387,12 @@ set_content("#editpile form div", [
 			FIELDSET([
 				LEGEND("Activations:"),
 				DIV({id: "claw_activations", class: "buttonbox"}),
-				DIV({id: "new_activation", class: "buttonbox"}, [
-					"Create: ", //TODO: Implement these
-					BUTTON({type: "button", disabled: 1}, "Command"),
-					BUTTON({type: "button", disabled: 1}, "Points reward"),
-					BUTTON({type: "button", disabled: 1}, "Timer"),
+				DIV({id: "new_activation", class: "buttonbox", "data-action": "claw"}, [
+					"Create: ",
+					BUTTON({type: "button", class: "addactivation", "data-invocation": "command"}, "Command"),
+					//FIXME: Reenable this button once the backend implementation is done
+					BUTTON({type: "button", class: "addactivation", "data-invocation": "reward", disabled: 1}, "Points reward"),
+					BUTTON({type: "button", class: "addactivation", "data-invocation": "timer"}, "Timer"),
 				]),
 			]),
 		])]),
@@ -427,6 +428,11 @@ on("click", "#createvar", e => {
 	DOM("[name=varname]").value = varname[0];
 	ws_sync.send({cmd: "createvar", varname: varname[0]});
 });
+
+on("click", ".addactivation", e => ws_sync.send({
+	cmd: "addactivation", nonce: e.match.closest_data("nonce"),
+	invocation: e.match.closest_data("invocation"), action: e.match.closest_data("action"),
+}));
 
 on("submit", "dialog form", async e => {
 	if (e.submitter.value === "cancel") return; //The "Cancel" button is actually a submit-type button to make it manage the dialog, but don't actually save anything

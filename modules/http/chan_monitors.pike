@@ -301,6 +301,41 @@ void wscmd_clawdone(object channel, mapping(string:mixed) conn, mapping(string:m
 	]));
 }
 
+@"is_mod": void wscmd_addactivation(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
+	mapping info = monitors[msg->nonce]; if (!info) return;
+	string cmdname, code;
+	if (msg->action == "claw") {
+		cmdname = "claw";
+		code = sprintf(#{chan_monitors(%O, "claw")
+			if ("{prizetype}" == "") "The claw has selected nothing. The claw is our master!"
+			else "The claw has selected: {prizetype} {prizelabel}. The claw is our master!"
+		#}, msg->nonce);
+	} else if (has_value(info->things->id, msg->action)) {
+		cmdname = "add" + msg->action;
+		code = sprintf(#{$%s:%s$ += "1"#}, info->varname, msg->action);
+	} else return; //Action has to be either "claw" or a valid thing type to add
+	if (channel->commands[cmdname]) //Deduplicate in an ugly fashion; if the chosen invocation is "command", you will probably want to manually edit this after
+		for (int i = 2; ; ++i)
+			if (!channel->commands[cmdname + i]) {cmdname += i; break;}
+	switch (msg->invocation) {
+		case "command": break; //Commands are simple, no extra code needed
+		case "reward": {
+			string rewardid = ""; //FIXME: Actually add the reward and put its ID in here
+			code = sprintf(#{
+				#access "none"
+				#visibility "hidden"
+				#redemption %O
+				chan_pointsrewards("{rewardid}", "fulfil", "{redemptionid}") ""
+			#}, rewardid) + code;
+			break;
+		}
+		case "timer": code = #{#access "none" #visibility "hidden" #automate "10"#} + code; break;
+		default: return; //Bad invocation type, do nothing
+	}
+	G->G->cmdmgr->update_command(channel, "", cmdname, code, (["language": "mustard"]));
+}
+
 //Can overwrite an existing variable
 mapping|zero websocket_cmd_createvar(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->session->fake) return (["cmd": "demo"]);
