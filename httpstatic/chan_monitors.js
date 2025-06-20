@@ -317,6 +317,12 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 ]));
 
 set_content("#editpile form div", [
+	P({style: "max-width: 600px"}, [
+		"A flexible system that can be used in a variety of ways, the Pile of Pics lets you drop " +
+		"items into it, and potentially claw them out again. The objects bounce off each other, " +
+		"and can be contained in a box or partial box. Objects can be provided images, or you " +
+		"can use Twitch emotes; note that BTTV, 7TV, FFZ, etc emotes will not work.",
+	]),
 	DIV(["Variable group: ", CODE({"data-content": "varname"})]),
 	LABEL(["Automatically reset? ", AUTO_RESET()]),
 	DIV(["Fade after ", INPUT({name: "fadeouttime", type: "number"}), " minutes (0 to disable)"]),
