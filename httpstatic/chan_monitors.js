@@ -2,6 +2,43 @@ import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.
 const {A, B, BR, BUTTON, CODE, DIV, FIELDSET, FIGCAPTION, FIGURE, IFRAME, IMG, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
 import {update_display, formatters} from "$$static||monitor.js$$";
 import {simpleconfirm, TEXTFORMATTING, upload_to_library} from "$$static||utils.js$$";
+import {commands, register_command, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
+
+//TODO: Make cmd_configure know about some standard types of configuration
+//Even better, have the command basis figured out from something inherent in the command
+cmd_configure({
+	get_command_basis: cmd => {
+		const cmdname = "!" + cmd.id.split("#")[0];
+		set_content("#advanced_view h3", ["Command name ", INPUT({autocomplete: "off", id: "cmdname", value: cmdname})]);
+		return {type: "anchor_command"};
+	},
+});
+
+//Search a command recursively for a monitor action
+function search_command(node, id, action) {
+	if (!node || typeof node === "string") return false;
+	if (Array.isArray(node)) return node.some(n => search_command(n, id, action));
+	if (node.builtin === "chan_monitors" && Array.isArray(node.builtin_param)
+		&& node.builtin_param[0] === id && node.builtin_param[1] === action)
+			return true;
+	//Note that we will scan naively here, even if the 'otherwise' node cannot be executed
+	//eg if this isn't even conditional. A properly-validated command should not have such
+	//quirks in it.
+	return search_command(node.message, id, action) || search_command(node.otherwise, id, action);
+}
+
+function update_activations(elem, id, action) {
+	elem = set_content(elem, Object.values(commands)
+		.filter(cmd => search_command(cmd, id, action))
+		.map(cmd => BUTTON({type: "button", class: "advview", "data-id": cmd.id}, "!" + cmd.id))
+	);
+	elem.dataset.activationid = id;
+	elem.dataset.activationaction = action;
+}
+function update_activation_lists() {
+	document.querySelectorAll("[data-activationid]").forEach(elem =>
+		update_activations(elem, elem.dataset.activationid, elem.dataset.activationaction))
+}
 
 const editables = { }, vargroups = { };
 function set_values(info, elem) {
@@ -42,6 +79,7 @@ function set_values(info, elem) {
 				BUTTON({type: "button", class: "editpilecat"}, "\u2699"),
 			]),
 		])));
+		update_activations("#claw_activations", info.id, "claw");
 	}
 	return elem;
 }
@@ -323,7 +361,7 @@ set_content("#editpile form div", [
 		"and can be contained in a box or partial box. Objects can be provided images, or you " +
 		"can use Twitch emotes; note that BTTV, 7TV, FFZ, etc emotes will not work.",
 	]),
-	TABLE([
+	TABLE({border: 1}, [
 		TR([TH("Variable group"), TD(CODE({"data-content": "varname"}))]),
 		TR([TH(LABEL({for: "editpile_autoreset"}, "Auto-reset")), TD(AUTO_RESET({id: "editpile_autoreset"}))]),
 		TR([TH("Fade after"), TD([INPUT({name: "fadeouttime", type: "number"}), " minutes (0 to disable)"])]),
@@ -343,8 +381,20 @@ set_content("#editpile form div", [
 				"% (0 for invisible)",
 			]),
 		])]),
-		TR([TH("Claw size"), TD([INPUT({name: "clawsize", type: "number"}), " (0 to disable)"])]),
-		TR(TD({colSpan: 2}, ["NOTE: The claw is not active on this edit page; open the direct link to test it."])),
+		TR([TH("Claw"), TD([
+			LABEL([INPUT({name: "clawsize", type: "number"}), " (0 to disable)"]), BR(),
+			"NOTE: The claw is not active on this edit page; open the", BR(), "direct link to test it.", BR(),
+			FIELDSET([
+				LEGEND("Activations:"),
+				DIV({id: "claw_activations", class: "buttonbox"}),
+				DIV({id: "new_activation", class: "buttonbox"}, [
+					"Create: ", //TODO: Implement these
+					BUTTON({type: "button", disabled: 1}, "Command"),
+					BUTTON({type: "button", disabled: 1}, "Points reward"),
+					BUTTON({type: "button", disabled: 1}, "Timer"),
+				]),
+			]),
+		])]),
 	]),
 	DIV({style: "margin: 12px 0"}, TABLE({border: "1"}, [
 		TR([TH("Wall"), TH("Size (%)")]),
@@ -524,6 +574,7 @@ on("click", ".editpilecat", e => {
 		elem.value = thing[attr];
 	}
 	update_thing_images(thing);
+	//TODO: Have an activation list for this category, same as for the claw
 	dlg.dataset.nonce = nonce;
 	dlg.dataset.originalid = thingid;
 	dlg.showModal();
@@ -562,19 +613,17 @@ function shorten(txt, len) {
 	if (!txt || txt.length <= len) return txt;
 	return txt.slice(0, len - 1) + "..."; //I really want a width-based shorten, but CSS won't max-width an option
 }
-const commands = { };
 ws_sync.connect(ws_group, {
-	ws_type: "chan_commands",
+	ws_type: "chan_commands", ws_sendid: "cmdedit",
 	select: DOM("#cmdpicker"),
 	make_option: cmd => OPTION({"data-id": cmd.id, value: cmd.id.split("#")[0]}, "!" + cmd.id.split("#")[0] + " -- " + shorten(textify(cmd.message), 75)),
 	is_recommended: cmd => cmd.access === "none" && cmd.visibility === "hidden",
 	render: function(data) {
 		if (data.id) {
-			const opt = this.select.querySelector(`[data-id="${data.id}"]`);
-			//Note that a partial update (currently) won't move a command between groups.
-			if (opt) set_content(opt, "!" + cmd.id.split("#")[0] + " -- " + textify(cmd.message)); //TODO: dedup
-			else this.groups[this.is_recommended(cmd) ? 1 : 2].appendChild(this.make_option(cmd));
-			commands[data.id] = data;
+			//FIXME: Partial updates to the SELECT() are broken. Replace it with an activation list for
+			//better functionality anyway, and get rid of the drop-down altogether.
+			commands[data.id] = data.data;
+			update_activation_lists();
 			return;
 		}
 		if (!this.groups) set_content(this.select, this.groups = [
@@ -588,6 +637,7 @@ ws_sync.connect(ws_group, {
 		set_content(this.groups[2], blocks[1]);
 		const want = this.select.dataset.wantvalue;
 		if (want) this.select.value = want;
+		update_activation_lists();
 	},
 });
 const variables = { };
