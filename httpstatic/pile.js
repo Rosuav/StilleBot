@@ -1,3 +1,5 @@
+import Matter from "https://esm.run/matter-js";
+import "https://esm.run/poly-decomp";
 const hacks = ws_group === "4OCNIkpnmXUkUF0s0SfmOuKzurlCP6mlwxeM#49497888"; //For testing, sometimes will have special code
 //const hacks = false;
 const engine = Matter.Engine.create();

@@ -57,15 +57,7 @@ constant monitorstyles = #"
 ";
 
 /* The Pile of Pics - credit to DeviCat for claiming that name!
-
-To update the physics engine:
 - https://brm.io/matter-js/docs/
-- Download the released version of matter-js - currently https://github.com/liabru/matter-js/releases/tag/0.20.0
-- Copy build/matter.min.js into .../httpstatic/
-It's MIT-licensed so this should be all legal.
-For concave polygon decomposition:
-- wget https://raw.githubusercontent.com/schteppe/poly-decomp.js/refs/heads/master/build/decomp.min.js
-- Also MIT-licensed.
 */
 constant pilestyles = #"
 body.invisible {
@@ -199,9 +191,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 				"default_thing_image": default_thing_image,
 			]),
 			"styles": pilestyles,
-			//Can't use "js": "matter.min.js" because that would make a type=module script element,
-			//and matter-js as of 0.20.0 does not support module-style loading.
-			"extra_scripts": "<script src=\"" + G->G->template_defaults["static"]("matter.min.js") + "\"></script><script src=\"" + G->G->template_defaults["static"]("decomp.min.js") + "\"></script>",
 		]));
 		return render_template("monitor.html", ([
 			"vars": (["ws_type": ws_type, "ws_group": nonce + "#" + req->misc->channel->userid, "ws_code": "monitor"]),
