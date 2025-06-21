@@ -263,7 +263,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 //Note that this message comes to the bot that's active as of when you click the button,
 //and the eventual redirect from Patreon will come to the bot that's active at that time.
 //If there's a bot handover during that time, the login will have to be restarted.
-@"is_mod": mapping wscmd_patreonlogin(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": @"demo_ok": mapping wscmd_patreonlogin(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	string tok = String.string2hex(random_string(8));
 	G->G->patreon_csrf_states[tok] = (["timestamp": time(), "channel": channel->userid]);
 	object uri = Standards.URI("https://www.patreon.com/oauth2/authorize");
