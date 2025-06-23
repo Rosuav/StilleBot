@@ -39,7 +39,9 @@ __async__ mapping parse_hype_status(mapping data)
 		"cooldown": cooldown, "expires": expires,
 		"level": (int)data->level, "goal": (int)data->goal,
 		"total": data->progress || (int)data->total, //Different format problems. Sigh.
-		"is_golden_kappa_train": data->is_golden_kappa_train, //Note that this isn't available when you first load the page, only in the eventsub messages. Sigh.
+		//TODO: What are the valid data->type values? This replaces the dedicated is_golden_kappa_train flag, is it "golden_kappa"? "goldenkappa"? "kappa"?
+		//Also there's the discount sub gift trains, etc
+		//"is_golden_kappa_train": data->is_golden_kappa_train, //Note that this isn't available when you first load the page, only in the eventsub messages. Sigh.
 	]);
 	//The API has one format, the eventsub notification has another. Sigh. Synchronize manually.
 	foreach (data->top_contributions + ({data->last_contribution}) - ({0}), mapping user) {
@@ -53,9 +55,9 @@ __async__ mapping parse_hype_status(mapping data)
 	return state;
 }
 
-@EventNotify("channel.hype_train.begin=1"):
-@EventNotify("channel.hype_train.progress=1"):
-@EventNotify("channel.hype_train.end=1"):
+@EventNotify("channel.hype_train.begin=2"):
+@EventNotify("channel.hype_train.progress=2"):
+@EventNotify("channel.hype_train.end=2"):
 void hypetrain_progression(object chan, mapping info) {
 	//Stdio.append_file("evthook.log", sprintf("EVENT: Hype %s [%O, %d]: %O\n", status, chan, time(), info));
 	parse_hype_status(info)->then() {send_updates_all(info->broadcaster_user_login, @__ARGS__);};
