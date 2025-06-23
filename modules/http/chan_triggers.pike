@@ -1,25 +1,40 @@
 inherit http_endpoint;
 inherit enableable_module;
 
-constant TEMPLATES = ({
-	"Text | Simple text, finds any string of letters",
-	"RegExp | Word trigger - \\&lt;some-word\\&gt;",
-});
+constant markdown = #{# Triggered responses for $$channel$$
 
-//Due to the nature of triggers, templates ALL use the advanced view.
-constant COMPLEX_TEMPLATES = ([
-	"Text": ([
-		"casefold": "on",
-		"conditional": "contains",
-		"expr1": "hello", "expr2": "%s",
-		"message": "Hello to you too!!",
-	]),
-	"RegExp": ([
-		"conditional": "regexp",
-		"expr1": "\\<Kappa\\>", "expr2": "%s",
-		"message": "MiniK Kappa KappaHD ZombieKappa",
-	]),
-]);
+Every chat message is checked against these triggers (in order). All matching
+responses will be sent. Unlike [commands](commands), triggers do not require
+that the command name be at the start of the message; they can react to any
+word or phrase anywhere in the message. They can also react to a variety of
+other aspects of the message, including checking whether the person is a mod,
+by using appropriate conditionals. Any response can be given, as per command
+handling.
+
+To respond to special events such as subscriptions, see [Special Triggers](specials).
+
+Channel moderators may add and edit these responses below.
+
+ID          | Response | -
+------------|----------|----
+-           | $$loadingmsg$$
+{: #triggers}
+
+[Add trigger](:#addtrigger)
+
+$$save_or_login||$$
+
+<style>
+table {width: 100%;}
+th, td {width: 100%;}
+dialog td:last-of-type {width: 100%;}
+th:first-of-type, th:last-of-type, td:first-of-type, td:last-of-type {width: max-content;}
+td:nth-of-type(2n+1):not([colspan]) {white-space: nowrap;}
+code {overflow-wrap: anywhere;}
+.gap {height: 1em;}
+td ul {margin: 0;}
+</style>
+#};
 
 constant ENABLEABLE_FEATURES = ([
 	"buy-follows": ([
@@ -49,24 +64,18 @@ void enable_feature(object channel, string kwd, int state) {
 	G->G->update_command(channel, "!!trigger", get_trig_id(channel, kwd) || "", state ? info->response : "");
 }
 
-__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
-{
-	array commands = ({ });
-	if (!req->misc->is_mod) {
-		//Read-only view is a bit of a hack - it just doesn't say it's loading.
-		return render_template("chan_triggers.md", ([
-			"loadingmsg": "Restricted to moderators only",
-			"templates": "- | -",
-		]) | req->misc->chaninfo);
-	}
-	return render_template("chan_triggers.md", ([
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
+	//Read-only view is a bit of a hack - it just doesn't say it's loading.
+	if (!req->misc->is_mod) return render_template(markdown, ([
+		"loadingmsg": "Restricted to moderators only",
+	]) | req->misc->chaninfo);
+	return render_template(markdown, ([
 		"vars": ([
 			"ws_type": "chan_commands", "ws_group": "!!trigger" + req->misc->channel->name,
 			"ws_code": "chan_triggers",
-		]) | G->G->command_editor_vars(req->misc->channel) | (["complex_templates": COMPLEX_TEMPLATES]),
+		]) | G->G->command_editor_vars(req->misc->channel),
 		"loadingmsg": "Loading...",
-		"templates": TEMPLATES * "\n",
-		"save_or_login": "[Save all](:#saveall)\n<p><a href=\"#examples\" class=opendlg data-dlg=templates>Create new trigger</a></p>",
+		"save_or_login": "[Save all](:#saveall)",
 	]) | req->misc->chaninfo);
 }
 

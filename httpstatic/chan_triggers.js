@@ -1,6 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {CODE, TD, TR} = choc; //autoimport
-import {render_command, cmd_configure} from "$$static||command_editor.js$$";
+import {render_command, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
 export const render_parent = DOM("#triggers tbody");
 export function render_item(el, prev) {
@@ -16,3 +16,10 @@ export function render_empty() {
 	]));
 }
 export function render(data) { }
+
+on("click", "#addtrigger", e => open_advanced_view({id: "", template: true,
+	"casefold": "on",
+	"conditional": "contains",
+	"expr1": "hello", "expr2": "%s",
+	"message": "Hello to you too!!",
+}));
