@@ -5,9 +5,9 @@ import {render_command, cmd_configure, open_advanced_view} from "$$static||comma
 export const render_parent = DOM("#triggers tbody");
 export function render_item(el, prev) {
 	return render_command(el, prev,
-		el.conditional === "contains" ?
-			["When ", CODE(el.expr1), " is typed..."]
-		: ["When a msg matches ", CODE(el.expr1 || ""), " ..."],
+		el.conditional === "contains" ? (
+			el.expr1 ? ["When ", CODE(el.expr1), " is typed..."] : "Every message..."
+		) : ["When a msg matches ", CODE(el.expr1 || ""), " ..."],
 	);
 }
 export function render_empty() {
