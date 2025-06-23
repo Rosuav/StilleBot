@@ -4,7 +4,6 @@ inherit enableable_module;
 constant TEMPLATES = ({
 	"Text | Simple text, finds any string of letters",
 	"RegExp | Word trigger - \\&lt;some-word\\&gt;",
-	"buy-follows | Automatically ban bots that ask you to buy followers",
 });
 
 //Due to the nature of triggers, templates ALL use the advanced view.
@@ -20,17 +19,16 @@ constant COMPLEX_TEMPLATES = ([
 		"expr1": "\\<Kappa\\>", "expr2": "%s",
 		"message": "MiniK Kappa KappaHD ZombieKappa",
 	]),
-	"buy-follows": ([
-		"conditional": "number",
-		"expr1": "{@buyfollows} && {@mod} == 0",
-		"message": "/ban $$ Atttempting to sell followers.",
-	]),
 ]);
 
 constant ENABLEABLE_FEATURES = ([
 	"buy-follows": ([
 		"description": "Automatically ban those bots that try to sell you followers",
-		"response": COMPLEX_TEMPLATES["buy-follows"],
+		"response": ([
+			"conditional": "number",
+			"expr1": "{@buyfollows} && {@mod} == 0",
+			"message": "/ban $$ Atttempting to sell followers.",
+		]),
 	]),
 ]);
 
