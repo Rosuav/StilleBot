@@ -1573,7 +1573,7 @@ on("change", "#setprops select", e => {
 		if (el) el.closest("tr").hidden = !param.visible(state);
 	}
 	//Also update the description if needed.
-	const desc = type.typedesc || el.desc;
+	const desc = type.typedesc || propedit.desc;
 	if (typeof desc === "function") set_content("#typedesc", desc(state));
 });
 
