@@ -14,7 +14,7 @@ constant SPECIALS = ({
 	({"!resub", ({"Someone announces a resubscription", "The subscriber", "tier, months, streak, multimonth, msg"}), "Stream support"}),
 	({"!subgift", ({"Someone gives a sub", "The giver", "tier, months, streak, recipient, multimonth, from_subbomb"}), "Stream support"}),
 	({"!subbomb", ({"Someone gives random subgifts", "The giver", "tier, gifts"}), "Stream support"}),
-	({"!cheer", ({"Any bits are cheered (including anonymously)", "The cheerer", "bits, msg, msgid"}), "Stream support"}),
+	({"!cheer", ({"Any bits are cheered", "The cheerer", "bits, msg, msgid"}), "Stream support"}),
 	({"!cheerbadge", ({"A viewer attains a new cheer badge", "The cheerer", "level"}), "Stream support"}),
 	({"!raided", ({"Another broadcaster raided you", "The raiding broadcaster", "viewers"}), "Stream support"}),
 	({"!charity", ({"Someone donates to the charity you're supporting", "The donor", "amount, msgid"}), "Stream support"}),
