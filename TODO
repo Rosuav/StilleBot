@@ -283,4 +283,6 @@
 * Countdown monitors need a UI to set them to a specific date/time or time.
 * Countdown monitors need to separate out the varname part! Completed and Inactive do NOT
   look the same as Active at the moment! :lol:
-* Pile of Pics claw looks oddly triangular, did I mess up some coordinates somewhere?
+* Need an easy external trigger for arbitrary notifications.
+  - New builtin+http_websocket
+  - Use any keyword as the group, same keyword in the trigger
