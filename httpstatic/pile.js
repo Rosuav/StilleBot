@@ -228,7 +228,7 @@ export function render(data) {
 		if (need_right) Matter.Composite.add(engine.world,
 			wall_objects.right = Rectangle(width / 2 + floor_size, height - height * need_right / 200, wall_thickness, height * need_right / 100 + 10,
 				{isStatic: true, render: {fillStyle: wallcolor, lineWidth: 0}}));
-		if (data.data.clawsize && !clawdrop) create_claw(data.data.clawsize);
+		if (+data.data.clawsize && !clawdrop) create_claw(data.data.clawsize);
 	}
 	if (data.addxtra) addxtra[data.addxtra] = data.xtra;
 	if (data.newcount) Object.entries(data.newcount).forEach(([thingtype, newcount]) => {
