@@ -18,6 +18,8 @@ cmd_configure({
 function search_command(node, id, action) {
 	if (!node || typeof node === "string") return false;
 	if (Array.isArray(node)) return node.some(n => search_command(n, id, action));
+	if (node.dest === "/set" && node.destcfg === "add" && node.target === id && action === "+=")
+		return true;
 	if (node.builtin === "chan_monitors" && Array.isArray(node.builtin_param)
 		&& node.builtin_param[0] === id && node.builtin_param[1] === action)
 			return true;
@@ -354,6 +356,18 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 	TR([TH("Share styles"), TD([BUTTON({type: "button", class: "copystyles"}, "Copy to clipboard"), BUTTON({type: "button", class: "pastestyles"}, "Paste from clipboard")])]),
 ]));
 
+function ACTIVATIONS(action) {
+	return [
+		DIV({id: action + "_activations", class: "buttonbox"}),
+		DIV({class: "buttonbox", "data-action": action}, [
+			"Create: ",
+			BUTTON({type: "button", class: "addactivation", "data-invocation": "command"}, "Command"),
+			//FIXME: Disable this button if we don't have perms for reward creation
+			BUTTON({type: "button", class: "addactivation", "data-invocation": "reward"}, "Points reward"),
+			BUTTON({type: "button", class: "addactivation", "data-invocation": "timer"}, "Timer"),
+		]),
+	];
+}
 set_content("#editpile form div", [
 	P({style: "max-width: 600px"}, [
 		"A flexible system that can be used in a variety of ways, the Pile of Pics lets you drop " +
@@ -386,14 +400,7 @@ set_content("#editpile form div", [
 			"NOTE: The claw is not active on this edit page; open the", BR(), "direct link to test it.", BR(),
 			FIELDSET([
 				LEGEND("Activations:"),
-				DIV({id: "claw_activations", class: "buttonbox"}),
-				DIV({class: "buttonbox", "data-action": "claw"}, [
-					"Create: ",
-					BUTTON({type: "button", class: "addactivation", "data-invocation": "command"}, "Command"),
-					//FIXME: Disable this button if we don't have perms for reward creation
-					BUTTON({type: "button", class: "addactivation", "data-invocation": "reward"}, "Points reward"),
-					BUTTON({type: "button", class: "addactivation", "data-invocation": "timer"}, "Timer"),
-				]),
+				ACTIVATIONS("claw"),
 			]),
 		])]),
 	]),
@@ -418,6 +425,7 @@ set_content("#editthingcat form div", TABLE({border: 1}, [
 			OPTION({value: "circle"}, "Circle"),
 		]),
 	])]),
+	TR([TH("Activations"), TD(ACTIVATIONS("thing"))]),
 	TR([TH("Images"), TD({id: "thingcatimages"})]),
 ]));
 
@@ -432,6 +440,7 @@ on("click", "#createvar", e => {
 on("click", ".addactivation", e => ws_sync.send({
 	cmd: "addactivation", nonce: e.match.closest_data("nonce"),
 	invocation: e.match.closest_data("invocation"), action: e.match.closest_data("action"),
+	thingid: e.match.closest_data("originalid"),
 }));
 
 on("submit", "dialog form", async e => {
@@ -580,7 +589,7 @@ on("click", ".editpilecat", e => {
 		elem.value = thing[attr];
 	}
 	update_thing_images(thing);
-	//TODO: Have an activation list for this category, same as for the claw
+	update_activations("#thing_activations", mon.varname + ":" + thingid, "+=");
 	dlg.dataset.nonce = nonce;
 	dlg.dataset.originalid = thingid;
 	dlg.showModal();

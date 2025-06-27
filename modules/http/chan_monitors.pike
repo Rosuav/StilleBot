@@ -294,15 +294,29 @@ void wscmd_clawdone(object channel, mapping(string:mixed) conn, mapping(string:m
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
 	mapping info = monitors[msg->nonce]; if (!info) return;
 	string cmdname, code;
+	mapping reward;
 	if (msg->action == "claw") {
 		cmdname = "claw";
 		code = sprintf(#{chan_monitors(%O, "claw")
 			if ("{prizetype}" == "") "The claw has selected nothing. The claw is our master!"
 			else "The claw has selected: {prizetype} {prizelabel}. The claw is our master!"
 		#}, msg->nonce);
-	} else if (has_value(info->things->id, msg->action)) {
-		cmdname = "add" + msg->action;
-		code = sprintf(#{$%s:%s$ += "1"#}, info->varname, msg->action);
+		reward = ([
+			"title": "Claw Machine",
+			"prompt": "Lower the claw into the pile and see what you can grab!",
+			"cost": 500,
+			"background_color": "#a0f0c0",
+			"is_global_cooldown_enabled": Val.true, "global_cooldown_seconds": 60,
+		]);
+	} else if (msg->action == "thing" && has_value(info->things->id, msg->thingid)) {
+		cmdname = "add" + msg->thingid;
+		code = sprintf(#{$%s:%s$ += "1"#}, info->varname, msg->thingid);
+		reward = ([
+			"title": "Add " + msg->thingid,
+			"prompt": "Add another "+ msg->thingid + " to the pile",
+			"cost": 100,
+			"background_color": "#663399",
+		]);
 	} else return; //Action has to be either "claw" or a valid thing type to add
 	if (channel->commands[cmdname]) //Deduplicate in an ugly fashion; if the chosen invocation is "command", you will probably want to manually edit this after
 		for (int i = 2; ; ++i)
@@ -310,13 +324,7 @@ void wscmd_clawdone(object channel, mapping(string:mixed) conn, mapping(string:m
 	switch (msg->invocation) {
 		case "command": break; //Commands are simple, no extra code needed
 		case "reward": {
-			string rewardid = await(create_channel_point_reward(channel, ([
-				"title": "Claw Machine",
-				"prompt": "Lower the claw into the pile and see what you can grab!",
-				"cost": 500,
-				"background_color": "#a0f0c0",
-				"is_global_cooldown_enabled": Val.true, "global_cooldown_seconds": 60,
-			])));
+			string rewardid = await(create_channel_point_reward(channel, reward));
 			code = sprintf(#{
 				#access "none"
 				#visibility "hidden"

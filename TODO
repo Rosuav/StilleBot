@@ -270,16 +270,6 @@
 * Builtins for quick and easy bulk operations on variables
   - Clear per-user vars for all users - can be done to make a per-session per-user var
   - Clear a grouped variable set
-* Add Pile of Pics to minigames
-  - Some thing types with corresponding channel point redemptions to add them
-  - The claw as an option, if implemented above
-  - A redrop redemption
-  - Usage patterns include:
-    - Prefill (and keep full) with items, then people can claw for them - eg "10 pushups"
-    - People get to put their names into the pool, then the streamer claws for one until
-      it succeeds?? Would require distinguishable Things, possibly including people's
-      avatars or chosen emotes.
-    - Larger/smaller Things to change the odds, eg "25 pushups" alongside "10 pushups"
 * Countdown monitors need a UI to set them to a specific date/time or time.
 * Countdown monitors need to separate out the varname part! Completed and Inactive do NOT
   look the same as Active at the moment! :lol:
