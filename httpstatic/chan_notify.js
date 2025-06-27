@@ -13,3 +13,13 @@ export function render(data) {
 }
 
 on("click", ".send_notif", e => ws_sync.send({cmd: "send_notif", group: e.match.closest_data("group")}));
+
+//Example code: Loopback.
+let loopback_count = 0;
+ws_sync.connect("loopback" + ws_group, {
+	ws_type: "chan_notify", ws_config: {quiet: {conn: 1, msg: 1}},
+	sockmsg_notify(msg) {
+		++loopback_count;
+		set_content("#loopbacks", ""+loopback_count);
+	},
+});

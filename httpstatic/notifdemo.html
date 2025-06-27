@@ -6,10 +6,10 @@
 <title>Mustard Mine notifications demo</title>
 </head>
 <body>
-<main></main>
+<main>Awaiting notifications... </main>
 <script type=module>
 import {connect} from "https://mustardmine.com/static/ws_sync.js";
-connect("demo_id#!demo", {
+connect("example_id#!demo", {
 	ws_type: "chan_notify", ws_config: {quiet: {conn: 1, msg: 1}},
 	sockmsg_notify(msg) {
 		console.log("GOT A NOTIFICATION", msg.parameter);

@@ -10,7 +10,10 @@ something happens. That something is entirely under your control (as the broadca
 Note that there is (deliberately) no security, no requirement for a login. This allows
 these notifications to be received by browser sources inside OBS, or similar.
 
-TODO: Example code, including a self-contained HTML page.
+[Example page](/static/notifdemo.html :target=_blank) This can be adapted to your needs.
+Open both that page and this in separate windows, and whenever you click the 'Notify'
+button here, that page will respond. The same notification can be sent by a bot command,
+channel point redemption, special trigger, or anything else that the bot can respond to.
 
 Currently active notification groups:
 
@@ -18,6 +21,8 @@ Group | Clients | Notify
 ------|---------|--------
 loading... | -  |-
 {:#notifgroups}
+
+Click the 'Loopback' notify button to increment this counter: <span id=loopbacks>0</span>
 ";
 
 constant builtin_name = "Notify";
