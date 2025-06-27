@@ -1394,8 +1394,8 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 			return;
 		}
 		[object channel, string grp] = handler->split_channel(data->group);
-		//Previously, this transformation would transform to logins.
-		//if (channel) data->group = grp + channel->name;
+		//Allow external clients to connect to eg "somegroup#rosuav" when they actually want
+		//"somegroup#49497888". This allows more convenient API access.
 		if (channel) data->group = grp + "#" + channel->userid;
 		//NOTE: Don't save the channel object itself here, in case code gets
 		//updated. We want to fetch up the latest channel object whenever it's

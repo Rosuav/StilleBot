@@ -428,7 +428,7 @@ class websocket_handler
 		//Allow the channel to be identified by Twitch ID
 		//Note: If the channel name is entirely digits, it cannot reliably be specified by name.
 		if ((string)(int)chan == chan) return ({G->G->irc->id[(int)chan], subgroup});
-		return ({G->G->irc->channels["#" + chan], subgroup});
+		return ({G->G->irc->channels["#" + lower_case(chan)], subgroup});
 	}
 
 	protected void create(string name)
