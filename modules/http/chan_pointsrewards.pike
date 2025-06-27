@@ -89,27 +89,19 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id, str
 	return (["items": rewards, "dynrewards": dynrewards]);
 }
 
+Regexp.SimpleRegexp trailing_number = Regexp.SimpleRegexp(" #[0-9]+$");
 void wscmd_add(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	array rewards = G->G->pointsrewards[channel->userid] || ({ });
-	mapping copyfrom = (["cost": 1]);
-	string basetitle = "New Custom Reward";
+	mapping settings = (["cost": 1, "title": "New Custom Reward"]);
 	if (msg->copyfrom && msg->copyfrom != "") {
+		array rewards = G->G->pointsrewards[channel->userid] || ({ });
 		int idx = search(rewards->id, msg->copyfrom);
-		if (idx != -1) {copyfrom = rewards[idx]; sscanf(basetitle = copyfrom->title, "%s #%*d", basetitle);}
+		if (idx != -1) {
+			settings = rewards[idx];
+			settings->title = trailing_number->replace(settings->title, "");
+		}
 	}
-	//Titles must be unique (among all rewards). To simplify rapid creation of
-	//multiple rewards, add a numeric disambiguator on conflict.
-	multiset have_titles = (multiset)rewards->title;
-	string title = basetitle; int idx = 1; //First one doesn't get the number appended
-	while (have_titles[title]) title = sprintf("%s #%d", basetitle, ++idx);
 	//Twitch will notify us when it's created, so no need to explicitly respond.
-	//TODO: Copying attributes like cooldown doesn't work currently due to differences
-	//between the way Twitch returns the queried one and the way you create one. Need
-	//to map between them.
-	twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid,
-		(["Authorization": "Bearer " + token_for_user_id(channel->userid)[0]]),
-		(["method": "POST", "json": copyfrom | (["title": title])]),
-	);
+	create_channel_point_reward(channel, settings);
 }
 
 //TODO: Deduplicate with wscmd_add(). Conceptually, this might add, might not, and will make the

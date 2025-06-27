@@ -175,6 +175,24 @@ __async__ void populate_rewards_cache(string|int broadcaster_id, mapping|void cu
 	};
 }
 
+@export: __async__ string create_channel_point_reward(object channel, mapping settings) {
+	array rewards = pointsrewards[channel->userid] || ({ });
+	//Titles must be unique (among all rewards). To simplify rapid creation of
+	//multiple rewards, add a numeric disambiguator on conflict.
+	multiset have_titles = (multiset)rewards->title;
+	string basetitle = settings->title || "Reward"; int idx = 1; //First one doesn't get the number appended
+	while (have_titles[settings->title]) settings->title = sprintf("%s #%d", basetitle, ++idx);
+	//TODO: Copying attributes like cooldown doesn't work currently due to differences
+	//between the way Twitch returns the queried one and the way you create one. Need
+	//to map between them.
+	mapping resp = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid,
+		(["Authorization": channel->userid]),
+		(["method": "POST", "json": settings]),
+	));
+	if (!resp->data || !sizeof(resp->data)) error("Unexpected failure creating channel point reward: %O %O\n", channel, resp);
+	return resp->data[0]->id;
+}
+
 protected void create(string name) {
 	::create(name);
 	G->G->populate_rewards_cache = populate_rewards_cache;
