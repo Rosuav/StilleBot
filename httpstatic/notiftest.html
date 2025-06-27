@@ -1,0 +1,20 @@
+<!DOCTYPE HTML>
+<html lang=en>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mustard Mine notifications demo</title>
+</head>
+<body>
+<main></main>
+<script type=module>
+import {connect} from "https://sikorsky.mustardmine.com/static/ws_sync.js";
+connect("demo_id#rosuav", {
+	ws_type: "chan_notify",
+	sockmsg_notify(msg) {
+		console.log("GOT A NOTIFICATION", msg);
+	},
+});
+</script>
+</body>
+</html>
