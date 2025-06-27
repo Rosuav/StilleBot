@@ -290,7 +290,7 @@ void wscmd_clawdone(object channel, mapping(string:mixed) conn, mapping(string:m
 	]));
 }
 
-@"is_mod": void wscmd_addactivation(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": __async__ void wscmd_addactivation(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
 	mapping info = monitors[msg->nonce]; if (!info) return;
 	string cmdname, code;
@@ -310,7 +310,13 @@ void wscmd_clawdone(object channel, mapping(string:mixed) conn, mapping(string:m
 	switch (msg->invocation) {
 		case "command": break; //Commands are simple, no extra code needed
 		case "reward": {
-			string rewardid = ""; //FIXME: Actually add the reward and put its ID in here
+			string rewardid = await(create_channel_point_reward(channel, ([
+				"title": "Claw Machine",
+				"prompt": "Lower the claw into the pile and see what you can grab!",
+				"cost": 500,
+				"background_color": "#a0f0c0",
+				"is_global_cooldown_enabled": Val.true, "global_cooldown_seconds": 60,
+			])));
 			code = sprintf(#{
 				#access "none"
 				#visibility "hidden"

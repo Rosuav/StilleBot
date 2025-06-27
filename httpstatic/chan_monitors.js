@@ -390,8 +390,8 @@ set_content("#editpile form div", [
 				DIV({id: "new_activation", class: "buttonbox", "data-action": "claw"}, [
 					"Create: ",
 					BUTTON({type: "button", class: "addactivation", "data-invocation": "command"}, "Command"),
-					//FIXME: Reenable this button once the backend implementation is done
-					BUTTON({type: "button", class: "addactivation", "data-invocation": "reward", disabled: 1}, "Points reward"),
+					//FIXME: Disable this button if we don't have perms for reward creation
+					BUTTON({type: "button", class: "addactivation", "data-invocation": "reward"}, "Points reward"),
 					BUTTON({type: "button", class: "addactivation", "data-invocation": "timer"}, "Timer"),
 				]),
 			]),
