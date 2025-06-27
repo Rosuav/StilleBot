@@ -11,6 +11,13 @@ Note that there is (deliberately) no security, no requirement for a login. This 
 these notifications to be received by browser sources inside OBS, or similar.
 
 TODO: Example code, including a self-contained HTML page.
+
+Currently active notification groups:
+
+Group | Clients | Notify
+------|---------|--------
+loading... | -  |-
+{:#notifgroups}
 ";
 
 constant builtin_name = "Notify";
@@ -56,6 +63,11 @@ void wscmd_init(object channel, mapping(string:mixed) conn, mapping(string:mixed
 void websocket_gone(mapping(string:mixed) conn) {
 	[object channel, string subgroup] = split_channel(conn->group);
 	if (subgroup != "") send_updates_all(channel, "");
+}
+
+void wscmd_send_notif(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->subgroup != "" || !stringp(msg->group)) return;
+	message_params(channel, ([]), ({msg->group, ""}), ([]));
 }
 
 protected void create(string name) {::create(name);}

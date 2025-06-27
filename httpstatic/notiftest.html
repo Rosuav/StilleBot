@@ -8,11 +8,11 @@
 <body>
 <main></main>
 <script type=module>
-import {connect} from "https://sikorsky.mustardmine.com/static/ws_sync.js";
+import {connect} from "https://mustardmine.com/static/ws_sync.js";
 connect("demo_id#rosuav", {
-	ws_type: "chan_notify",
+	ws_type: "chan_notify", ws_config: {quiet: {conn: 1, msg: 1}},
 	sockmsg_notify(msg) {
-		console.log("GOT A NOTIFICATION", msg);
+		console.log("GOT A NOTIFICATION", msg.parameter);
 	},
 });
 </script>
