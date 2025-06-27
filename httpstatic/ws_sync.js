@@ -27,7 +27,7 @@ export function get_userid() {
 
 export function connect(group, handler)
 {
-	if (!handler) handler = default_handler;
+	if (!handler) handler = default_handler || { }; //If there's no default and you provide none, it won't be very useful
 	const autorender = handler.autorender || { };
 	if (handler.render_item && handler.render_parent) { //Compatibility
 		autorender.item_parent = handler.render_parent;
@@ -114,7 +114,7 @@ export function connect(group, handler)
 				}
 			});
 			//Note that render() is called *after* render_item in all cases.
-			handler.render(data, group);
+			if (handler.render) handler.render(data, group);
 			unknown = "";
 		}
 		else if (data.cmd === "prefs_replace") {
@@ -160,10 +160,13 @@ export function connect(group, handler)
 		verbose(unknown ? "unkmsg" : "msg", "Got " + unknown + "message from server:", data);
 	};
 }
+let need_init = true; try {ws_code; ws_group;} catch (e) {need_init = false;}
 //When ready, import the handler code. It'll be eg "/subpoints.js" but with automatic mtime handling.
 async function init() {default_handler = await import(ws_code); connect(ws_group);}
-if (document.readyState !== "loading") init();
-else window.addEventListener("DOMContentLoaded", init);
+if (need_init) {
+	if (document.readyState !== "loading") init();
+	else window.addEventListener("DOMContentLoaded", init);
+}
 
 export function reconnect(sendid, new_group) {
 	const sock = send_sockets[sendid] || send_socket;
