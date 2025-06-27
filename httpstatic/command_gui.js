@@ -510,7 +510,7 @@ const types = {
 		typedesc: "Comments have no effect, and can be used to add notes to your commands.",
 	},
 	incr_variable: {
-		color: "#dd7777", label: el => `Add ${el.message} to $${el.target}$`,
+		color: "#dd7777", label: el => el.message < 0 ? `Subtract ${-el.message} from $${el.target}$` : `Add ${el.message} to $${el.target}$`,
 		params: [{attr: "dest", values: "/set"}, {attr: "destcfg", values: "add"},
 			{attr: "target", label: "Variable name"}, {attr: "message", label: "Increment by"}],
 		typedesc: ["Update a variable. Can be accessed as $varname$ in this or any other command.", BR(),
