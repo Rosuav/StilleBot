@@ -9,10 +9,11 @@
 <main></main>
 <script type=module>
 import {connect} from "https://mustardmine.com/static/ws_sync.js";
-connect("demo_id#rosuav", {
+connect("demo_id#!demo", {
 	ws_type: "chan_notify", ws_config: {quiet: {conn: 1, msg: 1}},
 	sockmsg_notify(msg) {
 		console.log("GOT A NOTIFICATION", msg.parameter);
+		document.querySelector("main").append("Notify! ");
 	},
 });
 </script>

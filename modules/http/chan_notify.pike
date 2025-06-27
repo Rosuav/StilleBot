@@ -57,7 +57,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	return ([]); //No default data needed
 }
 
-void wscmd_init(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"demo_ok": void wscmd_init(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->subgroup != "") send_updates_all(channel, "");
 }
 void websocket_gone(mapping(string:mixed) conn) {
@@ -65,7 +65,7 @@ void websocket_gone(mapping(string:mixed) conn) {
 	if (subgroup != "") send_updates_all(channel, "");
 }
 
-void wscmd_send_notif(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"demo_ok": void wscmd_send_notif(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->subgroup != "" || !stringp(msg->group)) return;
 	message_params(channel, ([]), ({msg->group, ""}), ([]));
 }
