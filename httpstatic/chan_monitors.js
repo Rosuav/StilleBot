@@ -387,7 +387,7 @@ set_content("#editpile form div", [
 			FIELDSET([
 				LEGEND("Activations:"),
 				DIV({id: "claw_activations", class: "buttonbox"}),
-				DIV({id: "new_activation", class: "buttonbox", "data-action": "claw"}, [
+				DIV({class: "buttonbox", "data-action": "claw"}, [
 					"Create: ",
 					BUTTON({type: "button", class: "addactivation", "data-invocation": "command"}, "Command"),
 					//FIXME: Disable this button if we don't have perms for reward creation
