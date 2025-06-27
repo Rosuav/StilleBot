@@ -267,9 +267,6 @@
   - Include or exclude names?
   - Allow drag and drop reordering of emotes
   - Fragment link for all settings except reordering
-* Builtins for quick and easy bulk operations on variables
-  - Clear per-user vars for all users - can be done to make a per-session per-user var
-  - Clear a grouped variable set
 * Countdown monitors need a UI to set them to a specific date/time or time.
 * Countdown monitors need to separate out the varname part! Completed and Inactive do NOT
   look the same as Active at the moment! :lol:
