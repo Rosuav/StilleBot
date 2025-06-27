@@ -358,6 +358,9 @@ class websocket_handler
 		}
 	}
 
+	//If you need this, you probably know why. Not a common thing.
+	void websocket_gone(mapping(string:mixed) conn) { }
+
 	void websocket_cmd_chgrp(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 		if (string err = websocket_validate(conn, msg)) {
 			conn->sock->send_text(Standards.JSON.encode((["cmd": "*DC*", "error": err])));

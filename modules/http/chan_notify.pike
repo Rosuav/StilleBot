@@ -38,10 +38,24 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 
 bool need_mod(string grp) {return grp != "";}
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
-	if (grp == "") return ([
-		//TODO: List currently-connected clients, or at least their groups
-	]);
+	if (grp == "") {
+		mapping groups = ([]);
+		string suf = "#" + channel->userid;
+		foreach (websocket_groups; string groupname; array socks)
+			if (has_suffix(groupname, suf)) foreach (socks, object sock)
+				if (sock && sock->state == 1) ++groups[groupname - suf];
+		m_delete(groups, ""); //No need to report the master socket group
+		return (["groups": groups]);
+	}
 	return ([]); //No default data needed
+}
+
+void wscmd_init(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->subgroup != "") send_updates_all(channel, "");
+}
+void websocket_gone(mapping(string:mixed) conn) {
+	[object channel, string subgroup] = split_channel(conn->group);
+	if (subgroup != "") send_updates_all(channel, "");
 }
 
 protected void create(string name) {::create(name);}
