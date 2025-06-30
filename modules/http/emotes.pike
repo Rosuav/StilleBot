@@ -101,7 +101,8 @@ constant capturedlg = #"
 > <label>Heading: <input id=heading size=20>
 > <fieldset id=sections><legend>Select sections</legend></fieldset>
 > <label><input type=checkbox id=headings> Include headings</label><br>
-> Emote size: <select id=imgsize><option value=3>Large<option value=2 selected>Medium<option value=1>Small</select>
+> Emote size: <select id=imgsize><option value=3>Large<option value=2 selected>Medium<option value=1>Small</select><br>
+> Background: <select id=background><option value=transparent>None<option value=\"#f7f7f7\">Light mode<option value=\"#0e0c13\">Dark mode</select><br>
 > </div>
 > <fieldset class=scrollable><legend>Preview</legend><div style=\"position: relative\"><div id=captureme></div></div></fieldset>
 > </div>

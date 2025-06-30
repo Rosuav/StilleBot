@@ -20,7 +20,7 @@ function update_preview() {
 			"src": "https://static-cdn.jtvnw.net/emoticons/v2/" + id + "/static/light/" + size + ".0",
 		})));
 	});
-	set_content("#captureme", sections);
+	set_content("#captureme", sections).style.backgroundColor = DOM("#background").value;
 }
 
 on("click", "#opencapturedlg", e => {
@@ -35,8 +35,11 @@ on("click", "#capture", e => {
 	const box = target.getBoundingClientRect();
 	const canvas = choc.CANVAS({width: box.width|0, height: box.height|0});
 	const ctx = canvas.getContext("2d");
-	//ctx.fillStyle = "#f7f7f7"; //TODO: Offer dark mode as well, and maybe offer transparency (skip the fillRect)
-	//ctx.fillRect(0, 0, canvas.width, canvas.height);
+	const bg = DOM("#background").value
+	if (bg !== "transparent") {
+		ctx.fillStyle = bg;
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+	}
 	target.querySelectorAll("img").forEach(img => {
 		ctx.drawImage(img, img.offsetLeft, img.offsetTop);
 	});
