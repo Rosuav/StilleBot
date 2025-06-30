@@ -90,10 +90,14 @@ on("click", "#capture", e => {
 	ctx.fillStyle = text_for_bg[bg] || "black";
 	ctx.textBaseline = "top"; //Measure text from the top left, not the baseline - lets us use DOM measurement for pixel positions
 	target.querySelectorAll("h2,h3,figcaption").forEach(hdg => {
-		const text = hdg.innerText;
+		let text = hdg.innerText;
 		const styles = getComputedStyle(hdg);
 		ctx.font = styles.font;
-		ctx.fillText(text, hdg.offsetLeft, hdg.offsetTop);
+		while (ctx.measureText(text).width > hdg.offsetWidth + 1) {
+			//Text is too wide. (Note that we grant one extra pixel of leeway as otherwise we get odd unnecessary ellipsization.)
+			text = text.slice(0, -2) + "…";
+		}
+		ctx.fillText(text, hdg.offsetLeft + (hdg.offsetWidth - ctx.measureText(text).width) / 2, hdg.offsetTop);
 	});
 	//To quickly see the image:
 	//target.closest(".twocol").append(choc.IMG({src: canvas.toDataURL(), style: "width: " + box.width + "px; height: " + box.height + "px"}));
