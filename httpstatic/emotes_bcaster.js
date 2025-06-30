@@ -1,10 +1,30 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {H2, H3, IMG, INPUT, LABEL} = choc; //autoimport
+const {FIGCAPTION, FIGURE, H2, H3, IMG, INPUT, LABEL} = choc; //autoimport
 
 set_content("#sections", emoteset_order.map(setid => LABEL([
 	INPUT({type: "checkbox", name: setid, checked: true}),
 	" " + emoteset_labels[setid].trim(),
 ])));
+
+const render_emote = {
+	none(id, size) {
+		return IMG({
+			crossOrigin: "anonymous", //Allow the use of these images in canvas without tainting it
+			"src": "https://static-cdn.jtvnw.net/emoticons/v2/" + id + "/static/light/" + size + ".0",
+		});
+	},
+	long(id, size, name) {
+		return FIGURE([
+			render_emote.none(id, size),
+			FIGCAPTION({class: "size" + size}, name || emote_names[id]),
+		]);
+	},
+	short(id, size) {
+		let name = emote_names[id];
+		if (name.startsWith(emote_prefix)) name = name.slice(emote_prefix.length);
+		return render_emote.long(id, size, name);
+	},
+}
 
 function update_preview() {
 	const sections = [];
@@ -12,15 +32,32 @@ function update_preview() {
 	const size = +DOM("#imgsize").value;
 	const hdg = DOM("#heading").value.trim();
 	if (hdg !== "") sections.push(H2(hdg));
+	const make_emote = render_emote[DOM("#emotenames").value];
 	document.querySelectorAll("#sections input:checked").forEach(el => {
 		const setid = el.name;
 		if (include_headings) sections.push(H3(emoteset_labels[setid]));
-		sections.push(emotes_by_set[setid].map(id => IMG({
-			crossOrigin: "anonymous", //Allow the use of these images in canvas without tainting it
-			"src": "https://static-cdn.jtvnw.net/emoticons/v2/" + id + "/static/light/" + size + ".0",
-		})));
+		sections.push(emotes_by_set[setid].map(id => make_emote(id, size)));
 	});
+	DOM("#captureme").classList.remove("no_ellipsis");
 	set_content("#captureme", sections).style.backgroundColor = DOM("#background").value;
+	switch (DOM("#longnames").value) {
+		case "shrink":
+			//See if any of the captions are getting ellipsized, and if so, shrink them.
+			//This is unideal but I don't know of a better way to do this.
+			//We attempt the size reduction in steps, and at some point, just give up and
+			//let it ellipsize.
+			["80%", "60%", "40%"].forEach(size => {
+				document.querySelectorAll("#captureme figcaption").forEach(el => {
+					if (el.offsetWidth < el.scrollWidth)
+						el.style.fontSize = size;
+				});
+			});
+			break;
+		case "retain":
+			DOM("#captureme").classList.add("no_ellipsis");
+			break;
+		case "ellipsize": default: break;
+	}
 }
 
 on("click", "#opencapturedlg", e => {
@@ -45,7 +82,7 @@ on("click", "#capture", e => {
 	});
 	ctx.fillStyle = "black";
 	ctx.textBaseline = "top"; //Measure text from the top left, not the baseline - lets us use DOM measurement for pixel positions
-	target.querySelectorAll("h2,h3").forEach(hdg => {
+	target.querySelectorAll("h2,h3,figcaption").forEach(hdg => {
 		const text = hdg.innerText;
 		const styles = getComputedStyle(hdg);
 		ctx.font = styles.font;

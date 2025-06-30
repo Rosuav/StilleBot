@@ -102,6 +102,8 @@ constant capturedlg = #"
 > <fieldset id=sections><legend>Select sections</legend></fieldset>
 > <label><input type=checkbox id=headings> Include headings</label><br>
 > Emote size: <select id=imgsize><option value=3>Large<option value=2 selected>Medium<option value=1>Small</select><br>
+> Emote names: <select id=emotenames><option value=none>None<option value=short>Abbreviated<option value=long>Full</select><br>
+> Long names: <select id=longnames><option value=ellipsize>Ellipsize<option value=shrink>Shrink<option value=retain>Retain</select><br>
 > Background: <select id=background><option value=transparent>None<option value=\"#f7f7f7\">Light mode<option value=\"#0e0c13\">Dark mode</select><br>
 > </div>
 > <fieldset class=scrollable><legend>Preview</legend><div style=\"position: relative\"><div id=captureme></div></div></fieldset>
@@ -120,6 +122,10 @@ much space on any size */
 #captureme img {width: unset; height: unset; border: none; margin-right: 1px;}
 .twocol {display: flex; gap: 8px}
 .scrollable {overflow-y: scroll; height: 300px;}
+figcaption.size1 {max-width: 28px;}
+figcaption.size2 {max-width: 56px;}
+figcaption.size3 {max-width: 112px;}
+#captureme.no_ellipsis figcaption {max-width: unset;}
 </style>
 ";
 
@@ -185,7 +191,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		array emotes = await(twitch_api_request("https://api.twitch.tv/helix/chat/emotes?broadcaster_id=" + id))->data;
 		mapping sets = ([]);
 		mapping setids = (["Subscriber badges": -1, "Bits badges": -2]); //Map description to ID for second pass
-		mapping emotes_by_set = ([]);
+		mapping emotes_by_set = ([]), emote_names = ([]);
 		foreach (emotes, mapping em) {
 			if (em->emote_type == "bitstier") em->emote_set_id = "Bits"; //Hack - we don't get the bits levels anyway, so just group 'em.
 			if (!sets[em->emote_set_id]) {
@@ -208,6 +214,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 					"<figcaption>%[0]s</figcaption></figure>", em->name,
 					replace(em->images->url_4x, "/static/", "/default/")) //Most emotes have the same image for static and default. Anims get a one-frame for static, and the animated for default.
 			});
+			emote_names[em->id] = em->name;
 		}
 		foreach (setids; string desc; string id) if (has_suffix(desc, " Animated")) {
 			if (string other = setids[desc - " Animated"]) {
@@ -260,13 +267,18 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		return render_template("checklist.md", ([
 			"vars": ([
 				"emotes_by_set": emotes_by_set,
+				"emote_names": emote_names,
+				//TODO: Heuristically recognize the actual prefix, rather than using commonality
+				//Notably, if all of your emote suffixes start with the same letter (not that
+				//hard if you only have a couple of emotes!), this will have a too-long prefix.
+				"emote_prefix": String.common_prefix(values(emote_names)),
 				"emoteset_order": emoteset_order,
 				"emoteset_labels": mkmapping((array(string))values(setids), indices(setids)),
 			]),
 			"js": "emotes_bcaster.js",
 			"login_link": "<button id=greyscale onclick=\"document.body.classList.toggle('greyscale')\">Toggle Greyscale (value check)</button>",
 			"emotes": "img", "title": "Channel emotes: " + await(get_user_info(id))->display_name,
-			"text": sprintf("%{\n## %s\n%{%s %}\n%}" + capturedlg, emotesets),
+			"text": sprintf("%{\n## %s\n%{%s %}\n%}%s", emotesets, capturedlg),
 		]));
 	}
 	if (req->variables->available) {
