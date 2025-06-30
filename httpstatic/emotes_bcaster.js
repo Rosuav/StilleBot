@@ -26,6 +26,11 @@ const render_emote = {
 	},
 }
 
+//HACK! Make the text white when on a dark background. Can we do this automatically somehow?
+const text_for_bg = {
+	"#0e0c13": "#f7f7f7",
+};
+
 function update_preview() {
 	const sections = [];
 	const include_headings = DOM("#headings").checked;
@@ -39,7 +44,9 @@ function update_preview() {
 		sections.push(emotes_by_set[setid].map(id => make_emote(id, size)));
 	});
 	DOM("#captureme").classList.remove("no_ellipsis");
-	set_content("#captureme", sections).style.backgroundColor = DOM("#background").value;
+	const bg = DOM("#background").value;
+	set_content("#captureme", sections).style.backgroundColor = bg;
+	DOM("#captureme").style.color = text_for_bg[bg] || null;
 	switch (DOM("#longnames").value) {
 		case "shrink":
 			//See if any of the captions are getting ellipsized, and if so, shrink them.
@@ -80,7 +87,7 @@ on("click", "#capture", e => {
 	target.querySelectorAll("img").forEach(img => {
 		ctx.drawImage(img, img.offsetLeft, img.offsetTop);
 	});
-	ctx.fillStyle = "black";
+	ctx.fillStyle = text_for_bg[bg] || "black";
 	ctx.textBaseline = "top"; //Measure text from the top left, not the baseline - lets us use DOM measurement for pixel positions
 	target.querySelectorAll("h2,h3,figcaption").forEach(hdg => {
 		const text = hdg.innerText;
