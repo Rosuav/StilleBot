@@ -265,6 +265,17 @@
     the stream (first few minutes), and ideally not then either.
 * Emote showcase, fixed image edition
   - Allow drag and drop reordering of emotes
+    - If there are no headings, it will look odd to block reordering at the set boundaries.
+      But if you then turn *on* headings, it would look even more odd, so this is probably
+      an unavoidable limitation.
+    - Directly manipulate the order of elements in emotes_by_set[setid]
+    - On drag-start, pick up the element, and ghost it in its current place
+      - Disable drag if a single-element set?
+    - On drag-over, place a vertical blue bar between the two at the target
+      - Limit the bar's position to the extremes of the current set
+    - On drop, splice the array to move the element. Don't try to have an auxiliary lookup
+      and don't stress about new emotes being added - the ordering doesn't need to be
+      retained in any way.
   - Fragment link for all settings except reordering
 * Countdown monitors need a UI to set them to a specific date/time or time.
 * Countdown monitors need to separate out the varname part! Completed and Inactive do NOT
