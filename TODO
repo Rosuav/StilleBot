@@ -280,3 +280,4 @@
 * Countdown monitors need a UI to set them to a specific date/time or time.
 * Countdown monitors need to separate out the varname part! Completed and Inactive do NOT
   look the same as Active at the moment! :lol:
+* Pile of Pics library access needs to have delete buttons
