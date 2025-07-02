@@ -773,7 +773,11 @@ mapping|Concurrent.Future message_params(object channel, mapping person, array p
 				}
 				case "add": return pile_add(channel, info, person, param);
 				case "remove": {
-					send_updates_all(channel, monitor, (["remove": param[2] || "default", "label": param[3] || ""]));
+					if (param[2] == "*") {
+						//Remove all things.
+						foreach (info->things || ({ }), mapping thing)
+							channel->set_variable(info->varname + ":" + thing->id, "0", "set");
+					} else send_updates_all(channel, monitor, (["remove": param[2] || "default", "label": param[3] || ""]));
 					break;
 				}
 				default: break;
