@@ -42,7 +42,7 @@ function update_activation_lists() {
 		update_activations(elem, elem.dataset.activationid, elem.dataset.activationaction))
 }
 
-const editables = { }, vargroups = { };
+const editables = { }, vargroups = { }, variables = { };
 function set_values(info, elem) {
 	if (!info) return 0;
 	for (let attr in info) {
@@ -210,7 +210,8 @@ set_content("#editcountdown form div", [
 			//TODO: Allow multiple select boxes with name=varname and populate them all
 			//Then this can reuse the autorender code that powers goal bar varnames.
 			INPUT({name: "varname", size: 20, "data-nocopy": 1}),
-			" Can be manipulated by commands.",
+			//FIXME: Reinstate when there's a better solution to the loss of seconds (see below)
+			//BUTTON({type: "button", id: "setcountdown"}, "Change..."),
 		])]),
 		use_preview: true,
 		texts: [
@@ -630,6 +631,44 @@ on("change", ".thingqty", e => {
 	ws_sync.send({cmd: "setvar", varname: mon.varname + ":" + thingid, val: e.match.value});
 });
 
+function twodig(n) {return ("0" + n).slice(-2);}
+
+on("click", "#setcountdown", e => {
+	const varname = e.match.closest("dialog").querySelector("[name=varname]").value; //In case the user's edited it
+	const time = +variables[varname]; //Zero if not set - will imply "00:00 and paused"
+	const dlg = DOM("#setcountdowndlg");
+	if (time > 1e9) { //Match the behaviour of monitor.js
+		const date = new Date(time * 1000);
+		//NOTE: The datetime-local input type supports minutes, but not seconds. This means that
+		//timers will lose resolution when they do not end at exactly the end of a minute.
+		//If your intention really is to target a specific time, this is probably fine, but if it
+		//was (say) a 5 minute timer for a break, that would be a problem. Need a solution, unless
+		//it's just not worth the hassle and we allow minute resolution only.
+		const datestring = (
+			date.getFullYear() + "-" + twodig(date.getMonth() + 1) + "-" + twodig(date.getDate())
+			+ "T" + twodig(date.getHours()) + ":" + twodig(date.getMinutes())
+		);
+		//FIXME: What about timezones? Currently we try to show in the user's timezone,
+		//but a lot of other aspects of the bot will use the channel's instead.
+		dlg.querySelector("[name=target]").value = datestring;
+		dlg.querySelector("[name=delay]").value = "";
+	} else {
+		dlg.querySelector("[name=target]").value = "";
+		//TODO: Format larger times as mm:ss or hh:mm:ss
+		dlg.querySelector("[name=delay]").value = time;
+	}
+	dlg.dataset.varname = varname;
+	dlg.showModal();
+});
+on("click", "#settarget", e => {
+	//TODO: Convert the date/time string into a time_t and set the variable
+	e.match.closest("dialog").close();
+});
+on("click", "#setdelay", e => {
+	//TODO: Convert [hh:][mm:]ss into an integer, add current time_t, and set the variable
+	e.match.closest("dialog").close();
+});
+
 function textify(cmd) {
 	if (typeof cmd === "string") return cmd;
 	if (Array.isArray(cmd)) return cmd.map(textify).filter(x => x).join(" // ");
@@ -667,11 +706,10 @@ ws_sync.connect(ws_group, {
 		update_activation_lists();
 	},
 });
-const variables = { };
 ws_sync.connect(ws_group, {
 	ws_type: "chan_variables", ws_sendid: "chan_variables",
 	render_parent: DOM("select[name=varname]"),
-	render_item: (v, obj) => obj || OPTION({"data-id": v.id}, v.id),
+	render_item: (v, obj) => {variables[v.id] = v.curval; return obj || OPTION({"data-id": v.id}, v.id)},
 	render: function(data) { },
 	sockmsg_groupvars: function(msg) {
 		vargroups[msg.prefix] = Object.fromEntries(msg.vars.map(v => [v.suffix, v.value]));
