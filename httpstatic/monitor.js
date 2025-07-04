@@ -29,17 +29,18 @@ function countdown_ticker(elem, id) {
 	//"#:##" for min:sec w/o leading zero
 	//"##" for seconds, padded to two places with zeroes (ditto "###" or "#")
 	let time = elem._stillebot_countdown_target;
+	let fmt = elem._stillebot_countdown_format;
 	//Times below a gigasecond are paused times, times above that are time_t when it hits zero
 	if (time > 1e9) time = Math.floor(time - new Date() / 1000);
 	if (time <= 0) {
 		//If you have special text for "in the past", use that the moment we hit zero.
-		if (styleinfo[id].textcompleted) return set_content(elem, styleinfo[id].textcompleted);
+		fmt = styleinfo[id].textcompleted || fmt;
 		time = 0; //Leave it stuck on 00:00 after it expires
 	}
 	if (time > 3600) { //TODO: Make this boundary configurable
-		if (styleinfo[id].textinactive) return set_content(elem, styleinfo[id].textinactive);
+		fmt = styleinfo[id].textinactive || fmt;
 	}
-	const parts = elem._stillebot_countdown_format.split(":##");
+	const parts = fmt.split(":##");
 	//For every ":##" in the string, fracture off one sixtieth of the time (thus seconds and minutes)
 	//Then a hash in the first part of the string gets whatever's left,
 	//padded to the number of hashes.
