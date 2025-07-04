@@ -205,40 +205,42 @@ function AUTO_RESET(attrs) {return SELECT({name: "autoreset", ...attrs}, [
 
 set_content("#edittext form div", TEXTFORMATTING({use_preview: true}));
 set_content("#editcountdown form div", [
-	TABLE({border: 1}, [ //TODO: Join all these tables somehow
-		TR([TH("Variable"), TD([
+	TEXTFORMATTING({
+		before: TR([TH("Variable"), TD([
 			//TODO: Allow multiple select boxes with name=varname and populate them all
 			//Then this can reuse the autorender code that powers goal bar varnames.
 			INPUT({name: "varname", size: 20, "data-nocopy": 1}),
+			" Can be manipulated by commands.",
 		])]),
-	]),
-	TEXTFORMATTING({use_preview: true, texts: [
-		{label: "Active"},
-		{name: "textcompleted", label: "Completed", desc: " If blank, same as Active"},
-		{name: "textinactive", label: "Inactive", desc: " If blank, same as Active"},
-	]}),
-	TABLE({border: 1}, [
-		TR(TH({colspan: 2}, "Automate timer based on...")),
-		TR([TH("Scene"), TD([
-			LABEL([INPUT({name: "startonscene", type: "checkbox"}),
-				" Start the countdown when this scene is selected"]),
-			P(["If this countdown is in an OBS scene and it becomes visible, the timer", BR(),
-			"will be started or reset. Good for break/BRB scenes."]),
-			LABEL(["Initial time ", INPUT({name: "startonscene_time", type: "number"}),
-				" Will count down from this time (eg 600 = ten minutes)"]),
-			P("For best results, configure OBS to shutdown source when not visible."), //And maybe refresh on visible? Or not needed?
-		])]),
-		TR([TH("Schedule"), TD([
-			LABEL([INPUT({name: "twitchsched", type: "checkbox"}),
-				" Tie this countdown to your Twitch schedule"]),
-			P(["The countdown will always target the next nearest event on your ",
-			A({href: "https://dashboard.twitch.tv/settings/channel/schedule"}, ["Twitch", BR(), "schedule"]),
-			". Add an offset (positive or negative) to have it show that many seconds", BR(),
-			"at the time of the event (eg 300 to count to five minutes after the event).", BR(),
-			"Note that Inactive and Completed here should generally be set to the same text."]),
-			LABEL(["Time offset ", INPUT({name: "twitchsched_offset", type: "number"})]),
-		])]),
-	]),
+		use_preview: true,
+		texts: [
+			{label: "Active"},
+			{name: "textcompleted", label: "Completed", desc: " If blank, same as Active"},
+			{name: "textinactive", label: "Inactive", desc: " If blank, same as Active"},
+		],
+		after: [
+			TR(TH({colspan: 2}, "Automate timer based on...")),
+			TR([TH("Scene"), TD([
+				LABEL([INPUT({name: "startonscene", type: "checkbox"}),
+					" Start the countdown when this scene is selected"]),
+				P(["If this countdown is in an OBS scene and it becomes visible, the timer", BR(),
+				"will be started or reset. Good for break/BRB scenes."]),
+				LABEL(["Initial time ", INPUT({name: "startonscene_time", type: "number"}),
+					" Will count down from this time (eg 600 = ten minutes)"]),
+				P("For best results, configure OBS to shutdown source when not visible."), //And maybe refresh on visible? Or not needed?
+			])]),
+			TR([TH("Schedule"), TD([
+				LABEL([INPUT({name: "twitchsched", type: "checkbox"}),
+					" Tie this countdown to your Twitch schedule"]),
+				P(["The countdown will always target the next nearest event on your ",
+				A({href: "https://dashboard.twitch.tv/settings/channel/schedule"}, ["Twitch", BR(), "schedule"]),
+				". Add an offset (positive or negative) to have it show that many seconds", BR(),
+				"at the time of the event (eg 300 to count to five minutes after the event).", BR(),
+				"Note that Inactive and Completed here should generally be set to the same text."]),
+				LABEL(["Time offset ", INPUT({name: "twitchsched_offset", type: "number"})]),
+			])]),
+		],
+	}),
 ]);
 
 set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [

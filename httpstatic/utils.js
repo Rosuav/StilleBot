@@ -98,11 +98,26 @@ on("click", ".twitchlogout", async e => {
 
 on("click", ".opendlg", e => {e.preventDefault(); DOM("#" + e.match.dataset.dlg).showModal();});
 
+/* General-purpose text formatting configuration. Supports the following config params:
+before, after: Table row(s) to be included at the start/end of the table
+texts: Array of text input configurations. If omitted, one default input is provided.
+    cfg.texts[n].class - CSS class for this input
+    .label - Label for the table heading
+    .name - Input name
+    .desc - Text or Choc Fac placed after the input
+textclass: Default CSS class for texts not given a class
+textlabel: Default label for texts - if omitted, "Text"
+textname: Default name for texts. Avoid duplication; if multiple texts, they should have
+  explicit names.
+blank_opts: If true, every select box has an empty option (for "unspecified")
+use_preview: If true, a preview background input will be included
+*/
 export function TEXTFORMATTING(cfg) {
     //Half an indent coz I can't be bothered
     if (cfg.textname === "-") cfg.texts = []; //Compat (deprecated)
     if (!cfg.texts) cfg.texts = [{ }];
     return TABLE({border: 1, "data-copystyles": 1}, [
+	cfg.before,
 	cfg.texts.map(t => TR({class: t.class || cfg.textclass || ""}, [TH(t.label || cfg.textlabel || "Text"), TD([INPUT({size: 40, name: t.name || cfg.textname || "text", "data-nocopy": 1}), t.desc])])),
 	TR([TH("Font"), TD([
 		INPUT({name: "font", size: "28"}),
@@ -168,6 +183,7 @@ export function TEXTFORMATTING(cfg) {
 	])]),
 	TR([TH("Custom CSS"), TD(INPUT({name: "css", size: 60}))]),
 	TR([TH("Share styles"), TD([BUTTON({type: "button", class: "copystyles"}, "Copy to clipboard"), BUTTON({type: "button", class: "pastestyles"}, "Paste from clipboard")])]),
+	cfg.after,
     ]);
 }
 
