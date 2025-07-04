@@ -813,8 +813,20 @@ __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:m
 	update_one(conn->group, id); //Note that the display connection doesn't need to be updated
 }
 
-__async__ void file_uploaded(mapping file) {
+@hook_uploaded_file_edited: __async__ void file_uploaded(mapping file) {
 	update_one("control#" + file->channel, file->id); //Display connection doesn't need to get updated.
+	if (!file->metadata) {
+		//File has been deleted. Purge all references to it.
+		mapping cfg = await(G->G->DB->load_config(file->channel, "alertbox"));
+		int changed_alert = 0;
+		string uri = "uploads://" + file->id;
+		foreach (cfg->alertconfigs || ([]);; mapping alert)
+			while (string key = search(alert, uri)) {
+				alert[key] = "";
+				changed_alert = 1;
+			}
+		if (changed_alert) await(G->G->DB->save_config(file->channel, "alertbox", cfg));
+	}
 }
 
 //Update the magic variable $nonhiddengifredeems$
@@ -862,17 +874,6 @@ void update_gif_variants(object channel, mapping cfg) {
 		return;
 	}
 	G->G->DB->delete_file(channel->userid, msg->id);
-	//TODO: Do this in response to *any* file deletion, probably signalled by the DB
-	int changed_alert = 0;
-	string uri = "uploads://" + msg->id;
-	foreach (cfg->alertconfigs || ([]);; mapping alert)
-		while (string key = search(alert, uri)) {
-			alert[key] = "";
-			changed_alert = 1;
-		}
-	if (changed_alert) await(G->G->DB->save_config(channel->userid, "alertbox", cfg));
-	update_one(conn->group, msg->id);
-	if (changed_alert) update_one(cfg->authkey + "#" + channel->userid, msg->id); //TODO: Is this needed? Does the client conn use these pushes?
 }
 
 int(0..1) valid_alert_type(string type, mapping|void cfg) {

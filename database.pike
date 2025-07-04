@@ -87,8 +87,8 @@ constant tables = ([
 		"expires timestamp with time zone", //NULL means it never expires
 		"data bytea not null", //The actual blob.
 		//Another not tested.
-		//"create or replace function send_upload_notification() returns trigger language plpgsql as $$begin perform pg_notify('stillebot.uploads', old.id::text); return null; end$$;",
-		//"create trigger uploads_update_notify after update on stillebot.uploads for each row execute function send_upload_notification();",
+		//"create or replace function send_upload_notification() returns trigger language plpgsql as $$begin perform pg_notify('stillebot.uploads', old.channel::text || '-' || old.id::text); return null; end$$;",
+		//"create or replace trigger uploads_update_notify after update or delete on stillebot.uploads for each row execute function send_upload_notification();",
 		//"alter table stillebot.uploads enable always trigger uploads_update_notify;",
 	}),
 	"botservice": ({
@@ -710,15 +710,25 @@ void delete_file(string|int channel, string id) {
 	G->G->DB->save_sql("delete from stillebot.uploads where channel = :channel and id = :id", (["channel": channel, "id": id]));
 }
 
+//Identical, but the first is called if the file doesn't expire, the second if it does. Rarely will
+//any module need both. NOTE: When a file is deleted, a notification will be sent out with the
+//file ID and channel, and nothing else. Notably, file->metadata will be absent for deleted files.
+//Note also that file deletion is always signalled via the first hook, not the second.
+@create_hook: constant uploaded_file_edited = ({"mapping file"});
+@create_hook: constant ephemeral_file_edited = ({"mapping file"});
+
 @"stillebot.uploads":
 __async__ void notify_file_updated(int pid, string cond, string extra, string host) {
-	//Note that this could be a fresh upload (just received its blob), or it
-	//could be a simple metadata edit. Either way, force it out to the websockets.
+	//Note that this could be a fresh upload (just received its blob), a simple
+	//metadata edit, or file removal. Regardless, force it out to the websockets.
 	if (!is_active_bot()) return; //Should be no websockets on an inactive bot anyway.
-	mapping file = await(get_file(extra)); if (!file) return;
-	//Should this be done generically somehow? The callbacks can do their own filtering as needed.
-	if (function cb = G->G->websocket_types[file->expires ? "chan_share" : "chan_alertbox"]->file_uploaded) cb(file);
-	if (function cb = G->G->websocket_types->chan_monitors->file_uploaded) cb(file);
+	sscanf(extra, "%d-%s", int channel, string id);
+	if (!id) id = extra; //Legacy notification - no channel ID available
+	werror("Getting file %O...\n", extra);
+	mapping file = await(get_file(id)) || (["id": id, "channel": channel]);
+	werror("Got file %O\n", file);
+	if (file->expires) event_notify("ephemeral_file_edited", file);
+	else event_notify("uploaded_file_edited", file);
 }
 
 @"stillebot.config:botconfig":

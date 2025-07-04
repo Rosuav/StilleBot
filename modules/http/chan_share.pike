@@ -144,7 +144,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	]) | req->misc->chaninfo);
 }
 
-__async__ void file_uploaded(mapping file) {
+@hook_ephemeral_file_edited: __async__ void file_uploaded(mapping file) {
 	mapping user = await(get_user_info(file->uploader, "id"));
 	update_one(user->id + "#" + file->channel, file->id);
 	mapping settings = await(G->G->DB->load_config(file->channel, "artshare"));
