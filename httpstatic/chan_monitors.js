@@ -46,7 +46,7 @@ const editables = { }, vargroups = { };
 function set_values(info, elem) {
 	if (!info) return 0;
 	for (let attr in info) {
-		if (attr === "text" && info.type === "goalbar") {
+		if (attr === "text" && elem.querySelector("[name=varname]")) {
 			//Fracture text into the variable name and the actual text.
 			const m = /^\$([^:$]+)\$:(.*)/.exec(info.text) || [0, "???", info.text];
 			const v = elem.querySelector("[name=varname]"); if (v) v.value = m[1];
@@ -205,6 +205,13 @@ function AUTO_RESET(attrs) {return SELECT({name: "autoreset", ...attrs}, [
 
 set_content("#edittext form div", TEXTFORMATTING({use_preview: true}));
 set_content("#editcountdown form div", [
+	TABLE({border: 1}, [ //TODO: Join all these tables somehow
+		TR([TH("Variable"), TD([
+			//TODO: Allow multiple select boxes with name=varname and populate them all
+			//Then this can reuse the autorender code that powers goal bar varnames.
+			INPUT({name: "varname", size: 20, "data-nocopy": 1}),
+		])]),
+	]),
 	TEXTFORMATTING({use_preview: true, texts: [
 		{label: "Active"},
 		{name: "textcompleted", label: "Completed", desc: " If blank, same as Active"},
@@ -432,8 +439,8 @@ set_content("#editthingcat form div", TABLE({border: 1}, [
 on("click", "#createvar", e => {
 	const varname = /^[A-Za-z]*/.exec(DOM("#newvarname").value);
 	if (!varname || varname[0] === "") return;
-	DOM("[name=varname]").appendChild(OPTION(varname[0]));
-	DOM("[name=varname]").value = varname[0];
+	DOM("select[name=varname]").appendChild(OPTION(varname[0]));
+	DOM("select[name=varname]").value = varname[0];
 	ws_sync.send({cmd: "createvar", varname: varname[0]});
 });
 
@@ -527,7 +534,7 @@ DOM("[name=tierpicker]").onchange = e => DOM("[name=currentval]").value = e.curr
 DOM("#setval").onclick = e => {
 	const val = +DOM("[name=currentval]").value;
 	if (val !== val) return; //TODO: Be nicer
-	ws_sync.send({cmd: "setvar", varname: DOM("[name=varname]").value, val});
+	ws_sync.send({cmd: "setvar", varname: DOM("select[name=varname]").value, val});
 	if (DOM("[name=infinitier]").checked) update_tierpicker(); //If you select a different tier, adjust the number of tiers shown in the dropdown.
 }
 
@@ -661,7 +668,7 @@ ws_sync.connect(ws_group, {
 const variables = { };
 ws_sync.connect(ws_group, {
 	ws_type: "chan_variables", ws_sendid: "chan_variables",
-	render_parent: DOM("[name=varname]"),
+	render_parent: DOM("select[name=varname]"),
 	render_item: (v, obj) => obj || OPTION({"data-id": v.id}, v.id),
 	render: function(data) { },
 	sockmsg_groupvars: function(msg) {
