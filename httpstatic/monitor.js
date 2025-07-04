@@ -176,7 +176,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		set_content(elem, [DIV(text), DIV(f(pos, t.format_style)), DIV(f(goal, t.format_style))]);
 	}
 	else if (type === "countdown") {
-		const m = /^([0-9]+):(.*)$/.exec(data.display);
+		const m = /^([0-9]*):(.*)$/.exec(data.display);
 		if (!m) {console.error("Something's misconfigured (see monitor.js countdown regex) -- display", data.display); return;}
 		elem._stillebot_countdown_target = +m[1];
 		elem._stillebot_countdown_format = m[2];
