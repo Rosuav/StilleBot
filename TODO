@@ -281,3 +281,5 @@
 * Countdown monitors need to separate out the varname part! Completed and Inactive do NOT
   look the same as Active at the moment! :lol:
 * Pile of Pics library access needs to have delete buttons
+* Errors thrown deep inside pgssl.pike do not result in proper exceptions. Would be useful
+  to catch them and handle them properly. The rewind_on_error handler should be a start.

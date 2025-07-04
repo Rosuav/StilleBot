@@ -250,6 +250,16 @@ void help() {
 			if (stringp(anno)) write("%-15s: %s\n", names[i], anno);
 }
 
+__async__ void test() {
+	write("Getting a UUID...\n");
+	write("Got %O\n", await(G->G->DB->query_ro("select gen_random_uuid()")));
+	write("Casting to UUID\n");
+	write("Got %O\n", await(G->G->DB->query_ro("select :id::uuid", (["id": "e9f68b01-61fb-4013-9db2-6af3baa6bcea"]))));
+	write("Miscasting to UUID\n");
+	catch {write("Got %O\n", await(G->G->DB->query_ro("select :id::uuid", (["id": "49497888-e9f68b01-61fb-4013-9db2-6af3baa6bcea"]))));};
+	write("Done\n");
+}
+
 protected void create(string name) {
 	::create(name);
 	G->G->utils = this;

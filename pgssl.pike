@@ -132,7 +132,14 @@ string encode_as_type(mixed value, int typeoid) {
 		case 700: value = sprintf("%4F", (float)value); break;
 		case 701: value = sprintf("%8F", (float)value); break;
 		case 1184: value = sprintf("%8c", value->usecs - EPOCH2000); break;
-		case 2950: value = sprintf("%@2c", array_sscanf(value, "%4x%4x-%4x-%4x-%4x-%4x%4x%4x")); break;
+		case 2950: {
+			array words = array_sscanf(value, "%4x%4x-%4x-%4x-%4x-%4x%4x%4x");
+			if (sizeof(words) != 8)
+				//error("Malformed UUID string %O\n", value); //Throwing errors doesn't really work here. TODO: Do better.
+				words = (words + ({0})*8)[..7];
+			value = sprintf("%@2c", words);
+			break;
+		}
 		case 3220: { //LSN
 			sscanf(value, "%x/%x", int n1, int n2);
 			value = sprintf("%4c%4c", n1, n2);
