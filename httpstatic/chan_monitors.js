@@ -129,10 +129,10 @@ export const autorender = {
 				FIGCAPTION([
 					A({href: file.url, target: "_blank"}, file.name),
 					" ",
+					//TODO: Reinstate
 					//BUTTON({type: "button", className: "renamefile", title: "Rename"}, "📝"),
 				]),
-				//TODO: Reinstate delete and rename
-				//BUTTON({type: "button", className: "confirmdelete", title: "Delete"}, "🗑"),
+				BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑"),
 			]),
 			DIV({style: "flex-grow: 1"}),
 			DIV({style: "display: flex; justify-content: space-around"}, BUTTON({type: "button", class: "chooseimage"}, "Choose")),
@@ -480,6 +480,9 @@ on("click", ".editbtn", e => {
 
 on("click", ".deletebtn", simpleconfirm("Delete this monitor?", e =>
 	ws_sync.send({cmd: "deletemonitor", nonce: e.match.dataset.nonce})));
+
+on("click", ".confirmdelete", simpleconfirm("Delete this file?", e =>
+	ws_sync.send({cmd: "deletefile", id: e.match.closest_data("id")})));
 
 on("dragstart", ".monitorlink", e => {
 	const url = `${e.match.href}&layer-name=Mustard%20Mine%20monitor&layer-width=${e.match.dataset.width||400}&layer-height=${e.match.dataset.height||120}`;

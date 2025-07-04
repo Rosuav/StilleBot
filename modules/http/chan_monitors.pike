@@ -451,6 +451,11 @@ __async__ void file_uploaded(mapping file) {
 		send_updates_all("#" + file->channel, (["id": file->id, "data": file->metadata | (["id": file->id]), "type": "image"]));
 }
 
+void wscmd_deletefile(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	G->G->DB->delete_file(channel->userid, msg->id);
+	update_one(conn->group, msg->id, "image");
+}
+
 void wscmd_removed(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
 	mapping info = monitors[conn->subgroup]; if (!info) return;

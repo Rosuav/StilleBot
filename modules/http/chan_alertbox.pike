@@ -861,9 +861,8 @@ void update_gif_variants(object channel, mapping cfg) {
 		update_all(channel->userid, cfg->authkey);
 		return;
 	}
-	string fn = sprintf("%d-%s", channel->userid, msg->id);
-	rm("httpstatic/uploads/" + fn); //If it returns 0 (file not found/not deleted), no problem
-	G->G->DB->delete_file(msg->id);
+	G->G->DB->delete_file(channel->userid, msg->id);
+	//TODO: Do this in response to *any* file deletion, probably signalled by the DB
 	int changed_alert = 0;
 	string uri = "uploads://" + msg->id;
 	foreach (cfg->alertconfigs || ([]);; mapping alert)

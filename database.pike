@@ -706,8 +706,8 @@ Concurrent.Future purge_ephemeral_files(string|int channel, string|int uploader,
 	);
 }
 
-void delete_file(string id) {
-	G->G->DB->save_sql("delete from stillebot.uploads where id = :id", (["id": id]));
+void delete_file(string|int channel, string id) {
+	G->G->DB->save_sql("delete from stillebot.uploads where channel = :channel and id = :id", (["channel": channel, "id": id]));
 }
 
 @"stillebot.uploads":
