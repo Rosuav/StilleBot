@@ -250,13 +250,25 @@ void help() {
 			if (stringp(anno)) write("%-15s: %s\n", names[i], anno);
 }
 
+__async__ void delayed() {
+	sleep(0.125);
+	write("Delayed query\n");
+	write("Delayed got %O\n", await(G->G->DB->query_ro("select 1234")));
+}
+
 __async__ void test() {
 	write("Getting a UUID...\n");
 	write("Got %O\n", await(G->G->DB->query_ro("select gen_random_uuid()")));
 	write("Casting to UUID\n");
 	write("Got %O\n", await(G->G->DB->query_ro("select :id::uuid", (["id": "e9f68b01-61fb-4013-9db2-6af3baa6bcea"]))));
+	mixed other = delayed();
 	write("Miscasting to UUID\n");
-	catch {write("Got %O\n", await(G->G->DB->query_ro("select :id::uuid", (["id": "49497888-e9f68b01-61fb-4013-9db2-6af3baa6bcea"]))));};
+	if (mixed ex = catch {
+		write("Got %O\n", await(G->G->DB->query_ro("select :id::uuid", (["id": "49497888-e9f68b01-61fb-4013-9db2-6af3baa6bcea"]))));
+	}) write("Unable to miscast:\n%s\n", describe_backtrace(ex));
+	write("One last query\n");
+	write("Got %O\n", await(G->G->DB->query_ro("select 42")));
+	write("Waiting for other...\n"); await(other);
 	write("Done\n");
 }
 

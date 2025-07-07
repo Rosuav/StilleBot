@@ -134,9 +134,7 @@ string encode_as_type(mixed value, int typeoid) {
 		case 1184: value = sprintf("%8c", value->usecs - EPOCH2000); break;
 		case 2950: {
 			array words = array_sscanf(value, "%4x%4x-%4x-%4x-%4x-%4x%4x%4x");
-			if (sizeof(words) != 8)
-				//error("Malformed UUID string %O\n", value); //Throwing errors doesn't really work here. TODO: Do better.
-				words = (words + ({0})*8)[..7];
+			if (sizeof(words) != 8) error("Malformed UUID string %O\n", value);
 			value = sprintf("%@2c", words);
 			break;
 		}
@@ -235,7 +233,7 @@ class SSLDatabase(string|mapping connect_to, mapping|void cfg) {
 		sock->connect();
 	}
 	void sockread() {
-		while (sizeof(in)) {
+		if (mixed ex = catch {while (sizeof(in)) {
 			object rew = in->rewind_on_error();
 			int msgtype = in->read_int8();
 			string msg = in->read_hstring(4, 4);
@@ -325,8 +323,27 @@ class SSLDatabase(string|mapping connect_to, mapping|void cfg) {
 					break;
 				}
 				case 'N': break; //NoticeResponse - not currently being reported anywhere
-				default: werror("Got unknown message [state %s]: %c %O\n", state, msgtype, msg);
+				case '3': break; //Close complete. Only happens if we raise an error.
+				default: werror("PGSSL got unknown message [state %s]: %c %O\n", state, msgtype, msg);
 			}
+		}}) {
+			//If we hit an exception while parsing responses to a query, report the query as failed,
+			//and resync with the server. If we hit one at any other time, just log it to the console
+			//and resync; no value raising it. Ideally, we should interrupt the current transaction
+			//with an error, but queueing a call to throw() is not sufficient as it will happen AFTER
+			//all other processing.
+			if (sizeof(preparing_statements)) {
+				string portalname = preparing_statements[0];
+				mapping stmt = inflight[portalname];
+				out->add_int8('C')->add_hstring(({'S', portalname, 0}), 4, 4);
+				flushsend();
+				//Is it okay to report failure here? There may still be queued subparts to this statement,
+				//so we're not removing it from preparing_statements yet. It should eventually get either
+				//a CommandComplete or an ErrorResponse. There'll also be a CloseComplete from the 'C'
+				//above; this doesn't currently affect anything.
+				stmt->completion->failure(ex);
+			}
+			else werror("PGSSL parse failure:\n%s\n", describe_backtrace(ex));
 		}
 	}
 	void sockwrite() {

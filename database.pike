@@ -61,6 +61,10 @@ constant tables = ([
 		//"create trigger settings_update_notify after update on stillebot.settings for each row execute function send_settings_notification();",
 		//"alter table stillebot.settings enable always trigger settings_update_notify;",
 		//TODO: Have a deletion trigger to avoid stale data in in-memory caches
+
+		//This has nothing to do with stillebot.settings, but it needs to go somewhere.
+		//Or maybe not. It isn't currently being used. Kept in case it's useful.
+		//"create or replace function throw(msg varchar) returns void language plpgsql as $$begin raise '%', msg; end$$;",
 	}),
 	"http_sessions": ({
 		"cookie varchar primary key",
