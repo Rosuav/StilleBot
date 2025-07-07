@@ -210,8 +210,7 @@ set_content("#editcountdown form div", [
 			//TODO: Allow multiple select boxes with name=varname and populate them all
 			//Then this can reuse the autorender code that powers goal bar varnames.
 			INPUT({name: "varname", size: 20, "data-nocopy": 1}),
-			//FIXME: Reinstate when there's a better solution to the loss of seconds (see below)
-			//BUTTON({type: "button", id: "setcountdown"}, "Change..."),
+			BUTTON({type: "button", id: "setcountdown"}, "Change..."),
 		])]),
 		use_preview: true,
 		texts: [
@@ -642,8 +641,11 @@ on("click", "#setcountdown", e => {
 		//NOTE: The datetime-local input type supports minutes, but not seconds. This means that
 		//timers will lose resolution when they do not end at exactly the end of a minute.
 		//If your intention really is to target a specific time, this is probably fine, but if it
-		//was (say) a 5 minute timer for a break, that would be a problem. Need a solution, unless
-		//it's just not worth the hassle and we allow minute resolution only.
+		//was (say) a 5 minute timer for a break, that would be a problem. When the dialog opens,
+		//it will be truncated to the start of that minute; this can mean that, when there's less
+		//than a minute to go, the timer could still be ticking down but the display shows a target
+		//time in the past. Thus opening the dialog and immediately clicking "Set" will truncate
+		//the target time to the start of that minute.
 		const datestring = (
 			date.getFullYear() + "-" + twodig(date.getMonth() + 1) + "-" + twodig(date.getDate())
 			+ "T" + twodig(date.getHours()) + ":" + twodig(date.getMinutes())
@@ -654,18 +656,26 @@ on("click", "#setcountdown", e => {
 		dlg.querySelector("[name=delay]").value = "";
 	} else {
 		dlg.querySelector("[name=target]").value = "";
-		//TODO: Format larger times as mm:ss or hh:mm:ss
-		dlg.querySelector("[name=delay]").value = time;
+		dlg.querySelector("[name=delay]").value = time < 60 ? ""+time
+			: time < 3600 ? Math.floor(time / 60) + ":" + twodig(time % 60)
+			: Math.floor(time / 3600) + ":" + twodig(Math.floor(time / 60) % 60) + ":" + twodig(time % 60);
 	}
 	dlg.dataset.varname = varname;
 	dlg.showModal();
 });
 on("click", "#settarget", e => {
-	//TODO: Convert the date/time string into a time_t and set the variable
+	const target = e.match.closest("dialog").querySelector("[name=target]").value;
+	ws_sync.send({cmd: "setvar", varname: e.match.closest("dialog").dataset.varname, val: +new Date(target) / 1000});
 	e.match.closest("dialog").close();
 });
-on("click", "#setdelay", e => {
-	//TODO: Convert [hh:][mm:]ss into an integer, add current time_t, and set the variable
+on("click", "#setdelay,#setdelayafter", e => {
+	let val = 0;
+	e.match.closest("dialog").querySelector("[name=delay]").value.split(":").forEach(part => val = val * 60 + (+part));
+	//To start a five minute counter at the current time, we need to add the current time.
+	//Note that the definition of "current time" is given by your computer's clock, and may
+	//not correspond to the server's. But they should normally be close.
+	if (e.match.id === "setdelayafter") val += Math.floor(+new Date() / 1000);
+	ws_sync.send({cmd: "setvar", varname: e.match.closest("dialog").dataset.varname, val});
 	e.match.closest("dialog").close();
 });
 

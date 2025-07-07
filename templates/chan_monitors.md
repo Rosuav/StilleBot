@@ -54,8 +54,8 @@ loading... | - | -
 
 > ### Set countdown time
 >
-> <label>Target time: <input name=target type=datetime-local></label> [Set](:#settarget)
-> <label>Countdown: <input name=delay type=number></label> [Set](:#setdelay) seconds, mm:ss, or hh:mm:ss
+> <label>Target time: <input name=target type=datetime-local></label> [Set counting](:#settarget)
+> <label>Countdown: <input name=delay></label> [Set paused](:#setdelay) [Set counting](:#setdelayafter) seconds, mm:ss, or hh:mm:ss
 >
 > [Close](: type=submit value=cancel)
 {: tag=dialog #setcountdowndlg}
