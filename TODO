@@ -279,5 +279,3 @@
   - Fragment link for all settings except reordering
 * Countdown monitors need a UI to set them to a specific date/time or time.
 * Pile of Pics library access needs to have rename buttons
-* Errors thrown deep inside pgssl.pike do not result in proper exceptions. Would be useful
-  to catch them and handle them properly. The rewind_on_error handler should be a start.
