@@ -79,6 +79,7 @@ function set_values(info, elem) {
 			]),
 			DIV({class: "buttonbox", style: "justify-content: space-around"}, [
 				BUTTON({type: "button", class: "editpilecat"}, "\u2699"),
+				BUTTON({type: "button", class: "deletething", title: "Delete", style: "padding: 0 0.5em; width: auto"}, "🗑"),
 			]),
 		])));
 		update_activations("#claw_activations", info.id, "claw");
@@ -458,9 +459,7 @@ on("submit", "dialog form", async e => {
 	if (dlg.id === "editthingcat") {
 		//HACK: Different message for editing the subelements
 		body.cmd = "managethings";
-		//HACK UPON HACK: There's no remove UI at the moment, so blank the ID to remove.
-		if (e.match.elements.id.value === "") body.remove = dlg.dataset.originalid;
-		else body.update = dlg.dataset.originalid;
+		body.update = dlg.dataset.originalid;
 	}
 	for (let el of e.match.elements)
 		if (el.name) body[el.name] = el.type === "checkbox" ? el.checked : el.value;
@@ -491,6 +490,9 @@ on("click", ".deletebtn", simpleconfirm("Delete this monitor?", e =>
 
 on("click", ".confirmdelete", simpleconfirm("Delete this file?", e =>
 	ws_sync.send({cmd: "deletefile", id: e.match.closest_data("id")})));
+
+on("click", ".deletething", simpleconfirm("Delete this thing category?", e =>
+	ws_sync.send({cmd: "managethings", nonce: e.match.closest_data("nonce"), remove: e.match.closest_data("thingid")})));
 
 on("click", ".renamefile", e => {
 	const elem = DOM("#renameform").elements;

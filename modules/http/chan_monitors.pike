@@ -498,7 +498,7 @@ void wscmd_removed(object channel, mapping(string:mixed) conn, mapping(string:mi
 		int idx = search(info->things->id, msg->update);
 		if (idx >= 0) {
 			mapping thing = info->things[idx];
-			if (msg->id) {
+			if (msg->id && msg->id != "") {
 				//Ensure that the ID is valid. It MAY be okay to allow a colon here as well,
 				//permitting variable names like $pileA:thing1:whatever$ but for now this is
 				//disallowed for simplicity's sake.
