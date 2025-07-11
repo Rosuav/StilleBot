@@ -34,4 +34,9 @@ instance, a token of {uptime} will be a number (represented with decimal
 digits); using {uptime|hms|offline} will use the uptime if it exists,
 otherwise will use the string "offline".
 
+Spaces inside the substitution will be included if, and only if, the
+resulting value isn't blank. For example, if {param} is the word "hello",
+then { param} will be " hello", but if param were blank, { param} would
+be blank (with no space).
+
 TODO: Are there any others that don't come through that way?

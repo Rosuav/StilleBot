@@ -3,7 +3,7 @@ inherit irc_callback;
 inherit annotated;
 
 mapping simple_regex_cache = ([]); //Emptied on code reload.
-object substitutions = Regexp.PCRE("(\\$[*?A-Za-z0-9|:]*\\$)|({[A-Za-z0-9_@|]+})");
+object substitutions = Regexp.PCRE("(\\$ *[*?A-Za-z0-9|:]* *\\$)|({ *[A-Za-z0-9_@|]+ *})");
 constant messagetypes = ({"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT", "USERSTATE"});
 mapping irc_connections = ([]); //Not persisted across code reloads, but will be repopulated (after checks) from the connection_cache.
 @retain: mapping channelcolor = ([]);
@@ -400,7 +400,7 @@ class channel(mapping identity) {
 		vars["{param}"] = vars["%s"]; vars["{username}"] = vars["$$"];
 		//Scan for two types of substitution - variables and parameters
 		return substitutions->replace(text) {
-			sscanf(__ARGS__[0], "%[${]%[^|$}]%[^$}]%[$}]", string type, string kwd, string filterdflt, string tail);
+			sscanf(__ARGS__[0], "%[${]%[ ]%[^|$}]%[^$}]%[ ]%[$}]", string type, string prefix, string kwd, string filterdflt, string suffix, string tail);
 			//TODO: Have the absence of a default be actually different from an empty one
 			//So $var||$ would give an empty string if var doesn't exist, but $var$ might
 			//throw an error or something. For now, they're equivalent, and $var$ will be
@@ -416,8 +416,8 @@ class channel(mapping identity) {
 			}
 			else value = vars[type + kwd + tail];
 			if (!value || value == "") return dflt;
-			if (function f = filter != "" && text_filters[filter]) return f(value, dflt, this);
-			return value;
+			if (function f = filter != "" && text_filters[filter]) value = f(value, dflt, this);
+			return prefix + value + suffix;
 		};
 	}
 
