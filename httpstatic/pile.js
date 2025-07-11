@@ -57,24 +57,25 @@ function create_claw(cfg) {
 		render: {fillStyle: cfg.clawcolor || "#71797E", lineWidth: 0},
 	};
 	const shoulderlength = +cfg.clawsize, armlength = +cfg.clawsize, talonlength = Math.floor(+cfg.clawsize / 4);
+	const thickness = +cfg.clawthickness || 1;
 	const shoulderangle = 0.3; //Fairly flat angle for the fixed part of the arm
 	const armangle = 0.08; //Initial angles. They will change once we touch something.
 	const shoulderangle_closed = 0.54, armangle_closed = 0.57; //Angles once the claw has fully closed (should still leave a small gap between the talons)
 	//The primary body of the claw is its head. Everything else is connected to that.
 	//Note that the labels starting "head-" are the ones which, when contacted, will trigger the closing of the claw.
 	const head = Matter.Bodies.fromVertices(0, 0, Matter.Vertices.fromPath("1 -12 8 5 4 10 -4 10 -8 5 -1 -12"), {...attrs, isStatic: true, label: "head-0"});
-	const leftshoulder = Rectangle(-8 - shoulderlength / 2, 5, shoulderlength, 2, {...attrs, label: "head-1"});
+	const leftshoulder = Rectangle(-8 - shoulderlength / 2, 5, shoulderlength, thickness * 2, {...attrs, label: "head-1"});
 	Matter.Body.setCentre(leftshoulder, {x: -8, y: 5});
 	Matter.Body.rotate(leftshoulder, -shoulderangle);
-	const rightshoulder = Rectangle(+8 + shoulderlength / 2, 5, shoulderlength, 2, {...attrs, label: "head-2"});
+	const rightshoulder = Rectangle(+8 + shoulderlength / 2, 5, shoulderlength, thickness * 2, {...attrs, label: "head-2"});
 	Matter.Body.setCentre(rightshoulder, {x: 8, y: 5});
 	Matter.Body.rotate(rightshoulder, +shoulderangle);
 	const shoulderendx = shoulderlength * Math.cos(shoulderangle), shoulderendy = shoulderlength * Math.sin(shoulderangle);
 	//Create an arm+talon combo which has its origin point at the top of the arm
-	const leftarmtalon = body_from_path(`-1 -1 -1 ${armlength+1} ${talonlength+1} ${armlength+1} ${talonlength+1} ${armlength-1} 1 ${armlength-1} 1 -1`, attrs);
+	const leftarmtalon = body_from_path(`-${thickness} -${thickness} -${thickness} ${armlength+thickness} ${talonlength+thickness} ${armlength+thickness} ${talonlength+thickness} ${armlength-thickness} ${thickness} ${armlength-thickness} ${thickness} -${thickness}`, attrs);
 	Matter.Body.rotate(leftarmtalon, -armangle);
 	Matter.Body.setPosition(leftarmtalon, {x: -8 - shoulderendx, y: 5 + shoulderendy});
-	const rightarmtalon = body_from_path(`1 -1 1 ${armlength+1} ${-talonlength-1} ${armlength+1} ${-talonlength-1} ${armlength-1} -1 ${armlength-1} -1 -1`, attrs);
+	const rightarmtalon = body_from_path(`${thickness} -${thickness} ${thickness} ${armlength+thickness} ${-talonlength-thickness} ${armlength+thickness} ${-talonlength-thickness} ${armlength-thickness} -${thickness} ${armlength-thickness} -${thickness} -${thickness}`, attrs);
 	Matter.Body.rotate(rightarmtalon, armangle);
 	Matter.Body.setPosition(rightarmtalon, {x: 8 + shoulderendx, y: 5 + shoulderendy});
 	const claw = Matter.Composite.create({
@@ -82,7 +83,7 @@ function create_claw(cfg) {
 			//The head
 			head,
 			//The tail
-			Rectangle(0, -1000, 2, 2000, {...attrs, isStatic: true}),
+			Rectangle(0, -1000, thickness * 2, 2000, {...attrs, isStatic: true}),
 			//Arms
 			leftshoulder, rightshoulder, leftarmtalon, rightarmtalon,
 			//Origin marker (keep last so it's on top)

@@ -407,7 +407,8 @@ set_content("#editpile form div", [
 			]),
 		])]),
 		TR([TH("Claw"), TD([
-			LABEL(["Size: ", INPUT({name: "clawsize", type: "number"}), " (0 to disable)"]), BR(),
+			LABEL(["Size: ", INPUT({name: "clawsize", type: "number"}), " (0 to disable)"]), " ",
+			LABEL(["Thickness: ", INPUT({name: "clawthickness", type: "number", defaultvalue: 1, min: 1, max: 10})]), BR(),
 			LABEL(["Color: ", INPUT({name: "clawcolor", type: "color", defaultvalue: "#71797E"})]), BR(),
 			"NOTE: The claw is not active on this edit page; open the", BR(), "direct link to test it.", BR(),
 			FIELDSET([
