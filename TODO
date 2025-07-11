@@ -277,5 +277,9 @@
       and don't stress about new emotes being added - the ordering doesn't need to be
       retained in any way.
   - Fragment link for all settings except reordering
-* Pile of Pics library access needs to have rename buttons
 * Pile of Pics thing categories need delete button (attempt save w/ blank ID)
+* Break out library management into its own module, both backend and frontend
+  - Some of it (uploading) is already in utils.js
+  - Most of the rest can be found in chan_alertbox.*
+  - Check chan_monitors, some has been duplicated into there
+  - Make an inheritable for the backend??

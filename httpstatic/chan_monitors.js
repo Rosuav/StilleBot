@@ -129,8 +129,7 @@ export const autorender = {
 				FIGCAPTION([
 					A({href: file.url, target: "_blank"}, file.name),
 					" ",
-					//TODO: Reinstate
-					//BUTTON({type: "button", className: "renamefile", title: "Rename"}, "📝"),
+					BUTTON({type: "button", class: "renamefile", title: "Rename"}, "📝"),
 				]),
 				BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑"),
 			]),
@@ -492,6 +491,24 @@ on("click", ".deletebtn", simpleconfirm("Delete this monitor?", e =>
 
 on("click", ".confirmdelete", simpleconfirm("Delete this file?", e =>
 	ws_sync.send({cmd: "deletefile", id: e.match.closest_data("id")})));
+
+on("click", ".renamefile", e => {
+	const elem = DOM("#renameform").elements;
+	const file = files[e.match.closest("[data-id]").dataset.id];
+	if (!file) return;
+	elem.id.value = file.id;
+	elem.name.value = file.name;
+	DOM("#renamefiledlg").showModal();
+});
+
+on("submit", "#renameform", e => {
+	e.preventDefault();
+	const msg = {cmd: "renamefile"};
+	for (let el of e.match.elements)
+		if (el.name) msg[el.name] = el.type === "checkbox" ? el.checked : el.value;
+	ws_sync.send(msg);
+	DOM("#renamefiledlg").close();
+});
 
 on("dragstart", ".monitorlink", e => {
 	const url = `${e.match.href}&layer-name=Mustard%20Mine%20monitor&layer-width=${e.match.dataset.width||400}&layer-height=${e.match.dataset.height||120}`;

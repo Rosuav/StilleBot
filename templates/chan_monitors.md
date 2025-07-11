@@ -124,3 +124,16 @@ Note that Piles of Pics may re-drop all objects if the page is refreshed.
 >
 > [Select](:#libraryselect disabled=true) [Close](:.dialog_close)
 {: tag=dialog #library .resizedlg}
+
+<!-- -->
+
+> ### Rename file
+> Renaming a file has no effect on the pile; the name is for your benefit entirely.
+>
+> <form id=renameform method=dialog>
+> <input type=hidden name=id>
+> <label>Name: <input name=name size=50></label>
+>
+> [Apply](:#renamefile type=submit) [Cancel](:.dialog_close)
+> </form>
+{: tag=dialog #renamefiledlg}

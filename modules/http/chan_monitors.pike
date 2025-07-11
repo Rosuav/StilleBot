@@ -453,9 +453,21 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 		send_updates_all("#" + file->channel, (["id": file->id, "data": file->metadata && (file->metadata | (["id": file->id])), "type": "image"]));
 }
 
-void wscmd_deletefile(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": void wscmd_deletefile(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	G->G->DB->delete_file(channel->userid, msg->id);
 	update_one(conn->group, msg->id, "image");
+}
+
+@"is_mod": __async__ void wscmd_renamefile(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//Rename a file. Won't change its URL (since that's based on ID),
+	//nor where the file is stored (it's in the DB), so this is really an
+	//"edit description" endpoint. But users will think of it as "rename".
+	if (!stringp(msg->id) || !stringp(msg->name)) return;
+	mapping file = await(G->G->DB->get_file(msg->id));
+	if (!file || file->channel != channel->userid) return; //Not found in this channel.
+	file->metadata->name = msg->name;
+	G->G->DB->update_file(file->id, file->metadata);
+	update_one(conn->group, file->id);
 }
 
 void wscmd_removed(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {

@@ -75,7 +75,7 @@ $$notmod2||[Show library](:.showlibrary) [Recent events](:.opendlg data-dlg=rece
 <ul class=tabset><li id=newpersonal><button id=addpersonal title=\"Add new personal alert\">+</button></li></ul><style id=selectalert></style><div id=alertconfigs></div>
 
 > ### Rename file
-> Renaming a file has no effect on alerts; call them whatever you like. FIXME: Write better description.
+> Renaming a file has no effect on alerts; the name is for your benefit entirely.
 >
 > <div class=thumbnail></div>
 >
@@ -1163,7 +1163,7 @@ void copy_stock(mapping alertconfigs, string basetype) {
 	//"edit description" endpoint. But users will think of it as "rename".
 	if (!stringp(msg->id) || !stringp(msg->name)) return;
 	mapping file = await(G->G->DB->get_file(msg->id));
-	if (!file) return; //Not found.
+	if (!file || file->channel != channel->userid) return; //Not found in this channel.
 	file->metadata->name = msg->name;
 	G->G->DB->update_file(file->id, file->metadata);
 	update_one(conn->group, file->id);
