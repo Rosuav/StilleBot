@@ -1,6 +1,6 @@
 import {choc, set_content, on} from "https://rosuav.github.io/choc/factory.js";
 const {BUTTON, IMG, INPUT, LABEL, LI, SPAN, TD, TR} = choc; //autoimport
-import {simpleconfirm} from "./utils.js";
+import {simpleconfirm} from "$$static||utils.js$$";
 
 const setups = {}; //Keyed by ID
 

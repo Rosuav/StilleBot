@@ -1,6 +1,6 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {BUTTON, IMG, INPUT, SPAN, TD, TIME, TR} = lindt; //autoimport
-import {simpleconfirm} from "./utils.js";
+import {simpleconfirm} from "$$static||utils.js$$";
 
 function if_different(login, name) {
 	if (login === name.toLowerCase()) return null;

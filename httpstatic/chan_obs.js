@@ -1,6 +1,6 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {} = choc; //autoimport
-import {simpleconfirm} from "./utils.js";
+import {simpleconfirm} from "$$static||utils.js$$";
 
 export function render(data) {
 	if (data.nonce) DOM("#obslink").href = "obs?key=" + data.nonce;

@@ -1,6 +1,6 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, BR, BUTTON, CODE, INPUT, LABEL, LI, OPTION, SELECT, SPAN, STYLE, UL} = lindt; //autoimport
-import {simpleconfirm} from "./utils.js";
+import {simpleconfirm} from "$$static||utils.js$$";
 
 export function render(data) {
 	const boss = {...sections.boss, ...(data.boss || { })};
