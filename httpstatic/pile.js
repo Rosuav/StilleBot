@@ -72,7 +72,13 @@ const armangle = 0.08; //Initial angles. They will change once we touch somethin
 const shoulderangle_closed = 0.54, armangle_closed = 0.57; //Angles once the claw has fully closed (should still leave a small gap between the talons)
 function create_claw(cfg) {
 	if (window.frameElement) return; //Don't enable the claw in preview mode
-	//FIXME: Calling this more than once will probably break things. Is currently blocked from re-calling.
+	//NOTE: At the moment, if you recreate the claw while it is ascending, the new claw will
+	//be constructed in the jaws-open position, likely dropping any cargo it had been holding.
+	let claw_pos = {x: 0, y: -5000}; //Hide it way above the screen
+	if (CLAW.claw) { //If there's an existing claw, place this one where that was.
+		claw_pos = {x: CLAW.head.position.x, y: CLAW.head.position.y};
+		Matter.Composite.remove(engine.world, CLAW.claw);
+	}
 	const attrs = {
 		isStatic: true,
 		render: {fillStyle: cfg.clawcolor || "#71797E", lineWidth: 0},
@@ -109,9 +115,8 @@ function create_claw(cfg) {
 			Rectangle(0, 0, 3, 3, {isStatic: true, render: {fillStyle: "#ffff22", lineWidth: 0}}),
 		],
 	});
-	Matter.Composite.translate(CLAW.claw, {x: 0, y: -5000}); //Hide it way above the screen
-	CLAW.initial_locations = CLAW.claw.bodies.map(c => ({x: c.position.x, y: c.position.y, angle: c.angle}));
-	reset_claw();
+	Matter.Composite.translate(CLAW.claw, claw_pos);
+	if (!CLAW.initial_locations) CLAW.initial_locations = CLAW.claw.bodies.map(c => ({x: c.position.x, y: c.position.y, angle: c.angle}));
 	Matter.Composite.add(engine.world, CLAW.claw);
 	if (!CLAW.events_created) create_claw_events();
 }
