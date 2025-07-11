@@ -49,14 +49,14 @@ function unfade() {
 	if (fadeouttime) fader = setTimeout(() => {fader = 0; document.body.classList.add("invisible")}, fadeouttime * 60000 - 5000);
 }
 
-function create_claw(clawsize) {
+function create_claw(cfg) {
 	if (window.frameElement) return; //Don't enable the claw in preview mode
 	//FIXME: Calling this more than once will probably break things. Is currently blocked from re-calling.
 	const attrs = {
 		isStatic: true,
-		render: {fillStyle: "#71797E", lineWidth: 0},
+		render: {fillStyle: cfg.clawcolor || "#71797E", lineWidth: 0},
 	};
-	const shoulderlength = +clawsize, armlength = +clawsize, talonlength = Math.floor(+clawsize / 4);
+	const shoulderlength = +cfg.clawsize, armlength = +cfg.clawsize, talonlength = Math.floor(+cfg.clawsize / 4);
 	const shoulderangle = 0.3; //Fairly flat angle for the fixed part of the arm
 	const armangle = 0.08; //Initial angles. They will change once we touch something.
 	const shoulderangle_closed = 0.54, armangle_closed = 0.57; //Angles once the claw has fully closed (should still leave a small gap between the talons)
@@ -228,7 +228,7 @@ export function render(data) {
 		if (need_right) Matter.Composite.add(engine.world,
 			wall_objects.right = Rectangle(width / 2 + floor_size, height - height * need_right / 200, wall_thickness, height * need_right / 100 + 10,
 				{isStatic: true, render: {fillStyle: wallcolor, lineWidth: 0}}));
-		if (+data.data.clawsize && !clawdrop) create_claw(data.data.clawsize);
+		if (+data.data.clawsize && !clawdrop) create_claw(data.data);
 	}
 	if (data.addxtra) addxtra[data.addxtra] = data.xtra;
 	if (data.newcount) Object.entries(data.newcount).forEach(([thingtype, newcount]) => {

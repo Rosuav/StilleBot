@@ -61,6 +61,8 @@ function set_values(info, elem) {
 		if (attr === "lvlupcmd") //Special case: the value might not work if stuff isn't loaded yet.
 			el.dataset.wantvalue = info[attr];
 	}
+	//Anything that wasn't updated, set it to its default value
+	elem.querySelectorAll("[defaultvalue][name]").forEach(el => !(el.name in info) && (el.value = el.getAttribute("defaultvalue")));
 	if (info.type === "goalbar") {
 		const el = elem.querySelector("[name=currentval]"); if (el) el.value = info.display.split(":")[0];
 		update_tierpicker();
@@ -406,6 +408,7 @@ set_content("#editpile form div", [
 		])]),
 		TR([TH("Claw"), TD([
 			LABEL(["Size: ", INPUT({name: "clawsize", type: "number"}), " (0 to disable)"]), BR(),
+			LABEL(["Color: ", INPUT({name: "clawcolor", type: "color", defaultvalue: "#71797E"})]), BR(),
 			"NOTE: The claw is not active on this edit page; open the", BR(), "direct link to test it.", BR(),
 			FIELDSET([
 				LEGEND("Activations:"),
