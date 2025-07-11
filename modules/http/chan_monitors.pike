@@ -299,7 +299,7 @@ void wscmd_clawdone(object channel, mapping(string:mixed) conn, mapping(string:m
 		cmdname = "claw";
 		code = sprintf(#{chan_monitors(%O, "claw")
 			if ("{prizetype}" == "") "The claw has selected nothing. The claw is our master!"
-			else "The claw has selected: {prizetype} {prizelabel}. The claw is our master!"
+			else "The claw has selected: {prizetype}{ prizelabel}. The claw is our master!"
 		#}, msg->nonce);
 		reward = ([
 			"title": "Claw Machine",
