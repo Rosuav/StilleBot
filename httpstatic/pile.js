@@ -21,7 +21,6 @@ let thingtypes = { };
 let fadeouttime = 0, fader = 0;
 let wall_config = { }, wall_objects = { };
 const clawqueue = []; //If empty, the claw isn't active. If >1 entries, after the current one, the next will autostart.
-let clawdrop;
 
 //Create a body from a set of vertices, where the body's origin is at (0,0) regardless of its centre of mass.
 //The object will be placed at the origin.
@@ -49,6 +48,28 @@ function unfade() {
 	if (fadeouttime) fader = setTimeout(() => {fader = 0; document.body.classList.add("invisible")}, fadeouttime * 60000 - 5000);
 }
 
+const CLAW = {
+	mode: "",
+	width: 0,
+};
+function clawdrop() {
+	unfade();
+	Matter.Composite.translate(CLAW.claw, {x: Math.random() * (width - CLAW.width * 2) + CLAW.width, y: 5000});
+	CLAW.mode = "descend";
+}
+
+function reset_claw() {
+	Matter.Composite.translate(CLAW.claw, {x: -CLAW.head.position.x, y: -CLAW.head.position.y - 5000}); //Hide it way above the screen
+	CLAW.claw.bodies.forEach((c, i) => {
+		const loc = CLAW.initial_locations[i];
+		Matter.Body.setPosition(c, loc);
+		Matter.Body.setAngle(c, loc.angle);
+	});
+}
+
+const shoulderangle = 0.3; //Fairly flat angle for the fixed part of the arm
+const armangle = 0.08; //Initial angles. They will change once we touch something.
+const shoulderangle_closed = 0.54, armangle_closed = 0.57; //Angles once the claw has fully closed (should still leave a small gap between the talons)
 function create_claw(cfg) {
 	if (window.frameElement) return; //Don't enable the claw in preview mode
 	//FIXME: Calling this more than once will probably break things. Is currently blocked from re-calling.
@@ -56,81 +77,69 @@ function create_claw(cfg) {
 		isStatic: true,
 		render: {fillStyle: cfg.clawcolor || "#71797E", lineWidth: 0},
 	};
+	CLAW.width = +cfg.clawsize; //TODO: Should this be increased a bit?
 	const shoulderlength = +cfg.clawsize, armlength = +cfg.clawsize, talonlength = Math.floor(+cfg.clawsize / 4);
 	const thickness = +cfg.clawthickness || 1;
-	const shoulderangle = 0.3; //Fairly flat angle for the fixed part of the arm
-	const armangle = 0.08; //Initial angles. They will change once we touch something.
-	const shoulderangle_closed = 0.54, armangle_closed = 0.57; //Angles once the claw has fully closed (should still leave a small gap between the talons)
 	//The primary body of the claw is its head. Everything else is connected to that.
 	//Note that the labels starting "head-" are the ones which, when contacted, will trigger the closing of the claw.
-	const head = Matter.Bodies.fromVertices(0, 0, Matter.Vertices.fromPath("1 -12 8 5 4 10 -4 10 -8 5 -1 -12"), {...attrs, isStatic: true, label: "head-0"});
-	const leftshoulder = Rectangle(-8 - shoulderlength / 2, 5, shoulderlength, thickness * 2, {...attrs, label: "head-1"});
-	Matter.Body.setCentre(leftshoulder, {x: -8, y: 5});
-	Matter.Body.rotate(leftshoulder, -shoulderangle);
-	const rightshoulder = Rectangle(+8 + shoulderlength / 2, 5, shoulderlength, thickness * 2, {...attrs, label: "head-2"});
-	Matter.Body.setCentre(rightshoulder, {x: 8, y: 5});
-	Matter.Body.rotate(rightshoulder, +shoulderangle);
+	CLAW.head = Matter.Bodies.fromVertices(0, 0, Matter.Vertices.fromPath("1 -12 8 5 4 10 -4 10 -8 5 -1 -12"), {...attrs, isStatic: true, label: "head-0"});
+	CLAW.leftshoulder = Rectangle(-8 - shoulderlength / 2, 5, shoulderlength, thickness * 2, {...attrs, label: "head-1"});
+	Matter.Body.setCentre(CLAW.leftshoulder, {x: -8, y: 5});
+	Matter.Body.rotate(CLAW.leftshoulder, -shoulderangle);
+	CLAW.rightshoulder = Rectangle(+8 + shoulderlength / 2, 5, shoulderlength, thickness * 2, {...attrs, label: "head-2"});
+	Matter.Body.setCentre(CLAW.rightshoulder, {x: 8, y: 5});
+	Matter.Body.rotate(CLAW.rightshoulder, +shoulderangle);
 	const shoulderendx = shoulderlength * Math.cos(shoulderangle), shoulderendy = shoulderlength * Math.sin(shoulderangle);
 	//Create an arm+talon combo which has its origin point at the top of the arm
-	const leftarmtalon = body_from_path(`-${thickness} -${thickness} -${thickness} ${armlength+thickness} ${talonlength+thickness} ${armlength+thickness} ${talonlength+thickness} ${armlength-thickness} ${thickness} ${armlength-thickness} ${thickness} -${thickness}`, attrs);
-	Matter.Body.rotate(leftarmtalon, -armangle);
-	Matter.Body.setPosition(leftarmtalon, {x: -8 - shoulderendx, y: 5 + shoulderendy});
-	const rightarmtalon = body_from_path(`${thickness} -${thickness} ${thickness} ${armlength+thickness} ${-talonlength-thickness} ${armlength+thickness} ${-talonlength-thickness} ${armlength-thickness} -${thickness} ${armlength-thickness} -${thickness} -${thickness}`, attrs);
-	Matter.Body.rotate(rightarmtalon, armangle);
-	Matter.Body.setPosition(rightarmtalon, {x: 8 + shoulderendx, y: 5 + shoulderendy});
-	const claw = Matter.Composite.create({
+	CLAW.leftarmtalon = body_from_path(`-${thickness} -${thickness} -${thickness} ${armlength+thickness} ${talonlength+thickness} ${armlength+thickness} ${talonlength+thickness} ${armlength-thickness} ${thickness} ${armlength-thickness} ${thickness} -${thickness}`, attrs);
+	Matter.Body.rotate(CLAW.leftarmtalon, -armangle);
+	Matter.Body.setPosition(CLAW.leftarmtalon, {x: -8 - shoulderendx, y: 5 + shoulderendy});
+	CLAW.rightarmtalon = body_from_path(`${thickness} -${thickness} ${thickness} ${armlength+thickness} ${-talonlength-thickness} ${armlength+thickness} ${-talonlength-thickness} ${armlength-thickness} -${thickness} ${armlength-thickness} -${thickness} -${thickness}`, attrs);
+	Matter.Body.rotate(CLAW.rightarmtalon, armangle);
+	Matter.Body.setPosition(CLAW.rightarmtalon, {x: 8 + shoulderendx, y: 5 + shoulderendy});
+	CLAW.claw = Matter.Composite.create({
 		bodies: [
 			//The head
-			head,
+			CLAW.head,
 			//The tail
 			Rectangle(0, -1000, thickness * 2, 2000, {...attrs, isStatic: true}),
 			//Arms
-			leftshoulder, rightshoulder, leftarmtalon, rightarmtalon,
+			CLAW.leftshoulder, CLAW.rightshoulder, CLAW.leftarmtalon, CLAW.rightarmtalon,
 			//Origin marker (keep last so it's on top)
 			Rectangle(0, 0, 3, 3, {isStatic: true, render: {fillStyle: "#ffff22", lineWidth: 0}}),
 		],
 	});
-	Matter.Composite.translate(claw, {x: 0, y: -5000}); //Hide it way above the screen
-	const initial_locations = claw.bodies.map(c => ({x: c.position.x, y: c.position.y, angle: c.angle}));
-	function reset_claw() {
-		Matter.Composite.translate(claw, {x: -head.position.x, y: -head.position.y - 5000}); //Hide it way above the screen
-		claw.bodies.forEach((c, i) => {
-			const loc = initial_locations[i];
-			Matter.Body.setPosition(c, loc);
-			Matter.Body.setAngle(c, loc.angle);
-		});
-	}
+	Matter.Composite.translate(CLAW.claw, {x: 0, y: -5000}); //Hide it way above the screen
+	CLAW.initial_locations = CLAW.claw.bodies.map(c => ({x: c.position.x, y: c.position.y, angle: c.angle}));
 	reset_claw();
-	Matter.Composite.add(engine.world, claw);
-	let clawmode = "";
-	clawdrop = () => {
-		unfade();
-		Matter.Composite.translate(claw, {x: Math.random() * (width - shoulderlength * 2) + shoulderlength, y: 5000});
-		clawmode = "descend";
-	}
+	Matter.Composite.add(engine.world, CLAW.claw);
+	if (!CLAW.events_created) create_claw_events();
+}
+
+function create_claw_events() {
+	CLAW.events_created = true;
 	const steps = 30;
-	let closing = 0;
-	Matter.Events.on(engine, "collisionStart", e => clawmode === "descend" && e.pairs.forEach(pair => {
-		const headA = pair.bodyA.label.startsWith("head-");
-		const headB = pair.bodyB.label.startsWith("head-");
-		if (headA !== headB) {
-			//The head has touched a thing! Note that this could be the armtalon part,
-			//if it strikes something and bounces up. Not sure what to do about that.
+	Matter.Events.on(engine, "collisionStart", e => CLAW.mode === "descend" && e.pairs.forEach(pair => {
+		const isheadA = pair.bodyA.label.startsWith("head-");
+		const isheadB = pair.bodyB.label.startsWith("head-");
+		if (isheadA !== isheadB) {
+			//The head (or shoulder) has touched a thing! Not the armtalon though; if that
+			//makes contact, it'll keep pushing, which gives better chances of grabbing.
 			//NOTE: If multiple pairs touch in a single frame, this function may be
 			//called multiple times. Ensure that it is idempotent. (Spawning multiple
 			//timeouts that have the same delay and are themselves idempotent is, in
 			//effect, idempotent.)
-			clawmode = ""; setTimeout(() => {closing = steps; clawmode = "close"}, 500);
+			CLAW.mode = ""; setTimeout(() => {CLAW.closing = steps; CLAW.mode = "close"}, 500);
 		}
 	}));
 	//Each step, we rotate the shoulder a little, and then the arm a little beyond that.
 	//Since the arm gets rotated around the shoulder too, the arm's own step is reduced
 	//to compensate. Otherwise it would get double the rotation.
-	Matter.Events.on(engine, "afterUpdate", e => {switch (clawmode) {
+	Matter.Events.on(engine, "afterUpdate", e => {switch (CLAW.mode) {
 		case "descend":
-			Matter.Composite.translate(claw, {x: 0, y: 2});
+			Matter.Composite.translate(CLAW.claw, {x: 0, y: 2});
 			//If we hit the floor, the collision check won't detect it, so just close below the surface and pull up.
-			if (head.position.y >= height) {clawmode = ""; setTimeout(() => {closing = steps; clawmode = "close"}, 500);}
+			if (CLAW.head.position.y >= height) {CLAW.mode = ""; setTimeout(() => {CLAW.closing = steps; CLAW.mode = "close"}, 500);}
 			break;
 		case "close": {
 			//To close the claws, we droop the shoulders slightly and then
@@ -143,27 +152,27 @@ function create_claw(cfg) {
 			//is done with a cosine curve starting at -pi and going to zero,
 			//yielding positions from -1 to 1; rescaling this to be from 0
 			//to 1 makes them into a fraction of the delta.
-			--closing;
-			const pos = Math.cos((-closing / steps) * Math.PI) / 2 + 0.5; //From zero to one
+			--CLAW.closing;
+			const pos = Math.cos((-CLAW.closing / steps) * Math.PI) / 2 + 0.5; //From zero to one
 			const shouldergoal = shoulderangle + (shoulderangle_closed - shoulderangle) * pos;
 			const armgoal = armangle + (armangle_closed - armangle) * pos;
-			const shoulderstep = shouldergoal - rightshoulder.angle;
-			Matter.Body.rotate(leftshoulder, -shoulderstep);
-			Matter.Body.rotate(rightshoulder, shoulderstep);
-			Matter.Body.rotate(leftarmtalon, -shoulderstep, {x: leftshoulder.position.x, y: leftshoulder.position.y});
-			Matter.Body.rotate(rightarmtalon, shoulderstep, {x: rightshoulder.position.x, y: rightshoulder.position.y});
-			const armstep = armgoal - rightarmtalon.angle;
-			Matter.Body.rotate(leftarmtalon, -armstep);
-			Matter.Body.rotate(rightarmtalon, armstep);
-			if (!closing) {
-				clawmode = ""; setTimeout(() => clawmode = "ascend", 500);
+			const shoulderstep = shouldergoal - CLAW.rightshoulder.angle;
+			Matter.Body.rotate(CLAW.leftshoulder, -shoulderstep);
+			Matter.Body.rotate(CLAW.rightshoulder, shoulderstep);
+			Matter.Body.rotate(CLAW.leftarmtalon, -shoulderstep, {x: CLAW.leftshoulder.position.x, y: CLAW.leftshoulder.position.y});
+			Matter.Body.rotate(CLAW.rightarmtalon, shoulderstep, {x: CLAW.rightshoulder.position.x, y: CLAW.rightshoulder.position.y});
+			const armstep = armgoal - CLAW.rightarmtalon.angle;
+			Matter.Body.rotate(CLAW.leftarmtalon, -armstep);
+			Matter.Body.rotate(CLAW.rightarmtalon, armstep);
+			if (!CLAW.closing) {
+				CLAW.mode = ""; setTimeout(() => CLAW.mode = "ascend", 500);
 			}
 			break;
 		}
 		case "ascend":
-			Matter.Composite.translate(claw, {x: 0, y: -1});
-			if (head.position.y < -100) {
-				clawmode = "";
+			Matter.Composite.translate(CLAW.claw, {x: 0, y: -1});
+			if (CLAW.head.position.y < -100) {
+				CLAW.mode = "";
 				//See what's above the screen. Note that there might be more than one thing,
 				//but we'll only claim one prize (chosen arbitrarily).
 				let prize = null, prizetype = "";
@@ -229,7 +238,7 @@ export function render(data) {
 		if (need_right) Matter.Composite.add(engine.world,
 			wall_objects.right = Rectangle(width / 2 + floor_size, height - height * need_right / 200, wall_thickness, height * need_right / 100 + 10,
 				{isStatic: true, render: {fillStyle: wallcolor, lineWidth: 0}}));
-		if (+data.data.clawsize && !clawdrop) create_claw(data.data);
+		if (+data.data.clawsize) create_claw(data.data);
 	}
 	if (data.addxtra) addxtra[data.addxtra] = data.xtra;
 	if (data.newcount) Object.entries(data.newcount).forEach(([thingtype, newcount]) => {
@@ -280,7 +289,7 @@ export function render(data) {
 			unfade();
 		}
 	});
-	if (data.claw && clawdrop) {
+	if (data.claw && CLAW.claw) {
 		clawqueue.push(data.claw);
 		if (clawqueue.length === 1) clawdrop();
 	}
