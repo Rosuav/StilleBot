@@ -282,3 +282,4 @@
   - Most of the rest can be found in chan_alertbox.*
   - Check chan_monitors, some has been duplicated into there
   - Make an inheritable for the backend??
+* Allow https://mustardmine.com/channels/USERID/
