@@ -259,6 +259,7 @@ constant emoteids = ([
 	"ImSpiraling": "emotesv2_44b6eb2a20e44887bb8b158869671619",
 	"ShyGhost": "emotesv2_9c489ffe04e14791b1fc300872605ac1",
 	"LilTrickster": "emotesv2_6f8b5741535344bf947ae6eea28c56c7",
+	"PufferPop": "emotesv2_0b4f05960b5b473c98d61698edc0806a",
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
