@@ -110,11 +110,11 @@ void probe_hype_train(int channel) {
 	get_user_info(channel)->then() {send_updates_all(__ARGS__[0]->login);};
 }
 
-constant emotes = #"SpillTheTea ThatsAServe WhosThisDiva
-RespectfullyNo ThatsIconique HerMind
-NoComment DownBad UghMood
-TheyAte PlotTwist AnActualQueen
-PackItUp InTheirBag SpitTheTruth";
+constant emotes = #"SpillTheTea ThatsAServe WhosThisDiva ConfettiHype
+RespectfullyNo ThatsIconique HerMind ImSpiraling
+NoComment DownBad UghMood ShyGhost
+TheyAte PlotTwist AnActualQueen LilTrickster
+PackItUp InTheirBag SpitTheTruth PufferPop";
 string avail_emotes = "";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
