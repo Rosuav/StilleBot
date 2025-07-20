@@ -117,6 +117,7 @@ __async__ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, 
 		}
 	}
 	object channel = G->G->irc->channels["#" + chan];
+	if (!channel && (int)chan) channel = G->G->irc->id[(int)chan]; //TODO: Redirect to the name as canonical, but only if a GET request and not for the API.
 	if (!channel) return 0;
 	req->misc->channel = channel;
 	req->misc->is_mod = 0; //If is_mod is false, save_or_login will be overridden
