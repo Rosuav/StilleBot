@@ -12,16 +12,13 @@ let dragset = null, dragorigin = -1; //Where the dragged emote came from
 
 const render_emote = {
 	none(id, size, setid, caption) {
+		let cls = "";
 		if (id === dragging && moved) {
-			//We're dragging this one around. Instead of actually rendering it, put a vertical
-			//green bar to indicate where it would be dropped. Note that the array has been
-			//mutated to show the target position, and the original position is saved for the
-			//Esc key to restore it to.
-			//TODO: Would it be better to have the exact same render, but with a transparency
-			//effect applied?
-			return FIGURE({"data-id": id, "data-set": setid, class: "dropmarker size" + size});
+			//We're dragging this one around. Note that the array has been mutated to show the
+			//target position, and the original position is saved for the Esc key to restore it to.
+			cls = "dragging";
 		}
-		return FIGURE({"data-id": id, "data-set": setid}, [
+		return FIGURE({"data-id": id, "data-set": setid, class: cls}, [
 			IMG({
 				crossOrigin: "anonymous", //Allow the use of these images in canvas without tainting it
 				"src": "https://static-cdn.jtvnw.net/emoticons/v2/" + id + "/static/light/" + size + ".0",
