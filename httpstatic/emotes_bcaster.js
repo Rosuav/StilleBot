@@ -6,6 +6,16 @@ set_content("#sections", emoteset_order.map(setid => LABEL([
 	" " + emoteset_labels[setid].trim(),
 ])));
 
+function slugify(setid) {
+	//Return a short reference for a set ID. Currently uses the initials of the label,
+	//since "F", "T1", "B", etc are all good labels.
+	return emoteset_labels[setid].split(" ").map(w => w[0]).join("");
+}
+
+const panelparams = new URLSearchParams(location.hash.slice(1));
+
+const bg_color = {none: "transparent", light: "#f7f7f7", dark: "#0e0c13"};
+
 let dragging = null; //If non-null, is the ID of the emote currently being dragged
 let moved = false; //True once the dragged emote has been moved (even just a pixel, even if moved back)
 let dragset = null, dragorigin = -1; //Where the dragged emote came from
@@ -40,25 +50,34 @@ const render_emote = {
 
 //HACK! Make the text white when on a dark background. Can we do this automatically somehow?
 const text_for_bg = {
-	"#0e0c13": "#f7f7f7",
+	dark: "#f7f7f7",
 };
 
 function update_preview() {
 	const sections = [];
 	const include_headings = DOM("#headings").checked;
+	panelparams.set("sec", +include_headings);
 	const size = +DOM("#imgsize").value;
+	panelparams.set("sz", size);
 	const hdg = DOM("#heading").value.trim();
 	if (hdg !== "") sections.push(H2(hdg));
+	panelparams.set("hdg", hdg);
 	const make_emote = render_emote[DOM("#emotenames").value];
+	panelparams.set("names", DOM("#emotenames").value);
+	let sets = [];
 	document.querySelectorAll("#sections input:checked").forEach(el => {
 		const setid = el.name;
+		sets.push(slugify(setid));
 		if (include_headings) sections.push(H3(emoteset_labels[setid]));
 		sections.push(emotes_by_set[setid].map(id => make_emote(id, size, setid)));
 	});
+	panelparams.set("sets", sets.join(" "));
 	DOM("#captureme").classList.remove("no_ellipsis");
 	const bg = DOM("#background").value;
-	set_content("#captureme", sections).style.backgroundColor = bg;
+	panelparams.set("bg", bg);
+	set_content("#captureme", sections).style.backgroundColor = bg_color[bg];
 	DOM("#captureme").style.color = text_for_bg[bg] || null;
+	panelparams.set("long", DOM("#longnames").value);
 	switch (DOM("#longnames").value) {
 		case "shrink":
 			//See if any of the captions are getting ellipsized, and if so, shrink them.
@@ -77,7 +96,33 @@ function update_preview() {
 			break;
 		case "ellipsize": default: break;
 	}
+	history.replaceState(null, "", "#" + panelparams.toString());
 }
+
+//Apply all current panel params (only if we have a fragment with content in it)
+if (location.hash.length >= 2) {
+	function param_to_dom(el, kwd) {
+		const val = panelparams.get(kwd);
+		if (val !== null) el[el.type === "checkbox" ? "checked" : "value"] = val;
+	}
+	param_to_dom(DOM("#headings"), "sec");
+	param_to_dom(DOM("#imgsize"), "sz");
+	param_to_dom(DOM("#heading"), "hdg");
+	param_to_dom(DOM("#emotenames"), "names");
+	const sets = panelparams.get("sets");
+	if (sets !== null) {
+		const want = {};
+		sets.split(" ").forEach(s => want[s] = true);
+		document.querySelectorAll("#sections input").forEach(el => {
+			el.checked = want[slugify(el.name)] || false;
+		});
+	}
+	param_to_dom(DOM("#background"), "bg");
+	param_to_dom(DOM("#longnames"), "long");
+	update_preview();
+	DOM("#capturedlg").showModal();
+}
+DOM("#capturedlg").onclose = e => history.replaceState(null, "", " ");
 
 on("click", "#opencapturedlg", e => {
 	update_preview();
@@ -92,8 +137,8 @@ on("click", "#capture", e => {
 	const canvas = choc.CANVAS({width: box.width|0, height: box.height|0});
 	const ctx = canvas.getContext("2d");
 	const bg = DOM("#background").value
-	if (bg !== "transparent") {
-		ctx.fillStyle = bg;
+	if (bg !== "none") {
+		ctx.fillStyle = bg_color[bg];
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 	}
 	target.querySelectorAll("img").forEach(img => {
@@ -139,6 +184,7 @@ dragtop.addEventListener("pointermove", e => {
 	if (!dragging) return;
 	let curpos = emotes_by_set[dragset].indexOf(dragging);
 	const target = document.elementFromPoint(e.clientX, e.clientY);
+	if (!target) return;
 	const dropdest = target.closest_data("id"), dropset = target.closest_data("set");
 	if (!dropset) return; //Probably dropping onto the background somewhere; leave the emote where it is for now.
 	let destidx = 0;

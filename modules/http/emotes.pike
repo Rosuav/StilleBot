@@ -104,7 +104,8 @@ constant capturedlg = #"
 > Emote size: <select id=imgsize><option value=3>Large<option value=2 selected>Medium<option value=1>Small</select><br>
 > Emote names: <select id=emotenames><option value=none>None<option value=short>Abbreviated<option value=long>Full</select><br>
 > Long names: <select id=longnames><option value=ellipsize>Ellipsize<option value=shrink>Shrink<option value=retain>Retain</select><br>
-> Background: <select id=background><option value=transparent>None<option value=\"#f7f7f7\">Light mode<option value=\"#0e0c13\">Dark mode</select><br>
+> Background: <select id=background><option value=none>None<option value=light>Light mode<option value=dark>Dark mode</select><br>
+> TIP: Bookmark this page to return<br>here with all your settings retained.
 > </div>
 > <fieldset class=scrollable><legend>Preview</legend><div style=\"position: relative\"><div id=captureme></div></div></fieldset>
 > </div>

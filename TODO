@@ -263,8 +263,6 @@
       the stream isn't online, reset immediately; if stream IS online, flag for one EOS reset.
   - Note that this should never reset while you are online, unless it's right at the start of
     the stream (first few minutes), and ideally not then either.
-* Emote showcase, fixed image edition
-  - Fragment link for all settings except reordering
 * Break out library management into its own module, both backend and frontend
   - Some of it (uploading) is already in utils.js
   - Most of the rest can be found in chan_alertbox.*
