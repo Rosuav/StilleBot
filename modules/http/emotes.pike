@@ -255,9 +255,15 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			if (set->set_id == "bits") sets[-2] = ({"Bits badges", b});
 		}
 		array sorted = ({ });
-		foreach (order, string lbl)
-			if (array s = m_delete(sets, setids[lbl])) sorted += ({s});
-		array emoteset_order = filter(setids[order[*]], stringp); //Exclude any null entries (for sections that are absent), and the -1/-2 for badges
+		array emoteset_order = ({ });
+		foreach (order, string lbl) {
+			mixed id = setids[lbl] || setids[lbl + " Animated"];
+			if (array s = m_delete(sets, id)) sorted += ({s});
+			//Exclude any null entries (for sections that are absent), and the -1/-2 for badges
+			//But if we have "Tier 1 Animated" while not having "Tier 1", then put the set ID for
+			//the animated set in the position where the base set would have gone.
+			if (stringp(id)) emoteset_order += ({id});
+		}
 		//Any that weren't found, stick at the beginning so they're obvious
 		//TODO: Is it right to cast to int here? What's the purpose of the ordering - just stability?
 		//The emote set IDs are now UUIDs instead of just integers, so this might now be invalid.
