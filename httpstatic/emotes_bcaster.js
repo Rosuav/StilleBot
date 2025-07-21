@@ -145,7 +145,10 @@ dragtop.addEventListener("pointermove", e => {
 	let destidx = 0;
 	if (dropset !== dragset) {
 		//If you drag something past its own set, it will "lock" at the extreme of the set
-		//TODO: If you dragged forwards, lock at emotes_by_set[dragset].length
+		//If you dragged forwards, lock at the end. I don't really care if weird things
+		//happen with failed indexOf searches, it'll still be at one end or the other.
+		if (emoteset_order.indexOf(dropset) > emoteset_order.indexOf(dragset))
+			destidx = emotes_by_set[dragset].length;
 	} else {
 		//Within the set, dropping "on" an item means either dropping to its left or its right.
 		destidx = emotes_by_set[dragset].indexOf(dropdest);
