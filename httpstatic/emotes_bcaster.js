@@ -16,7 +16,7 @@ const render_emote = {
 			//We're dragging this one around. Instead of actually rendering it, put a vertical
 			//green bar to indicate where it would be dropped. Note that the array has been
 			//mutated to show the target position, and the original position is saved for the
-			//Esc key to restore it to (TODO).
+			//Esc key to restore it to.
 			//TODO: Would it be better to have the exact same render, but with a transparency
 			//effect applied?
 			return FIGURE({"data-id": id, "data-set": setid, class: "dropmarker size" + size});
@@ -125,13 +125,14 @@ on("click", "#capture", e => {
 //as the event is attached to document; maybe it would work to capture pointer to document, but then we
 //still need to do all the real work ourselves.
 const dragtop = DOM("#captureme");
+let pointerid = null;
 dragtop.addEventListener("pointerdown", e => {
 	if (e.button) return; //Only left clicks
 	dragging = e.target.closest_data("id");
 	dragset = e.target.closest_data("set");
 	if (!emotes_by_set[dragset]) {dragging = null; return;}
 	dragorigin = emotes_by_set[dragset].indexOf(dragging);
-	dragtop.setPointerCapture(e.pointerId);
+	dragtop.setPointerCapture(pointerid = e.pointerId);
 	moved = false;
 	//Note that we don't update_preview here; there's no visual change until the first movement.
 	e.preventDefault();
@@ -168,4 +169,15 @@ dragtop.addEventListener("pointerup", e => {
 	dragging = null;
 	dragtop.releasePointerCapture(e.pointerId);
 	update_preview();
+});
+document.addEventListener("keydown", e => {
+	if (dragging && e.code === "Escape") {
+		e.preventDefault();
+		//Reset the dragged emote to its original position.
+		emotes_by_set[dragset] = emotes_by_set[dragset].filter(el => el !== dragging); //Remove it from whereever it now is
+		emotes_by_set[dragset].splice(dragorigin, 0, dragging);
+		dragging = null;
+		dragtop.releasePointerCapture(pointerid);
+		update_preview();
+	}
 });
