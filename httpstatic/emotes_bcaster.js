@@ -6,23 +6,38 @@ set_content("#sections", emoteset_order.map(setid => LABEL([
 	" " + emoteset_labels[setid].trim(),
 ])));
 
+let dragging = null; //If non-null, is the ID of the emote currently being dragged
+let moved = false; //True once the dragged emote has been moved (even just a pixel, even if moved back)
+let dragset = null, dragorigin = -1; //Where the dragged emote came from
+
 const render_emote = {
-	none(id, size) {
-		return IMG({
-			crossOrigin: "anonymous", //Allow the use of these images in canvas without tainting it
-			"src": "https://static-cdn.jtvnw.net/emoticons/v2/" + id + "/static/light/" + size + ".0",
-		});
-	},
-	long(id, size, name) {
-		return FIGURE([
-			render_emote.none(id, size),
-			FIGCAPTION({class: "size" + size}, name || emote_names[id]),
+	none(id, size, setid, caption) {
+		if (id === dragging && moved) {
+			//We're dragging this one around. Instead of actually rendering it, put a vertical
+			//green bar to indicate where it would be dropped. Note that the array has been
+			//mutated to show the target position, and the original position is saved for the
+			//Esc key to restore it to (TODO).
+			//TODO: Would it be better to have the exact same render, but with a transparency
+			//effect applied?
+			return FIGURE({"data-id": id, "data-set": setid, class: "dropmarker size" + size});
+		}
+		return FIGURE({"data-id": id, "data-set": setid}, [
+			IMG({
+				crossOrigin: "anonymous", //Allow the use of these images in canvas without tainting it
+				"src": "https://static-cdn.jtvnw.net/emoticons/v2/" + id + "/static/light/" + size + ".0",
+			}),
+			caption,
 		]);
 	},
-	short(id, size) {
+	long(id, size, setid, name) {
+		return render_emote.none(id, size, setid,
+			FIGCAPTION({class: "size" + size}, name || emote_names[id]),
+		);
+	},
+	short(id, size, setid) {
 		let name = emote_names[id];
 		if (name.startsWith(emote_prefix)) name = name.slice(emote_prefix.length);
-		return render_emote.long(id, size, name);
+		return render_emote.long(id, size, setid, name);
 	},
 }
 
@@ -41,7 +56,7 @@ function update_preview() {
 	document.querySelectorAll("#sections input:checked").forEach(el => {
 		const setid = el.name;
 		if (include_headings) sections.push(H3(emoteset_labels[setid]));
-		sections.push(emotes_by_set[setid].map(id => make_emote(id, size)));
+		sections.push(emotes_by_set[setid].map(id => make_emote(id, size, setid)));
 	});
 	DOM("#captureme").classList.remove("no_ellipsis");
 	const bg = DOM("#background").value;
@@ -104,4 +119,50 @@ on("click", "#capture", e => {
 	canvas.toBlob(blob => {
 		choc.A({href: URL.createObjectURL(blob), download: "emotes.png"}).click();
 	});
+});
+
+//All pointer events will get targeted here. Using pointer capture with Choc on() doesn't work properly,
+//as the event is attached to document; maybe it would work to capture pointer to document, but then we
+//still need to do all the real work ourselves.
+const dragtop = DOM("#captureme");
+dragtop.addEventListener("pointerdown", e => {
+	if (e.button) return; //Only left clicks
+	dragging = e.target.closest_data("id");
+	dragset = e.target.closest_data("set");
+	if (!emotes_by_set[dragset]) {dragging = null; return;}
+	dragorigin = emotes_by_set[dragset].indexOf(dragging);
+	dragtop.setPointerCapture(e.pointerId);
+	moved = false;
+	//Note that we don't update_preview here; there's no visual change until the first movement.
+	e.preventDefault();
+});
+dragtop.addEventListener("pointermove", e => {
+	if (!dragging) return;
+	let curpos = emotes_by_set[dragset].indexOf(dragging);
+	const target = document.elementFromPoint(e.clientX, e.clientY);
+	const dropdest = target.closest_data("id"), dropset = target.closest_data("set");
+	if (!dropset) return; //Probably dropping onto the background somewhere; leave the emote where it is for now.
+	let destidx = 0;
+	if (dropset !== dragset) {
+		//If you drag something past its own set, it will "lock" at the extreme of the set
+		//TODO: If you dragged forwards, lock at emotes_by_set[dragset].length
+	} else {
+		//Within the set, dropping "on" an item means either dropping to its left or its right.
+		destidx = emotes_by_set[dragset].indexOf(dropdest);
+		const bounds = target.getBoundingClientRect();
+		if (e.clientX > (bounds.left + bounds.right) / 2) {
+			//If we're on the right hand half of the target, drop to the right of this one.
+			++destidx;
+		}
+	}
+	//Remove the previous slot that this held, and put it instead at the new index.
+	const set = emotes_by_set[dragset].map(el => el === dragging ? null : el); //Suppress the previous one (without altering indices)
+	set.splice(destidx, 0, dragging); //Insert at the new position
+	emotes_by_set[dragset] = set.filter(el => el); //And remove the null from the first step.
+	if (!moved || destidx != curpos) {moved = true; update_preview();}
+});
+dragtop.addEventListener("pointerup", e => {
+	dragging = null;
+	dragtop.releasePointerCapture(e.pointerId);
+	update_preview();
 });

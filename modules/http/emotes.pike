@@ -126,6 +126,10 @@ figcaption.size1 {max-width: 28px;}
 figcaption.size2 {max-width: 56px;}
 figcaption.size3 {max-width: 112px;}
 #captureme.no_ellipsis figcaption {max-width: unset;}
+.dropmarker {background: #080; margin: 0 4px;}
+.dropmarker.size1 {width: 3px; height: 28px;}
+.dropmarker.size2 {width: 5px; height: 56px;}
+.dropmarker.size3 {width: 8px; height: 112px;}
 </style>
 ";
 
