@@ -127,7 +127,8 @@ dragtop.addEventListener("pointerdown", e => {
 	if (e.button) return; //Only left clicks
 	dragging = e.target.closest_data("id");
 	dragset = e.target.closest_data("set");
-	if (!emotes_by_set[dragset]) {dragging = null; return;}
+	//Can only drag when there's at least two to reorder. Sorry affiliates and your tiered emotes.
+	if (!emotes_by_set[dragset] || emotes_by_set[dragset].length < 2) {dragging = null; return;}
 	dragorigin = emotes_by_set[dragset].indexOf(dragging);
 	dragtop.setPointerCapture(pointerid = e.pointerId);
 	moved = false;
