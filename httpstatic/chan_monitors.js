@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, B, BR, BUTTON, CODE, DIV, FIELDSET, FIGCAPTION, FIGURE, IFRAME, IMG, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
+const {A, B, BR, BUTTON, CAPTION, CODE, DIV, FIELDSET, FIGCAPTION, FIGURE, IFRAME, IMG, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
 import {update_display, formatters} from "$$static||monitor.js$$";
 import {simpleconfirm, TEXTFORMATTING, upload_to_library} from "$$static||utils.js$$";
 import {commands, register_command, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
@@ -405,6 +405,19 @@ set_content("#editpile form div", [
 				INPUT({name: "wallalpha", type: "number", min: 0, max: 100, value: 0}),
 				"% (0 for invisible)",
 			]),
+			TABLE([
+				CAPTION("Wall sizes:"),
+				TR([
+					TD(LABEL(["Left ", INPUT({type: "number", name: "wall_left"})])),
+					TD(),
+					TD(LABEL(["Right ", INPUT({type: "number", name: "wall_right"})])),
+				]),
+				TR([
+					TD(),
+					TD(LABEL(["Floor ", INPUT({type: "number", name: "wall_floor"})])),
+					TD(),
+				]),
+			]),
 		])]),
 		TR([TH("Claw"), TD([
 			LABEL(["Size: ", INPUT({name: "clawsize", type: "number"}), " (0 to disable)"]), " ",
@@ -417,12 +430,6 @@ set_content("#editpile form div", [
 			]),
 		])]),
 	]),
-	DIV({style: "margin: 12px 0"}, TABLE({border: "1"}, [
-		TR([TH("Wall"), TH("Size (%)")]),
-		TR([TD(LABEL({for: "wall_left"}, "Left")), TD(INPUT({type: "number", id: "wall_left", name: "wall_left"}))]),
-		TR([TD(LABEL({for: "wall_right"}, "Right")), TD(INPUT({type: "number", id: "wall_right", name: "wall_right"}))]),
-		TR([TD(LABEL({for: "wall_floor"}, "Floor")), TD(INPUT({type: "number", id: "wall_floor", name: "wall_floor"}))]),
-	])),
 	"Thing categories:",
 	DIV({id: "pilethings"}), //Will contain a tile for every category of thing that can be dropped onto the pile
 ]);
