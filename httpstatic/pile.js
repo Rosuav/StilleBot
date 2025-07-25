@@ -243,13 +243,23 @@ export function render(data) {
 					//So. To merge two objects, we add all the mass and momentum from bodyB onto bodyA,
 					//then delete bodyB. If this results in bodyA becoming larger than the default size
 					//for another body type, we should switch its type.
-					const scale = ((pair.bodyA.mass + pair.bodyB.mass) / pair.bodyA.mass) ** 0.5;
-					const ang_vel = pair.bodyA.angularVelocity + pair.bodyB.angularVelocity;
-					const vel = {
-						x: pair.bodyA.velocity.x + pair.bodyB.velocity.x,
-						y: pair.bodyA.velocity.y + pair.bodyB.velocity.y,
+					const massA = pair.bodyA.mass, massB = pair.bodyB.mass, massAB = massA + massB;
+					const scale = (massAB / massA) ** 0.5;
+					//True conservation of angular momentum is a pain. We cheat. Each body contributes
+					//an amount of pseudo-momentum equal to its velocity times its mass, which completely
+					//ignores the size. Realistically, two objects with identical velocity and mass, but
+					//different sizes, will have different angular momentum, but we assume uniform density
+					//anyway, so this is massively fudged.
+					const ang_vel = (pair.bodyA.angularVelocity * massA + pair.bodyB.angularVelocity * massB) / massAB;
+					//Linear momentum is simpler. Velocity (in each basis direction) times mass.
+					const lin_vel = {
+						x: (pair.bodyA.velocity.x * massA + pair.bodyB.velocity.x * massB) / massAB,
+						y: (pair.bodyA.velocity.y * massA + pair.bodyB.velocity.y * massB) / massAB,
 					};
 					Matter.Body.scale(pair.bodyA, scale, scale);
+					Matter.Body.setAngularVelocity(pair.bodyA, ang_vel);
+					Matter.Body.setVelocity(pair.bodyA, lin_vel);
+					//TODO: Reposition to the barycenter of the two objects?
 					pair.bodyA.render.sprite.xScale *= scale;
 					pair.bodyA.render.sprite.yScale *= scale;
 					const things = thingcategories[catB];

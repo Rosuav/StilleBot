@@ -277,21 +277,7 @@
       for the demo? Or only if there's no non-preview active (which will always be
       true on the demo)?
 * Pile of Pics hype mode
-  - Probably not actually a mode; it can be individual pieces
-  - 100% walls on all four sides, yes including the top
-  - Coefficient of Restitution increased
   - When two things collide, they merge.
-    - Conserve mass and momentum
-    - Since we primarily use "size" and assume that mass is the square of that,
-      this means we end up with a size of sqrt(X²+Y²). This may produce odd results
-      if the two things have differently-shaped hulls but it's probably close enough.
-    - Final velocity is (M1*V1 + M2*V2)/(M1+M2).
-    - Or would it be better to conserve kinetic energy instead? See what looks more
-      natural. 2D physics doesn't necessarily "look right" compared to the real world
-      math involved.
-    - This will mean that object sizes are not always exactly equal to the specified
-      ones. Make sure we can arbitrarily size things without messing up the texture.
-      (Might require rescaling the texture every time we rescale the thing.)
     - If the new size exceeds the base size of a different thing type, switch to that
       type. Either way, report back to the server, so that refreshing the page will
       respawn the exact same set of items. This will be VERY messed-up if there are
