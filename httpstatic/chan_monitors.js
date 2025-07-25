@@ -438,7 +438,6 @@ set_content("#editpile form div", [
 			LABEL(["Size: ", INPUT({name: "clawsize", type: "number"}), " (0 to disable)"]), " ",
 			LABEL(["Thickness: ", INPUT({name: "clawthickness", type: "number", defaultvalue: 1, min: 1, max: 10})]), BR(),
 			LABEL(["Color: ", INPUT({name: "clawcolor", type: "color", defaultvalue: "#71797E"})]), BR(),
-			"NOTE: The claw is not active on this edit page; open", BR(), "the direct link to test it.", BR(),
 			"NOTE: Having a top wall will likely prevent", BR(), "successful clawing!",
 			FIELDSET([
 				LEGEND("Activations:"),

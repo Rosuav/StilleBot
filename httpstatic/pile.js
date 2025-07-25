@@ -80,7 +80,6 @@ const shoulderangle = 0.3; //Fairly flat angle for the fixed part of the arm
 const armangle = 0.08; //Initial angles. They will change once we touch something.
 const shoulderangle_closed = 0.54, armangle_closed = 0.57; //Angles once the claw has fully closed (should still leave a small gap between the talons)
 function create_claw(cfg) {
-	if (window.frameElement) return; //Don't enable the claw in preview mode
 	//NOTE: At the moment, if you recreate the claw while it is ascending, the new claw will
 	//be constructed in the jaws-open position, likely dropping any cargo it had been holding.
 	let claw_pos = {x: 0, y: -5000}; //Hide it way above the screen
@@ -204,7 +203,7 @@ function create_claw_events() {
 					Matter.Composite.remove(engine.world, prize[0]);
 				}
 				const clawid = clawqueue.shift(); //TODO: Have an autoretry option, which will skip shifting the queue if there was no prize.
-				if (clawid) ws_sync.send({cmd: "clawdone", prizetype, label, clawid});
+				if (clawid && !window.frameElement) ws_sync.send({cmd: "clawdone", prizetype, label, clawid});
 				reset_claw();
 				if (clawqueue.length) setTimeout(clawdrop, 2000);
 			}
@@ -264,8 +263,9 @@ export function render(data) {
 					pair.bodyA.render.sprite.yScale *= scale;
 					const things = thingcategories[catB];
 					id_to_category[pair.bodyB.id] = null;
-					things.splice(things.findIndex(t => t.id === pair.bodyB.id), 1);
-					ws_sync.send({cmd: "removed", thingtype: catB, label: pair.bodyB.label});
+					const idx = things.findIndex(t => t.id === pair.bodyB.id);
+					if (idx >= 0) things.splice(idx, 1);
+					if (!window.frameElement) ws_sync.send({cmd: "removed", thingtype: catB, label: pair.bodyB.label});
 					Matter.Composite.remove(engine.world, pair.bodyB);
 				}));
 			}
@@ -374,7 +374,7 @@ export function render(data) {
 		for (let i = 0; i < things.length; ++i) {
 			const thing = things[i];
 			if (thing.label !== "label-" + data.label) continue;
-			ws_sync.send({cmd: "removed", thingtype: data.remove, label: thing.label});
+			if (!window.frameElement) ws_sync.send({cmd: "removed", thingtype: data.remove, label: thing.label});
 			Matter.Composite.remove(engine.world, thing);
 			things.splice(i, 1);
 			return;
