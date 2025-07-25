@@ -29,6 +29,7 @@ const behaviour_attrs = {
 	Floating: {restitution: 1, friction: 0, frictionAir: 0},
 };
 let behaviour = "Gravity", default_attrs = behaviour_attrs[behaviour];
+const id_to_category = { }; //Map a MatterJS body ID to the thing category, or undefined if it isn't a thing
 
 //Create a body from a set of vertices, where the body's origin is at (0,0) regardless of its centre of mass.
 //The object will be placed at the origin.
@@ -190,14 +191,10 @@ function create_claw_events() {
 				//but we'll only claim one prize (chosen randomly).
 				let prizes = [], prizetype = "", label = null;
 				engine.world.bodies.forEach(body => {if (body.position.y < 0) {
-					//Note: The top wall will have a y below zero, but it isn't in a thing category.
-					//Would it be better to use the labels to directly look up a thing category, or
-					//perhaps to maintain a direct mapping of IDs to categories and indices? Or at
-					//least to categories (which would be stable)?
-					for (let thingtype in thingcategories) {
-						const idx = thingcategories[thingtype].findIndex(thing => thing.id === body.id);
-						if (idx >= 0) {prizes.push([prize, thingtype, idx]); break;}
-					}
+					const thingtype = id_to_category[body.id];
+					if (!thingtype) return; //Notably, the top wall isn't in a thing category.
+					const idx = thingcategories[thingtype].findIndex(thing => thing.id === body.id);
+					if (idx >= 0) prizes.push([body, thingtype, idx]);
 				}});
 				if (prizes.length) {
 					const prize = prizes[Math.floor(Math.random() * prizes.length)];
@@ -323,6 +320,7 @@ export function render(data) {
 			if (behaviour === "Floating") Matter.Body.setVelocity(obj, {x: Math.random() * 40 - 20, y: Math.random() * 40 - 5});
 			Matter.Composite.add(engine.world, obj);
 			things.push(obj);
+			id_to_category[obj.id] = thingtype;
 			//A new thing has been added! Make the pile visible.
 			unfade();
 		}
