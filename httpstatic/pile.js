@@ -179,20 +179,27 @@ function create_claw_events() {
 			if (CLAW.head.position.y < -100) {
 				CLAW.mode = "";
 				//See what's above the screen. Note that there might be more than one thing,
-				//but we'll only claim one prize (chosen arbitrarily).
-				let prize = null, prizetype = "";
-				engine.world.bodies.forEach(body => body.position.y < 0 && (prize = body));
-				if (prize) {
+				//but we'll only claim one prize (chosen randomly).
+				let prizes = [], prizetype = "", label = null;
+				engine.world.bodies.forEach(body => {if (body.position.y < 0) {
+					//Note: The top wall will have a y below zero, but it isn't in a thing category.
+					//Would it be better to use the labels to directly look up a thing category, or
+					//perhaps to maintain a direct mapping of IDs to categories and indices? Or at
+					//least to categories (which would be stable)?
 					for (let thingtype in thingcategories) {
-						const things = thingcategories[thingtype];
-						things.forEach((thing, idx) => {
-							if (thing.id === prize.id) {things.splice(idx, 1); prizetype = thingtype;}
-						});
+						const idx = thingcategories[thingtype].findIndex(thing => thing.id === body.id);
+						if (idx >= 0) {prizes.push([prize, thingtype, idx]); break;}
 					}
-					Matter.Composite.remove(engine.world, prize);
+				}});
+				if (prizes.length) {
+					const prize = prizes[Math.floor(Math.random() * prizes.length)];
+					thingcategories[prize[1]].splice(prize[2], 1);
+					prizetype = prize[1];
+					label = prize[0].label;
+					Matter.Composite.remove(engine.world, prize[0]);
 				}
 				const clawid = clawqueue.shift(); //TODO: Have an autoretry option, which will skip shifting the queue if there was no prize.
-				if (clawid) ws_sync.send({cmd: "clawdone", prizetype, label: prize?.label, clawid});
+				if (clawid) ws_sync.send({cmd: "clawdone", prizetype, label, clawid});
 				reset_claw();
 				if (clawqueue.length) setTimeout(clawdrop, 2000);
 			}
@@ -217,7 +224,7 @@ export function render(data) {
 		const wallcolor = hexcolor(data.data.wallcolor, data.data.wallalpha);
 		const floor_changed = data.data.wall_floor !== wall_config.floor
 			|| wallcolor !== wall_config.color;
-		for (let side of ["floor", "left", "right"]) {
+		for (let side of ["floor", "left", "right", "top"]) {
 			if (data.data["wall_" + side] !== wall_config[side] || floor_changed) {
 				wall_config[side] = data.data["wall_" + side];
 				if (wall_objects[side]) {
@@ -230,10 +237,16 @@ export function render(data) {
 		//even at 10px there's occasional issues. However, thicker walls look weird if the floor isn't 100% size.
 		const wall_thickness = 95 < +wall_config.floor ? 60 : 10;
 		//The need fields are 0 if no recreation is needed, or a percentage eg 50% to create a half-size wall.
+		const need_top = !wall_objects.top && +wall_config.top;
 		const need_floor = !wall_objects.floor && +wall_config.floor;
 		const need_left = !wall_objects.left && +wall_config.left;
 		const need_right = !wall_objects.right && +wall_config.right;
 		const floor_size = width * +wall_config.floor / 200 + wall_thickness / 2 - 2;
+		if (need_top) Matter.Composite.add(engine.world,
+			//NOTE: The top is not placed above the left/right walls, but always at the very top. If
+			//the left/right are not full height, there will be a gap below the top wall.
+			wall_objects.top = Rectangle(width / 2, -28, width * need_top / 100 + 10, 60,
+				{isStatic: true, render: {fillStyle: wallcolor, lineWidth: 0}}));
 		if (need_floor) Matter.Composite.add(engine.world,
 			wall_objects.floor = Rectangle(width / 2, height + 28, width * need_floor / 100 + 10, 60,
 				{isStatic: true, render: {fillStyle: wallcolor, lineWidth: 0}}));

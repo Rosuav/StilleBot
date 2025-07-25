@@ -91,7 +91,7 @@ constant saveable_attributes = "previewbg barcolor fillcolor altcolor needlesize
 	"infinitier lvlupcmd format format_style width height "
 	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip follow kofi_dono kofi_member kofi_renew kofi_shop kofi_commission "
 	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive startonscene startonscene_time record_leaderboard "
-	"twitchsched twitchsched_offset fadeouttime wall_left wall_right wall_floor autoreset clawsize "
+	"twitchsched twitchsched_offset fadeouttime wall_top wall_left wall_right wall_floor autoreset clawsize "
 	"wallcolor wallalpha clawcolor clawthickness" / " " + TEXTFORMATTING_ATTRS;
 constant retained_attributes = (<"boss_selfheal", "boss_giftrecipient">); //Attributes set externally, not editable with wscmd_updatemonitor.
 constant valid_types = (<"text", "goalbar", "countdown", "pile">);
@@ -393,7 +393,7 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 		"active": 1,
 	]);
 	if (msg->type == "pile") monitors[nonce] |= ([
-		"wall_left": 100, "wall_right": 100, "wall_floor": 100,
+		"wall_top": 0, "wall_left": 100, "wall_right": 100, "wall_floor": 100,
 		"things": ({default_thing_type | ([])}),
 	]);
 	mapping info = monitors[nonce];

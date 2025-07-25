@@ -405,8 +405,13 @@ set_content("#editpile form div", [
 				INPUT({name: "wallalpha", type: "number", min: 0, max: 100, value: 0}),
 				"% (0 for invisible)",
 			]),
-			TABLE([
+			TABLE({style: "margin: 6px 0"},[
 				CAPTION("Wall sizes:"),
+				TR([
+					TD(),
+					TD({style: "text-align: right"}, LABEL(["Top ", INPUT({type: "number", name: "wall_top"})])),
+					TD(),
+				]),
 				TR([
 					TD(LABEL(["Left ", INPUT({type: "number", name: "wall_left"})])),
 					TD(),
@@ -414,7 +419,7 @@ set_content("#editpile form div", [
 				]),
 				TR([
 					TD(),
-					TD(LABEL(["Floor ", INPUT({type: "number", name: "wall_floor"})])),
+					TD({style: "text-align: right"}, LABEL(["Floor ", INPUT({type: "number", name: "wall_floor"})])),
 					TD(),
 				]),
 			]),
@@ -423,7 +428,8 @@ set_content("#editpile form div", [
 			LABEL(["Size: ", INPUT({name: "clawsize", type: "number"}), " (0 to disable)"]), " ",
 			LABEL(["Thickness: ", INPUT({name: "clawthickness", type: "number", defaultvalue: 1, min: 1, max: 10})]), BR(),
 			LABEL(["Color: ", INPUT({name: "clawcolor", type: "color", defaultvalue: "#71797E"})]), BR(),
-			"NOTE: The claw is not active on this edit page; open the", BR(), "direct link to test it.", BR(),
+			"NOTE: The claw is not active on this edit page; open", BR(), "the direct link to test it.", BR(),
+			"NOTE: Having a top wall will likely prevent", BR(), "successful clawing!",
 			FIELDSET([
 				LEGEND("Activations:"),
 				ACTIVATIONS("claw"),
