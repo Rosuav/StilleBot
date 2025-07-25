@@ -18,7 +18,7 @@ window.renderer = renderer; //For debugging, eg toggle wireframes mode
 const thingcategories = { };
 //Map category ID to the server-provided information about it
 let thingtypes = { };
-let fadeouttime = 0, fader = 0;
+let fadeouttime = 0, fader = 0, bouncemode = "Bounce";
 let wall_config = { }, wall_objects = { };
 const clawqueue = []; //If empty, the claw isn't active. If >1 entries, after the current one, the next will autostart.
 //NOTE: These attributes will be applied any time the behaviour is reselected, so ensure that they don't need
@@ -219,6 +219,7 @@ function hexcolor(color, alpha) {
 	return (color || "#000000") + ("0" + Math.floor((alpha || 0) * 2.55 + 0.5).toString(16)).slice(-2);
 }
 
+let _bounce_events_created = false;
 export function render(data) {
 	if (data.data) { //Odd name but this is the primary reconfiguration
 		if (data.data.fadeouttime) fadeouttime = +data.data.fadeouttime;
@@ -231,6 +232,33 @@ export function render(data) {
 			Matter.Composite.allBodies(engine.world).forEach(body => {
 				for (let attr in default_attrs) body[attr] = default_attrs[attr];
 			});
+		}
+		if (data.data.bouncemode) {
+			bouncemode = data.data.bouncemode;
+			if (!_bounce_events_created && bouncemode === "Merge") {
+				_bounce_events_created = true;
+				Matter.Events.on(engine, "collisionStart", e => bouncemode === "Merge" && e.pairs.forEach(pair => {
+					const catA = id_to_category[pair.bodyA.id], catB = id_to_category[pair.bodyB.id];
+					if (!catA || !catB) return;
+					//So. To merge two objects, we add all the mass and momentum from bodyB onto bodyA,
+					//then delete bodyB. If this results in bodyA becoming larger than the default size
+					//for another body type, we should switch its type.
+					const scale = ((pair.bodyA.mass + pair.bodyB.mass) / pair.bodyA.mass) ** 0.5;
+					const ang_vel = pair.bodyA.angularVelocity + pair.bodyB.angularVelocity;
+					const vel = {
+						x: pair.bodyA.velocity.x + pair.bodyB.velocity.x,
+						y: pair.bodyA.velocity.y + pair.bodyB.velocity.y,
+					};
+					Matter.Body.scale(pair.bodyA, scale, scale);
+					pair.bodyA.render.sprite.xScale *= scale;
+					pair.bodyA.render.sprite.yScale *= scale;
+					const things = thingcategories[catB];
+					id_to_category[pair.bodyB.id] = null;
+					things.splice(things.findIndex(t => t.id === pair.bodyB.id), 1);
+					ws_sync.send({cmd: "removed", thingtype: catB, label: pair.bodyB.label});
+					Matter.Composite.remove(engine.world, pair.bodyB);
+				}));
+			}
 		}
 		if (data.data.things) thingtypes = Object.fromEntries(data.data.things.map(t => [t.id, t]));
 		renderer.options.background = hexcolor(data.data.bgcolor, data.data.bgalpha);

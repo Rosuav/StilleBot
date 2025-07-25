@@ -390,10 +390,16 @@ set_content("#editpile form div", [
 		TR([TH("Variable group"), TD(CODE({"data-content": "varname"}))]),
 		TR([TH(LABEL({for: "editpile_autoreset"}, "Auto-reset")), TD(AUTO_RESET({id: "editpile_autoreset"}))]),
 		TR([TH("Fade after"), TD([INPUT({name: "fadeouttime", type: "number"}), " minutes (0 to disable)"])]),
-		TR([TH("Behaviour"), TD(SELECT({name: "behaviour"}, [
-			OPTION("Gravity"),
-			OPTION("Floating"),
-		]))]),
+		TR([TH("Behaviour"), TD([
+			SELECT({name: "behaviour"}, [
+				OPTION("Gravity"),
+				OPTION("Floating"),
+			]),
+			SELECT({name: "bouncemode"}, [
+				OPTION("Bounce"),
+				OPTION("Merge"),
+			]),
+		])]),
 		TR([TH("Background"), TD([
 			LABEL(["Color: ", INPUT({name: "bgcolor", type: "color"})]),
 			LABEL([
