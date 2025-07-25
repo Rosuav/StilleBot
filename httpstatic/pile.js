@@ -355,7 +355,7 @@ export function render(data) {
 			//taken into account). Provide each newly-added element with a bit of rotation, either direction.
 			Matter.Body.setAngularVelocity(obj, Math.random() * .2 - .1);
 			//And if we're in zero-grav mode, also move them around a bit. More down than up.
-			if (behaviour === "Floating") Matter.Body.setVelocity(obj, {x: Math.random() * 40 - 20, y: Math.random() * 40 - 5});
+			if (behaviour === "Floating") Matter.Body.setVelocity(obj, {x: Math.random() * width / 50 - width / 100, y: Math.random() * height / 50 - height / 200});
 			Matter.Composite.add(engine.world, obj);
 			things.push(obj);
 			id_to_category[obj.id] = thingtype;
