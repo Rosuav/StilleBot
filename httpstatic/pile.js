@@ -21,6 +21,14 @@ let thingtypes = { };
 let fadeouttime = 0, fader = 0;
 let wall_config = { }, wall_objects = { };
 const clawqueue = []; //If empty, the claw isn't active. If >1 entries, after the current one, the next will autostart.
+//NOTE: These attributes will be applied any time the behaviour is reselected, so ensure that they don't need
+//to be set with dedicated methods. Also, ensure that every attribute is set on every behaviour, otherwise things
+//will get messy after multiple reselections.
+const behaviour_attrs = {
+	Gravity: {restitution: 0.25, friction: 0.1, frictionAir: 0.01},
+	Floating: {restitution: 1, friction: 0, frictionAir: 0},
+};
+let behaviour = "Gravity", default_attrs = behaviour_attrs[behaviour];
 
 //Create a body from a set of vertices, where the body's origin is at (0,0) regardless of its centre of mass.
 //The object will be placed at the origin.
@@ -217,6 +225,16 @@ function hexcolor(color, alpha) {
 export function render(data) {
 	if (data.data) { //Odd name but this is the primary reconfiguration
 		if (data.data.fadeouttime) fadeouttime = +data.data.fadeouttime;
+		if (data.data.behaviour && data.data.behaviour !== behaviour) {
+			behaviour = data.data.behaviour;
+			default_attrs = behaviour_attrs[behaviour] || behaviour_attrs.Gravity;
+			engine.gravity.scale = behaviour === "Floating" ? 0 : 0.001;
+			//TODO: What about the claw? Should its attributes be updated? They aren't currently being
+			//applied in the first place.
+			Matter.Composite.allBodies(engine.world).forEach(body => {
+				for (let attr in default_attrs) body[attr] = default_attrs[attr];
+			});
+		}
 		if (data.data.things) thingtypes = Object.fromEntries(data.data.things.map(t => [t.id, t]));
 		renderer.options.background = hexcolor(data.data.bgcolor, data.data.bgalpha);
 		//If the floor dimension changes, recreate the walls as well. Otherwise, only recreate what's changed.
@@ -246,16 +264,16 @@ export function render(data) {
 			//NOTE: The top is not placed above the left/right walls, but always at the very top. If
 			//the left/right are not full height, there will be a gap below the top wall.
 			wall_objects.top = Rectangle(width / 2, -28, width * need_top / 100 + 10, 60,
-				{isStatic: true, render: {fillStyle: wallcolor, lineWidth: 0}}));
+				{isStatic: true, render: {fillStyle: wallcolor, lineWidth: 0}, ...default_attrs}));
 		if (need_floor) Matter.Composite.add(engine.world,
 			wall_objects.floor = Rectangle(width / 2, height + 28, width * need_floor / 100 + 10, 60,
-				{isStatic: true, render: {fillStyle: wallcolor, lineWidth: 0}}));
+				{isStatic: true, render: {fillStyle: wallcolor, lineWidth: 0}, ...default_attrs}));
 		if (need_left) Matter.Composite.add(engine.world,
 			wall_objects.left = Rectangle(width / 2 - floor_size, height - height * need_left / 200, wall_thickness, height * need_left / 100 + 10,
-				{isStatic: true, render: {fillStyle: wallcolor, lineWidth: 0}}));
+				{isStatic: true, render: {fillStyle: wallcolor, lineWidth: 0}, ...default_attrs}));
 		if (need_right) Matter.Composite.add(engine.world,
 			wall_objects.right = Rectangle(width / 2 + floor_size, height - height * need_right / 200, wall_thickness, height * need_right / 100 + 10,
-				{isStatic: true, render: {fillStyle: wallcolor, lineWidth: 0}}));
+				{isStatic: true, render: {fillStyle: wallcolor, lineWidth: 0}, ...default_attrs}));
 		if (+data.data.clawsize) create_claw(data.data);
 	}
 	if (data.addxtra) addxtra[data.addxtra] = data.xtra;
@@ -275,7 +293,7 @@ export function render(data) {
 					xOffset: img.xoffset || 0, yOffset: img.yoffset || 0,
 					xScale: scale, yScale: scale, 
 				}},
-				restitution: 0.25, //Make 'em a little bit bouncier
+				...default_attrs,
 			};
 			if (xtra.label) attrs.label = "label-" + xtra.label; //Force a prefix so we can do hit-detection based on label category
 			let obj;
@@ -301,6 +319,8 @@ export function render(data) {
 			//60Hz physics rate, meaning that 0.01 will rotate you by 0.60 rad/sec (before friction is
 			//taken into account). Provide each newly-added element with a bit of rotation, either direction.
 			Matter.Body.setAngularVelocity(obj, Math.random() * .2 - .1);
+			//And if we're in zero-grav mode, also move them around a bit. More down than up.
+			if (behaviour === "Floating") Matter.Body.setVelocity(obj, {x: Math.random() * 40 - 20, y: Math.random() * 40 - 5});
 			Matter.Composite.add(engine.world, obj);
 			things.push(obj);
 			//A new thing has been added! Make the pile visible.
