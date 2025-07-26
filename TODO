@@ -286,7 +286,6 @@
     This might be the excuse needed to change that, and thus allow refreshing when a
     person's avatar is texturing a thing. In effect, we'd need to record not just the
     quantity, but an array of vital statistics: size, texture, label
-* Emote showcase - center them, and in large mode, increase gap
 * On command editor, have a button to immediately execute as self.
   - This will be most useful when testing out a command (it'll be same as running it
     with a blank parameter), esp when the command is associated with something else,

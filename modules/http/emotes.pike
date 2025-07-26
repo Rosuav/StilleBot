@@ -115,7 +115,17 @@ constant capturedlg = #"
 
 <style>
 #sections label {display: block;}
-#captureme {width: 320px;}
+#captureme {
+	width: 320px;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-around;
+}
+#captureme h2, #captureme h3 {
+	max-width: 100%;
+	width: 100%;
+	text-align: center;
+}
 #captureme h2 {margin-bottom: 0; margin-top: 0}
 #captureme h3 {margin-bottom: 0;}
 /* A 1px gap between images still fits 11 to a row at the smallest size, and doesn't waste
