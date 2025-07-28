@@ -278,7 +278,7 @@ void wscmd_execute(object channel, mapping(string:mixed) conn, mapping(string:mi
 		//If you explicitly say "run this", you likely want it to happen regardless of the condition, so
 		//dig into the message and grab the actual command.
 		if (mapping msg = valid[1] == "!trigger" && mappingp(runme) && runme->message) runme = msg;
-		//TODO: Provide suitable information for each anchor type
+		//TODO: If G->G->special_commands[valid[1]], call its placeholder generator to make the params
 		mapping params = ([
 			"{param}": "", //Should there be a prompt for params? Probably not.
 		]);

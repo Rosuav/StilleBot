@@ -118,6 +118,12 @@ class builtin_command {
 
 //Note that this is not an inheritable. Usage:
 //constant new_follower = special_trigger("!follower", "Someone follows the channel", "The new follower", "", "Stream support");
+/* Additional features to be added:
+- Params as a mapping, replacing cmdmgr->SPECIAL_PARAMS and removing the flat namespace of all special params
+- Function to generate placeholder data - can then be used in chan_commands::wscmd_execute
+- Required OAuth scope to use this trigger (would replace functionality in eventhooks.pike)
+- Call this object to trigger the special
+*/
 @"G->G->special_triggers";
 class special_trigger(
 	string name, //eg "!sub" - should have exactly one leading bang
