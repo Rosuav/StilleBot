@@ -5,56 +5,45 @@ inherit annotated;
 inherit builtin_command;
 @retain: mapping autocommands = ([]);
 
-//Note: Each special with the same-named parameter is assumed to use it in the same way.
-//It's good to maintain this for the sake of humans anyway, but also the display makes
-//this assumption, and has only a single description for any given name.
-constant SPECIALS = ({
-	({"!sub", ({"Someone subscribes for the first time", "The subscriber", "tier, multimonth"}), "Stream support"}),
-	({"!resub", ({"Someone announces a resubscription", "The subscriber", "tier, months, streak, multimonth, msg"}), "Stream support"}),
-	({"!subgift", ({"Someone gives a sub", "The giver", "tier, months, streak, recipient, multimonth, from_subbomb"}), "Stream support"}),
-	({"!subbomb", ({"Someone gives random subgifts", "The giver", "tier, gifts"}), "Stream support"}),
-	({"!cheer", ({"Any bits are cheered", "The cheerer", "bits, msg, msgid"}), "Stream support"}),
-	({"!cheerbadge", ({"A viewer attains a new cheer badge", "The cheerer", "level"}), "Stream support"}),
-	({"!raided", ({"Another broadcaster raided you", "The raiding broadcaster", "viewers"}), "Stream support"}),
-	({"!charity", ({"Someone donates to the charity you're supporting", "The donor", "amount, msgid"}), "Stream support"}),
-	//Do these need to move somewhere else? Also - check their provides, it may be added to soon.
-	({"!hypetrain_begin", ({"A hype train just started!", "The broadcaster", "levelup"}), "Stream support"}),
-	({"!hypetrain_progress", ({"Progress was made on a hype train", "The broadcaster", "levelup"}), "Stream support"}),
-	({"!hypetrain_end", ({"A hype train just ended (successfully or unsuccessfully)", "The broadcaster", ""}), "Stream support"}),
-	//So many in this section.
-	({"!goalprogress", ({"A Twitch goal has advanced - bits, subs, etc", "The broadcaster", "goalid, title, current, target"}), "Stream support"}),
-	({"!watchstreak", ({"Someone achieved a new watch streak!", "The viewer", "months, reward"}), "Stream support"}),
+//TODO: Distribute these to more-appropriate modules
+constant sub = special_trigger("!sub", "Someone subscribes for the first time", "The subscriber", "tier, multimonth", "Stream support");
+constant resub = special_trigger("!resub", "Someone announces a resubscription", "The subscriber", "tier, months, streak, multimonth, msg", "Stream support");
+constant subgift = special_trigger("!subgift", "Someone gives a sub", "The giver", "tier, months, streak, recipient, multimonth, from_subbomb", "Stream support");
+constant subbomb = special_trigger("!subbomb", "Someone gives random subgifts", "The giver", "tier, gifts", "Stream support");
+constant cheer = special_trigger("!cheer", "Any bits are cheered", "The cheerer", "bits, msg, msgid", "Stream support");
+constant cheerbadge = special_trigger("!cheerbadge", "A viewer attains a new cheer badge", "The cheerer", "level", "Stream support");
+constant raided = special_trigger("!raided", "Another broadcaster raided you", "The raiding broadcaster", "viewers", "Stream support");
+constant charity = special_trigger("!charity", "Someone donates to the charity you're supporting", "The donor", "amount, msgid", "Stream support");
+constant hypetrain_begin = special_trigger("!hypetrain_begin", "A hype train just started!", "The broadcaster", "levelup", "Stream support");
+constant hypetrain_progress = special_trigger("!hypetrain_progress", "Progress was made on a hype train", "The broadcaster", "levelup", "Stream support");
+constant hypetrain_end = special_trigger("!hypetrain_end", "A hype train just ended (successfully or unsuccessfully)", "The broadcaster", "", "Stream support");
+constant goalprogress = special_trigger("!goalprogress", "A Twitch goal has advanced - bits, subs, etc", "The broadcaster", "goalid, title, current, target", "Stream support");
+constant watchstreak = special_trigger("!watchstreak", "Someone achieved a new watch streak!", "The viewer", "months, reward", "Stream support");
+constant channelonline = special_trigger("!channelonline", "The channel has recently gone online (started streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english", "Status");
+constant channelsetup = special_trigger("!channelsetup", "The channel has changed its category/title/CCLs", "The broadcaster", "category, title, tag_names, ccls", "Status");
+constant channeloffline = special_trigger("!channeloffline", "The channel has recently gone offline (stopped streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english", "Status");
+constant musictrack = special_trigger("!musictrack", "A track just started playing (see VLC integration)", "VLC", "desc, blockpath, block, track, playing", "Status");
+constant pollbegin = special_trigger("!pollbegin", "A channel poll just began", "The broadcaster", "title, choices, points_per_vote, choice_N_title", "Status");
+constant pollended = special_trigger("!pollended", "A channel poll just ended", "The broadcaster", "title, choices, points_per_vote, choice_N_title, choice_N_votes, choice_N_pointsvotes, winner_title", "Status");
+constant predictionlocked = special_trigger("!predictionlocked", "A channel prediction no longer accepts entries", "The broadcaster", "title, choices, choice_N_title, choice_N_users, choice_N_points, choice_N_top_M_user, choice_N_top_M_points_used", "Status");
+constant predictionended = special_trigger("!predictionended", "A channel prediction just ended", "The broadcaster", "title, choices, choice_N_title, choice_N_users, choice_N_points, choice_N_top_M_user, choice_N_top_M_points_used, choice_N_top_M_points_won, winner_*, loser_*", "Status");
+constant timeout = special_trigger("!timeout", "A user got timed out or banned", "The victim", "ban_duration", "Status");
+constant adbreak = special_trigger("!adbreak", "An ad just started on this channel", "The broadcaster", "length, is_automatic", "Status");
+constant giveaway_started = special_trigger("!giveaway_started", "A giveaway just opened, and people can buy tickets", "The broadcaster", "title, duration, duration_hms, duration_english", "Giveaways");
+constant giveaway_ticket = special_trigger("!giveaway_ticket", "Someone bought ticket(s) in the giveaway", "Ticket buyer", "title, tickets_bought, tickets_total, tickets_max", "Giveaways");
+constant giveaway_toomany = special_trigger("!giveaway_toomany", "Ticket purchase attempt failed", "Ticket buyer", "title, tickets_bought, tickets_total, tickets_max", "Giveaways");
+constant giveaway_closed = special_trigger("!giveaway_closed", "The giveaway just closed; people can no longer buy tickets", "The broadcaster", "title, tickets_total, entries_total", "Giveaways");
+constant giveaway_winner = special_trigger("!giveaway_winner", "A giveaway winner has been chosen!", "The broadcaster", "title, winner_name, winner_tickets, tickets_total, entries_total", "Giveaways");
+constant giveaway_ended = special_trigger("!giveaway_ended", "The giveaway is fully concluded and all ticket purchases are nonrefundable.", "The broadcaster", "title, tickets_total, entries_total, giveaway_cancelled", "Giveaways");
+constant kofi_dono = special_trigger("!kofi_dono", "Donation received on Ko-fi.", "The broadcaster", "amount, msg, from_name", "Ko-fi");
+constant kofi_member = special_trigger("!kofi_member", "New monthly membership on Ko-fi.", "The broadcaster", "amount, msg, from_name, tiername", "Ko-fi");
+constant kofi_shop = special_trigger("!kofi_shop", "Shop sale on Ko-fi.", "The broadcaster", "amount, msg, from_name, shop_item_ids", "Ko-fi");
+constant fw_dono = special_trigger("!fw_dono", "Donation received on Fourth Wall.", "The broadcaster", "amount, msg, from_name", "Fourth Wall");
+constant fw_member = special_trigger("!fw_member", "New monthly membership on Fourth Wall.", "The broadcaster", "amount, msg, from_name", "Fourth Wall");
+constant fw_shop = special_trigger("!fw_shop", "Shop sale on Fourth Wall.", "The broadcaster", "is_test, amount, msg, from_name, shop_item_ids", "Fourth Wall");
+constant fw_gift = special_trigger("!fw_gift", "Gift purchase on Fourth Wall.", "The broadcaster", "amount, msg, from_name, shop_item_ids", "Fourth Wall");
+constant fw_other = special_trigger("!fw_other", "Other notification from Fourth Wall - not usually useful.", "The broadcaster", "notif_type", "Fourth Wall");
 
-	({"!channelonline", ({"The channel has recently gone online (started streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"}), "Status"}),
-	({"!channelsetup", ({"The channel has changed its category/title/CCLs", "The broadcaster", "category, title, tag_names, ccls"}), "Status"}),
-	({"!channeloffline", ({"The channel has recently gone offline (stopped streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english"}), "Status"}),
-	({"!musictrack", ({"A track just started playing (see VLC integration)", "VLC", "desc, blockpath, block, track, playing"}), "Status"}),
-	({"!pollbegin", ({"A channel poll just began", "The broadcaster", "title, choices, points_per_vote, choice_N_title"}), "Status"}),
-	({"!pollended", ({"A channel poll just ended", "The broadcaster", "title, choices, points_per_vote, choice_N_title, choice_N_votes, choice_N_pointsvotes, winner_title"}), "Status"}),
-	({"!predictionlocked", ({"A channel prediction no longer accepts entries", "The broadcaster", "title, choices, choice_N_title, choice_N_users, choice_N_points, choice_N_top_M_user, choice_N_top_M_points_used"}), "Status"}),
-	({"!predictionended", ({"A channel prediction just ended", "The broadcaster", "title, choices, choice_N_title, choice_N_users, choice_N_points, choice_N_top_M_user, choice_N_top_M_points_used, choice_N_top_M_points_won, winner_*, loser_*"}), "Status"}),
-	//Should these go into some other category?
-	({"!timeout", ({"A user got timed out or banned", "The victim", "ban_duration"}), "Status"}),
-	({"!adbreak", ({"An ad just started on this channel", "The broadcaster", "length, is_automatic"}), "Status"}),
-
-	({"!giveaway_started", ({"A giveaway just opened, and people can buy tickets", "The broadcaster", "title, duration, duration_hms, duration_english"}), "Giveaways"}),
-	({"!giveaway_ticket", ({"Someone bought ticket(s) in the giveaway", "Ticket buyer", "title, tickets_bought, tickets_total, tickets_max"}), "Giveaways"}),
-	({"!giveaway_toomany", ({"Ticket purchase attempt failed", "Ticket buyer", "title, tickets_bought, tickets_total, tickets_max"}), "Giveaways"}),
-	({"!giveaway_closed", ({"The giveaway just closed; people can no longer buy tickets", "The broadcaster", "title, tickets_total, entries_total"}), "Giveaways"}),
-	({"!giveaway_winner", ({"A giveaway winner has been chosen!", "The broadcaster", "title, winner_name, winner_tickets, tickets_total, entries_total"}), "Giveaways"}),
-	({"!giveaway_ended", ({"The giveaway is fully concluded and all ticket purchases are nonrefundable.", "The broadcaster", "title, tickets_total, entries_total, giveaway_cancelled"}), "Giveaways"}),
-
-	({"!kofi_dono", ({"Donation received on Ko-fi.", "The broadcaster", "amount, msg, from_name"}), "Ko-fi"}),
-	({"!kofi_member", ({"New monthly membership on Ko-fi.", "The broadcaster", "amount, msg, from_name, tiername"}), "Ko-fi"}),
-	({"!kofi_shop", ({"Shop sale on Ko-fi.", "The broadcaster", "amount, msg, from_name, shop_item_ids"}), "Ko-fi"}),
-
-	({"!fw_dono", ({"Donation received on Fourth Wall.", "The broadcaster", "amount, msg, from_name"}), "Fourth Wall"}),
-	({"!fw_member", ({"New monthly membership on Fourth Wall.", "The broadcaster", "amount, msg, from_name"}), "Fourth Wall"}),
-	({"!fw_shop", ({"Shop sale on Fourth Wall.", "The broadcaster", "is_test, amount, msg, from_name, shop_item_ids"}), "Fourth Wall"}),
-	({"!fw_gift", ({"Gift purchase on Fourth Wall.", "The broadcaster", "amount, msg, from_name, shop_item_ids"}), "Fourth Wall"}),
-	({"!fw_other", ({"Other notification from Fourth Wall - not usually useful.", "The broadcaster", "notif_type"}), "Fourth Wall"}),
-});
-constant SPECIAL_NAMES = (multiset)SPECIALS[*][0];
 constant SPECIAL_PARAMS = ({
 	({"tier", "Subscription tier - 1, 2, or 3 (Prime subs show as tier 1)"}),
 	({"months", "Cumulative months of subscription/viewership"}), //TODO: Check interaction with multimonth
@@ -467,7 +456,7 @@ array validate_command(object channel, string|zero mode, string cmdname, echoabl
 			command = String.trim(lower_case(command));
 			if (command == "") return 0;
 			state->cmd = command = pfx + command;
-			if (pfx == "!" && !SPECIAL_NAMES[command] && !G->G->special_triggers[command]) command = 0; //Only specific specials are valid
+			if (pfx == "!" && !G->G->special_triggers[command]) command = 0; //Only specific specials are valid
 			if (pfx == "") {
 				//See if an original name was provided
 				string orig = "";
@@ -728,7 +717,7 @@ mapping message_params(object channel, mapping person, array param) {
 		case "Create": {
 			if (sizeof(param) < 3) error("Not enough args\n");
 			string cmd = command_casefold(param[1]);
-			if (has_value(cmd, '!') && !SPECIAL_NAMES[cmd] && !G->G->special_triggers[cmd]) error("Command names cannot include exclamation marks\n");
+			if (has_value(cmd, '!') && !G->G->special_triggers[cmd]) error("Command names cannot include exclamation marks\n");
 			string newornot = channel->commands[cmd] ? "Updated" : "Created new";
 			_save_command(channel, cmd, param[2..] * " ");
 			return (["{result}": sprintf("%s command !%s", newornot, cmd)]);

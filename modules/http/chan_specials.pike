@@ -8,44 +8,22 @@ inherit enableable_module;
 //maintained, so that the displayed order will always be consistent.
 constant SPECIAL_ORDER = ({
 	"!follower",
-	"!sub",
-	"!resub",
-	"!subgift",
-	"!subbomb",
-	"!cheer",
-	"!cheerbadge",
+	"!sub", "!resub", "!subgift", "!subbomb",
+	"!cheer", "!cheerbadge",
 	"!raided",
 	"!charity",
-	"!hypetrain_begin",
-	"!hypetrain_progress",
-	"!hypetrain_end",
+	"!hypetrain_begin", "!hypetrain_progress", "!hypetrain_end",
 	"!goalprogress",
 	"!watchstreak",
-	"!channelonline",
-	"!channelsetup",
-	"!channeloffline",
+	"!channelonline", "!channelsetup", "!channeloffline",
 	"!musictrack",
-	"!pollbegin",
-	"!pollended",
-	"!predictionlocked",
-	"!predictionended",
+	"!pollbegin", "!pollended",
+	"!predictionlocked", "!predictionended",
 	"!timeout",
-	"!adbreak",
-	"!adsoon",
-	"!giveaway_started",
-	"!giveaway_ticket",
-	"!giveaway_toomany",
-	"!giveaway_closed",
-	"!giveaway_winner",
-	"!giveaway_ended",
-	"!kofi_dono",
-	"!kofi_member",
-	"!kofi_shop",
-	"!fw_dono",
-	"!fw_member",
-	"!fw_shop",
-	"!fw_gift",
-	"!fw_other",
+	"!adbreak", "!adsoon",
+	"!giveaway_started", "!giveaway_ticket", "!giveaway_toomany", "!giveaway_closed", "!giveaway_winner", "!giveaway_ended",
+	"!kofi_dono", "!kofi_member", "!kofi_shop",
+	"!fw_dono", "!fw_member", "!fw_shop", "!fw_gift", "!fw_other",
 });
 constant SPECIAL_PRECEDENCE = mkmapping(SPECIAL_ORDER, enumerate(sizeof(SPECIAL_ORDER), 1, 1));
 
@@ -128,24 +106,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	multiset scopes = (multiset)(token_for_user_login(req->misc->channel->name[1..])[1] / " ");
 	int is_bcaster = req->misc->channel->userid == (int)req->misc->session->user->id;
 	array commands = ({ }), order = ({ });
-	foreach (G->G->cmdmgr->SPECIALS, [string spec, [string desc, string originator, string params], string tab]) { //Legacy
-		array scopesets = G->G->SPECIALS_SCOPES[spec - "!"];
-		string|zero scopes_required = 0;
-		if (scopesets) {
-			scopes_required = is_bcaster ? scopesets[0] * " " : "bcaster";
-			foreach (scopesets, array scopeset)
-				if (!has_value(scopes[scopeset[*]], 0)) scopes_required = 0;
-		}
-		commands += ({([
-			"id": spec,
-			"desc": desc, "originator": originator,
-			"params": params, "tab": tab,
-			//Null if none needed or we already have them. "bcaster" if scopes needed and we're not the broadcaster.
-			//Otherwise, is the scopes required to activate this special.
-			"scopes_required": scopes_required,
-		])});
-		order += ({SPECIAL_PRECEDENCE[spec] || 9999}); //TODO: Grab the fallback precedence from the object
-	}
 	foreach (values(G->G->special_triggers), object spec) {
 		array scopesets = G->G->SPECIALS_SCOPES[spec->name - "!"];
 		string|zero scopes_required = 0;
