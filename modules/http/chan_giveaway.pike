@@ -98,6 +98,13 @@ constant access = "none";
 @retain: mapping giveaway_tickets = ([]);
 @retain: multiset giveaway_purchases = (<>);
 
+constant giveaway_started = special_trigger("!giveaway_started", "A giveaway just opened, and people can buy tickets", "The broadcaster", "title, duration, duration_hms, duration_english", "Giveaways");
+constant giveaway_ticket = special_trigger("!giveaway_ticket", "Someone bought ticket(s) in the giveaway", "Ticket buyer", "title, tickets_bought, tickets_total, tickets_max", "Giveaways");
+constant giveaway_toomany = special_trigger("!giveaway_toomany", "Ticket purchase attempt failed", "Ticket buyer", "title, tickets_bought, tickets_total, tickets_max", "Giveaways");
+constant giveaway_closed = special_trigger("!giveaway_closed", "The giveaway just closed; people can no longer buy tickets", "The broadcaster", "title, tickets_total, entries_total", "Giveaways");
+constant giveaway_winner = special_trigger("!giveaway_winner", "A giveaway winner has been chosen!", "The broadcaster", "title, winner_name, winner_tickets, tickets_total, entries_total", "Giveaways");
+constant giveaway_ended = special_trigger("!giveaway_ended", "The giveaway is fully concluded and all ticket purchases are nonrefundable.", "The broadcaster", "title, tickets_total, entries_total, giveaway_cancelled", "Giveaways");
+
 constant NOTIFICATION_SPECIALS = ([
 	"started": "A giveaway for {title} is now open - use your channel points to purchase tickets!",
 	"toomany": ([

@@ -17,6 +17,19 @@ inherit annotated;
 //The annotation has three parts, the scopes (pipe delimited - any is acceptable),
 //the subscription type, and the version.
 
+//TODO: Autogenerate these from the annotations
+constant triggers = ({
+	special_trigger("!hypetrain_begin", "A hype train just started!", "The broadcaster", "levelup", "Stream support"),
+	special_trigger("!hypetrain_progress", "Progress was made on a hype train", "The broadcaster", "levelup", "Stream support"),
+	special_trigger("!hypetrain_end", "A hype train just ended (successfully or unsuccessfully)", "The broadcaster", "", "Stream support"),
+	special_trigger("!goalprogress", "A Twitch goal has advanced - bits, subs, etc", "The broadcaster", "goalid, title, current, target", "Stream support"),
+	special_trigger("!pollbegin", "A channel poll just began", "The broadcaster", "title, choices, points_per_vote, choice_N_title", "Status"),
+	special_trigger("!pollended", "A channel poll just ended", "The broadcaster", "title, choices, points_per_vote, choice_N_title, choice_N_votes, choice_N_pointsvotes, winner_title", "Status"),
+	special_trigger("!predictionlocked", "A channel prediction no longer accepts entries", "The broadcaster", "title, choices, choice_N_title, choice_N_users, choice_N_points, choice_N_top_M_user, choice_N_top_M_points_used", "Status"),
+	special_trigger("!predictionended", "A channel prediction just ended", "The broadcaster", "title, choices, choice_N_title, choice_N_users, choice_N_points, choice_N_top_M_user, choice_N_top_M_points_used, choice_N_top_M_points_won, winner_*, loser_*", "Status"),
+	special_trigger("!adbreak", "An ad just started on this channel", "The broadcaster", "length, is_automatic", "Status"),
+});
+
 @({"channel:read:polls|channel:manage:polls", "channel.poll.begin", "1"}):
 mapping pollbegin(object channel, mapping info) {
 	mapping params = ([

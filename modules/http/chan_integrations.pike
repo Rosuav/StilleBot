@@ -65,6 +65,15 @@ vertical-align: middle;
 //level module, which would break encapsulation.
 @create_hook: constant kofi_support = ({"object channel", "string type", "mapping params", "mapping raw"});
 
+constant kofi_dono = special_trigger("!kofi_dono", "Donation received on Ko-fi.", "The broadcaster", "amount, msg, from_name", "Ko-fi");
+constant kofi_member = special_trigger("!kofi_member", "New monthly membership on Ko-fi.", "The broadcaster", "amount, msg, from_name, tiername", "Ko-fi");
+constant kofi_shop = special_trigger("!kofi_shop", "Shop sale on Ko-fi.", "The broadcaster", "amount, msg, from_name, shop_item_ids", "Ko-fi");
+constant fw_dono = special_trigger("!fw_dono", "Donation received on Fourth Wall.", "The broadcaster", "amount, msg, from_name", "Fourth Wall");
+constant fw_member = special_trigger("!fw_member", "New monthly membership on Fourth Wall.", "The broadcaster", "amount, msg, from_name", "Fourth Wall");
+constant fw_shop = special_trigger("!fw_shop", "Shop sale on Fourth Wall.", "The broadcaster", "is_test, amount, msg, from_name, shop_item_ids", "Fourth Wall");
+constant fw_gift = special_trigger("!fw_gift", "Gift purchase on Fourth Wall.", "The broadcaster", "amount, msg, from_name, shop_item_ids", "Fourth Wall");
+constant fw_other = special_trigger("!fw_other", "Other notification from Fourth Wall - not usually useful.", "The broadcaster", "notif_type", "Fourth Wall");
+
 __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req) {
 	if (string other = req->request_type == "POST" && !is_active_bot() && get_active_bot()) {
 		//POST requests are likely to be webhooks. Forward them to the active bot, including whichever

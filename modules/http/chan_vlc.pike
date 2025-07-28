@@ -124,6 +124,8 @@ this works. I don't understand, but I'll take it. */
 ";
 @retain: mapping vlc_status = ([]);
 
+constant musictrack = special_trigger("!musictrack", "A track just started playing (see VLC integration)", "VLC", "desc, blockpath, block, track, playing", "Status");
+
 //Create (if necessary) and return the VLC Auth Token
 string auth_token(object channel) {
 	if (string t = channel->config->vlcauthtoken) return t;

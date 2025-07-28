@@ -336,6 +336,10 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 	});
 }
 
+constant channelonline = special_trigger("!channelonline", "The channel has recently gone online (started streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english", "Status");
+constant channelsetup = special_trigger("!channelsetup", "The channel has changed its category/title/CCLs", "The broadcaster", "category, title, tag_names, ccls", "Status");
+constant channeloffline = special_trigger("!channeloffline", "The channel has recently gone offline (stopped streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english", "Status");
+
 void streaminfo(array data)
 {
 	//First, quickly remap the array into a lookup mapping
