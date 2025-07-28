@@ -129,7 +129,7 @@ class special_trigger(
 	string name, //eg "!sub" - should have exactly one leading bang
 	string desc, //Human-readable description for the UI
 	string originator, //Description of the person tagged as the originator (for {username} etc)
-	string params, //Comma-separated list of parameters. Deprecated.
+	string|mapping params, //Comma-separated list of parameter names, or mapping of param name to description
 	string tab, //Label for the tab that this goes into in chan_specials
 ) {
 	@constant;

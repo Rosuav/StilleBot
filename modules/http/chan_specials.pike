@@ -114,6 +114,9 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			foreach (scopesets, array scopeset)
 				if (!has_value(scopes[scopeset[*]], 0)) scopes_required = 0;
 		}
+		string params = "";
+		if (stringp(spec->params)) params = spec->params;
+		else if (mappingp(spec->params)) params = sort(indices(spec->params)) * ", ";
 		commands += ({([
 			"id": spec->name,
 			"desc": spec->desc, "originator": spec->originator,
