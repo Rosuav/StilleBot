@@ -48,6 +48,7 @@ document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 			LI(BUTTON({type: "button", id: "save_advanced"}, "Save")),
 			LI(BUTTON({type: "button", className: "dialog_close"}, "Cancel")),
 			LI(BUTTON({type: "button", id: "delete_advanced"}, "Delete?")),
+			LI(BUTTON({type: "button", id: "invoke_command"}, "Run now")),
 		]),
 	]),
 ])));
@@ -165,6 +166,11 @@ on("click", "#save_advanced", async e => {
 on("click", "#delete_advanced", simpleconfirm("Delete this command?", e => {
 	ws_sync.send({cmd: "delete", cmdname: cmd_id}, "cmdedit");
 	DOM("#advanced_view").close();
+}));
+
+//TODO: Have a preferences control to disable confirmation
+on("click", "#invoke_command", simpleconfirm("Run this command now?", e => {
+	ws_sync.send({cmd: "execute", response: get_message_details(), language: mode === "mustard" ? "mustard" : ""}, "cmdedit");
 }));
 
 on("click", ".raw_view", e => {

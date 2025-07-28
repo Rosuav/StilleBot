@@ -256,6 +256,32 @@ void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mix
 }
 void wscmd_delete(object c, mapping conn, mapping msg) {wscmd_update(c, conn, msg | (["response": ""]));}
 
+//This should probably go somewhere else, but really, we should just be as consistent as possible
+//with key names.
+mapping user_to_person(mapping user) {
+	return ([
+		"displayname": user->display_name || user->login,
+		"user": user->login,
+		"uid": user->uid,
+	]);
+}
+
+void wscmd_execute(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//FIXME: Check handling of specials, what's the group, what's the mode, etc.
+	//Ultimately every special will probably need to provide default (or placeholder) parameters.
+	string cmdname = "validateme"; //Will need to change for special triggers
+	echoable_message valid = G->G->cmdmgr->validate_command(channel, (conn->group / "#")[0], cmdname, msg->response, ([
+		"language": msg->language == "mustard" ? "mustard" : "",
+	]));
+	if (valid) {
+		//TODO: Provide suitable information for each anchor type
+		mapping params = ([
+			"{param}": "", //Should there be a prompt for params? Probably not.
+		]);
+		channel->send(user_to_person(conn->session->user), valid[2], params);
+	}
+}
+
 void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string mode] = split_channel(conn->group);
 	if (!channel) return 0; //Fake-mod mode is okay here (this handles tab switching inside the editor)
