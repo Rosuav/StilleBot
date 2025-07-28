@@ -170,7 +170,7 @@ on("click", "#delete_advanced", simpleconfirm("Delete this command?", e => {
 
 //TODO: Have a preferences control to disable confirmation
 on("click", "#invoke_command", simpleconfirm("Run this command now?", e => {
-	ws_sync.send({cmd: "execute", response: get_message_details(), language: mode === "mustard" ? "mustard" : ""}, "cmdedit");
+	ws_sync.send({cmd: "execute", cmdname: cmd_id, response: get_message_details(), language: mode === "mustard" ? "mustard" : ""}, "cmdedit");
 }));
 
 on("click", ".raw_view", e => {

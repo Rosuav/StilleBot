@@ -267,10 +267,9 @@ mapping user_to_person(mapping user) {
 }
 
 void wscmd_execute(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	//FIXME: Check handling of specials, what's the group, what's the mode, etc.
-	//Ultimately every special will probably need to provide default (or placeholder) parameters.
-	string cmdname = "validateme"; //Will need to change for special triggers
-	array valid = G->G->cmdmgr->validate_command(channel, (conn->group / "#")[0], cmdname, msg->response, ([
+	string cmdname = "validateme";
+	if (conn->subgroup == "!!" && stringp(msg->cmdname) && has_prefix(msg->cmdname, "!")) cmdname = msg->cmdname;
+	array valid = G->G->cmdmgr->validate_command(channel, conn->subgroup, cmdname, msg->response, ([
 		"language": msg->language == "mustard" ? "mustard" : "",
 	]));
 	if (valid) {
