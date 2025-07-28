@@ -9,7 +9,6 @@ inherit builtin_command;
 //It's good to maintain this for the sake of humans anyway, but also the display makes
 //this assumption, and has only a single description for any given name.
 constant SPECIALS = ({
-	({"!follower", ({"Someone follows the channel", "The new follower", ""}), "Stream support"}),
 	({"!sub", ({"Someone subscribes for the first time", "The subscriber", "tier, multimonth"}), "Stream support"}),
 	({"!resub", ({"Someone announces a resubscription", "The subscriber", "tier, months, streak, multimonth, msg"}), "Stream support"}),
 	({"!subgift", ({"Someone gives a sub", "The giver", "tier, months, streak, recipient, multimonth, from_subbomb"}), "Stream support"}),
@@ -37,7 +36,6 @@ constant SPECIALS = ({
 	//Should these go into some other category?
 	({"!timeout", ({"A user got timed out or banned", "The victim", "ban_duration"}), "Status"}),
 	({"!adbreak", ({"An ad just started on this channel", "The broadcaster", "length, is_automatic"}), "Status"}),
-	({"!adsoon", ({"An ad is scheduled to start soon (see Ads/Snoozes)", "The broadcaster", "advance_warning"}), "Status"}),
 
 	({"!giveaway_started", ({"A giveaway just opened, and people can buy tickets", "The broadcaster", "title, duration, duration_hms, duration_english"}), "Giveaways"}),
 	({"!giveaway_ticket", ({"Someone bought ticket(s) in the giveaway", "Ticket buyer", "title, tickets_bought, tickets_total, tickets_max"}), "Giveaways"}),
@@ -469,7 +467,7 @@ array validate_command(object channel, string|zero mode, string cmdname, echoabl
 			command = String.trim(lower_case(command));
 			if (command == "") return 0;
 			state->cmd = command = pfx + command;
-			if (pfx == "!" && !SPECIAL_NAMES[command]) command = 0; //Only specific specials are valid
+			if (pfx == "!" && !SPECIAL_NAMES[command] && !G->G->special_triggers[command]) command = 0; //Only specific specials are valid
 			if (pfx == "") {
 				//See if an original name was provided
 				string orig = "";
@@ -730,7 +728,7 @@ mapping message_params(object channel, mapping person, array param) {
 		case "Create": {
 			if (sizeof(param) < 3) error("Not enough args\n");
 			string cmd = command_casefold(param[1]);
-			if (!SPECIAL_NAMES[cmd] && has_value(cmd, '!')) error("Command names cannot include exclamation marks\n");
+			if (has_value(cmd, '!') && !SPECIAL_NAMES[cmd] && !G->G->special_triggers[cmd]) error("Command names cannot include exclamation marks\n");
 			string newornot = channel->commands[cmd] ? "Updated" : "Created new";
 			_save_command(channel, cmd, param[2..] * " ");
 			return (["{result}": sprintf("%s command !%s", newornot, cmd)]);

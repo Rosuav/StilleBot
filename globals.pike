@@ -116,6 +116,24 @@ class builtin_command {
 	}
 }
 
+//Note that this is not an inheritable. Usage:
+//constant new_follower = special_trigger("!follower", "Someone follows the channel", "The new follower", "", "Stream support");
+@"G->G->special_triggers";
+class special_trigger(
+	string name, //eg "!sub" - should have exactly one leading bang
+	string desc, //Human-readable description for the UI
+	string originator, //Description of the person tagged as the originator (for {username} etc)
+	string params, //Comma-separated list of parameters. Deprecated.
+	string tab, //Label for the tab that this goes into in chan_specials
+) {
+	@constant;
+	int sort_order; //NOTE: This is a disambiguator only, and should not usually matter.
+	protected void create() {
+		sort_order = G->G->special_triggers[name]->?sort_order || sizeof(G->G->special_triggers) + 1;
+		G->G->special_triggers[name] = this;
+	}
+}
+
 string describe_time_short(int tm)
 {
 	string msg = "";

@@ -20,6 +20,8 @@ Ad-vance warning: <input type=number id=advance_warning> seconds. Enables the [!
 @retain: mapping channel_ad_callouts = ([]);
 @retain: mapping channel_ad_vance_warning = ([]);
 
+constant ad_soon = special_trigger("!adsoon", "An ad is scheduled to start soon (see Ads/Snoozes)", "The broadcaster", "advance_warning", "Status");
+
 __async__ void check_stats(object channel) {
 	remove_call_out(channel_ad_callouts[channel->userid]);
 	mapping snooze = await(twitch_api_request("https://api.twitch.tv/helix/channels/ads?broadcaster_id=" + channel->userid,

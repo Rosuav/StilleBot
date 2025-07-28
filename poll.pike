@@ -467,6 +467,7 @@ void streaminfo(array data)
 
 @create_hook:
 constant follower = ({"object channel", "mapping follower"});
+constant new_follower = special_trigger("!follower", "Someone follows the channel", "The new follower", "", "Stream support");
 
 //NOTE: This event hook will work only if the broadcaster or a mod has granted permission
 //for the "moderator:read:followers" scope. It may be simplest to rely on two checks: either
