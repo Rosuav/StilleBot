@@ -270,15 +270,20 @@ void wscmd_execute(object channel, mapping(string:mixed) conn, mapping(string:mi
 	//FIXME: Check handling of specials, what's the group, what's the mode, etc.
 	//Ultimately every special will probably need to provide default (or placeholder) parameters.
 	string cmdname = "validateme"; //Will need to change for special triggers
-	echoable_message valid = G->G->cmdmgr->validate_command(channel, (conn->group / "#")[0], cmdname, msg->response, ([
+	array valid = G->G->cmdmgr->validate_command(channel, (conn->group / "#")[0], cmdname, msg->response, ([
 		"language": msg->language == "mustard" ? "mustard" : "",
 	]));
 	if (valid) {
+		mapping runme = valid[2];
+		//Triggers are always conditional. (Even an "every message" trigger technically has a condition.)
+		//If you explicitly say "run this", you likely want it to happen regardless of the condition, so
+		//dig into the message and grab the actual command.
+		if (mapping msg = valid[1] == "!trigger" && mappingp(runme) && runme->message) runme = msg;
 		//TODO: Provide suitable information for each anchor type
 		mapping params = ([
 			"{param}": "", //Should there be a prompt for params? Probably not.
 		]);
-		channel->send(user_to_person(conn->session->user), valid[2], params);
+		channel->send(user_to_person(conn->session->user), runme, params);
 	}
 }
 
