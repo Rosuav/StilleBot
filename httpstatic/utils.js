@@ -72,8 +72,8 @@ on("click", "#simpleconfirmyes", e => {
 	const cb = simpleconfirm_callback, arg = simpleconfirm_arg;
 	if (simpleconfirm_match) arg.match = simpleconfirm_match;
 	simpleconfirm_match = simpleconfirm_arg = simpleconfirm_callback = undefined;
-	if (cb) cb(arg);
 	DOM("#simpleconfirmdlg").close();
+	if (cb) cb(arg);
 })
 
 //Fire-and-forget. There's no callback when the user dismisses the dialog.
