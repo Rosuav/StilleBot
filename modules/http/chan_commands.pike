@@ -286,6 +286,15 @@ void wscmd_execute(object channel, mapping(string:mixed) conn, mapping(string:mi
 	}
 }
 
+void wscmd_deletereward(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//Not technically part of command management, but intended for use alongside it.
+	twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+			+ channel->userid + "&id=" + msg->redemption,
+		(["Authorization": channel->userid]),
+		(["method": "DELETE"]),
+	);
+}
+
 void websocket_cmd_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string mode] = split_channel(conn->group);
 	if (!channel) return 0; //Fake-mod mode is okay here (this handles tab switching inside the editor)

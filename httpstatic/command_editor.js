@@ -164,8 +164,12 @@ on("click", "#save_advanced", async e => {
 });
 
 on("click", "#delete_advanced", simpleconfirm("Delete this command?", e => {
+	const info = get_message_details();
 	ws_sync.send({cmd: "delete", cmdname: cmd_id}, "cmdedit");
 	DOM("#advanced_view").close();
+	if (info.redemption) simpleconfirm("Also delete the corresponding channel point reward?",
+		e => ws_sync.send({cmd: "deletereward", redemption: info.redemption}, "cmdedit")
+	)(e);
 }));
 
 //TODO: Have a preferences control to disable confirmation
