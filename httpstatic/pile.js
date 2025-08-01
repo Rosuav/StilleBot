@@ -379,10 +379,12 @@ export function render(data) {
 	}
 	if (data.shake) {
 		//Add some random kinetic energy to all things. Tends to be more up than down. Works well with gravity piles.
+		unfade();
 		jostle(0.2, 0.2, 0.15, 0.05, data.shake);
 	}
 	if (data.rattle) {
 		//Add random kinetic energy to all things multiple times. Mostly horizontal.
+		unfade();
 		setTimeout(jostle,   0, 0.1, 0.1, 0.020, 0.010, data.rattle);
 		setTimeout(jostle, 100, 0.1, 0.1, 0.001, 0.001, data.rattle);
 		setTimeout(jostle, 250, 0.1, 0.1, 0.030, 0.000, data.rattle);
@@ -390,6 +392,7 @@ export function render(data) {
 	}
 	if (data.roll) {
 		//Rotate gravity through a 360° turn. If there is no gravity, it will be added for the duration.
+		unfade();
 		const scale = engine.gravity.scale;
 		engine.gravity.scale = width / 1.5e6; //A good-looking flight speed depends on how much of the display we traverse per time unit
 		let start = +new Date;
