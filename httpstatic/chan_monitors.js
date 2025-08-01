@@ -84,7 +84,9 @@ function set_values(info, elem) {
 				BUTTON({type: "button", class: "deletething", title: "Delete", style: "padding: 0 0.5em; width: auto"}, "🗑"),
 			]),
 		])));
-		update_activations("#claw_activations", info.id, "claw");
+		["claw", "shake", "rattle", "roll"].forEach(ac =>
+			update_activations("#" + ac + "_activations", info.id, ac)
+		);
 	}
 	return elem;
 }
@@ -453,6 +455,12 @@ set_content("#editpile form div", [
 				LEGEND("Activations:"),
 				ACTIVATIONS("claw"),
 			]),
+		])]),
+		TR([TH("Jostle"), TD([
+			"Allow your users to jostle the pile!",
+			FIELDSET([LEGEND("Shake:"), ACTIVATIONS("shake")]),
+			FIELDSET([LEGEND("Rattle:"), ACTIVATIONS("rattle")]),
+			FIELDSET([LEGEND("Roll:"), ACTIVATIONS("roll")]),
 		])]),
 	]),
 	"Thing categories:",

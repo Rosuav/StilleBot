@@ -321,6 +321,20 @@ void wscmd_clawdone(object channel, mapping(string:mixed) conn, mapping(string:m
 			"background_color": "#a0f0c0",
 			"is_global_cooldown_enabled": Val.true, "global_cooldown_seconds": 60,
 		]);
+	} else if ((<"shake", "rattle", "roll">)[msg->action]) {
+		cmdname = msg->action;
+		code = sprintf("chan_monitors(%O, %O) %O", msg->nonce, msg->action, "$$ " + msg->action + "s the pile!");
+		reward = ([
+			"title": String.sillycaps(msg->action) + " the Pile",
+			"prompt": ([
+				"shake": "Shake up the pile a bit!",
+				"rattle": "Rattle the things in the pile!",
+				"roll": "Make the pile do a barrel roll!",
+			])[msg->action],
+			"cost": 250,
+			"background_color": "#a0f0c0",
+			"is_global_cooldown_enabled": Val.true, "global_cooldown_seconds": 60,
+		]);
 	} else if (msg->action == "thing" && has_value(info->things->id, msg->thingid)) {
 		cmdname = "add" + msg->thingid;
 		code = sprintf(#{$%s:%s$ += "1"#}, info->varname, msg->thingid);
