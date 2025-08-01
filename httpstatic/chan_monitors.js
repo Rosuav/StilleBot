@@ -168,9 +168,11 @@ export const autorender = {
 		//Note that this incurs the cost of a separate websocket with (partly) duplicate signals. Review
 		//this decision once things are fully implemented and consider doing it like the others (but
 		//maybe with a different update call).
-		if (editables[nonce].type === "pile")
+		if (editables[nonce].type === "pile") {
 			//TODO: Get the width and height once they're configurable
 			set_content(el.querySelector(".preview"), IFRAME({src: "monitors?view=" + nonce, "width": 600, "height": 400}));
+			el.querySelector("[data-action=claw]").disabled = +editables[nonce].clawsize <= 0;
+		}
 		else update_display(el.querySelector(".preview"), editables[nonce]);
 		el.querySelector(".preview-bg").style.backgroundColor = editables[nonce].previewbg;
 		const dlg = DOM("#edit" + msg.type);
