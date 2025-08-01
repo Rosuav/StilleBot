@@ -140,63 +140,61 @@ export const autorender = {
 			DIV({style: "display: flex; justify-content: space-around"}, BUTTON({type: "button", class: "chooseimage"}, "Choose")),
 		]);
 	},
-};
-
-export const render_parent = DOM("#monitors tbody");
-export function render_item(msg, obj) {
-	if (!msg) return 0;
-	const nonce = msg.id;
-	if (!editables[nonce] || msg.type) editables[nonce] = msg;
-	else for (let attr in msg) editables[nonce][attr] = msg[attr]; //Partial update, keep the info we have
-	const el = obj || TR({"data-nonce": nonce, "data-id": nonce}, [
-		TD(DIV({className: "preview-frame"}, DIV({className: "preview-bg"}, DIV({className: "preview"})))),
-		TD([
-			BUTTON({type: "button", className: "editbtn"}, "Edit"),
-			BUTTON({type: "button", className: "deletebtn", "data-nonce": nonce}, "Delete?"),
-		]),
-		TD(A({className: "monitorlink", href: "monitors?view=" + nonce}, "Drag me to OBS")),
-	]);
-	//HACK: For pile o' pics, the preview is actually just iframed in. Lower performance but easier.
-	//Note that this incurs the cost of a separate websocket with (partly) duplicate signals. Review
-	//this decision once things are fully implemented and consider doing it like the others (but
-	//maybe with a different update call).
-	if (editables[nonce].type === "pile")
-		//TODO: Get the width and height once they're configurable
-		set_content(el.querySelector(".preview"), IFRAME({src: "monitors?view=" + nonce, "width": 600, "height": 400}));
-	else update_display(el.querySelector(".preview"), editables[nonce]);
-	el.querySelector(".preview-bg").style.backgroundColor = editables[nonce].previewbg;
-	const dlg = DOM("#edit" + msg.type);
-	if (dlg && dlg.dataset.nonce === nonce) {
-		//dlg.querySelector("form").reset(); //Do we need this? Would add flicker.
-		//When it's a pile of stuff, we also need to update the quantities, so query those first.
-		if (editables[nonce].type === "pile") ws_sync.send({cmd: "getgroupvars", id: editables[nonce].varname}, "chan_variables");
-		else set_values(msg, dlg);
-	}
-	const catdlg = DOM("#editthingcat");
-	if (catdlg && catdlg.dataset.nonce === nonce) {
-		const thing = editables[nonce].things.find(t => t.id === catdlg.dataset.originalid);
-		if (thing) {
-			const form = DOM("#editthingcat form");
-			for (let attr in thing) {
-				const elem = form.elements[attr]; if (!elem) continue;
-				elem.value = thing[attr];
-			}
-			update_thing_images(thing);
+	item_parent: DOM("#monitors tbody"),
+	item(msg, obj) { //extcall
+		if (!msg) return 0;
+		const nonce = msg.id;
+		if (!editables[nonce] || msg.type) editables[nonce] = msg;
+		else for (let attr in msg) editables[nonce][attr] = msg[attr]; //Partial update, keep the info we have
+		const el = obj || TR({"data-nonce": nonce, "data-id": nonce}, [
+			TD(DIV({className: "preview-frame"}, DIV({className: "preview-bg"}, DIV({className: "preview"})))),
+			TD([
+				BUTTON({type: "button", className: "editbtn"}, "Edit"),
+				BUTTON({type: "button", className: "deletebtn", "data-nonce": nonce}, "Delete?"),
+			]),
+			TD(A({className: "monitorlink", href: "monitors?view=" + nonce}, "Drag me to OBS")),
+		]);
+		//HACK: For pile o' pics, the preview is actually just iframed in. Lower performance but easier.
+		//Note that this incurs the cost of a separate websocket with (partly) duplicate signals. Review
+		//this decision once things are fully implemented and consider doing it like the others (but
+		//maybe with a different update call).
+		if (editables[nonce].type === "pile")
+			//TODO: Get the width and height once they're configurable
+			set_content(el.querySelector(".preview"), IFRAME({src: "monitors?view=" + nonce, "width": 600, "height": 400}));
+		else update_display(el.querySelector(".preview"), editables[nonce]);
+		el.querySelector(".preview-bg").style.backgroundColor = editables[nonce].previewbg;
+		const dlg = DOM("#edit" + msg.type);
+		if (dlg && dlg.dataset.nonce === nonce) {
+			//dlg.querySelector("form").reset(); //Do we need this? Would add flicker.
+			//When it's a pile of stuff, we also need to update the quantities, so query those first.
+			if (editables[nonce].type === "pile") ws_sync.send({cmd: "getgroupvars", id: editables[nonce].varname}, "chan_variables");
+			else set_values(msg, dlg);
 		}
-	}
-	setTimeout(() => { //Wait till the preview has rendered, then measure it for the link
-		const box = el.querySelector(".preview").getBoundingClientRect();
-		const link = el.querySelector(".monitorlink");
-		link.dataset.width = Math.round(box.width);
-		link.dataset.height = Math.round(box.height);
-	}, 50);
-	return el;
-}
-export function render_empty() {
-	return render_parent.appendChild(TR([
+		const catdlg = DOM("#editthingcat");
+		if (catdlg && catdlg.dataset.nonce === nonce) {
+			const thing = editables[nonce].things.find(t => t.id === catdlg.dataset.originalid);
+			if (thing) {
+				const form = DOM("#editthingcat form");
+				for (let attr in thing) {
+					const elem = form.elements[attr]; if (!elem) continue;
+					elem.value = thing[attr];
+				}
+				update_thing_images(thing);
+			}
+		}
+		setTimeout(() => { //Wait till the preview has rendered, then measure it for the link
+			const box = el.querySelector(".preview").getBoundingClientRect();
+			const link = el.querySelector(".monitorlink");
+			link.dataset.width = Math.round(box.width);
+			link.dataset.height = Math.round(box.height);
+		}, 50);
+		return el;
+	},
+	render_empty() {return render_parent.appendChild(TR([
 		TD({colSpan: 4}, "No monitors defined. Create one!"),
-	]));
+	]));},
 }
+
 export function render(data) { }
 
 function AUTO_RESET(attrs) {return SELECT({name: "autoreset", ...attrs}, [
