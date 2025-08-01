@@ -170,6 +170,7 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 	flex-wrap: wrap;
 }
 .buttonbox.attached {margin-bottom: 1px;}
+.buttonbox.centered {justify-content: center;}
 #cmdviewtabset label {
 	background: #a0f0c0;
 	padding-right: 0.25em;

@@ -149,8 +149,18 @@ export const autorender = {
 		const el = obj || TR({"data-nonce": nonce, "data-id": nonce}, [
 			TD(DIV({className: "preview-frame"}, DIV({className: "preview-bg"}, DIV({className: "preview"})))),
 			TD([
-				BUTTON({type: "button", className: "editbtn"}, "Edit"),
-				BUTTON({type: "button", className: "deletebtn", "data-nonce": nonce}, "Delete?"),
+				DIV({class: "buttonbox"}, [
+					BUTTON({type: "button", className: "editbtn"}, "Edit"),
+					BUTTON({type: "button", className: "deletebtn", "data-nonce": nonce}, "Delete?"),
+				]),
+				//If other types gain interaction options, add them too
+				editables[nonce].type === "pile" && FIELDSET({style: "width: min-content; padding: 5px; margin: auto", class: "buttonbox centered"}, [
+					LEGEND("Interact"),
+					BUTTON({type: "button", class: "interactbtn", "data-action": "claw"}, "Claw"), //TODO: Make conditional on having the claw active
+					BUTTON({type: "button", class: "interactbtn", "data-action": "shake"}, "Shake"),
+					BUTTON({type: "button", class: "interactbtn", "data-action": "rattle"}, "Rattle"),
+					BUTTON({type: "button", class: "interactbtn", "data-action": "roll"}, "Roll"),
+				]),
 			]),
 			TD(A({className: "monitorlink", href: "monitors?view=" + nonce}, "Drag me to OBS")),
 		]);
@@ -535,6 +545,8 @@ on("submit", "#renameform", e => {
 	ws_sync.send(msg);
 	DOM("#renamefiledlg").close();
 });
+
+on("click", ".interactbtn", e => ws_sync.send({cmd: "interact", nonce: e.match.closest_data("id"), action: e.match.dataset.action}));
 
 on("dragstart", ".monitorlink", e => {
 	const url = `${e.match.href}&layer-name=Mustard%20Mine%20monitor&layer-width=${e.match.dataset.width||400}&layer-height=${e.match.dataset.height||120}`;

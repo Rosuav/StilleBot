@@ -290,6 +290,19 @@ void wscmd_clawdone(object channel, mapping(string:mixed) conn, mapping(string:m
 	]));
 }
 
+@"is_mod": @"demo_ok": __async__ void wscmd_interact(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	array socks = websocket_groups[msg->nonce + "#" + channel->userid] || ({ });
+	//On the demo, this should only send to your own IP address. The group name is still the nonce though.
+	if (!channel->userid) socks = filter(socks, socks->query_id()->remote_ip[*] == conn->remote_ip);
+	switch (msg->action) {
+		case "claw": _low_send_updates((["claw": String.string2hex(random_string(4))]), socks); break;
+		case "shake": case "rattle": case "roll":
+			_low_send_updates(([msg->action: 1]), socks); //The value is a "strength", not currently user-selectable
+			break;
+		default: break;
+	}
+}
+
 @"is_mod": __async__ void wscmd_addactivation(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
 	mapping info = monitors[msg->nonce]; if (!info) return;

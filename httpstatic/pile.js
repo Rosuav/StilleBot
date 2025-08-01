@@ -211,6 +211,16 @@ function create_claw_events() {
 	}});
 }
 
+//Apply random force to all objects, randomized within the span given, and multiplied by the magnitude.
+function jostle(left, right, up, down, magnitude) {
+	Object.values(thingcategories).forEach(cat => cat.forEach(obj =>
+		Matter.Body.applyForce(obj, obj.position, {
+			x: (Math.random() * (left + right) - left) * obj.mass * magnitude,
+			y: (Math.random() * (up + down) - up) * obj.mass * magnitude,
+		})
+	));
+}
+
 const addxtra = { };
 
 //For a given color eg #663399 and alpha eg 100, return an eight digit hex color. Note that alpha is in the range 0-100.
@@ -366,6 +376,39 @@ export function render(data) {
 	if (data.claw && CLAW.claw) {
 		clawqueue.push(data.claw);
 		if (clawqueue.length === 1) clawdrop();
+	}
+	if (data.shake) {
+		//Add some random kinetic energy to all things. Tends to be more up than down. Works well with gravity piles.
+		jostle(0.2, 0.2, 0.15, 0.05, data.shake);
+	}
+	if (data.rattle) {
+		//Add random kinetic energy to all things multiple times. Mostly horizontal.
+		setTimeout(jostle,   0, 0.1, 0.1, 0.020, 0.010, data.rattle);
+		setTimeout(jostle, 100, 0.1, 0.1, 0.001, 0.001, data.rattle);
+		setTimeout(jostle, 250, 0.1, 0.1, 0.030, 0.000, data.rattle);
+		setTimeout(jostle, 500, 0.1, 0.1, 0.010, 0.010, data.rattle);
+	}
+	if (data.roll) {
+		//Rotate gravity through a 360° turn. If there is no gravity, it will be added for the duration.
+		const scale = engine.gravity.scale;
+		engine.gravity.scale = width / 1.5e6; //A good-looking flight speed depends on how much of the display we traverse per time unit
+		let start = +new Date;
+		const timer = setInterval(() => {
+			let pos = (+new Date - start) / 500; //After pi seconds, this will reach tau
+			if (pos > Math.PI * 2) {
+				clearInterval(timer);
+				engine.gravity.x = 0;
+				engine.gravity.y = 1;
+				engine.gravity.scale = scale;
+				return;
+			}
+			//NOTE: Normal orientation of trig functions puts sine on the Y axis and cosine on the X,
+			//but in this case, the starting position (0 radians) corresponds to gravity pointing
+			//straight down. We could do this by subtracting a quarter turn before taking the sin/cos,
+			//but the same effect is achieved by flipping the coordinates.
+			engine.gravity.x = Math.sin(pos);
+			engine.gravity.y = Math.cos(pos);
+		}, 0.01);
 	}
 	if (data.remove) {
 		//Remove one of a thingtype, choosing based on label
