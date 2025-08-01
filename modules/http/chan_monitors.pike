@@ -803,6 +803,9 @@ mapping|Concurrent.Future message_params(object channel, mapping person, array p
 					send_updates_all(channel, monitor, (["claw": dropid]));
 					return prom->future();
 				}
+				case "shake": case "rattle": case "roll":
+					send_updates_all(channel, monitor, ([param[1]: (sizeof(param) > 2 && (int)param[2]) || 1]));
+					break;
 				case "add": return pile_add(channel, info, person, param);
 				case "remove": {
 					if (param[2] == "*") {
