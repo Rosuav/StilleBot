@@ -5,7 +5,9 @@ import {render_command, cmd_configure, open_advanced_view} from "$$static||comma
 export const render_parent = DOM("#triggers tbody");
 export function render_item(el, prev) {
 	return render_command(el, prev,
-		el.conditional === "contains" ? (
+		el.expr2 === "{username}" ? "When " + el.expr1 + " speaks..." :
+		el.expr2 === "{rewardid}" ? "When a reward is redeemed..." :
+		el.conditional === "contains" || el.conditional === "string" ? (
 			el.expr1 ? ["When ", CODE(el.expr1), " is typed... "] : "Custom trigger... "
 		) : ["When a msg matches ", CODE(el.expr1 || ""), " ... "],
 	);

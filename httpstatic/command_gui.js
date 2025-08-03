@@ -408,13 +408,13 @@ const types = {
 			: el.conditional === "contains" ? (
 				el.expr1 ? `When '${el.expr1}' is typed...` : "Every message..."
 			) : `When a msg matches ${el.expr1||""} ...`,
-		params: [{attr: "conditional", label: "Match type", values: ["contains", "regexp", "number"],
-				selections: {contains: "Simple match", regexp: "Regular expression", number: "Expression evaluation"}},
+		params: [{attr: "conditional", label: "Match type", values: ["contains", "string", "regexp", "number"],
+				selections: {contains: "Simple match", string: "Entire text", regexp: "Regular expression", number: "Expression evaluation"}},
 			{attr: "casefold", label: "Case insensitive", values: bool_attr},
 			{attr: "id", label: null}, //Retain the ID but don't show it for editing
 			{attr: "expr1", label: "Search for"},
-			{attr: "expr2", label: "Trigger type", values: ["%s", "{rewardid}"],
-				selections: {"%s": "Regular", "{rewardid}": "Channel point redemption"}},
+			{attr: "expr2", label: "Trigger on", values: ["%s", "{rewardid}", "{username}"],
+				selections: {"%s": "Message", "{rewardid}": "Channel point redemption", "{username}": "User name"}},
 		],
 		provides: {
 			"{param}": "The entire message",
