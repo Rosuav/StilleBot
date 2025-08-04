@@ -680,8 +680,8 @@ const types = {
 	weight: {
 		color: "#ee7777", children: ["message"], label: el => "Chance: " + (el.weight || 1),
 		params: [{attr: "weight", label: "Weight", values: numeric}],
-		typedesc: "When inserted into a Random selector, this one will have a greater chance "
-			+ "of being selected. (Non-weighted entries have a weight of 1.)",
+		typedesc: ["When inserted into a Random selector, this one will have a greater chance",
+			BR(), "of being selected. (Non-weighted entries have a weight of 1.)"],
 	},
 	text: {
 		color: "#77eeee", width: 400, label: el => el.message,
