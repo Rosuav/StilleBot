@@ -16,7 +16,10 @@ flags: flags "#" "name" "=" value {addflag2};
 
 value: "name";
 value: "string";
-value: "number";
+value: signednumber;
+
+signednumber: "number";
+signednumber: "-" "number" {negate};
 
 /* There's some complexity here to allow conditions to have optional 'else', and
 to have optional braces. It layers in a bit. Lemme walk you through it. */
@@ -87,8 +90,8 @@ oper: "-=";
 oper: "in";
 calc_cond: "string" {cond_calc};
 calc_cond: "(" calc_cond ")" {taketwo};
-cooldown: "number" {cd_naked};
-cooldown: "(" flags "number" flags ")" {cd_flags};
+cooldown: signednumber {cd_naked};
+cooldown: "(" flags signednumber flags ")" {cd_flags};
 
 varoper: "=";
 varoper: "+=";

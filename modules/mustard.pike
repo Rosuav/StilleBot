@@ -52,6 +52,7 @@ mapping setvar(string varname, string oper, mixed value) {
 		"=": "", "+=": "add", "-=": "spend",
 	])[oper], "target": varname, "message": value]);
 }
+string negate(string x, string y) {return x + y;} //"-" + "1" == "-1"
 
 constant KEYWORDS = (<"if", "else", "in", "test", "try", "catch", "cooldown">);
 
