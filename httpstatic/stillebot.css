@@ -307,6 +307,13 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 	white-space: nowrap;
 }
 
+[name="cdlength_selector"] ~ * {
+	display: none;
+}
+[name="cdlength_selector"]:has(option[value="0"]:checked) ~ * {
+	display: unset;
+}
+
 .clipbtn {cursor: copy;}
 #copied {
 	opacity: 0;

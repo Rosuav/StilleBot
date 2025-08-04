@@ -149,6 +149,58 @@ const text_message = {...default_handlers,
 		return msg.message;
 	},
 };
+//Special case: The cooldown length is a number, but is shown to the user as a series of number+unit options.
+const cdlength_selections = { //Common selections available in the drop-down
+	"-1": "One per stream",
+	1: "1 second",
+	30: "30 seconds",
+	60: "1 minute",
+	900: "15 minutes",
+	3600: "1 hour",
+	86400: "1 day",
+};
+const cooldown_length = {...default_handlers,
+	validate: val => typeof val === "number" && (val === -1 || val > 0),
+	make_control: (id, val, el) => {
+		let num = +val, unit = "1";
+		if (num >= 3600 && (num % 3600) === 0) {num /= 3600; unit = "3600";}
+		else if (num >= 60 && (num % 60) === 0) {num /= 60; unit = "60";}
+		return DIV([
+			INPUT({...id, value: val, class: "actualval", type: "hidden"}), //Hidden input to store the actual value
+			SELECT({name: "cdlength_selector", value: cdlength_selections[val] ? ""+val : "0"}, [
+				Object.entries(cdlength_selections).map(([value, label]) =>
+					OPTION({value}, label)
+				),
+				OPTION({value: 0}, "Custom..."),
+			]),
+			//These are visible only if Custom is selected, but always present
+			INPUT({name: "cdlength_number", value: num, size: 5, type: "number"}),
+			SELECT({name: "cdlength_unit", value: unit}, [
+				OPTION({value: 1}, "seconds"),
+				OPTION({value: 60}, "minutes"),
+				OPTION({value: 3600}, "hours"),
+			]),
+		]);
+	},
+	retrieve_value: el => +el.value,
+};
+function set_cdlength(parent, val) {
+	let num = +val, unit = "1";
+	if (num >= 3600 && (num % 3600) === 0) {num /= 3600; unit = "3600";}
+	else if (num >= 60 && (num % 60) === 0) {num /= 60; unit = "60";}
+	parent.querySelector(".actualval").value = val;
+	parent.querySelector("[name=cdlength_selector]").value = cdlength_selections[val] ? ""+val : "0";
+	parent.querySelector("[name=cdlength_number]").value = num;
+	parent.querySelector("[name=cdlength_unit]").value = unit;
+}
+on("change", "[name=cdlength_selector]", e => +e.match.value && set_cdlength(e.match.parentElement, e.match.value));
+on("change", "[name=cdlength_number],[name=cdlength_unit]", e => {
+	const par = e.match.parentElement;
+	const num = +par.querySelector("[name=cdlength_number]").value;
+	const unit = +par.querySelector("[name=cdlength_unit]").value;
+	set_cdlength(par, num * unit);
+});
+
 //Special case: The cooldown name field can contain an internal ID, eg ".fuse:1", which won't be interesting to the user.
 const cooldown_name = {...default_handlers,
 	normalize: val => {
@@ -170,6 +222,7 @@ const cooldown_name = {...default_handlers,
 	},
 	retrieve_value: (val, el) => (val.nextElementSibling.querySelector("[type=checkbox]").checked ? "*" : "") + val.value,
 };
+
 //Special case: Builtins can require custom code.
 const builtin_validators = {
 	alertbox_id: {...default_handlers,
@@ -587,9 +640,12 @@ const types = {
 		typedesc: "Spend some of a bot-managed value. Subtracts from the variable but won't let it go below zero.",
 	},
 	cooldown: {
-		color: "#aacc55", children: ["message", "otherwise"], label: el => [format_time_delay(el.cdlength) + " cooldown", "If on cooldown:"],
+		color: "#aacc55", children: ["message", "otherwise"], label: el => [
+			el.cdlength < 0 ? "Once per stream" : format_time_delay(el.cdlength) + " cooldown",
+			"If on cooldown:"
+		],
 		params: [{attr: "conditional", values: "cooldown"},
-			{attr: "cdlength", label: "Delay (seconds)", values: [-1, 86400, 1]},
+			{attr: "cdlength", label: "Delay", values: cooldown_length},
 			{attr: "cdname", label: "Tag (optional)", values: cooldown_name},
 			{attr: "cdqueue", label: "Queue", values: bool_attr}],
 		typedesc: ["Prevent the command from being used too quickly. If it's been used recently, the second block happens instead.",
