@@ -50,8 +50,6 @@
     - Any others?
 * Special trigger when any goal bar tiers up?? Would be better than the weird system
   where it triggers an actual command. Could deep link straight to the editor now.
-* "max-width: fit-content" doesn't work in Firefox - but nor does -moz-fit-content :(
-  - Causes display problems on graphical editor and opening up element details
 * Should ALL specials function as implicit arrays, the way triggers do?
   - Alternatively: should invocations and executions be separated? Aliases would then
     be just another way to have more than one invocation for a single command.
