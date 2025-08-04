@@ -580,6 +580,27 @@ class channel(mapping identity) {
 				if (cfg->simulate) {vars["{cooldown}"] = vars["{cooldown_hms}"] = "0"; break;}
 				string key = message->cdname + name;
 				if (has_prefix(key, "*")) key = vars["{uid}"] + key; //Cooldown of "*foo" will be a per-user cooldown.
+				if (message->cdlength < 0) {
+					//It's a till-end-of-stream cooldown. What we store is the stream-online time,
+					//negated, and if the current stream-online time is different, the cooldown is
+					//considered to be over. Note that this WILL reset cooldowns even if the stream
+					//blips, which may be inconsistent with other definitions of "stream offline".
+					vars["{cooldown}"] = vars["{cooldown_hms}"] = "-1"; //Not relevant in this mode.
+					int streamonline = G->G->stream_online_since[userid]->?unix_time();
+					if (!streamonline)
+						//Stream is not online, so all usage is blocked.
+						msg = message->otherwise;
+					else if (-streamonline != cooldown_timeout[key])
+						//It's a new stream! (Or there's no timeout stored, which means it
+						//hasn't been used this stream - zero won't equal any negative number.)
+						cooldown_timeout[key] = -streamonline;
+					else
+						//Same stream, cooldown is in effect.
+						msg = message->otherwise;
+					//Note that message->cdqueue is not supported here. It's now or never.
+					break;
+				}
+				//Else it's a regular cooldown defined in seconds.
 				int delay = cooldown_timeout[key] - time();
 				if (delay < 0) { //The time has passed!
 					cooldown_timeout[key] = time() + message->cdlength; //But reset it.

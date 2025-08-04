@@ -589,7 +589,7 @@ const types = {
 	cooldown: {
 		color: "#aacc55", children: ["message", "otherwise"], label: el => [format_time_delay(el.cdlength) + " cooldown", "If on cooldown:"],
 		params: [{attr: "conditional", values: "cooldown"},
-			{attr: "cdlength", label: "Delay (seconds)", values: [1, 86400, 1]}, //TODO: Support hh:mm:ss and show it that way for display
+			{attr: "cdlength", label: "Delay (seconds)", values: [-1, 86400, 1]},
 			{attr: "cdname", label: "Tag (optional)", values: cooldown_name},
 			{attr: "cdqueue", label: "Queue", values: bool_attr}],
 		typedesc: ["Prevent the command from being used too quickly. If it's been used recently, the second block happens instead.",
