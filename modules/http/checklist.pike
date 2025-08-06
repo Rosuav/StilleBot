@@ -155,6 +155,7 @@ CupFooty ZombieKappa OWL2019Tracer FightCC<br>
 constant emoteids = ([
 	"HypeOni6": "301205427", "OWL2019Tracer": "1833318",
 	"PrimeYouDontSay": "134251", "PrimeUWot": "134252", "PrimeRlyTho": "134253",
+	"BopBop": "emotesv2_5860ce75b7fb4e10ad885c1d11972050",
 	//Pride emotes, now part of hype trains
 	"PrideUwu": "302303590",
 	"PrideLaugh": "302303593",
