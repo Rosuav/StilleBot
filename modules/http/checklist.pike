@@ -142,6 +142,7 @@ RPGEpicStaff RPGMana RPGSeven<br>
 Turbo:<br>BagOfMemes FlipThis KappaHD MindManners<br>MiniK PartyPopper ScaredyCat TableHere<br>
 Prime:<br>PrimeYouDontSay PrimeUWot PrimeRlyTho<br>
 Clip creation:<br>Clappy ClappyDerp ClappyHype<br>
+Others:<br>BopBop<br>
 
 ## Single Survivors
 For a while, Twitch released sets of emotes, but only let us keep the one
