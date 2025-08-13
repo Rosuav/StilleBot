@@ -276,3 +276,4 @@
     This might be the excuse needed to change that, and thus allow refreshing when a
     person's avatar is texturing a thing. In effect, we'd need to record not just the
     quantity, but an array of vital statistics: size, texture, label
+* New specials: onetapstreakstarted, onetapbreakpointachieved, onetapstreakexpired
