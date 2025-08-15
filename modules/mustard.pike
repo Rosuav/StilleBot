@@ -63,6 +63,7 @@ echoable_message parse_mustard(string|Stdio.Buffer mustard) {
 	array|string next() {
 		mustard->sscanf("%*[ \t\r\n;]");
 		if (!sizeof(mustard)) return "";
+		if (array token = mustard->sscanf("÷")) return "/"; //Alias the division sign
 		if (array token = mustard->sscanf("%[=,~+-]")) //All characters that can be part of multi-character tokens
 			return token[0];
 		//In theory, this should do the job. Not sure why it doesn't work.
