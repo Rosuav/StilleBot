@@ -67,7 +67,7 @@ vertical-align: middle;
 
 constant kofi_dono = special_trigger("!kofi_dono", "Donation received on Ko-fi.", "The broadcaster", "amount, msg, from_name", "Ko-fi");
 constant kofi_member = special_trigger("!kofi_member", "New monthly membership on Ko-fi.", "The broadcaster", "amount, msg, from_name, tiername", "Ko-fi");
-constant kofi_shop = special_trigger("!kofi_shop", "Shop sale on Ko-fi.", "The broadcaster", "amount, msg, from_name, shop_item_ids", "Ko-fi");
+constant kofi_shop = special_trigger("!kofi_shop", "Shop sale on Ko-fi.", "The broadcaster", "amount, msg, from_name, shop_item_ids, shop_item_count", "Ko-fi");
 constant fw_dono = special_trigger("!fw_dono", "Donation received on Fourth Wall.", "The broadcaster", "amount, msg, from_name", "Fourth Wall");
 constant fw_member = special_trigger("!fw_member", "New monthly membership on Fourth Wall.", "The broadcaster", "amount, msg, from_name", "Fourth Wall");
 constant fw_shop = special_trigger("!fw_shop", "Shop sale on Fourth Wall.", "The broadcaster", "is_test, amount, msg, from_name, shop_item_ids", "Fourth Wall");
@@ -151,8 +151,11 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			alertparams->tiername = params["{tiername}"] = data->tiername || "";
 		} else if (arrayp(data->shop_items) && sizeof(data->shop_items)) {
 			special = "!kofi_shop";
-			if (data->is_public) params["{shop_item_ids}"] = data->shop_items->direct_link_code * " ";
-			else params["{shop_item_ids}"] = "";
+			if (data->is_public) {
+				params["{shop_item_ids}"] = data->shop_items->direct_link_code * " ";
+				params["{shop_item_count}"] = `+(0, @data->shop_items->quantity);
+			}
+			else params["{shop_item_ids}"] = params["{shop_item_count}"] = "";
 			alertparams->is_shopsale = "1";
 			//If we could get the item names too, that'd be great.
 			//What about quantities??

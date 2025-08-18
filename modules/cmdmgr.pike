@@ -43,6 +43,7 @@ constant SPECIAL_PARAMS = ({
 	({"amount", "Total amount given (with currency eg '3 USD')"}),
 	({"from_name", "Name (possibly username) of the supporter. Not (necessarily) a Twitch username."}),
 	({"shop_item_ids", "Blank-separated list of ten-digit hexadecimal item IDs bought."}),
+	({"shop_item_count", "Total number of items bought."}),
 	({"tiername", "Ko-fi subscription tier (if applicable)"}),
 	({"choices", "Number of choices in the poll"}),
 	({"points_per_vote", "Channel points to buy a vote (0 if not available)"}),
