@@ -81,6 +81,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		["barcolor", "fillcolor", "altcolor", "format", "progressive", "infinitier", "textcompleted", "textinactive", "format_style"].forEach(
 			key => data[key] && (styleinfo[data.id][key] = data[key]));
 		ensure_font(data.font);
+		ensure_font("Noto Color Emoji"); //Hack - ensure that emojis work
 	}
 	const type = styleinfo[data.id] && styleinfo[data.id].type;
 	if (elem._stillebot_countdown_interval) {
