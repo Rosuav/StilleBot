@@ -41,6 +41,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "unlocks"));
 	if (!cfg->varname) return ([]);
 	array unlocks = cfg->unlocks || ({ });
+	sort(-unlocks->threshold[*], unlocks); //Put the newest unlocks at the top
 	int curval = (int)channel->expand_variables("$" + cfg->varname + "$");
 	mapping ret = ([
 		"unlocks": filter(unlocks) {return curval >= __ARGS__[0]->threshold;},
@@ -63,7 +64,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 
 @"is_mod": __async__ mapping wscmd_add_unlock(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
-		cfg->unlocks += ({([])});
+		cfg->unlocks += ({(["id": ++cfg->nextid, "threshold": 1])});
 	});
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");
@@ -71,8 +72,22 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 
 @"is_mod": __async__ void wscmd_delete_unlock(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
-		//TODO: Delete by index
-		cfg->unlocks = ({});
+		cfg->unlocks = filter(cfg->unlocks || ({ })) {return __ARGS__[0]->id != msg->id;};
+	});
+	send_updates_all(channel, "");
+	send_updates_all(channel, "control");
+}
+
+@"is_mod": __async__ void wscmd_update_unlock(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
+		if (!cfg->unlocks) return;
+		int idx = search(cfg->unlocks->id, (int)msg->id);
+		if (idx != -1) {
+			mapping unl = cfg->unlocks[idx];
+			if ((int)msg->threshold) unl->threshold = (int)msg->threshold;
+			//TODO: Support uploads, which would make ->url just a pointer back to the server somewhere
+			if (msg->url) unl->url = msg->url;
+		}
 	});
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");

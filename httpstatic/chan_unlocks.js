@@ -1,18 +1,24 @@
 import {choc, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, DIV, IMG, INPUT, LABEL, LI, OPTION, P, PRE, SPAN, TD, TEXTAREA, TIME, TR, UL} = choc; //autoimport
+const {BR, BUTTON, HR, IMG, INPUT, LABEL, LI} = choc; //autoimport
 import {simpleconfirm, simplemessage} from "$$static||utils.js$$";
 
 export const autorender = {
 	unlock_parent: DOM("#unlocks"),
-	unlock(f) {return LI({"data-id": f.id, class: "openform", ".form_data": f}, [
-		f.id, " ", f.formtitle,
+	unlock(f) {return LI({"data-id": f.id}, [ //extcall
+		"Unlocked at ", f.threshold, "!", BR(),
+		IMG({src: f.url}),
+		HR(),
 	]);},
 	unlock_empty() {return DOM("#unlocks").appendChild(LI([
 		"Work with the community to unlock these things!",
 	]));},
 	allunlock_parent: DOM("#allunlocks"),
-	allunlock(f) {return LI({"data-id": f.id}, [
-		f.id, " ", f.formtitle,
+	allunlock(f) {return LI({"data-id": f.id}, [ //extcall
+		LABEL(["Unlock at ", INPUT({class: "threshold", type: "number", value: f.threshold || 1})]),
+		BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑"), BR(),
+		"NOTE: Set the threshold before uploading the image, or it will be unexpectedly visible!", BR(),
+		LABEL(["Image URL: ", INPUT({class: "url", value: f.url || ""})]), BR(),
+		"TODO: Allow direct uploads. For now, they need to be provided as links to somewhere.",
 	]);},
 	allunlock_empty() {return DOM("#allunlocks").appendChild(LI([
 		"No unlocks yet - add one to get started.",
@@ -28,5 +34,10 @@ export function render(data) {
 
 on("click", "#addunlock", e => ws_sync.send({cmd: "add_unlock"}));
 on("change", "#varname", e => ws_sync.send({cmd: "config", varname: e.match.value}));
+on("click", ".confirmdelete", simpleconfirm("Really delete this unlock?", e =>
+	ws_sync.send({cmd: "delete_unlock", id: e.match.closest_data("id")})
+));
+on("change", ".threshold", e => ws_sync.send({cmd: "update_unlock", id: e.match.closest_data("id"), threshold: e.match.value}));
+on("change", ".url", e => ws_sync.send({cmd: "update_unlock", id: e.match.closest_data("id"), url: e.match.value}));
 
 if (ws_group.startsWith("control#")) document.querySelectorAll(".modonly").forEach(el => (el.hidden = false));
