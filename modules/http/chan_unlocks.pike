@@ -11,7 +11,12 @@ constant markdown = #"# Unlocks!
 
 > ### Manage unlocks
 >
-> <label>Select variable: <select id=varname></select></label>
+> <label>Select variable: <select class=config name=varname></select></label>
+> <label>Display format: <select class=config name=format>
+> <option value=plain>plain</option>
+> <option value=currency>currency eg $27.18</option>
+> <option value=subscriptions>subscriptions</option>
+> </select></label>
 >
 > * loading...
 > {:#allunlocks}
@@ -26,8 +31,12 @@ constant markdown = #"# Unlocks!
 	list-style-type: none;
 	padding: 0;
 }
+input[type=number] {width: 5.5em;} /* Widen the inputs a bit */
+.preview {max-width: 200px; cursor: pointer;}
 </style>
 ";
+
+array configs = ({"varname", "format"});
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	return render(req, (["vars": ([
@@ -48,7 +57,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	]);
 	if (grp == "control") {
 		ret->allunlocks = unlocks;
-		ret->varname = cfg->varname;
+		foreach (configs, string c) ret[c] = cfg[c] || "";
 		mapping vars = G->G->DB->load_cached_config(channel->userid, "variables");
 		multiset(string) varnames = (<>);
 		foreach (vars; string name;) {
@@ -95,7 +104,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 
 @"is_mod": __async__ void wscmd_config(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
-		if (msg->varname) cfg->varname = msg->varname;
+		foreach (configs, string c) if (msg[c]) cfg[c] = msg[c];
 	});
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");
