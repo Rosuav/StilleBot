@@ -38,6 +38,7 @@ export function render(data) {
 		format = formatters[data.format] || formatters.plain;
 		document.querySelectorAll(".thresholddisplay").forEach(el => set_content(el, format(el.dataset.threshold)));
 	}
+	set_content("#nextunlock", data.nextval ? ["NEXT UNLOCK AT ", format(data.nextval), "!"] : "");
 }
 
 on("click", "#addunlock", e => ws_sync.send({cmd: "add_unlock"}));

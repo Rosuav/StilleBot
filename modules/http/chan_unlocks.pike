@@ -4,6 +4,8 @@ inherit http_websocket;
 
 constant markdown = #"# Unlocks!
 
+<p id=nextunlock></p>
+
 * loading...
 {:#unlocks}
 
@@ -55,6 +57,10 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping ret = ([
 		"unlocks": filter(unlocks) {return curval >= __ARGS__[0]->threshold;},
 	]);
+	int nextval = 0;
+	//Find the next unlock. Since they're sorted descending, we just grab any we see, last one wins.
+	foreach (unlocks, mapping unl) if (unl->threshold > curval) nextval = unl->threshold;
+	ret->nextval = nextval;
 	if (grp == "control") {
 		ret->allunlocks = unlocks;
 		foreach (configs, string c) ret[c] = cfg[c] || "";
