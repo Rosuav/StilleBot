@@ -39,13 +39,24 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 bool need_mod(string grp) {return grp == "control";}
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "unlocks"));
+	if (!cfg->varname) return ([]);
 	array unlocks = cfg->unlocks || ({ });
+	int curval = (int)channel->expand_variables("$" + cfg->varname + "$");
 	mapping ret = ([
-		"unlocks": filter(unlocks) {return 1;}, //TODO: Check if unlocked
+		"unlocks": filter(unlocks) {return curval >= __ARGS__[0]->threshold;},
 	]);
 	if (grp == "control") {
 		ret->allunlocks = unlocks;
 		ret->varname = cfg->varname;
+		mapping vars = G->G->DB->load_cached_config(channel->userid, "variables");
+		multiset(string) varnames = (<>);
+		foreach (vars; string name;) {
+			if (name == "*") continue; //Ignore the collection of user vars
+			if (sscanf(name, "%s:%*s", string base)) ; //Ignore user vars for the moment
+			else varnames[name - "$"] = 1;
+		}
+		array variables = sort(indices(varnames));
+		ret->varnames = (["id": variables[*]]); //Do we need any other info? Current value?
 	}
 	return ret;
 }
@@ -61,6 +72,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 @"is_mod": __async__ void wscmd_delete_unlock(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
 		//TODO: Delete by index
+		cfg->unlocks = ({});
 	});
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");

@@ -11,33 +11,22 @@ export const autorender = {
 		"Work with the community to unlock these things!",
 	]));},
 	allunlock_parent: DOM("#allunlocks"),
-	allunlock(f) {return LI({"data-id": f.id, class: "openform", ".form_data": f}, [
+	allunlock(f) {return LI({"data-id": f.id}, [
 		f.id, " ", f.formtitle,
 	]);},
 	allunlock_empty() {return DOM("#allunlocks").appendChild(LI([
 		"No unlocks yet - add one to get started.",
 	]));},
+	varname_parent: DOM("#varname"),
+	varname: (v, obj) => obj || OPTION({"data-id": v.id}, v.id),
 }
 
 let pending_var_selection;
 export function render(data) {
-	if (DOM("#varname").firstChild) DOM("#varname").value = data.varname;
-	else pending_var_selection = data.varname;
+	DOM("#varname").value = data.varname;
 }
 
 on("click", "#addunlock", e => ws_sync.send({cmd: "add_unlock"}));
 on("change", "#varname", e => ws_sync.send({cmd: "config", varname: e.match.value}));
 
-const variables = { };
-if (ws_group.startsWith("control#")) {
-	document.querySelectorAll(".modonly").forEach(el => (el.hidden = false));
-	ws_sync.connect(ws_group, {
-		ws_type: "chan_variables", ws_sendid: "chan_variables",
-		render_parent: DOM("#varname"),
-		render_item: (v, obj) => {variables[v.id] = v.curval; return obj || OPTION({"data-id": v.id}, v.id)},
-		render: function(data) {
-			if (pending_var_selection) DOM("#varname").value = pending_var_selection;
-			pending_var_selection = null;
-		},
-	});
-}
+if (ws_group.startsWith("control#")) document.querySelectorAll(".modonly").forEach(el => (el.hidden = false));
