@@ -6,6 +6,8 @@ constant markdown = #"# Unlocks!
 
 <p id=nextunlock></p>
 
+Click to view these gorgeous pics fullscreen.
+
 * loading...
 {:#unlocks}
 
