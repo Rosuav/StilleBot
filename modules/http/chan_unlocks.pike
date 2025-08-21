@@ -1,5 +1,3 @@
-inherit annotated;
-inherit hook;
 inherit http_websocket;
 
 constant markdown = #"# Unlocks!
@@ -117,8 +115,3 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");
 }
-
-@hook_variable_changed: void check_unlocks(object channel, string var, string newval) {
-}
-
-protected void create(string name) {::create(name);}
