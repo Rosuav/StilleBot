@@ -89,7 +89,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 
 @"is_mod": __async__ void wscmd_delete_unlock(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
-		cfg->unlocks = filter(cfg->unlocks || ({ })) {return __ARGS__[0]->id != msg->id;};
+		cfg->unlocks = filter(cfg->unlocks || ({ })) {return __ARGS__[0]->id != (int)msg->id;};
 	});
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");
