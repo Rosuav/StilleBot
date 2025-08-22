@@ -1,9 +1,10 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DIV, FIGCAPTION, FIGURE, HR, IMG, INPUT, LABEL, LI, OPTION, SPAN} = lindt; //autoimport
+const {A, BR, BUTTON, DIV, FIGCAPTION, FIGURE, HR, IMG, INPUT, LABEL, LI, OPTION, SPAN} = lindt; //autoimport
 import {simpleconfirm, simplemessage, upload_to_library} from "$$static||utils.js$$";
 import {formatters} from "$$static||monitor.js$$";
 
 let format = formatters.plain;
+function slugify(x) {return x.replace(/[^A-Za-z0-9]/g, "").toLowerCase();}
 export function render(data) {
 	if (data.varnames) replace_content("[name=varname]", data.varnames.map(v => OPTION(v.id)));
 	document.querySelectorAll(".config").forEach(el => {
@@ -11,8 +12,11 @@ export function render(data) {
 	});
 	if (data.format) format = formatters[data.format] || formatters.plain;
 	replace_content("#nextunlock", data.nextval ? ["NEXT UNLOCK AT ", format(data.nextval), "!"] : "");
-	if (data.unlocks) replace_content("#unlocks", data.unlocks.length ? data.unlocks.map(f => LI({"key": f.id}, [
-		"Unlocked at ", SPAN({class: "thresholddisplay"}, format(f.threshold)), "!", BR(),
+	if (data.unlocks) replace_content("#unlocks", data.unlocks.length ? data.unlocks.map(f => LI({
+			"key": f.id, "id": "unlock-" + slugify(format(f.threshold)),
+	}, [
+		"Unlocked at ", SPAN({class: "thresholddisplay"}, format(f.threshold)), "! ",
+		A({href: "#unlock-" + slugify(format(f.threshold)), style: "text-decoration: none"}, "🔗"), BR(),
 		FIGURE([
 			FIGCAPTION(f.caption),
 			IMG({src: "/upload/" + f.fileid, class: "preview"}),
