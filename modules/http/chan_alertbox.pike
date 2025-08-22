@@ -762,7 +762,7 @@ __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:m
 	send_updates_all(conn->group, (["delpersonal": msg->id]));
 }
 
-//NOTE: Also invoked by chan_monitors.pike
+//NOTE: Also invoked by chan_monitors.pike and chan_unlocks.pike
 @"is_mod": __async__ mapping|zero wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!intp(msg->size) || msg->size < 0) return 0; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
 	array files = await(G->G->DB->list_channel_files(channel->userid));
