@@ -130,6 +130,19 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	send_updates_all(channel, "control");
 }
 
+@"is_mod": __async__ void wscmd_shuffle(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
+		if (!cfg->unlocks) return;
+		int curval = (int)channel->expand_variables("$" + cfg->varname + "$");
+		array unl = filter(cfg->unlocks) {return curval < __ARGS__[0]->threshold;};
+		array th = unl->threshold;
+		Array.shuffle(th);
+		foreach (unl; int i; mapping u) u->threshold = th[i];
+	});
+	send_updates_all(channel, "");
+	send_updates_all(channel, "control");
+}
+
 //As with chan_monitors, the functionality for uploads is being lifted from alertbox (which comes
 //alphabetically prior to this file). May be of value to refactor this at some point.
 @"is_mod": __async__ mapping|zero wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
