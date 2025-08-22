@@ -763,8 +763,8 @@ __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:m
 }
 
 //NOTE: Also invoked by chan_monitors.pike
-@"is_mod": __async__ void wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!intp(msg->size) || msg->size < 0) return; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
+@"is_mod": __async__ mapping|zero wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!intp(msg->size) || msg->size < 0) return 0; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
 	array files = await(G->G->DB->list_channel_files(channel->userid));
 	int used = `+(0, @files->allocation);
 	//Count 1KB chunks, rounding up, and adding one chunk for overhead. Won't make much
@@ -784,10 +784,7 @@ __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:m
 	//TODO: Check if the file name is duplicated? Maybe? Not sure. It's not a fundamental
 	//blocker. Maybe the front end should check instead, and offer to delete the old one.
 	//TODO: Sanitize the name - at least a length check.
-	if (error) {
-		conn->sock->send_text(Standards.JSON.encode((["cmd": "uploaderror", "name": msg->name, "error": error]), 4));
-		return;
-	}
+	if (error) return (["cmd": "uploaderror", "name": msg->name, "error": error]);
 	mapping attrs = ([
 		"name": msg->name,
 		"size": msg->size, "allocation": allocation,
@@ -799,8 +796,8 @@ __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:m
 		attrs->autocrop = 1;
 	}
 	string id = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, attrs, 0));
-	conn->sock->send_text(Standards.JSON.encode((["cmd": "upload", "id": id, "name": msg->name]), 4));
 	update_one(conn->group, id); //Note that the display connection doesn't need to be updated
+	return (["cmd": "upload", "id": id, "name": msg->name]);
 }
 
 @hook_uploaded_file_edited: __async__ void file_uploaded(mapping file) {
