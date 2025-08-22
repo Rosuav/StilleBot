@@ -1,5 +1,5 @@
 import {choc, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, FIGCAPTION, FIGURE, HR, IMG, INPUT, LABEL, LI, OPTION, SPAN} = choc; //autoimport
+const {BR, BUTTON, DIV, FIGCAPTION, FIGURE, HR, IMG, INPUT, LABEL, LI, OPTION, SPAN} = choc; //autoimport
 import {simpleconfirm, simplemessage, upload_to_library} from "$$static||utils.js$$";
 import {formatters} from "$$static||monitor.js$$";
 
@@ -19,10 +19,16 @@ export const autorender = {
 	]));},
 	allunlock_parent: DOM("#allunlocks"),
 	allunlock(f) {return LI({"data-id": f.id}, [ //extcall
-		LABEL(["Unlock at ", INPUT({"data-unlockfield": "threshold", type: "number", value: f.threshold || 1})]),
-		BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑"), BR(),
-		LABEL(["Caption: ", INPUT({"data-unlockfield": "caption", value: f.caption || ""})]), BR(),
-		IMG({src: "/upload/" + f.fileid, class: "preview small"}), BR(),
+		DIV({class: "twocol"}, [
+			DIV([
+				LABEL(["Unlock at ", INPUT({"data-unlockfield": "threshold", type: "number", value: f.threshold || 1})]),
+				BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑"), BR(),
+				LABEL(["Caption: ", INPUT({"data-unlockfield": "caption", value: f.caption || ""})]), BR(),
+			]),
+			DIV([
+				IMG({src: "/upload/" + f.fileid, class: "preview small"}), BR(),
+			]),
+		]),
 	]);},
 	allunlock_empty() {return DOM("#allunlocks").appendChild(LI([
 		"No unlocks yet - add one to get started.",

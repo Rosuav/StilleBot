@@ -38,6 +38,15 @@ input[type=number] {width: 7.5em;} /* Widen the inputs a bit */
 .preview.small {max-width: 75px;}
 figure {width: fit-content;}
 figure figcaption {max-width: unset; text-align: center;}
+.twocol {
+	display: flex;
+	justify-content: space-between;
+}
+#allunlocks li {
+	background: #dff;
+	margin-bottom: 0.75em;
+}
+#allunlocks li:nth-child(even) {background: #fdf;}
 </style>
 ";
 
