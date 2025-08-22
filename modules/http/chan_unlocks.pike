@@ -35,6 +35,8 @@ Click to view these gorgeous pics fullscreen.
 }
 input[type=number] {width: 5.5em;} /* Widen the inputs a bit */
 .preview {max-width: 200px; cursor: pointer;}
+figure {width: fit-content;}
+figure figcaption {max-width: unset; text-align: center;}
 </style>
 ";
 
@@ -102,6 +104,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 			if ((int)msg->threshold) unl->threshold = (int)msg->threshold;
 			//TODO: Support uploads, which would make ->url just a pointer back to the server somewhere
 			if (msg->url) unl->url = msg->url;
+			if (msg->caption) unl->caption = msg->caption;
 		}
 	});
 	send_updates_all(channel, "");

@@ -1,5 +1,5 @@
 import {choc, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, HR, IMG, INPUT, LABEL, LI, OPTION, SPAN} = choc; //autoimport
+const {BR, BUTTON, FIGCAPTION, FIGURE, HR, IMG, INPUT, LABEL, LI, OPTION, SPAN} = choc; //autoimport
 import {simpleconfirm, simplemessage} from "$$static||utils.js$$";
 import {formatters} from "$$static||monitor.js$$";
 
@@ -8,7 +8,10 @@ export const autorender = {
 	unlock_parent: DOM("#unlocks"),
 	unlock(f) {return LI({"data-id": f.id}, [ //extcall
 		"Unlocked at ", SPAN({class: "thresholddisplay", "data-threshold": f.threshold}, format(f.threshold)), "!", BR(),
-		IMG({src: f.url, class: "preview"}),
+		FIGURE([
+			FIGCAPTION(f.caption),
+			IMG({src: f.url, class: "preview"}),
+		]),
 		HR(),
 	]);},
 	unlock_empty() {return DOM("#unlocks").appendChild(LI([
@@ -16,10 +19,10 @@ export const autorender = {
 	]));},
 	allunlock_parent: DOM("#allunlocks"),
 	allunlock(f) {return LI({"data-id": f.id}, [ //extcall
-		LABEL(["Unlock at ", INPUT({class: "threshold", type: "number", value: f.threshold || 1})]),
+		LABEL(["Unlock at ", INPUT({"data-unlockfield": "threshold", type: "number", value: f.threshold || 1})]),
 		BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑"), BR(),
-		"NOTE: Set the threshold before uploading the image, or it will be unexpectedly visible!", BR(),
-		LABEL(["Image URL: ", INPUT({class: "url", value: f.url || ""})]), BR(),
+		LABEL(["Caption: ", INPUT({"data-unlockfield": "caption", value: f.caption || ""})]), BR(),
+		LABEL(["Image URL: ", INPUT({"data-unlockfield": "url", value: f.url || ""})]), BR(),
 		"TODO: Allow direct uploads. For now, they need to be provided as links to somewhere.",
 	]);},
 	allunlock_empty() {return DOM("#allunlocks").appendChild(LI([
@@ -46,8 +49,7 @@ on("change", ".config", e => ws_sync.send({cmd: "config", [e.match.name]: e.matc
 on("click", ".confirmdelete", simpleconfirm("Really delete this unlock?", e =>
 	ws_sync.send({cmd: "delete_unlock", id: e.match.closest_data("id")})
 ));
-on("change", ".threshold", e => ws_sync.send({cmd: "update_unlock", id: e.match.closest_data("id"), threshold: e.match.value}));
-on("change", ".url", e => ws_sync.send({cmd: "update_unlock", id: e.match.closest_data("id"), url: e.match.value}));
+on("change", "[data-unlockfield]", e => ws_sync.send({cmd: "update_unlock", id: e.match.closest_data("id"), [e.match.dataset.unlockfield]: e.match.value}));
 
 on("click", ".preview", e => e.match.requestFullscreen());
 
