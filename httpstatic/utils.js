@@ -283,7 +283,7 @@ export function upload_to_library(cfg) {
 			INPUT({class: "fileuploader", type: "file", multiple: 1, accept: "image/*"}), //TODO: Let the accept be configurable
 		]),
 		DIV({class: "filedropzone"}, "Or drop files here to upload"),
-		DIV({id: "uploaderror"}),
+		DIV({id: "uploaderror", class: "hidden"}),
 	]));
 
 	const uploadme = { };
