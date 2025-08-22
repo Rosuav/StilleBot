@@ -13,17 +13,17 @@ Click to view these gorgeous pics fullscreen.
 
 > ### Manage unlocks
 >
-> <label>Select variable: <select class=config name=varname></select></label>
+> <div><label>Select variable: <select class=config name=varname></select></label><br>
 > <label>Display format: <select class=config name=format>
 > <option value=plain>plain</option>
 > <option value=currency>currency eg $27.18</option>
 > <option value=subscriptions>subscriptions</option>
-> </select></label>
+> </select></label></div>
+>
+> <div class=uploadtarget></div>
 >
 > * loading...
 > {:#allunlocks}
->
-> <div class=uploadtarget></div>
 >
 > [Close](:.dialog_close)
 {: tag=formdialog #managedlg}

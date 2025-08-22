@@ -19,7 +19,7 @@ export function render(data) {
 		]),
 		HR(),
 	])) : LI("Work with the community to unlock these things!"));
-	if (data.allunlocks) replace_content("#allunlocks", data.allunlocks.map(f => LI({"key": f.id}, [
+	if (data.allunlocks) replace_content("#allunlocks", data.allunlocks.map(f => LI({"key": f.id, "data-id": f.id}, [
 		DIV({class: "twocol"}, [
 			DIV([
 				LABEL(["Unlock at ", INPUT({"data-unlockfield": "threshold", type: "number", value: f.threshold || 1})]),
