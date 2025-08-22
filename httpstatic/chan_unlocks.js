@@ -1,28 +1,25 @@
-import {choc, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DIV, FIGCAPTION, FIGURE, HR, IMG, INPUT, LABEL, LI, OPTION, SPAN} = choc; //autoimport
+import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
+const {BR, BUTTON, DIV, FIGCAPTION, FIGURE, HR, IMG, INPUT, LABEL, LI, OPTION, SPAN} = lindt; //autoimport
 import {simpleconfirm, simplemessage, upload_to_library} from "$$static||utils.js$$";
 import {formatters} from "$$static||monitor.js$$";
 
 let format = formatters.plain;
 export function render(data) {
-	if (data.varnames) set_content("[name=varname]", data.varnames.map(v => OPTION({"data-id": v.id}, v.id)));
+	if (data.varnames) replace_content("[name=varname]", data.varnames.map(v => OPTION(v.id)));
 	document.querySelectorAll(".config").forEach(el => {
 		if (data[el.name]) el.value = data[el.name];
 	});
-	if (data.format) {
-		format = formatters[data.format] || formatters.plain;
-		document.querySelectorAll(".thresholddisplay").forEach(el => set_content(el, format(el.dataset.threshold)));
-	}
-	set_content("#nextunlock", data.nextval ? ["NEXT UNLOCK AT ", format(data.nextval), "!"] : "");
-	if (data.unlocks) set_content("#unlocks", data.unlocks.length ? data.unlocks.map(f => LI({"data-id": f.id}, [
-		"Unlocked at ", SPAN({class: "thresholddisplay", "data-threshold": f.threshold}, format(f.threshold)), "!", BR(),
+	if (data.format) format = formatters[data.format] || formatters.plain;
+	replace_content("#nextunlock", data.nextval ? ["NEXT UNLOCK AT ", format(data.nextval), "!"] : "");
+	if (data.unlocks) replace_content("#unlocks", data.unlocks.length ? data.unlocks.map(f => LI({"key": f.id}, [
+		"Unlocked at ", SPAN({class: "thresholddisplay"}, format(f.threshold)), "!", BR(),
 		FIGURE([
 			FIGCAPTION(f.caption),
 			IMG({src: "/upload/" + f.fileid, class: "preview"}),
 		]),
 		HR(),
 	])) : LI("Work with the community to unlock these things!"));
-	if (data.allunlocks) set_content("#allunlocks", data.allunlocks.map(f => LI({"data-id": f.id}, [
+	if (data.allunlocks) replace_content("#allunlocks", data.allunlocks.map(f => LI({"key": f.id}, [
 		DIV({class: "twocol"}, [
 			DIV([
 				LABEL(["Unlock at ", INPUT({"data-unlockfield": "threshold", type: "number", value: f.threshold || 1})]),
