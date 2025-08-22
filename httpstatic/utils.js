@@ -296,7 +296,7 @@ export function upload_to_library(cfg) {
 			body: file,
 			credentials: "same-origin",
 		})).json();
-		set_content("#uploaderror", resp.error).classList.toggle("hidden", !!resp.error);
+		set_content("#uploaderror", resp.error).classList.toggle("hidden", !resp.error);
 		if (cfg.uploaded) cfg.uploaded(resp);
 	});
 
