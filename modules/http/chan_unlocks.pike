@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit hook;
 
 constant markdown = #"# Unlocks!
 
@@ -72,7 +73,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	int nextval = 0;
 	//Find the next unlock. Since they're sorted descending, we just grab any we see, last one wins.
 	foreach (unlocks, mapping unl) if (unl->threshold > curval) nextval = unl->threshold;
-	ret->nextval = nextval;
+	ret->curval = curval; ret->nextval = nextval;
 	if (grp == "control") {
 		ret->allunlocks = unlocks;
 		foreach (configs, string c) ret[c] = cfg[c] || "";
@@ -148,3 +149,12 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	}
 	return resp;
 }
+
+@hook_variable_changed: __async__ void check_unlocks(object channel, string varname, string newval) {
+	mapping cfg = await(G->G->DB->load_config(channel->userid, "unlocks"));
+	if (varname != cfg->varname) return;
+	send_updates_all(channel, "");
+	send_updates_all(channel, "control");
+}
+
+protected void create(string name) {::create(name);}

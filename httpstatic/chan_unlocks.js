@@ -11,7 +11,9 @@ export function render(data) {
 		if (data[el.name]) el.value = data[el.name];
 	});
 	if (data.format) format = formatters[data.format] || formatters.plain;
-	replace_content("#nextunlock", data.nextval ? ["NEXT UNLOCK AT ", format(data.nextval), "!"] : "");
+	replace_content("#nextunlock", data.nextval ? [
+		"NEXT UNLOCK AT ", format(data.nextval), " - just ", format(data.nextval - data.curval), " to go!",
+	] : "");
 	if (data.unlocks) replace_content("#unlocks", data.unlocks.length ? data.unlocks.map(f => LI({
 			"key": f.id, "id": "unlock-" + slugify(format(f.threshold)),
 	}, [
