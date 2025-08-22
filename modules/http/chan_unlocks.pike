@@ -137,8 +137,14 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	if (resp->?cmd == "upload") {
 		//Add the unlock immediately, without waiting for completion of the upload
 		await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
+			int th = 1<<30;
+			if (cfg->unlocks && sizeof(cfg->unlocks)) {
+				//TODO: Check that this new threshold is higher than the current value
+				//TODO: Have the increment be configurable
+				th = max(@cfg->unlocks->threshold) + 10000;
+			}
 			cfg->unlocks += ({([
-				"id": ++cfg->nextid, "threshold": 1<<30,
+				"id": ++cfg->nextid, "threshold": th,
 				"fileid": resp->id,
 				"caption": resp->name || "",
 			])});
