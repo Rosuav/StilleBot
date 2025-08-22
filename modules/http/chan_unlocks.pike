@@ -81,7 +81,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 
 @"is_mod": __async__ mapping wscmd_add_unlock(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
-		cfg->unlocks += ({(["id": ++cfg->nextid, "threshold": 1])});
+		cfg->unlocks += ({(["id": ++cfg->nextid, "threshold": 1<<30])});
 	});
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");
