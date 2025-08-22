@@ -4,21 +4,25 @@ import {simpleconfirm, simplemessage, upload_to_library} from "$$static||utils.j
 import {formatters} from "$$static||monitor.js$$";
 
 let format = formatters.plain;
-export const autorender = {
-	unlock_parent: DOM("#unlocks"),
-	unlock(f) {return LI({"data-id": f.id}, [ //extcall
+export function render(data) {
+	if (data.varnames) set_content("[name=varname]", data.varnames.map(v => OPTION({"data-id": v.id}, v.id)));
+	document.querySelectorAll(".config").forEach(el => {
+		if (data[el.name]) el.value = data[el.name];
+	});
+	if (data.format) {
+		format = formatters[data.format] || formatters.plain;
+		document.querySelectorAll(".thresholddisplay").forEach(el => set_content(el, format(el.dataset.threshold)));
+	}
+	set_content("#nextunlock", data.nextval ? ["NEXT UNLOCK AT ", format(data.nextval), "!"] : "");
+	if (data.unlocks) set_content("#unlocks", data.unlocks.length ? data.unlocks.map(f => LI({"data-id": f.id}, [
 		"Unlocked at ", SPAN({class: "thresholddisplay", "data-threshold": f.threshold}, format(f.threshold)), "!", BR(),
 		FIGURE([
 			FIGCAPTION(f.caption),
 			IMG({src: "/upload/" + f.fileid, class: "preview"}),
 		]),
 		HR(),
-	]);},
-	unlock_empty() {return DOM("#unlocks").appendChild(LI([
-		"Work with the community to unlock these things!",
-	]));},
-	allunlock_parent: DOM("#allunlocks"),
-	allunlock(f) {return LI({"data-id": f.id}, [ //extcall
+	])) : LI("Work with the community to unlock these things!"));
+	if (data.allunlocks) set_content("#allunlocks", data.allunlocks.map(f => LI({"data-id": f.id}, [
 		DIV({class: "twocol"}, [
 			DIV([
 				LABEL(["Unlock at ", INPUT({"data-unlockfield": "threshold", type: "number", value: f.threshold || 1})]),
@@ -29,24 +33,7 @@ export const autorender = {
 				IMG({src: "/upload/" + f.fileid, class: "preview small"}), BR(),
 			]),
 		]),
-	]);},
-	allunlock_empty() {return DOM("#allunlocks").appendChild(LI([
-		"No unlocks yet - add one to get started.",
-	]));},
-	varname_parent: DOM("[name=varname]"),
-	varname: (v, obj) => obj || OPTION({"data-id": v.id}, v.id), //extcall
-}
-
-let pending_var_selection;
-export function render(data) {
-	document.querySelectorAll(".config").forEach(el => {
-		if (data[el.name]) el.value = data[el.name];
-	});
-	if (data.format) {
-		format = formatters[data.format] || formatters.plain;
-		document.querySelectorAll(".thresholddisplay").forEach(el => set_content(el, format(el.dataset.threshold)));
-	}
-	set_content("#nextunlock", data.nextval ? ["NEXT UNLOCK AT ", format(data.nextval), "!"] : "");
+	])));
 }
 
 on("click", "#addunlock", e => ws_sync.send({cmd: "add_unlock"}));
