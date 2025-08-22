@@ -69,17 +69,6 @@ on("click", "#user_types input", e => {
 	ws_sync.send({cmd: "config", who: {[e.match.dataset.kwd]: e.match.checked}});
 });
 
-export function sockmsg_uploaderror(msg) {
-	set_content("#errormsg", msg.error).classList.add("visible");
-}
-
-upload_to_library({
-	start_upload() {
-		set_content("#errormsg", "").classList.remove("visible");
-	},
-	uploaded(resp) {
-		if (resp.error) set_content("#errormsg", resp.error).classList.add("visible");
-	},
-})
+upload_to_library({});
 
 on("change", "#msgformat", e => ws_sync.send({cmd: "config", msgformat: e.match.value}));

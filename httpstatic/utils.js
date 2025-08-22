@@ -2,7 +2,7 @@
 //import {...} from "$$static||utils.js$$";
 
 import {choc, on, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DIALOG, DIV, H3, HEADER, INPUT, LABEL, LINK, OPTGROUP, OPTION, P, SECTION, SELECT, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
+const {BR, BUTTON, DIALOG, DIV, FORM, H3, HEADER, INPUT, LABEL, LINK, OPTGROUP, OPTION, P, SECTION, SELECT, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
 ensure_simpleconfirm_dlg(); //Unnecessary overhead once Firefox 98+ is standard - can then be removed
 fix_dialogs({close_selector: ".dialog_cancel,.dialog_close", click_outside: "formless", methods: 1});
 
@@ -216,7 +216,7 @@ export function copytext(copyme) {
 
 //Note that this uses #copied for hysterical raisins, but any quick description label will work.
 export function notify(elem, x, y, label) {
-	const c = DOM("#copied") || DIV({id: "copied"});
+	const c = document.getElementById("copied") || DIV({id: "copied"});
 	const par = (elem && elem.closest("dialog")) || document.body;
 	par.append(c); //Reparent the marker element to the dialog or document every time it's used
 	set_content(c, label).classList.add("shown");
@@ -276,6 +276,16 @@ on("click", "#togglesidebar", e => {
 
 //Handle file uploads. If they don't go to the library, you'll have to handle them manually in the individual files.
 export function upload_to_library(cfg) {
+	//Deduplicate the construction of drop targets etc by creating a <div class=uploadtarget> anywhere on the page.
+	document.querySelectorAll(".uploadtarget").forEach(targ => set_content(targ, [
+		FORM([
+			"Upload new file: ",
+			INPUT({class: "fileuploader", type: "file", multiple: 1, accept: "image/*"}), //TODO: Let the accept be configurable
+		]),
+		DIV({class: "filedropzone"}, "Or drop files here to upload"),
+		DIV({id: "uploaderror"}),
+	]));
+
 	const uploadme = { };
 	ws_sync.register_callback(async function upload(msg) {
 		const file = uploadme[msg.name];
@@ -286,7 +296,12 @@ export function upload_to_library(cfg) {
 			body: file,
 			credentials: "same-origin",
 		})).json();
+		set_content("#uploaderror", resp.error).classList.toggle("hidden", !!resp.error);
 		if (cfg.uploaded) cfg.uploaded(resp);
+	});
+
+	ws_sync.register_callback(function uploaderror(msg) {
+		set_content("#uploaderror", msg.error || "Unknown upload error, see server log").classList.remove("hidden");
 	});
 
 	on("change", ".fileuploader", e => {

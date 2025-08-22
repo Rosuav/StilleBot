@@ -16,10 +16,7 @@ Example: <code id=defaultmsg></code>
 Please note: Files are removed periodically; this is not a portfolio.
 
 <div id=uploads></div>
-<form>Upload new file: <input class=fileuploader type=file multiple accept=\"image/*\"></form>
-<div class=filedropzone>Or drop files here to upload</div>
-
-<div id=errormsg></div>
+<div class=uploadtarget></div>
 
 > ### Delete file
 > Really delete this file?
@@ -35,17 +32,6 @@ Please note: Files are removed periodically; this is not a portfolio.
 {: tag=dialog #confirmdeletedlg}
 
 <style>
-#errormsg {
-	display: none;
-	border: 2px solid red;
-	background-color: #fdd;
-	padding: 5px;
-	margin: 10px;
-}
-#errormsg.visible {
-	display: block;
-}
-
 #user_types {
 	display: flex;
 	list-style-type: none;

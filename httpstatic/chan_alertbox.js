@@ -801,10 +801,6 @@ on("click", "#libraryselect", async e => {
 	DOM("#library").close();
 });
 
-export function sockmsg_uploaderror(msg) {
-	set_content("#uploaderror", msg.error || "Unknown upload error, see server log").classList.remove("hidden");
-}
-
 on("submit", ".alertconfig", e => {
 	e.preventDefault();
 	const msg = {cmd: "alertcfg", type: e.match.dataset.type};

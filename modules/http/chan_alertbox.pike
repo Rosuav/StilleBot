@@ -212,16 +212,6 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 .cheer-only {display: none;}
 [data-type^=cheer] .cheer-only {display: revert;}
 
-#uploaderror {
-	margin-bottom: 0.5em;
-	background: #fee;
-	border: 1px solid red;
-	padding: 0.125em 0.5em;
-	max-width: -moz-fit-content;
-	max-width: fit-content;
-}
-#uploaderror.hidden {display: none;}
-
 .invisible {visibility: hidden;}
 
 .need-auth {
