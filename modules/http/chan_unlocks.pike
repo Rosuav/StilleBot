@@ -139,6 +139,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 			cfg->unlocks += ({([
 				"id": ++cfg->nextid, "threshold": 1<<30,
 				"fileid": resp->id,
+				"caption": resp->name || "",
 			])});
 		});
 		send_updates_all(channel, "control");
