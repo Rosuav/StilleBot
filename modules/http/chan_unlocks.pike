@@ -152,7 +152,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 
 @hook_variable_changed: __async__ void check_unlocks(object channel, string varname, string newval) {
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "unlocks"));
-	if (varname != cfg->varname) return;
+	if (varname != "$" + cfg->varname + "$") return;
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");
 }
