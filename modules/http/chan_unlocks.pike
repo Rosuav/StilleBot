@@ -134,7 +134,8 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
 		if (!cfg->unlocks) return;
 		int curval = (int)channel->expand_variables("$" + cfg->varname + "$");
-		array unl = filter(cfg->unlocks) {return curval < __ARGS__[0]->threshold;};
+		//Shuffle only those that are still ahead of us, and not the immediate next (in case it's been teased).
+		array unl = filter(cfg->unlocks) {return curval + 10000 < __ARGS__[0]->threshold;};
 		array th = unl->threshold;
 		Array.shuffle(th);
 		foreach (unl; int i; mapping u) u->threshold = th[i];
