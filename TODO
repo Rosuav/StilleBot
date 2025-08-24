@@ -279,7 +279,3 @@
 * New specials: onetapstreakstarted, onetapbreakpointachieved, onetapstreakexpired
 * Seize the Crown - initial cost sets dynreward base cost? Need to have it optionally
   NOT set that, to not reset every stream, but also have a button to reset it now.
-* Upload to the unlocks
-  - Uploads automatically become new unlocks, with threshold super high
-  - Bulk upload should therefore be possible
-  - Support captions. With Devi's, put "Chii (DeviCat)" for existing ones.
