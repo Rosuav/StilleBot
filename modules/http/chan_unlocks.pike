@@ -48,6 +48,7 @@ figure figcaption {max-width: unset; text-align: center;}
 	margin-bottom: 0.75em;
 }
 #allunlocks li:nth-child(even) {background: #fdf;}
+.unlocked {opacity: 0.6;}
 </style>
 ";
 

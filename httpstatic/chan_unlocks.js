@@ -25,10 +25,16 @@ export function render(data) {
 		]),
 		HR(),
 	])) : LI("Work with the community to unlock these things!"));
-	if (data.allunlocks) replace_content("#allunlocks", data.allunlocks.map(f => LI({"key": f.id, "data-id": f.id}, [
+	if (data.allunlocks) replace_content("#allunlocks", data.allunlocks.map(f => LI({
+		"key": f.id, "data-id": f.id,
+		class: f.threshold > data.curval ? "locked" : "unlocked",
+	}, [
 		DIV({class: "twocol"}, [
 			DIV([
-				LABEL(["Unlock at ", INPUT({"data-unlockfield": "threshold", type: "number", value: f.threshold || 1})]),
+				LABEL([
+					f.threshold > data.curval ? "Unlock at " : "Unlocked at ",
+					INPUT({"data-unlockfield": "threshold", type: "number", value: f.threshold || 1}),
+				]),
 				BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑"), BR(),
 				LABEL(["Caption: ", INPUT({"data-unlockfield": "caption", value: f.caption || ""})]), BR(),
 			]),
