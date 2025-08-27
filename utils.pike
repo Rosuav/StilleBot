@@ -240,6 +240,17 @@ int update() {
 	return -1;
 }
 
+__async__ void credentials() {
+	array(string) users = G->G->args[Arg.REST];
+	if (!sizeof(users)) write("Usage: pike stillebot --exec=credentials user [user] [user]\n");
+	while (!G->G->user_credentials_loaded) sleep(0.125);
+	foreach (users, string user) {
+		mapping creds = G->G->user_credentials[user];
+		if (!creds) write("%s: No credentials stored\n", user);
+		else write("%s: Validated %ds ago, scopes %s\n", user, time() - creds->validated, creds->scopes * ", ");
+	}
+}
+
 @"This help information":
 void help() {
 	write("\nUSAGE: pike stillebot --exec=ACTION\nwhere ACTION is one of the following:\n");
