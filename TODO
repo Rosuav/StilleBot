@@ -279,4 +279,3 @@
 * New specials: onetapstreakstarted, onetapbreakpointachieved, onetapstreakexpired
 * Seize the Crown - initial cost sets dynreward base cost? Need to have it optionally
   NOT set that, to not reset every stream, but also have a button to reset it now.
-* Unlocks is showing raw numbers when not logged in - failing to respect display format

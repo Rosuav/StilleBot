@@ -75,6 +75,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	//Find the next unlock. Since they're sorted descending, we just grab any we see, last one wins.
 	foreach (unlocks, mapping unl) if (unl->threshold > curval) nextval = unl->threshold;
 	ret->curval = curval; ret->nextval = nextval;
+	ret->format = cfg->format || "plain";
 	if (grp == "control") {
 		ret->allunlocks = unlocks;
 		foreach (configs, string c) ret[c] = cfg[c] || "";
