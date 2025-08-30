@@ -197,7 +197,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 				"{msg}": data->message || "",
 				"{shop_item_ids}": Array.arrayify(data->offers->?id) * " ",
 			]); break;
-			case "GIVEAWAY_PURCHASED": special = "!fw_gift"; params = ([
+			case "GIFT_PURCHASE": special = "!fw_gift"; params = ([
 				"{from_name}": data->username || "Anonymous",
 				"{amount}": data->amounts->?total->?value + " " + data->amounts->?total->?currency,
 				"{msg}": data->message || "",
