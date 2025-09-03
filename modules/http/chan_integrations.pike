@@ -34,6 +34,11 @@ that looks something like: `8e7d24cf-66b4-4695-a651-3e744df5a861`<br>Paste it he
 Once this is complete, Fourth Wall events will begin showing up in [Alerts](alertbox#fourthwall) and
 anywhere else they end up getting added.
 
+NOTE: By default, shop orders will be counted towards goal bars by their gross value. If you would prefer
+to have them contribute their net profit instead, enter your 2-letter country code here: <input id=fwcountry size=2>
+Orders from this country will be counted as domestic and presumed to have a slightly lower fee than
+international orders. Blank this field to return to ignoring all fees.
+
 ## Enabling Patreon notifications
 
 [Link your Patreon account](:#patreonlogin)
@@ -226,6 +231,15 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		req->misc->channel->trigger_special(special, (["user": req->misc->channel->login]), params);
 		int|float amount = data->amounts->?total->?value;
 		if (floatp(amount)) amount = (int)(amount * 100 + 0.5); else amount *= 100;
+		//To calculate the profit on a sale, we take the total amount as above, then remove the following:
+		//1) Shipping
+		//2) Tax
+		//3) Cost of Goods Sold (summed from offers[*]->cost)
+		//4) And the transaction fee. This is the hard part.
+		//For now, I am ignoring Buy Now Pay Later (which has significantly higher fees) and PayPal (which has
+		//slightly higher fees). The two fee schedules listed on the Fourth Wall docs are, as of 20250904:
+		//https://help.fourthwall.com/hc/en-us/articles/13331335648283-Transaction-fees
+		//Domestic 2.9% + 30c, International 3.9% + 30c.
 		if (amount) G->G->goal_bar_autoadvance(req->misc->channel, (["user": req->misc->channel->login, "from_name": data->username || "Anonymous"]), special[1..], amount);
 		return "Awesome, thanks!";
 	}
@@ -254,10 +268,11 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 }
 
 @"is_mod": __async__ void wscmd_settoken(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!stringp(msg->token)) return;
+	if (!stringp(msg->token) && !stringp(msg->country)) return;
 	if (!(<"kofi", "fourthwall">)[msg->platform]) return;
 	await(G->G->DB->mutate_config(channel->userid, msg->platform) {mapping cfg = __ARGS__[0];
-		cfg->verification_token = msg->token;
+		if (msg->token) cfg->verification_token = msg->token;
+		if (msg->country) cfg->country = msg->country;
 	});
 	send_updates_all(conn->group);
 }
@@ -270,6 +285,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	return ([
 		"kofitoken": stringp(kofi->verification_token) && "..." + kofi->verification_token[<3..],
 		"fwtoken": stringp(fw->verification_token) && "..." + fw->verification_token[<3..],
+		"fwcountry": fw->country || "",
 		"paturl": pat->campaign_url, //May be null
 	]);
 }
