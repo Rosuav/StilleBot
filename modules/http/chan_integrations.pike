@@ -198,7 +198,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		string billing_country = data->billing->?address->?country || "";
 		//Suppress personal information in the log. Test messages (triggered from the Fourth Wall UI)
 		//have fake personal info, so we can keep those and thus easily see the actual message structure.
-		if (!data->testMode) foreach ("shipping billing email" / " ", string key) if (data[key]) data[key] = "(...)";
+		if (!body->testMode) foreach ("shipping billing email" / " ", string key) if (data[key]) data[key] = "(...)";
 		Stdio.append_file("fourthwall.log", sprintf("\n%s%s INTEGRATION for %O: %O\n", ctime(time()), body->type || "UNKNOWN", req->misc->channel->login, body));
 		string special = "!fw_other";
 		mapping params = (["{notif_type}": body->type]);
