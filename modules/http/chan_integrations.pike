@@ -79,6 +79,11 @@ constant fw_shop = special_trigger("!fw_shop", "Shop sale on Fourth Wall.", "The
 constant fw_gift = special_trigger("!fw_gift", "Gift purchase on Fourth Wall.", "The broadcaster", "amount, msg, from_name, shop_item_ids", "Fourth Wall");
 constant fw_other = special_trigger("!fw_other", "Other notification from Fourth Wall - not usually useful.", "The broadcaster", "notif_type", "Fourth Wall");
 
+int to_cents(int|float amount) {
+	if (floatp(amount)) return (int)(amount * 100 + 0.5);
+	return amount * 100;
+}
+
 __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req) {
 	if (string other = req->request_type == "POST" && !is_active_bot() && get_active_bot()) {
 		//POST requests are likely to be webhooks. Forward them to the active bot, including whichever
@@ -190,6 +195,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		mapping body = Standards.JSON.decode_utf8(req->body_raw);
 		mapping data = mappingp(body) && body->data;
 		if (!mappingp(data)) return (["error": 400, "data": "No data in body"]);
+		string billing_country = data->billing->?address->?country || "";
 		//Suppress personal information in the log. Test messages (triggered from the Fourth Wall UI)
 		//have fake personal info, so we can keep those and thus easily see the actual message structure.
 		if (!data->testMode) foreach ("shipping billing email" / " ", string key) if (data[key]) data[key] = "(...)";
@@ -228,9 +234,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			"amount": (string)data->amounts->?total->?value,
 			"msg": data->message || "",
 		]));
-		req->misc->channel->trigger_special(special, (["user": req->misc->channel->login]), params);
-		int|float amount = data->amounts->?total->?value;
-		if (floatp(amount)) amount = (int)(amount * 100 + 0.5); else amount *= 100;
+		int amount = to_cents(data->amounts->?total->?value);
 		//To calculate the profit on a sale, we take the total amount as above, then remove the following:
 		//1) Shipping
 		//2) Tax
@@ -240,6 +244,20 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		//slightly higher fees). The two fee schedules listed on the Fourth Wall docs are, as of 20250904:
 		//https://help.fourthwall.com/hc/en-us/articles/13331335648283-Transaction-fees
 		//Domestic 2.9% + 30c, International 3.9% + 30c.
+		if (fw->country && fw->country != "") {
+			//Note that these calculations might be off by a little, but hopefully not hugely.
+			if (billing_country == fw->country)
+				amount -= (int)(amount * .029) + 30;
+			else
+				amount -= (int)(amount * .039) + 30;
+			amount -= to_cents(data->amounts->?shipping->?value);
+			amount -= to_cents(data->amounts->?tax->?value);
+			foreach (Array.arrayify(data->offers), mapping offer)
+				amount -= to_cents(offer->variant->?cost->?value);
+			Stdio.append_file("fourthwall.log", sprintf("Calculated profit: %O\n", amount));
+		}
+		params["{profit}"] = (string)amount;
+		req->misc->channel->trigger_special(special, (["user": req->misc->channel->login]), params);
 		if (amount) G->G->goal_bar_autoadvance(req->misc->channel, (["user": req->misc->channel->login, "from_name": data->username || "Anonymous"]), special[1..], amount);
 		return "Awesome, thanks!";
 	}
