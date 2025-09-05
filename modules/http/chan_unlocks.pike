@@ -70,15 +70,15 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "unlocks"));
 	if (!cfg->varname) return ([]);
 	array unlocks = cfg->unlocks || ({ });
-	sort(-unlocks->threshold[*], unlocks); //Put the newest unlocks at the top
 	int curval = (int)channel->expand_variables("$" + cfg->varname + "$");
+	int unlocked = cfg->unlockcost && curval / cfg->unlockcost; //If you haven't set the unlock cost, nothing has been unlocked.
 	mapping ret = ([
-		"unlocks": filter(unlocks) {return curval >= __ARGS__[0]->threshold;},
+		"unlocks": unlocks[..unlocked - 1],
 	]);
-	int nextval = 0;
-	//Find the next unlock. Since they're sorted descending, we just grab any we see, last one wins.
-	foreach (unlocks, mapping unl) if (unl->threshold > curval) nextval = unl->threshold;
-	ret->curval = curval; ret->nextval = nextval;
+	ret->curval = curval;
+	//If all have been unlocked, there is nothing more to unlock (though more could be added).
+	ret->nextval = unlocked < sizeof(unlocks) && cfg->unlockcost * (unlocked + 1);
+	ret->unlockcost = cfg->unlockcost;
 	ret->format = cfg->format || "plain";
 	if (grp == "control") {
 		ret->allunlocks = unlocks;
@@ -111,7 +111,6 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		int idx = search(cfg->unlocks->id, (int)msg->id);
 		if (idx != -1) {
 			mapping unl = cfg->unlocks[idx];
-			if ((int)msg->threshold) unl->threshold = (int)msg->threshold;
 			if (msg->caption) unl->caption = msg->caption;
 		}
 	});
@@ -130,15 +129,20 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 
 @"is_mod": __async__ void wscmd_shuffle(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
-		if (!cfg->unlocks) return;
+		if (!cfg->unlocks || !cfg->unlockcost) return;
 		int curval = (int)channel->expand_variables("$" + cfg->varname + "$");
 		//Shuffle only those that are still ahead of us, and not the immediate next (in case it's been teased).
-		array unl = filter(cfg->unlocks) {return curval + cfg->unlockcost < __ARGS__[0]->threshold;};
-		array th = unl->threshold;
-		Array.shuffle(th);
-		foreach (unl; int i; mapping u) u->threshold = th[i];
+		int unlocked = curval / cfg->unlockcost; //Number of pics unlocked so far
+		array visible = cfg->unlocks[..unlocked]; //This will include one extra (since the array counts from zero), thus incorporating the potentially-teased.
+		array invisible = cfg->unlocks[unlocked+1..];
+		//Note that, with 27 images unlocked, we need at least 30 total images to be worth shuffling.
+		//Image #28 may have already been teased, so it doesn't get reordered; and if there are only
+		//29 total images, there's nothing to shuffle.
+		if (sizeof(invisible) < 2) return;
+		Array.shuffle(invisible);
+		cfg->unlocks = visible + invisible;
 	});
-	send_updates_all(channel, "");
+	send_updates_all(channel, ""); //Shouldn't be necessary since we don't shuffle the sighted ones
 	send_updates_all(channel, "control");
 }
 
@@ -147,11 +151,9 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
 		if (!cfg->unlocks) return;
 		int curval = (int)channel->expand_variables("$" + cfg->varname + "$");
+		int unlocked = curval / cfg->unlockcost;
 		//Retain only those that are still ahead of us
-		array unl = filter(cfg->unlocks) {return curval < __ARGS__[0]->threshold;};
-		foreach (unl; int i; mapping u) u->threshold = (i+1) * cfg->unlockcost;
-		cfg->unlocks = unl;
-		return cfg;
+		cfg->unlocks = cfg->unlocks[unlocked..];
 	});
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");
@@ -164,19 +166,14 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	if (resp->?cmd == "upload") {
 		//Add the unlock immediately, without waiting for completion of the upload
 		await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
-			int th = cfg->unlockcost;
-			if (cfg->unlocks && sizeof(cfg->unlocks)) {
-				th = max(@cfg->unlocks->threshold) + cfg->unlockcost;
-			}
 			cfg->unlocks += ({([
-				"id": ++cfg->nextid, "threshold": th,
+				"id": ++cfg->nextid,
 				"fileid": resp->id,
 				"caption": resp->name || "",
 			])});
 		});
+		send_updates_all(channel, ""); //Only necessary if we were out of unlocks previously, but may as well push the update regardless.
 		send_updates_all(channel, "control");
-		//Note that we don't bother sending to the view-only group. If this has, in fact, been unlocked,
-		//we'll know once the threshold gets updated.
 	}
 	return resp;
 }

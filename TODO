@@ -280,9 +280,6 @@
 * Seize the Crown - initial cost sets dynreward base cost? Need to have it optionally
   NOT set that, to not reset every stream, but also have a button to reset it now.
 * Unlocks
-  - No more individual unlock thresholds, just make it "every X". No need to customize
-    other than the amount per unlock.
-  - Add a button to shuffle (backend supported, just needs frontend)
   - New action: Clean out. Remove all the unlocked ones, and reduce the goal bar by the
     same amount. So if it was at $1922, the goal bar will be set to $22. It can then be
     cleared completely if desired.
