@@ -11,6 +11,7 @@ export function render(data) {
 		if (data[el.name]) el.value = data[el.name];
 	});
 	if (data.format) format = formatters[data.format] || formatters.plain;
+	if (data.unlockcost) set_content("#unlockcostdisplay", format(data.unlockcost));
 	replace_content("#nextunlock", data.nextval ? [
 		"NEXT UNLOCK AT ", format(data.nextval), " - just ", format(data.nextval - data.curval), " to go!",
 	] : "");

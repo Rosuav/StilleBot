@@ -15,6 +15,7 @@ Click to view these gorgeous pics fullscreen.
 > ### Manage unlocks
 >
 > <div><label>Select variable: <select class=config name=varname></select></label><br>
+> <div><label>Unlock cost: <input class=config name=unlockcost type=number> <span id=unlockcostdisplay></span> per pic</label><br>
 > <label>Display format: <select class=config name=format>
 > <option value=plain>plain</option>
 > <option value=currency>currency eg $27.18</option>
@@ -52,7 +53,8 @@ figure figcaption {max-width: unset; text-align: center;}
 </style>
 ";
 
-array configs = ({"varname", "format"});
+array strconfigs = ({"varname", "format"});
+array intconfigs = ({"unlockcost"});
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	return render(req, (["vars": ([
@@ -78,7 +80,8 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	ret->format = cfg->format || "plain";
 	if (grp == "control") {
 		ret->allunlocks = unlocks;
-		foreach (configs, string c) ret[c] = cfg[c] || "";
+		foreach (strconfigs, string c) ret[c] = cfg[c] || "";
+		foreach (intconfigs, string c) ret[c] = cfg[c] || 0;
 		mapping vars = G->G->DB->load_cached_config(channel->userid, "variables");
 		multiset(string) varnames = (<>);
 		foreach (vars; string name;) {
@@ -126,7 +129,8 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 
 @"is_mod": __async__ void wscmd_config(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
-		foreach (configs, string c) if (msg[c]) cfg[c] = msg[c];
+		foreach (strconfigs, string c) if (msg[c]) cfg[c] = msg[c];
+		foreach (intconfigs, string c) if (!undefinedp(msg[c])) cfg[c] = (int)msg[c];
 	});
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");
@@ -137,7 +141,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		if (!cfg->unlocks) return;
 		int curval = (int)channel->expand_variables("$" + cfg->varname + "$");
 		//Shuffle only those that are still ahead of us, and not the immediate next (in case it's been teased).
-		array unl = filter(cfg->unlocks) {return curval + 10000 < __ARGS__[0]->threshold;};
+		array unl = filter(cfg->unlocks) {return curval + cfg->unlockcost < __ARGS__[0]->threshold;};
 		array th = unl->threshold;
 		Array.shuffle(th);
 		foreach (unl; int i; mapping u) u->threshold = th[i];
@@ -153,7 +157,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		int curval = (int)channel->expand_variables("$" + cfg->varname + "$");
 		//Retain only those that are still ahead of us
 		array unl = filter(cfg->unlocks) {return curval < __ARGS__[0]->threshold;};
-		foreach (unl; int i; mapping u) u->threshold = (i+1) * 10000;
+		foreach (unl; int i; mapping u) u->threshold = (i+1) * cfg->unlockcost;
 		cfg->unlocks = unl;
 		return cfg;
 	});
@@ -170,9 +174,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
 			int th = 1<<30;
 			if (cfg->unlocks && sizeof(cfg->unlocks)) {
-				//TODO: Check that this new threshold is higher than the current value
-				//TODO: Have the increment be configurable
-				th = max(@cfg->unlocks->threshold) + 10000;
+				th = max(@cfg->unlocks->threshold) + cfg->unlockcost;
 			}
 			cfg->unlocks += ({([
 				"id": ++cfg->nextid, "threshold": th,
