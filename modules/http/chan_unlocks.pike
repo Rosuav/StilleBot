@@ -97,14 +97,6 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	return ret;
 }
 
-@"is_mod": __async__ mapping wscmd_add_unlock(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
-		cfg->unlocks += ({(["id": ++cfg->nextid, "threshold": 1<<30])});
-	});
-	send_updates_all(channel, "");
-	send_updates_all(channel, "control");
-}
-
 @"is_mod": __async__ void wscmd_delete_unlock(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
 		cfg->unlocks = filter(cfg->unlocks || ({ })) {return __ARGS__[0]->id != (int)msg->id;};
@@ -120,8 +112,6 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		if (idx != -1) {
 			mapping unl = cfg->unlocks[idx];
 			if ((int)msg->threshold) unl->threshold = (int)msg->threshold;
-			//NOTE: The file ID currenly cannot be edited. Should it be able to be?
-			//Alternatively, should there be a way to select an existing file to make into an unlock?
 			if (msg->caption) unl->caption = msg->caption;
 		}
 	});
@@ -174,7 +164,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	if (resp->?cmd == "upload") {
 		//Add the unlock immediately, without waiting for completion of the upload
 		await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
-			int th = 1<<30;
+			int th = cfg->unlockcost;
 			if (cfg->unlocks && sizeof(cfg->unlocks)) {
 				th = max(@cfg->unlocks->threshold) + cfg->unlockcost;
 			}
