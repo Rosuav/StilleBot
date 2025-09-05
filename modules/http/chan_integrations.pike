@@ -227,6 +227,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 				"{amount}": data->amounts->?total->?value + " " + data->amounts->?total->?currency,
 				"{msg}": data->message || "",
 			]); break;
+			case "GIFT_DRAW_STARTED": case "GIFT_DRAW_ENDED": return; //Don't count these, they're going to be duplicates
 			default: break;
 		}
 		if (special != "!fw_other") G->G->send_alert(req->misc->channel, "fourthwall", ([
@@ -251,6 +252,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			else
 				amount -= (int)(amount * .039) + 30;
 			amount -= to_cents(data->amounts->?shipping->?value);
+			amount -= to_cents(data->amounts->?prepaidShipping->?value); //Gifts can have an allocation to shipping, though the exact figure isn't known until a winner is selected
 			amount -= to_cents(data->amounts->?tax->?value);
 			foreach (Array.arrayify(data->offers), mapping offer)
 				amount -= to_cents(offer->variant->?cost->?value);
