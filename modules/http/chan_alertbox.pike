@@ -761,17 +761,11 @@ __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:m
 	send_updates_all(conn->group, (["delpersonal": msg->id]));
 }
 
-//NOTE: Also invoked by chan_monitors.pike and chan_unlocks.pike
 @"is_mod": __async__ mapping|zero wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (conn->type == "chan_monitors") {
-		//Hack: When something is uploaded via the Pile of Pics, autocrop transparency away.
-		//TODO: Provide a proper option for doing this, independently of socket type
-		msg->autocrop = 1;
-	}
 	mapping file = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, msg, 0));
 	if (file->error) return (["cmd": "uploaderror", "name": msg->name, "error": file->error]);
 	update_one(conn->group, file->id); //Note that the display connection doesn't need to be updated
-	return (["cmd": "upload", "id": file->id, "name": msg->name]);
+	return (["cmd": "upload", "name": msg->name, "id": file->id]);
 }
 
 @hook_uploaded_file_edited: __async__ void file_uploaded(mapping file) {

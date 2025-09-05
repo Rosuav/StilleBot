@@ -470,9 +470,13 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 	update_one(channel, "", nonce);
 }
 
-//All the functionality for file uploads to library is identical. Should this be refactored somewhere?
-//Note that alertbox comes prior alphabetically to monitors and thus this should be available.
-@"is_mod": function wscmd_upload = G->G->websocket_types->chan_alertbox->?wscmd_upload;
+@"is_mod": __async__ mapping|zero wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	msg->autocrop = 1; //Request that the image be cropped after upload
+	mapping file = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, msg, 0));
+	if (file->error) return (["cmd": "uploaderror", "name": msg->name, "error": file->error]);
+	return (["cmd": "upload", "name": msg->name, "id": file->id]);
+}
+
 @hook_uploaded_file_edited: __async__ void file_uploaded(mapping file) {
 	//Push out notifications regarding images. With sounds and videos, only push out notifs
 	//if the file has been deleted (at which point we can't tell what the mimetype was anyway).

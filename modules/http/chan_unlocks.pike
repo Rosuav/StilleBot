@@ -163,20 +163,19 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 //As with chan_monitors, the functionality for uploads is being lifted from alertbox (which comes
 //alphabetically prior to this file). May be of value to refactor this at some point.
 @"is_mod": __async__ mapping|zero wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping|zero resp = await(G->G->websocket_types->chan_alertbox->wscmd_upload(channel, conn, msg));
-	if (resp->?cmd == "upload") {
-		//Add the unlock immediately, without waiting for completion of the upload
-		await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
-			cfg->unlocks += ({([
-				"id": ++cfg->nextid,
-				"fileid": resp->id,
-				"caption": resp->name || "",
-			])});
-		});
-		send_updates_all(channel, ""); //Only necessary if we were out of unlocks previously, but may as well push the update regardless.
-		send_updates_all(channel, "control");
-	}
-	return resp;
+	mapping file = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, msg, 0));
+	if (file->error) return (["cmd": "uploaderror", "name": msg->name, "error": file->error]);
+	//Add the unlock immediately, without waiting for completion of the upload
+	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
+		cfg->unlocks += ({([
+			"id": ++cfg->nextid,
+			"fileid": file->id,
+			"caption": msg->name || "",
+		])});
+	});
+	send_updates_all(channel, ""); //Only necessary if we were out of unlocks previously, but may as well push the update regardless.
+	send_updates_all(channel, "control");
+	return (["cmd": "upload", "name": msg->name, "id": file->id]);
 }
 
 @hook_variable_changed: __async__ void check_unlocks(object channel, string varname, string newval) {
