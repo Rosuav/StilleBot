@@ -687,9 +687,41 @@ __async__ mapping|zero get_file(string id, int|void include_blob) {
 	return sizeof(rows) && rows[0];
 }
 
+constant MAX_PER_FILE = 16, MAX_TOTAL_STORAGE = 128; //MB
 //Returns (["id": "some_urlsafe_string"]) on success, or (["error": "Human readable message"]) on failure.
 //May in the future provide additional info eg remaining upload capacity
 __async__ mapping prepare_file(string|int channel, string|int uploader, mapping metadata, int(1bit) ephemeral) {
+	if (ephemeral) {
+		//Currently ephemeral file permissions checking is all done in chan_share.pike - it may need to be moved
+		//here also.
+	} else {
+		if (!intp(metadata->size) || metadata->size < 0) return 0; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
+		int used = await(query_ro(
+			"select sum((metadata->'allocation')::int) from stillebot.uploads where channel = :channel and expires is null",
+			(["channel": channel]),
+		))[0]->allocation;
+		//Count 1KB chunks, rounding up, and adding one chunk for overhead. Won't make much
+		//difference to most files, but will stop someone from uploading twenty-five million
+		//one-byte files, which would be just stupid :)
+		int allocation = (metadata->size + 2047) / 1024;
+		array mimetype = (metadata->mimetype || "") / "/";
+		if (sizeof(mimetype) != 2)
+			return (["error": sprintf("Unrecognized MIME type %O", metadata->mimetype)]);
+		else if (!(<"image", "audio", "video">)[mimetype[0]])
+			return (["error": "Only audio and image (including video) files are supported"]);
+		else if (metadata->size > MAX_PER_FILE * 1048576)
+			return (["error": "File too large (limit " + MAX_PER_FILE + " MB)"]);
+		else if (used + allocation > MAX_TOTAL_STORAGE * 1024)
+			return (["error": "Unable to upload, storage limit of " + MAX_TOTAL_STORAGE + " MB exceeded. Delete other files to make room."]);
+		//Sanitize the attribute list, excluding anything we don't recognize.
+		mapping attrs = ([
+			"name": metadata->name, //TODO: Sanitize the name - at least a length check.
+			"size": metadata->size, "allocation": allocation,
+			"mimetype": metadata->mimetype,
+		]);
+		if (metadata->autocrop) attrs->autocrop = 1;
+		metadata = attrs;
+	}
 	return await(query_rw(
 		"insert into stillebot.uploads (channel, uploader, data, metadata, expires) values (:channel, :uploader, '', :metadata, "
 			+ (ephemeral ? "now() + interval '24 hours'" : "NULL") + ") returning id",

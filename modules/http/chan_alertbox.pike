@@ -296,7 +296,6 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 {: tag=dialog #gif-variants}
 ";
 
-constant MAX_PER_FILE = 16, MAX_TOTAL_STORAGE = 128; //MB
 //Every standard alert should have a 'builtin' which says which module will trigger this.
 //Not currently used, beyond that standard alerts have a builtin and personal alerts don't.
 constant ALERTTYPES = ({([
@@ -500,7 +499,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	mapping prem = premium[(string)req->misc->channel->userid] || ([]);
 	return render(req, ([
 		"vars": (["ws_group": "control",
-			"maxfilesize": MAX_PER_FILE, "maxtotsize": MAX_TOTAL_STORAGE,
+			"maxfilesize": G->G->DB->MAX_PER_FILE, "maxtotsize": G->G->DB->MAX_TOTAL_STORAGE,
 			"avail_voices": tts_config->avail_voices[?prem->tts_rate] || ({ }),
 			"follower_alert_scopes": req->misc->channel->name != "#!demo" && ensure_bcaster_token(req, "moderator:read:followers"),
 		]),
@@ -764,40 +763,15 @@ __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:m
 
 //NOTE: Also invoked by chan_monitors.pike and chan_unlocks.pike
 @"is_mod": __async__ mapping|zero wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!intp(msg->size) || msg->size < 0) return 0; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
-	array files = await(G->G->DB->list_channel_files(channel->userid));
-	int used = `+(0, @files->allocation);
-	//Count 1KB chunks, rounding up, and adding one chunk for overhead. Won't make much
-	//difference to most files, but will stop someone from uploading twenty-five million
-	//one-byte files, which would be just stupid :)
-	int allocation = (msg->size + 2047) / 1024;
-	string error;
-	array mimetype = (msg->mimetype || "") / "/";
-	if (sizeof(mimetype) != 2)
-		error = sprintf("Unrecognized MIME type %O", msg->mimetype);
-	else if (!(<"image", "audio", "video">)[mimetype[0]])
-		error = "Only audio and image (including video) files are supported";
-	else if (msg->size > MAX_PER_FILE * 1048576)
-		error = "File too large (limit " + MAX_PER_FILE + " MB)";
-	else if (used + allocation > MAX_TOTAL_STORAGE * 1024)
-		error = "Unable to upload, storage limit of " + MAX_TOTAL_STORAGE + " MB exceeded. Delete other files to make room.";
-	//TODO: Check if the file name is duplicated? Maybe? Not sure. It's not a fundamental
-	//blocker. Maybe the front end should check instead, and offer to delete the old one.
-	//TODO: Sanitize the name - at least a length check.
-	if (error) return (["cmd": "uploaderror", "name": msg->name, "error": error]);
-	mapping attrs = ([
-		"name": msg->name,
-		"size": msg->size, "allocation": allocation,
-		"mimetype": msg->mimetype,
-	]);
 	if (conn->type == "chan_monitors") {
 		//Hack: When something is uploaded via the Pile of Pics, autocrop transparency away.
 		//TODO: Provide a proper option for doing this, independently of socket type
-		attrs->autocrop = 1;
+		msg->autocrop = 1;
 	}
-	string id = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, attrs, 0))->id;
-	update_one(conn->group, id); //Note that the display connection doesn't need to be updated
-	return (["cmd": "upload", "id": id, "name": msg->name]);
+	mapping file = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, msg, 0));
+	if (file->error) return (["cmd": "uploaderror", "name": msg->name, "error": file->error]);
+	update_one(conn->group, file->id); //Note that the display connection doesn't need to be updated
+	return (["cmd": "upload", "id": file->id, "name": msg->name]);
 }
 
 @hook_uploaded_file_edited: __async__ void file_uploaded(mapping file) {

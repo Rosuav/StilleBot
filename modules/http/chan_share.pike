@@ -77,7 +77,7 @@ figcaption {
 ";
 
 constant DEFAULT_MSG_FORMAT = "New art share from {username}: {URL}";
-constant MAX_PER_FILE = 16, MAX_FILES = 4; //MB and file count. File size is advisory, upload.pike has the hard limit.
+constant MAX_FILES = 4; //May end up moving into database.pike where the other file upload limits are.
 constant user_types = ({
 	//Keyword, label, description
 	({"mod", "Mods", "The broadcaster and channel moderators"}),
@@ -124,7 +124,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	if (mapping resp = ensure_login(req)) return resp;
 	return render(req, ([
 		"vars": (["ws_group": (string)req->misc->session->user->id,
-			"maxfilesize": MAX_PER_FILE, "maxfiles": MAX_FILES,
+			"maxfilesize": G->G->DB->MAX_PER_FILE, "maxfiles": MAX_FILES,
 			"user_types": user_types, "is_mod": req->misc->is_mod,
 		]),
 	]) | req->misc->chaninfo);
@@ -165,8 +165,8 @@ __async__ void wscmd_upload(object channel, mapping(string:mixed) conn, mapping(
 	string error;
 	if (string err = await(permission_check(channel, conn->is_mod, conn->session->user)))
 		error = err;
-	else if (msg->size > MAX_PER_FILE * 1048576)
-		error = "File too large (limit " + MAX_PER_FILE + " MB)";
+	else if (msg->size > G->G->DB->MAX_PER_FILE * 1048576)
+		error = "File too large (limit " + G->G->DB->MAX_PER_FILE + " MB)";
 	else if (sizeof(await(G->G->DB->list_ephemeral_files(channel->userid, conn->session->user->id))) >= MAX_FILES)
 		error = "Limit of " + MAX_FILES + " files reached. Delete other files to make room.";
 	if (error) {
