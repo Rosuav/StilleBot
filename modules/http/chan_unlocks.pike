@@ -24,6 +24,8 @@ Click to view these gorgeous pics fullscreen.
 >
 > <div class=uploadtarget></div>
 >
+> [Shuffle not-yet-unlocked pics](:#shuffle)
+>
 > * loading...
 > {:#allunlocks}
 >
