@@ -10,9 +10,6 @@ constant vars_provided = ([
 	"{uid}": "User's Twitch ID",
 ]);
 
-//TODO: A thing kinda like this for a leaderboard.
-//Instaed of "set this keyword to this user's ID", it will be "set this keyword to the
-//UID of the highest ranked person", and possibly "set kwd1, kwd2, kwd3" etc.
 __async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
 	mapping info = ([]);
 	catch {

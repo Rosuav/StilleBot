@@ -12,7 +12,7 @@ in the same subtree will reveal what $foo$ would have been if not for the setvar
 inherit builtin_command;
 constant builtin_name = "Variables";
 constant builtin_description = "Manipulate variables with dynamic names";
-constant builtin_param = ({"Variable name", "/Action/get/set/add/spend/clear", "New value"});
+constant builtin_param = ({"Variable name", "/Action/get/set/add/spend/clear/leaders", "New value"});
 constant vars_provided = ([
 	"{value}": "Value of that variable (after any change)",
 ]);
@@ -56,6 +56,26 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 			//points reward etc. The only notification we send is to /c/variables itself.
 			G->G->websocket_types->chan_variables->send_updates_all("#" + channel->userid);
 			return (["{value}": ""]); //Nothing useful to report.
+		}
+		case "leaders": {
+			//Hack: The provided value is the number of top people to return
+			mapping vars = G->G->DB->load_cached_config(channel->userid, "variables")["*"] || ([]);
+			array values = ({ }), users = ({ });
+			varname = "$" + replace(varname, "$", "") + "$";
+			foreach (vars; string uid; mapping v) if (v[varname]) {
+				users += ({uid});
+				values += ({-(int)v[varname]}); //Descending sort
+			}
+			sort(values, users);
+			mapping ret = (["{value}": (string)sizeof(users)]); //The base return value won't have anything much, just the (total) count of users
+			int limit = (int)value;
+			if (limit) users = users[..limit-1];
+			foreach (users; int i; string uid) {
+				ret["{value" + (i+1) + "}"] = vars[uid][varname];
+				ret["{uid" + (i+1) + "}"] = uid;
+				ret["{username" + (i+1) + "}"] = await(get_user_info(uid))->?display_name || uid;
+			}
+			return ret;
 		}
 		default: error("Invalid action %O, check docs\n", action);
 	}
