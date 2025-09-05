@@ -718,6 +718,7 @@ __async__ mapping prepare_file(string|int channel, string|int uploader, mapping 
 			"name": metadata->name, //TODO: Sanitize the name - at least a length check.
 			"size": metadata->size, "allocation": allocation,
 			"mimetype": metadata->mimetype,
+			"owner": metadata->owner,
 		]);
 		if (metadata->autocrop) attrs->autocrop = 1;
 		metadata = attrs;
@@ -762,9 +763,9 @@ __async__ void notify_file_updated(int pid, string cond, string extra, string ho
 	if (!is_active_bot()) return; //Should be no websockets on an inactive bot anyway.
 	sscanf(extra, "%d-%s", int channel, string id);
 	if (!id) id = extra; //Legacy notification - no channel ID available
-	werror("Getting file %O...\n", extra);
+	werror("FILE UPDATED! Getting file %O...\n", extra);
 	mapping file = await(get_file(id)) || (["id": id, "channel": channel]);
-	werror("Got file %O\n", file);
+	werror("FILE UPDATED! Got file %O\n", file);
 	if (file->expires) event_notify("ephemeral_file_edited", file);
 	else event_notify("uploaded_file_edited", file);
 }

@@ -163,6 +163,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 //As with chan_monitors, the functionality for uploads is being lifted from alertbox (which comes
 //alphabetically prior to this file). May be of value to refactor this at some point.
 @"is_mod": __async__ mapping|zero wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	msg->owner = "unlocks";
 	mapping file = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, msg, 0));
 	if (file->error) return (["cmd": "uploaderror", "name": msg->name, "error": file->error]);
 	//Add the unlock immediately, without waiting for completion of the upload

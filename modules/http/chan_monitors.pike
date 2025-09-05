@@ -471,6 +471,7 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 }
 
 @"is_mod": __async__ mapping|zero wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	msg->owner = "monitors";
 	msg->autocrop = 1; //Request that the image be cropped after upload
 	mapping file = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, msg, 0));
 	if (file->error) return (["cmd": "uploaderror", "name": msg->name, "error": file->error]);

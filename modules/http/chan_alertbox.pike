@@ -762,6 +762,7 @@ __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:m
 }
 
 @"is_mod": __async__ mapping|zero wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	msg->owner = "alertbox";
 	mapping file = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, msg, 0));
 	if (file->error) return (["cmd": "uploaderror", "name": msg->name, "error": file->error]);
 	update_one(conn->group, file->id); //Note that the display connection doesn't need to be updated
