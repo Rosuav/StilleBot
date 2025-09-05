@@ -795,7 +795,7 @@ __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:m
 		//TODO: Provide a proper option for doing this, independently of socket type
 		attrs->autocrop = 1;
 	}
-	string id = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, attrs, 0));
+	string id = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, attrs, 0))->id;
 	update_one(conn->group, id); //Note that the display connection doesn't need to be updated
 	return (["cmd": "upload", "id": id, "name": msg->name]);
 }

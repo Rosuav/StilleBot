@@ -176,7 +176,7 @@ __async__ void wscmd_upload(object channel, mapping(string:mixed) conn, mapping(
 	string id = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, ([
 		"name": msg->name,
 		"size": msg->size,
-	]), 1));
+	]), 1))->id;
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "upload", "id": id, "name": msg->name]), 4));
 	//We kinda ought to push out an update with the half-uploaded file, but it's tidier to
 	//leave it absent until the upload is complete.
