@@ -280,9 +280,6 @@
 * Seize the Crown - initial cost sets dynreward base cost? Need to have it optionally
   NOT set that, to not reset every stream, but also have a button to reset it now.
 * Unlocks
-  - New action: Clean out. Remove all the unlocked ones, and reduce the goal bar by the
-    same amount. So if it was at $1922, the goal bar will be set to $22. It can then be
-    cleared completely if desired.
   - Deleting, including by clean out, should delete the corresponding library files
   - Record that the library files are owned by the Unlocks module, and have them not be
     listed in the Alert Box list, or maybe in another tab or something

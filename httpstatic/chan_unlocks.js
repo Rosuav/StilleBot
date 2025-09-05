@@ -54,6 +54,7 @@ export function render(data) {
 }
 
 on("click", "#shuffle", e => ws_sync.send({cmd: "shuffle"}));
+on("click", "#truncate", simpleconfirm("Truncate all pics currently unlocked?", e => ws_sync.send({cmd: "truncate"})));
 on("change", ".config", e => ws_sync.send({cmd: "config", [e.match.name]: e.match.value}));
 on("click", ".confirmdelete", simpleconfirm("Really delete this unlock?", e =>
 	ws_sync.send({cmd: "delete_unlock", id: e.match.closest_data("id")})

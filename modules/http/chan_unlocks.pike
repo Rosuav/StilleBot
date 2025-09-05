@@ -24,7 +24,7 @@ Click to view these gorgeous pics fullscreen.
 >
 > <div class=uploadtarget></div>
 >
-> [Shuffle not-yet-unlocked pics](:#shuffle)
+> [Shuffle not-yet-unlocked pics](:#shuffle) [Chop off the ones already seen](:#truncate)
 >
 > * loading...
 > {:#allunlocks}
@@ -68,7 +68,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 bool need_mod(string grp) {return grp == "control";}
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping cfg = await(G->G->DB->load_config(channel->userid, "unlocks"));
-	if (!cfg->varname) return ([]);
+	if (!cfg->varname && grp != "control") return ([]);
 	array unlocks = cfg->unlocks || ({ });
 	int curval = (int)channel->expand_variables("$" + cfg->varname + "$");
 	int unlocked = cfg->unlockcost && curval / cfg->unlockcost; //If you haven't set the unlock cost, nothing has been unlocked.
@@ -146,14 +146,15 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	send_updates_all(channel, "control");
 }
 
-//HACK JOB, awaiting proper implementation incl file deletion and updating of the variable
 @"is_mod": __async__ void wscmd_truncate(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
-		if (!cfg->unlocks) return;
+		if (!cfg->unlocks || !cfg->unlockcost) return;
 		int curval = (int)channel->expand_variables("$" + cfg->varname + "$");
 		int unlocked = curval / cfg->unlockcost;
 		//Retain only those that are still ahead of us
+		//TODO: Remove the files corresponding to the unlocks being removed
 		cfg->unlocks = cfg->unlocks[unlocked..];
+		channel->set_variable(cfg->varname, (string)(curval % cfg->unlockcost), "set");
 	});
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");
