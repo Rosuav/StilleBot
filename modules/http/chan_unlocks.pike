@@ -98,9 +98,17 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 }
 
 @"is_mod": __async__ void wscmd_delete_unlock(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string|zero deleteme;
 	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
-		cfg->unlocks = filter(cfg->unlocks || ({ })) {return __ARGS__[0]->id != (int)msg->id;};
+		if (!cfg->unlocks) return;
+		int idx = search(cfg->unlocks->id, (int)msg->id);
+		if (idx != -1) {
+			mapping unl = cfg->unlocks[idx];
+			deleteme = unl->fileid;
+			cfg->unlocks = cfg->unlocks[..idx-1] + cfg->unlocks[idx+1..];
+		}
 	});
+	if (deleteme) G->G->DB->delete_file(channel->userid, deleteme);
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");
 }
@@ -147,15 +155,19 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 }
 
 @"is_mod": __async__ void wscmd_truncate(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	array deleteme = ({ });
+	string varname; int newval;
 	await(G->G->DB->mutate_config(channel->userid, "unlocks") {mapping cfg = __ARGS__[0];
 		if (!cfg->unlocks || !cfg->unlockcost) return;
 		int curval = (int)channel->expand_variables("$" + cfg->varname + "$");
 		int unlocked = curval / cfg->unlockcost;
 		//Retain only those that are still ahead of us
-		//TODO: Remove the files corresponding to the unlocks being removed
+		deleteme = cfg->unlocks[..unlocked-1]->fileid;
 		cfg->unlocks = cfg->unlocks[unlocked..];
-		channel->set_variable(cfg->varname, (string)(curval % cfg->unlockcost), "set");
+		varname = cfg->varname; newval = curval % cfg->unlockcost;
 	});
+	channel->set_variable(varname, (string)newval, "set");
+	G->G->DB->delete_file(channel->userid, deleteme[*]);
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");
 }

@@ -280,7 +280,6 @@
 * Seize the Crown - initial cost sets dynreward base cost? Need to have it optionally
   NOT set that, to not reset every stream, but also have a button to reset it now.
 * Unlocks
-  - Deleting, including by clean out, should delete the corresponding library files
   - Record that the library files are owned by the Unlocks module, and have them not be
     listed in the Alert Box list, or maybe in another tab or something
   - Formalize the teasers. Show the description when half way there.
