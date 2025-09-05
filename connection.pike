@@ -82,6 +82,11 @@ mapping(string:function(string:string)) text_filters = ([
 		return sprintf("%d %s %d", ts->month_day(), ts->month_name(), ts->year_no());
 	},
 	"upper": upper_case, "lower": lower_case,
+	"money": lambda(string cents) {
+		int c = (int)cents;
+		if (c % 100) return sprintf("$%d.%02d", c / 100, c % 100);
+		return "$" + (c / 100);
+	},
 ]);
 
 __async__ void raidwatch(int channel, string raiddesc) {
