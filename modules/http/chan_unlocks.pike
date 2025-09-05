@@ -52,6 +52,15 @@ figure figcaption {max-width: unset; text-align: center;}
 }
 #allunlocks li:nth-child(even) {background: #fdf;}
 .unlocked {opacity: 0.6;}
+.teaser {
+	display: inline-block;
+	margin: 2px;
+	border: 4px ridge silver;
+	padding: 5px;
+}
+.teaser:not(:hover) span {
+	filter: blur(5px);
+}
 </style>
 ";
 
@@ -77,7 +86,12 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	]);
 	ret->curval = curval;
 	//If all have been unlocked, there is nothing more to unlock (though more could be added).
-	ret->nextval = unlocked < sizeof(unlocks) && cfg->unlockcost * (unlocked + 1);
+	if (unlocked < sizeof(unlocks) && cfg->unlockcost) {
+		ret->nextval = cfg->unlockcost * (unlocked + 1);
+		//If we're more than half way there, tease the next one.
+		if (curval % cfg->unlockcost > cfg->unlockcost / 2)
+			ret->teaser = unlocks[unlocked]->caption;
+	}
 	ret->unlockcost = cfg->unlockcost;
 	ret->format = cfg->format || "plain";
 	if (grp == "control") {

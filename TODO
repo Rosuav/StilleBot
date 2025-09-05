@@ -266,6 +266,9 @@
   - Most of the rest can be found in chan_alertbox.*
   - Check chan_monitors, some has been duplicated into there
   - Make an inheritable for the backend??
+  - Now that file ownership is being recorded, it would be of value to differentiate in the
+    front end, keeping unlocks from cluttering up the alert box and vice versa. Be aware that
+    legacy uploads have no ownership and are most likely (but not certainly) alertbox files.
 * Pile of Pics hype mode
   - When two things collide, they merge.
     - If the new size exceeds the base size of a different thing type, switch to that
@@ -279,7 +282,3 @@
 * New specials: onetapstreakstarted, onetapbreakpointachieved, onetapstreakexpired
 * Seize the Crown - initial cost sets dynreward base cost? Need to have it optionally
   NOT set that, to not reset every stream, but also have a button to reset it now.
-* Unlocks
-  - Record that the library files are owned by the Unlocks module, and have them not be
-    listed in the Alert Box list, or maybe in another tab or something
-  - Formalize the teasers. Show the description when half way there.

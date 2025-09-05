@@ -16,6 +16,7 @@ export function render(data) {
 	if (data.unlockcost) set_content("#unlockcostdisplay", format(unlockcost = data.unlockcost));
 	replace_content("#nextunlock", data.nextval ? [
 		"NEXT UNLOCK AT ", format(data.nextval), " - just ", format(data.nextval - data.curval), " to go!",
+		data.teaser && [BR(), "Getting close to unlocking... ", SPAN({class: "teaser"}, SPAN(data.teaser))],
 	] : "");
 	if (data.unlocks) replace_content("#unlocks", data.unlocks.length ? data.unlocks.map((f, i) => {
 		const cost = displaycost(i), slug = slugify(cost);
