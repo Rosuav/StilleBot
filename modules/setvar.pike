@@ -13,6 +13,18 @@ inherit builtin_command;
 constant builtin_name = "Variables";
 constant builtin_description = "Manipulate variables with dynamic names";
 constant builtin_param = ({"Variable name", "/Action/get/set/add/spend/clear/leaders", "New value"});
+//Experimenting with a branching parameter set
+constant MOCKUP_builtin_param = ({
+	"Variable name",
+	"/Action", //Having an enum with no options triggers this behaviour
+	([ //The next array entry will have the options, mapped to their additional args.
+		"get": ({ }), //This one needs no more args
+		({"set", "add", "spend"}): ({"New value"}), //One more arg for any of these values
+		"clear": ({ }), //Can have this separately, or combine it with get, whichever makes more sense logically
+		"leaders": ({"Top N"}), //This one gets a different arg, which would display a different label in the front end
+	]),
+	//If any more args were listed here, they would happen after the additionals given above.
+});
 constant vars_provided = ([
 	"{value}": "Value of that variable (after any change)",
 ]);

@@ -414,6 +414,13 @@ __async__ void update_first(object channel, mapping game) {
 constant command_description = "Manage stream minigames";
 constant builtin_name = "Minigame";
 constant builtin_param = ({"/Game/first/boss", "Extra info"});
+constant MOCKUP_builtin_param = ({
+	"/Game",
+	([
+		"first": ({"/Reward/first/second/third/last"}),
+		"boss": ({"/Action/reset/slay"}),
+	]),
+});
 constant vars_provided = ([
 	"{shame}": "1 if user should be shamed for duplicate claiming",
 	"{count}": "Number of times the user has checked in (once per stream)",

@@ -24,6 +24,14 @@ Need to reset the key? [Reset key](:#resetkey) will disable any previous link an
 constant builtin_name = "OBS Studio";
 constant builtin_description = "Manage OBS Studio";
 constant builtin_param = ({"/Action/Status/Get scene/Switch scene", "Parameter"});
+constant MOCKUP_builtin_param = ({
+	"/Action",
+	([
+		"Status": ({ }),
+		"Get scene": ({ }),
+		"Switch scene": ({"Scene"}),
+	]),
+});
 constant vars_provided = ([
 	"{scenename}": "Current scene name (get/switch scene)",
 	"{streaming}": "1 if streaming, 0 if not (status)",

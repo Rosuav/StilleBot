@@ -253,6 +253,13 @@ void wscmd_import(object channel, mapping(string:mixed) conn, mapping(string:mix
 
 constant builtin_name = "Stream setup";
 constant builtin_param = ({"/Action/query/title/category/tags/ccls", "New value"});
+constant MOCKUP_builtin_param = ({
+	"/Action",
+	([
+		"query": ({ }),
+		({"title", "category", "tags", "ccls"}): "New value",
+	]),
+});
 constant scope_required = "channel:manage:broadcast"; //If you only use "query", it could be done without privilege, though.
 constant vars_provided = ([
 	"{prevtitle}": "Stream title prior to any update",

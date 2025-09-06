@@ -228,6 +228,20 @@ constant builtin_name = "Points rewards";
 //TODO: In the front end, label them as "[En/Dis]able reward", "Mark complete", "Refund points"
 //TODO: Allow setting more than one attribute, eg setting both title and desc atomically
 constant builtin_param = ({"/Reward/reward_id", "/Action/enable/disable/cost/title/desc/query/fulfil/cancel", "Redemption ID"});
+constant MOCKUP_builtin_param = ({
+	"/Reward/reward_id",
+	"/Action",
+	([
+		"enable": ({"Enabled (1/0)"}), //TODO: Boolean as a checkbox
+		"disable": ({ }), //Do we need both this and enable?
+		"cost": ({"New cost"}),
+		"title": ({"New title"}),
+		"desc": ({"New description"}),
+		"query": ({ }),
+		"fulfil": ({"Redemption ID"}),
+		"cancel": ({"Redemption ID"}),
+	]),
+});
 constant scope_required = "channel:manage:redemptions";
 constant vars_provided = ([
 	"{action}": "Action(s) performed, if any (may be blank)",

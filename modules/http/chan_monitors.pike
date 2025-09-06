@@ -69,6 +69,9 @@ body.invisible {
 constant builtin_name = "Monitors"; //The front end may redescribe this according to the parameters
 constant builtin_description = "Get information about a channel monitor";
 //NOTE: The labels for parameters 1 and 2 will be replaced by the GUI editor based on monitor type.
+//TODO: Can this be done with MOCKUP_builtin_param somehow? It would be somewhat different, as the
+//lookup key would need to be the monitor's type (rather than using the text of the first parameter),
+//but this would be an excellent feature if it can be coded up nicely.
 constant builtin_param = ({"/Monitor/monitor_id", "Advancement/action", "Time/Type", "Label", "Image"});
 constant vars_provided = ([
 	"{type}": "Monitor type (text, goalbar, countdown)",

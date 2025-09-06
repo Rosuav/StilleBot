@@ -258,6 +258,9 @@ echoable_message _validate_recursive(echoable_message resp, mapping state)
 				ret->builtin_param = Process.split_quoted_string(resp->builtin_param);
 				//If the builtin is expecting 3 params, and the user provides more words
 				//than that, join the remainder into a single string.
+				//TODO: Step through the params, don't just count them; when we hit an enum, ensure
+				//that a valid value is being given. Search for MOCKUP_builtin_param to see examples
+				//of a proposed way to then change the number of args.
 				int max = sizeof(handler->builtin_param);
 				if (sizeof(ret->builtin_param) > max)
 					ret->builtin_param = ret->builtin_param[..max - 2] + ({ret->builtin_param[max - 1..] * " "});
@@ -618,6 +621,14 @@ echoable_message|zero update_command(object channel, string mode, string cmdname
 constant builtin_description = "Manage channel commands";
 constant builtin_name = "Command manager";
 constant builtin_param = ({"/Action/Automate/Create/Delete", "Command name", "Time/message"});
+constant MOCKUP_builtin_param = ({
+	"/Action",
+	([
+		"Automate": ({"Command name", "Time"}),
+		"Create": ({"Command name", "Message"}),
+		"Delete": ({"Command name"}),
+	]),
+});
 constant vars_provided = ([]);
 constant command_suggestions = ([
 	"!addcmd": ([
