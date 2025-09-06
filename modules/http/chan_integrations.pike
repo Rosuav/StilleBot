@@ -202,30 +202,31 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		Stdio.append_file("fourthwall.log", sprintf("\n%s%s INTEGRATION for %O: %O\n", ctime(time()), body->type || "UNKNOWN", req->misc->channel->login, body));
 		string special = "!fw_other";
 		mapping params = (["{notif_type}": body->type]);
+		string message = Parser.parse_html_entities(data->message || "");
 		switch (body->type) {
 			case "ORDER_PLACED": special = "!fw_shop"; params = ([
 				"{is_test}": (string)body->testMode,
 				"{from_name}": data->username || "Anonymous",
 				"{amount}": data->amounts->?total->?value + " " + data->amounts->?total->?currency,
-				"{msg}": data->message || "",
+				"{msg}": message,
 				"{shop_item_ids}": Array.arrayify(data->offers->?id) * " ",
 			]); break;
 			case "GIFT_PURCHASE": special = "!fw_gift"; params = ([
 				"{from_name}": data->username || "Anonymous",
 				"{amount}": data->amounts->?total->?value + " " + data->amounts->?total->?currency,
-				"{msg}": data->message || "",
+				"{msg}": message,
 				"{shop_item_ids}": Array.arrayify(data->offer->?id) * " ",
 			]); break;
 			case "DONATION": special = "!fw_dono"; params = ([
 				"{from_name}": data->username || "Anonymous",
 				"{amount}": data->amounts->?total->?value + " " + data->amounts->?total->?currency,
-				"{msg}": data->message || "",
+				"{msg}": message,
 			]); break;
 			//TODO: Check this against what we see in the log
 			case "SUBSCRIPTION_PURCHASED": special = "!fw_member"; params = ([
 				"{from_name}": data->username || "Anonymous",
 				"{amount}": data->amounts->?total->?value + " " + data->amounts->?total->?currency,
-				"{msg}": data->message || "",
+				"{msg}": message,
 			]); break;
 			case "GIFT_DRAW_STARTED": case "GIFT_DRAW_ENDED": return "Thanks!"; //Don't count these, they're going to be duplicates
 			default: break;
