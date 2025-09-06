@@ -96,7 +96,11 @@ class builtin_command {
 	constant builtin_description = ""; //Label used in any human-readable context - one line description of purpose
 	constant command_description = ""; //Deprecated: Description for the default response
 	constant builtin_name = ""; //Short human-readable name for the drop-down
-	constant builtin_param = ""; //Label(s) for the parameter(s), or "/Label/option/option/option" to offer specific selections. If blank, has no parameter. May be an array for multiple params.
+	constant builtin_param = ""; //Array of supported parameters, or a single string if only one param. Can carry additional info about these params, see docs.
+	//Old description: Label(s) for the parameter(s), or "/Label/option/option/option" to offer specific selections. If blank, has no parameter. May be an array for multiple params.
+	//TODO: Document both the enumeration and, if MOCKUP_builtin_param happens, the branching.
+	//TODO: Allow data type indications, which can be used in the front end to switch to a numeric input or a checkbox
+	//TODO: Document the way an enum can have an equals sign separating value from label
 	constant vars_provided = ([ ]); //List all available vars (it's okay if they aren't all always provided)
 	constant command_suggestions = 0; //Set this to provide some suggestions (which will show up as enableable features)
 	constant scope_required = ""; //If nonblank, will be offered as a suggestion any time this builtin is used. TODO: Make this more flexible, so some parameters can ask for scope, others not?
@@ -104,7 +108,7 @@ class builtin_command {
 	//Override this either as-is or as a continue function to return the useful params.
 	//Note that the person mapping may be as skeletal as (["user": "Nobody"]) - all
 	//other keys are optional.
-	//The params will be an array of as many strings as builtin_param contains (if it's
+	//The params will be an array of as many strings as builtin_param allows (if it's
 	//a string directly, that's equivalent to an array of that one string).
 	mapping|Concurrent.Future message_params(object channel, mapping person, array params, mapping cfg) { }
 

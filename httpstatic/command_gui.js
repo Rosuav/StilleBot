@@ -283,6 +283,8 @@ function check_monitor_params(id) {
 	let labels = [null, null, null, null];
 	//TODO: With the "Action" options, replace the input with a select, offering the exact valid actions and no others
 	//TODO: Generalize this to allow for trees of parameter meanings. Maybe if an earlier one is a mapping????
+	//TODO: Implement MOCKUP_builtin_param in whatever form it gets made. Note that monitors is still a bit of a
+	//special case, as it switches on the type rather than the value, but it'll still all be basically here.
 	if (mon.type === "countdown") labels = ["Action", "Time (seconds)", null, null];
 	else if (mon.type === "goalbar") labels = ["Advance by", null, null, null];
 	else if (mon.type === "pile") labels = ["Action", "Thing", "Label", "Image"];
