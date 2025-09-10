@@ -913,6 +913,13 @@ void check_for_resets(int broadcaster_id, int streamreset) {
 
 @hook_channel_offline: int channel_offline(string chan, int uptime, int broadcaster_id) {check_for_resets(broadcaster_id, 1);}
 
+//Untested, use next time StreamLabs falls over
+//hack_tip("devicat", "dkurtze", 2500);
+__async__ void hack_tip(string channel, string username, int cents) {
+	mapping user = await(get_user_info(username, "login"));
+	autoadvance(G->G->irc->channels["#" + channel], user | (["from_name": username]), "tip", 2500);
+}
+
 protected void create(string name) {
 	::create(name);
 	G->G->goal_bar_autoadvance = autoadvance;
