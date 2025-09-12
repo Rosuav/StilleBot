@@ -337,7 +337,12 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 }
 
 constant channelonline = special_trigger("!channelonline", "The channel has recently gone online (started streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english", "Status");
-constant channelsetup = special_trigger("!channelsetup", "The channel has changed its category/title/CCLs", "The broadcaster", "category, title, tag_names, ccls", "Status");
+constant channelsetup = special_trigger("!channelsetup", "The channel has changed its category/title/CCLs", "The broadcaster", ([
+	"{category}": "English name of the game or category being streamed in",
+	"{title}": "Title of the stream",
+	"{tag_names}": "Stream tags eg '[English], [FamilyFriendly]' - should be searched case insensitively",
+	"{ccls}": "Content classification labels eg '[ProfanityVulgarity], [ViolentGraphic]'",
+]), "Status");
 constant channeloffline = special_trigger("!channeloffline", "The channel has recently gone offline (stopped streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english", "Status");
 
 void streaminfo(array data)

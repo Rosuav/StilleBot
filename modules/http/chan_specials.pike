@@ -107,6 +107,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	int is_bcaster = req->misc->channel->userid == (int)req->misc->session->user->id;
 	array commands = ({ }), order = ({ });
 	mapping SPECIAL_PARAMS = mkmapping(@Array.transpose(G->G->cmdmgr->SPECIAL_PARAMS));
+	mapping special_uses = ([]);
 	foreach (values(G->G->special_triggers), object spec) {
 		array scopesets = G->G->SPECIALS_SCOPES[spec->name - "!"];
 		string|zero scopes_required = 0;
@@ -118,8 +119,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		mapping params = ([]);
 		if (mappingp(spec->params)) params = spec->params;
 		else if (stringp(spec->params) && spec->params != "")
-			foreach (spec->params / ", ", string p)
+			foreach (spec->params / ", ", string p) {
 				params["{" + p + "}"] = SPECIAL_PARAMS[p] || p;
+				special_uses[p] += ({spec->name});
+			}
 		commands += ({([
 			"id": spec->name,
 			"desc": spec->desc, "originator": spec->originator,
@@ -130,6 +133,9 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		])});
 		order += ({SPECIAL_PRECEDENCE[spec->name] || spec->sort_order});
 	}
+	//werror("Special uses: %O\n", special_uses);
+	foreach (G->G->cmdmgr->SPECIAL_PARAMS, [string name, string desc])
+		if (!special_uses[name]) werror("UNUSED SPECIAL PARAM: %s -> %s\n", name, desc);
 	sort(order, commands);
 	return render_template("chan_specials.md", ([
 		"vars": ([
