@@ -7,7 +7,8 @@ let command_lookup = { };
 const describe_param = (p, desc) => LI([CODE(p), " - " + desc]);
 function describe_all_params(cmd) {
 	return [describe_param("$$", cmd.originator), describe_param("{uid}", "ID of that person")].concat(
-		cmd.params.split(", ").map(p => p && describe_param("{" + p + "}", SPECIAL_PARAMS[p]))
+		Object.entries(cmd.params).sort((a, b) => a[0].localeCompare(b[0]))
+			.map(([p, desc]) => describe_param(p, desc))
 	);
 }
 
@@ -97,8 +98,7 @@ cmd_configure({
 		DOM("#commands").dataset.rb = "tab-" + tab;
 		DOM("#tab-" + tab).checked = true;
 		set_content("#advanced_view h3", ["Edit special response ", CODE("!" + command.id.split("#")[0])]);
-		const params = {"{username}": cmd.originator, "{uid}": "ID of that person"};
-		cmd.params.split(", ").forEach(p => p && (params["{" + p + "}"] = SPECIAL_PARAMS[p]));
+		const params = {"{username}": cmd.originator, "{uid}": "ID of that person", ...cmd.params};
 		basis._provides = params;
 		basis._desc = "Happens when: " + cmd.desc;
 		basis._shortdesc = cmd.desc; //Needs to be even shorter though

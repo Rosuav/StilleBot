@@ -143,8 +143,8 @@ constant charity = special_trigger("!charity", "Someone donates to the charity y
 constant watchstreak = special_trigger("!watchstreak", "Someone achieved a new watch streak!", "The viewer", "months, reward", "Stream support");
 constant timeout = special_trigger("!timeout", "A user got timed out or banned", "The victim", "ban_duration", "Status");
 constant combostarted = special_trigger("!combostarted", "A hype combo started", "Broadcaster", ([
-	"time_remaining": "Time remaining (ms)",
-	"gift_id": "Type of icon shown??",
+	"{time_remaining}": "Time remaining (ms)",
+	"{gift_id}": "Type of icon shown??",
 ]), "Stream support");
 constant combolvlup = special_trigger("!combolvlup", "A hype combo levelled up", "Broadcaster", "level, threshold", "Stream support");
 constant combofinished = special_trigger("!combofinished", "A hype combo finished", "Broadcaster", "contributor_1, contributor_1_taps, contributor_2, contributor_2_taps, gift_id, largest_contributor_count, streak_size_bits, streak_size_taps", "Stream support");
