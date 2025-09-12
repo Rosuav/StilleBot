@@ -1089,18 +1089,21 @@ class channel(mapping identity) {
 					//you get a sharedchatnotice that has a source_msg_id in it.
 					break;
 				case "onetapstreakstarted":
+					Stdio.append_file("onetap.log", sprintf("%s%O\n%O\n", ctime(time()), person, params));
 					trigger_special("!combostarted", person, ([ //Might need something other than person[]
 						"{gift_id}": params->msg_param_gift_id || "unknown",
 						"{time_remaining}": params->msg_param_ms_remaining || "0",
 					]));
 					break;
 				case "onetapbreakpointachieved":
+					Stdio.append_file("onetap.log", sprintf("%s%O\n%O\n", ctime(time()), person, params));
 					trigger_special("!combolvlup", person, ([
 						"{level}": params->breakpoint_number || "0",
 						"{threshold}": params->msg_param_breakpoint_threshold_bits || "0",
 					]));
 					break;
 				case "onetapstreakexpired": {
+					Stdio.append_file("onetap.log", sprintf("%s%O\n%O\n", ctime(time()), person, params));
 					mapping args = ([]);
 					foreach (params; string name; string val)
 						if (sscanf(name, "msg_param_%s", string n) && n && n != "")
