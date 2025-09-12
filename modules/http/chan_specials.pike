@@ -118,11 +118,13 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		}
 		mapping params = ([]);
 		if (mappingp(spec->params)) params = spec->params;
-		else if (stringp(spec->params) && spec->params != "")
+		else if (stringp(spec->params) && spec->params != "") {
 			foreach (spec->params / ", ", string p) {
 				params["{" + p + "}"] = SPECIAL_PARAMS[p] || p;
 				special_uses[p] += ({spec->name});
 			}
+			//werror("Special %O params s/be %O\n", spec->name, params); //Migration aid
+		}
 		commands += ({([
 			"id": spec->name,
 			"desc": spec->desc, "originator": spec->originator,
