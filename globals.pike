@@ -871,7 +871,7 @@ class irc_callback {
 	Concurrent.Future irc_connect(mapping options) {
 		//Bump this version number when there's an incompatible change. Old
 		//connections will all be severed.
-		options = (["module": this, "version": 11]) | (options || ([]));
+		options = (["module": this, "version": 11, "encrypt": 1]) | (options || ([]));
 		if (!options->user) {
 			//Default credentials from the bot's main configs
 			mapping cred = G->G->dbsettings->credentials;
