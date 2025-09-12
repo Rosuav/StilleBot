@@ -142,6 +142,9 @@ constant cheerbadge = special_trigger("!cheerbadge", "A viewer attains a new che
 constant charity = special_trigger("!charity", "Someone donates to the charity you're supporting", "The donor", "amount, msgid", "Stream support");
 constant watchstreak = special_trigger("!watchstreak", "Someone achieved a new watch streak!", "The viewer", "months, reward", "Stream support");
 constant timeout = special_trigger("!timeout", "A user got timed out or banned", "The victim", "ban_duration", "Status");
+constant combostarted = special_trigger("!combostarted", "A hype combo started", "Broadcaster", "time_remaining, gift_id", "Stream support");
+constant combolvlup = special_trigger("!combolvlup", "A hype combo levelled up", "Broadcaster", "level, threshold", "Stream support");
+constant combofinished = special_trigger("!combofinished", "A hype combo finished", "Broadcaster", "contributor_1, contributor_1_taps, contributor_2, contributor_2_taps, gift_id, largest_contributor_count, streak_size_bits, streak_size_taps", "Stream support");
 
 class channel(mapping identity) {
 	string name; //name begins with a hash and is all lowercase. Preference: Use this->login (no hash) instead.
@@ -1085,6 +1088,26 @@ class channel(mapping identity) {
 					//If you're participating in a shared chat, and a notification is sent to the other,
 					//you get a sharedchatnotice that has a source_msg_id in it.
 					break;
+				case "onetapstreakstarted":
+					trigger_special("!combostarted", person, ([ //Might need something other than person[]
+						"{gift_id}": params->msg_param_gift_id || "unknown",
+						"{time_remaining}": params->msg_param_ms_remaining || "0",
+					]));
+					break;
+				case "onetapbreakpointachieved":
+					trigger_special("!combolvlup", person, ([
+						"{level}": params->breakpoint_number || "0",
+						"{threshold}": params->msg_param_breakpoint_threshold_bits || "0",
+					]));
+					break;
+				case "onetapstreakexpired": {
+					mapping args = ([]);
+					foreach (params; string name; string val)
+						if (sscanf(name, "msg_param_%s", string n) && n && n != "")
+							args["{" + n + "}"] = val;
+					trigger_special("!combofinished", person, args);
+					break;
+				}
 				default: werror("Unrecognized %s with msg_id %O on channel %s\n%O\n%O\n",
 					type, params->msg_id, name, params, msg);
 					Stdio.append_file("notice.log", sprintf("%sUnknown %s %s %s %O\n", ctime(time()), type, chan, msg, params));
