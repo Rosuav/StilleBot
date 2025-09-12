@@ -146,8 +146,18 @@ constant combostarted = special_trigger("!combostarted", "A hype combo started",
 	"{time_remaining}": "Time remaining (ms)",
 	"{gift_id}": "Type of icon shown??",
 ]), "Stream support");
-constant combolvlup = special_trigger("!combolvlup", "A hype combo levelled up", "Broadcaster", "level, threshold", "Stream support");
-constant combofinished = special_trigger("!combofinished", "A hype combo finished", "Broadcaster", "contributor_1, contributor_1_taps, contributor_2, contributor_2_taps, gift_id, largest_contributor_count, streak_size_bits, streak_size_taps", "Stream support");
+constant combolvlup = special_trigger("!combolvlup", "A hype combo levelled up", "Broadcaster", ([
+	"{level}": "Level just attained in the combo",
+	"{threshold}": "Bits required for next level??",
+]), "Stream support");
+constant combofinished = special_trigger("!combofinished", "A hype combo finished", "Broadcaster", ([
+	"{contributor_N}": "Name of Nth top contributor",
+	"{contributor_N_taps}": "Number of times the Nth top contrib tapped",
+	"{gift_id}": "Type of icon that was shown??",
+	"{largest_contributor_count}": "Number of top contributors",
+	"{streak_size_bits}": "Total number of bits given",
+	"{streak_size_taps}": "Total number of taps given",
+]), "Stream support");
 
 class channel(mapping identity) {
 	string name; //name begins with a hash and is all lowercase. Preference: Use this->login (no hash) instead.
