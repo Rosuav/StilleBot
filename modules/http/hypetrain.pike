@@ -91,12 +91,12 @@ __async__ mapping get_state(int|string chan)
 		]),
 	]);
 	mixed ex = catch {
-		string uid;
+		int uid;
 		if (intp(chan)) {//Deprecated, might change everything to be all channel names at some point
-			uid = (string)chan;
-			chan = await(get_user_info(chan))->login;
+			uid = chan;
+			chan = await(get_user_info(uid))->login;
 		}
-		else uid = (string)await(get_user_id(chan));
+		else uid = await(get_user_id(chan));
 		//TODO: Switch to using /hypetrain/status which is the modern API
 		//Need to get an example hype train, compare, and probably get rid of the remapping.
 		//The old API will vanish Dec 4th.
