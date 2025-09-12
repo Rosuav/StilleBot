@@ -120,7 +120,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		commands += ({([
 			"id": spec->name,
 			"desc": spec->desc, "originator": spec->originator,
-			"params": spec->params, "tab": spec->tab,
+			"params": params, "tab": spec->tab,
 			//Null if none needed or we already have them. "bcaster" if scopes needed and we're not the broadcaster.
 			//Otherwise, is the scopes required to activate this special.
 			"scopes_required": scopes_required,
