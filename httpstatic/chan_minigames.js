@@ -72,7 +72,17 @@ export function render(data) {
 			]),
 			" Set to Yes to make the magic happen!",
 		]),
+		LI([
+			"Initial holder ",
+			SELECT({name: "initialholder", value: crown.initialholder}, Object.entries(voices).map(([id, name]) =>
+				OPTION({value: id}, name)
+			)),
+		]),
 		LI(["Initial price ", INPUT({type: "number", name: "initialprice", value: crown.initialprice})]),
+		LI([
+			"Crown can be retrieved any time with the ", CODE("!retrievecrown"), " command, or here: ",
+			BUTTON({".onclick": () => ws_sync.send({cmd: "retrievecrown"})}, "Retrieve crown"),
+		]),
 		LI(["Increase per movement ", INPUT({type: "number", name: "increase", value: crown.increase})]),
 		LI([
 			"Grace time after gaining the crown ",

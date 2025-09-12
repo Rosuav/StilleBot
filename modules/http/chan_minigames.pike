@@ -64,6 +64,7 @@ constant sections = ([
 	"crown": ([
 		"enabled": 0,
 		"initialprice": 5000,
+		"initialholder": 279141671, //As above, default to Mustard Mine
 		"increase": 1000,
 		"gracetime": 60,
 		"perpersonperstream": 0,
@@ -218,11 +219,19 @@ __async__ void update_crown(object channel, mapping game) {
 			await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->crown = game;});
 		}
 		if (channel->commands->seizecrown) G->G->cmdmgr->update_command(channel, "", "seizecrown", "");
+		if (channel->commands->retrievecrown) G->G->cmdmgr->update_command(channel, "", "retrievecrown", "");
 		//No other config changes are done. The deletion of the reward will (asynchronously)
 		//result in other info getting cleaned up, but we broadly don't need to take action.
 		return;
 	}
 	mapping cfg = sections->crown | game;
+	mapping vox = G->G->DB->load_cached_config(channel->userid, "voices");
+	if (!vox[(string)game->initialholder]) {
+		string defvoice = G->G->irc->id[0]->?config->?defvoice;
+		werror("Invalid initial crown holder %O resetting to %O\n", game->initialholder, defvoice);
+		game->initialholder = (int)defvoice;
+		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->crown = game;});
+	}
 	if (!game->rewardid) {
 		//TODO: Should this disambiguation be in pointsrewards more generally?
 		string basetitle = "Seize the Crown";
@@ -271,6 +280,21 @@ __async__ void update_crown(object channel, mapping game) {
 			$crownholder$ = \"{username}\"
 		}
 		", (["language": "mustard"]));
+	G->G->cmdmgr->update_command(channel, "", "retrievecrown", #"
+		#access \"mod\"
+		#visibility \"hidden\"
+		uservars(\"crownholder\", \"" + game->initialholder + #"\") $crownholder$ = \"{name}\"
+		try {
+			chan_pointsrewards(\"" + game->rewardid + #"\", \"cost\", \"" + cfg->initialprice + #"\") \"\"
+		}
+		catch \"\"
+		\"Crown has been retrieved.\"
+		", (["language": "mustard"]));
+
+}
+
+void wscmd_retrievecrown(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	channel->send((["{username}": channel->display_name]), channel->commands->retrievecrown || "");
 }
 
 constant firsts = ([
