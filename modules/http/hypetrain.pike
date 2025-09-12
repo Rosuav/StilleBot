@@ -59,7 +59,7 @@ __async__ mapping parse_hype_status(mapping data)
 @EventNotify("channel.hype_train.progress=2"):
 @EventNotify("channel.hype_train.end=2"):
 void hypetrain_progression(object chan, mapping info) {
-	twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + chan->userid,
+	twitch_api_request("https://api.twitch.tv/helix/hypetrain/status?broadcaster_id=" + chan->userid,
 		(["Authorization": chan->userid]))->then() {
 			Stdio.append_file("evthook.log", sprintf("EVENT: Hype train [%O, %d]: %O\nFetched: %O\n", chan, time(), info, __ARGS__[0]));
 		};
