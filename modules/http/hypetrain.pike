@@ -59,7 +59,10 @@ __async__ mapping parse_hype_status(mapping data)
 @EventNotify("channel.hype_train.progress=2"):
 @EventNotify("channel.hype_train.end=2"):
 void hypetrain_progression(object chan, mapping info) {
-	//Stdio.append_file("evthook.log", sprintf("EVENT: Hype %s [%O, %d]: %O\n", status, chan, time(), info));
+	twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + chan->userid,
+		(["Authorization": chan->userid]))->then() {
+			Stdio.append_file("evthook.log", sprintf("EVENT: Hype train [%O, %d]: %O\nFetched: %O\n", chan, time(), info, __ARGS__[0]));
+		};
 	parse_hype_status(info)->then() {send_updates_all(info->broadcaster_user_login, @__ARGS__);};
 }
 
@@ -94,8 +97,11 @@ __async__ mapping get_state(int|string chan)
 			chan = await(get_user_info(chan))->login;
 		}
 		else uid = (string)await(get_user_id(chan));
+		//TODO: Switch to using /hypetrain/status which is the modern API
+		//Need to get an example hype train, compare, and probably get rid of the remapping.
+		//The old API will vanish Dec 4th.
 		mapping info = await(twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + uid,
-				(["Authorization": "Bearer " + token_for_user_id(uid)[0]])));
+				(["Authorization": uid])));
 		//If there's an error fetching events, don't set up hooks
 		establish_notifications(uid);
 		mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
