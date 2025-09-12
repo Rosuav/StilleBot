@@ -279,5 +279,3 @@
     This might be the excuse needed to change that, and thus allow refreshing when a
     person's avatar is texturing a thing. In effect, we'd need to record not just the
     quantity, but an array of vital statistics: size, texture, label
-* Seize the Crown - initial cost sets dynreward base cost? Need to have it optionally
-  NOT set that, to not reset every stream, but also have a button to reset it now.
