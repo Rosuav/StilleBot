@@ -58,8 +58,6 @@ it cannot be seen outside of one).
 	border: 1px solid;
 }
 
-#emotes li > img:last-of-type {display: none;}
-#emotes.hardmode li > img:last-of-type {display: inline-block;}
 #emotes li:before {content: "Pending: ";}
 #emotes li.available:before {content: "Earnable: ";}
 #emotes li.next:before {content: "Next goal: ";}
@@ -98,8 +96,6 @@ it cannot be seen outside of one).
 #emotes.emotes_large em:nth-of-type(5) {left: 500px;}
 #emotes.emotes_large em:nth-of-type(6) {left: 625px;}
 #emotes.emotes_large li > em:last-of-type {display: none;}
-#emotes.emotes_large.hardmode li > img:last-of-type {display: none;}
-#emotes.emotes_large.hardmode li > em:last-of-type {display: block;}
 
 audio {display: none;}
 #config ul.gapbelow li {margin-bottom: 1.5em;}

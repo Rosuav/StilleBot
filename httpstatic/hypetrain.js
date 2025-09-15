@@ -1,26 +1,15 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {A, BUTTON, BR, P, SPAN} = choc;
 
-//The threshold for "Super Hard" is this many bits per level (not total).
-//In order to unlock the sixth emote for each level, you need to have a
-//goal that is at least this number of bits for the level (since Insane
-//is even higher - level 1 needs 10,000 bits).
-const hardmode = [0, 5000, 7500, 10600, 14600, 22300];
-
 const ismobile = !DOM("#configform");
 let have_prefs = false, need_interaction = false;
 if (!ismobile) ws_sync.prefs_notify(prefs => { //Note: Even if no prefs are set, we need a notification that they're loaded, so this is unkeyed notification for now.
 	have_prefs = true;
-	//Merge (legacy) local configs
-	let config = {}, save_prefs = false;
-	try {
-		config = JSON.parse(localStorage.getItem("hypetrain_config")) || {};
-		localStorage.removeItem("hypetrain_config");
-		if (Object.keys(config).length) save_prefs = true;
-	} catch (e) {}
-	if (prefs["hypetrain"]) config = {...prefs["hypetrain"], ...config};
-	if (save_prefs) ws_sync.send({cmd: "prefs_update", hypetrain: config});
-	//Ultimately: const config = prefs["hypetrain"] or set prefs_notify to tell us about "hypetrain" only.
+	const config = prefs.hypetrain;
+	//Ultimately: Set prefs_notify to tell us about "hypetrain" only.
+	//CJA 20250915: This was previously merging in localStorage configs, no longer supported. However,
+	//I don't recall why this meant it needed to be an unkeyed notification. What are the consequences
+	//of switching to keyed, and can that now be done as a simplification?
 
 	const el = DOM("#configform").elements;
 	for (let name in config) {
@@ -53,9 +42,9 @@ function update() {
 function subs(n) {return Math.floor((n + 499) / 500);} //Calculate how many T1 subs are needed
 
 function fmt_contrib(c) {
-	if (!c.display_name) return ""; //No data available (can happen after a hype train ends)
-	if (c.type === "BITS") return `${c.display_name} with ${c.total} bits`;
-	return `${c.display_name} with ${c.total / 500} T1 subs (or equivalent)`;
+	if (!c.user_name) return ""; //No data available (can happen after a hype train ends)
+	if (c.type === "BITS") return `${c.user_name} with ${c.total} bits`;
+	return `${c.user_name} with ${c.total / 500} T1 subs (or equivalent)`;
 }
 
 //Play audio snippets, if configured to do so
@@ -82,6 +71,18 @@ function check_interaction() {
 	DOM("#interact-warning").classList.toggle("hidden", interacted || !need_interaction);
 }
 
+function level_color(level) {
+	const degree = 216 - level * 20;
+	//Color should be full red, full green, and a decreasing amount of blue, to give
+	//a pale yellow at level 1 up to a vibrant yellow once we get beyond level 100ish.
+	//The gradient progresses from the more vibrant one (next level) to the paler one
+	//(current level). The current scheme gives decent colours up to level 10, then
+	//locks in place until level 100. Would be nice to have more variation after that.
+	//Reducing the multiplier on the degree to 2 would give variation as far as level
+	//108, but at the cost of per-level differentiation, and thus usefulness.
+	return "#ffff" + (degree < 0 ? "00" : ("0" + degree.toString(16)).slice(-2));
+}
+
 let last_rendered = null;
 export let render = (state) => {
 	if (state.error) {
@@ -101,8 +102,6 @@ export let render = (state) => {
 	document.querySelectorAll("#emotes li").forEach((li, idx) => li.className =
 		lvl >= idx + 2 || state.total >= state.goal ? "available" :
 		state.expires && lvl === idx + 1 ? "next" : ""); //Only show "next" during active hype trains
-	//As of 20240504, Twitch doesn't seem to do the "hard mode" thing any more; everyone gets access to all six.
-	document.getElementById("emotes").classList.toggle("hardmode", /*state.goal >= hardmode[state.level]*/true);
 
 	if (!state.expires && !state.cooldown) {
 		//Idle state. If we previously had a cooldown, it's now expired.
@@ -123,14 +122,15 @@ export let render = (state) => {
 	{
 		//Active hype train!
 		goal = `Level ${state.level} requires ${state.goal} bits or ${subs(state.goal)} tier one subs.`;
-		goalattrs.className = "level" + state.level;
 		let need = state.goal - state.total;
-		if (need <= 0) {goal += " TIER FIVE COMPLETE!"; goalattrs.className = "level6";}
+		if (need <= 0) goal += " HYPE TRAIN COMPLETE!"; //Probably never going to happen
 		else {
 			goal += ` Need ${need} more bits, or ${subs(need)} more subs.`;
 			let mark = state.total / state.goal * 100;
 			let delta = 0.375; //Width of the red marker line (each side)
-			goalattrs.style = `background: linear-gradient(.25turn, var(--hype-level${state.level + 1}) ${mark-delta}%, red, var(--hype-level${state.level}) ${mark+delta}%, var(--hype-level${state.level}))`;
+			const from_color = level_color(state.level + 1);
+			const to_color = level_color(state.level);
+			goalattrs.style = `background: linear-gradient(.25turn, ${from_color} ${mark-delta}%, red, ${to_color} ${mark+delta}%, ${to_color})`;
 		}
 		if (last_rendered === "idle") hypetrain_started();
 		last_rendered = "active";
@@ -139,8 +139,8 @@ export let render = (state) => {
 	{
 		if (state.level === 1)
 			goal = `The last hype train reached ${state.total} out of ${state.goal} to complete level 1.`;
-		else if (state.level === 5 && state.total >= state.goal)
-			goal = `The last hype train finished level 5 at ${Math.round(100 * state.total / state.goal)}%!!`;
+		else if (state.total >= state.goal) //Probably never going to happen
+			goal = `The last hype train finished level ${state.level} at ${Math.round(100 * state.total / state.goal)}%!!`;
 		else
 			goal = `The last hype train completed level ${state.level - 1}! Good job!`;
 		last_rendered = "cooldown"; //No audio cue when changing from active to cooldown
@@ -158,7 +158,6 @@ export let render = (state) => {
 		]),
 		conduc.BITS || P({id: "cond_bits"}, "No hype conductor for bits - cheer any number of bits to claim this spot!"),
 		conduc.SUBS || P({id: "cond_subs"}, "No hype conductor for subs - subscribe/resub/subgift to claim this spot!"),
-		P(["Latest contribution: ", fmt_contrib(state.lastcontrib)]),
 		P(goalattrs, goal),
 	]);
 	if (updating) clearInterval(updating);
@@ -177,32 +176,31 @@ if (ismobile) render = (state) => {
 		//Active hype train!
 		set_content("#status", ["ACTIVE", BR(), SPAN({id: "time"})]).className = "active";
 		let need = state.goal - state.total;
-		if (need < 0) set_content("#nextlevel", "TIER FIVE COMPLETE!").className = "level6";
+		if (need < 0) set_content("#nextlevel", "HYPE TRAIN COMPLETE!");
 		else set_content("#nextlevel", [
 			`Level ${state.level} needs`, BR(),
 			need + " bits", BR(),
 			subs(need) + " subs",
-		]).className = "level" + state.level;
+		]);
 	}
 	else
 	{
-		set_content("#status", ["Cooling down", BR(), SPAN({id: "time"})]).className = "";
+		set_content("#status", ["Cooling down", BR(), SPAN({id: "time"})]);
 		if (state.level === 1)
-			set_content("#nextlevel", `Reached ${state.total} out of ${state.goal}`).className = "";
-		else if (state.level === 5 && state.total >= state.goal)
-			set_content("#nextlevel", `Finished level 5 at ${Math.round(100 * state.total / state.goal)}%!!`).className = "";
+			set_content("#nextlevel", `Reached ${state.total} out of ${state.goal}`);
+		else if (state.total >= state.goal)
+			set_content("#nextlevel", `Finished level ${state.level} at ${Math.round(100 * state.total / state.goal)}%!!`);
 		else
-			set_content("#nextlevel", `Finished level ${state.level - 1}!`).className = "";
+			set_content("#nextlevel", `Finished level ${state.level - 1}!`);
 	}
 	expiry = (state.expires || state.cooldown) * 1000;
 	const contrib = state.lastcontrib.type === "BITS" ? `${state.lastcontrib.total} bits` : `${state.lastcontrib.total / 500} subs`;
-	set_content("#latest", ["Latest:", BR(), `${state.lastcontrib.display_name} - ${contrib}`]);
 	let have_bits = 0, have_subs = 0;
 	state.conductors.forEach(c => {
 		let sel, desc;
 		if (c.type === "BITS") {have_bits = 1; sel = "#cond_bits"; desc = c.total + " bits"}
 		else {have_subs = 1; sel = "#cond_subs"; desc = (c.total/500) + " subs";}
-		set_content(sel, ["Conductor:", BR(), c.display_name, BR(), desc]).className = "present";
+		set_content(sel, ["Conductor:", BR(), c.user_name, BR(), desc]).className = "present";
 	});
 	if (!have_bits) set_content("#cond_bits", "").className = "";
 	if (!have_subs) set_content("#cond_subs", "").className = "";

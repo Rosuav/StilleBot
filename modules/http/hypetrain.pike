@@ -4,6 +4,7 @@ inherit annotated;
 inherit builtin_command;
 inherit hook;
 @retain: mapping hypetrain_checktime = ([]);
+@retain: mapping hypetrain_info = ([]);
 
 //Parse a timestamp into a valid Unix time. If ts is null, malformed,
 //or in the past, returns 0.
@@ -12,45 +13,43 @@ int until(string ts, int now)
 	object tm = time_from_iso(ts || "");
 	return tm && tm->unix_time() > now && tm->unix_time();
 }
-mapping cached = 0; int cache_time = 0;
 
-__async__ mapping parse_hype_status(mapping data)
+mapping parse_hype_status(mapping data)
 {
+	mapping current = data->current || data; //EventSub messages have nothing BUT the current info, queries also get the all-time high
+	string channelid = current->broadcaster_user_id;
+	mapping retained = hypetrain_info[channelid];
+	if (!retained) hypetrain_info[channelid] = retained = ([]);
+	if (data->all_time_high) retained->all_time_high = data->all_time_high;
+	if (data->shared_all_time_high) retained->shared_all_time_high = data->shared_all_time_high;
 	int now = time();
-	int cooldown = until(data->cooldown_end_time || data->cooldown_ends_at, now);
-	int expires = until(data->expires_at, now);
+	int cooldown = retained->cooldown = (until(current->cooldown_ends_at, now) || retained->cooldown);
+	int expires = until(current->expires_at, now);
 	int checktime = expires || cooldown;
-	string channelid = data->broadcaster_id || data->broadcaster_user_id;
-	if (checktime && checktime != hypetrain_checktime[data->broadcaster_id]) {
+	if (checktime && checktime != hypetrain_checktime[channelid]) {
 		//Schedule a check about when the hype train or cooldown will end.
 		//If something changes before then (eg it goes to a new level),
 		//we'll schedule a duplicate call_out, but otherwise, rechecking
 		//repeatedly won't create a spew of call_outs that spam the API.
-		hypetrain_checktime[data->broadcaster_id] = checktime;
-		call_out(probe_hype_train, checktime - now + 1, (int)channelid);
+		hypetrain_checktime[channelid] = checktime;
+		call_out(send_updates_all, checktime - now + 1, current->broadcaster_user_login);
 	}
 	if (expires && !cooldown) {
-		//There's a weird issue with the eventsub message: the cooldown is omitted.
-		//For simplicity's sake, assume that it'll be 55 minutes after the expiry
-		//(which will be true if, and only if, there's a one-hour cooldown).
+		//Cooldowns are not always provided. We retain this info if we possibly can, but
+		//otherwise, we have to guess that it's an hour after expiration.
 		cooldown = expires + 55 * 60;
 	}
-	mapping state = ([
-		"cooldown": cooldown, "expires": expires,
-		"level": (int)data->level, "goal": (int)data->goal,
-		"total": data->progress || (int)data->total, //Different format problems. Sigh.
-		//TODO: What are the valid data->type values? This replaces the dedicated is_golden_kappa_train flag, is it "golden_kappa"? "goldenkappa"? "kappa"?
-		//Also there's the discount sub gift trains, etc
-		//"is_golden_kappa_train": data->is_golden_kappa_train, //Note that this isn't available when you first load the page, only in the eventsub messages. Sigh.
+	mapping state = retained | ([
+		"expires": expires,
+		"level": (int)current->level, "goal": (int)current->goal,
+		"total": current->progress,
 	]);
 	//The API has one format, the eventsub notification has another. Sigh. Synchronize manually.
-	foreach (data->top_contributions + ({data->last_contribution}) - ({0}), mapping user) {
-		if (user->user_id) user->user = user->user_id;
-		if (user->user_name) user->display_name = user->user_name;
-		else user->display_name = await(get_user_info(user->user))->display_name;
-		user->type = (["bits": "BITS", "subscription": "SUBS"])[user->type] || user->type; //Events say "bits", API says "BITS".
+	foreach (data->top_contributions || ({ }), mapping user) {
+		//API says "bits", events say "BITS". This is inverted from how it used to be in v1,
+		//and I still don't care about the distinction.
+		user->type = (["bits": "BITS", "subscription": "SUBS"])[user->type] || user->type;
 	}
-	state->lastcontrib = data->last_contribution || ([]);
 	state->conductors = data->top_contributions || ({ });
 	return state;
 }
@@ -59,36 +58,36 @@ __async__ mapping parse_hype_status(mapping data)
 @EventNotify("channel.hype_train.progress=2"):
 @EventNotify("channel.hype_train.end=2"):
 void hypetrain_progression(object chan, mapping info) {
-	twitch_api_request("https://api.twitch.tv/helix/hypetrain/status?broadcaster_id=" + chan->userid,
-		(["Authorization": chan->userid]))->then() {
-			Stdio.append_file("evthook.log", sprintf("EVENT: Hype train [%O, %d]: %O\nFetched: %O\n", chan, time(), info, __ARGS__[0]));
-		};
-	parse_hype_status(info)->then() {send_updates_all(info->broadcaster_user_login, @__ARGS__);};
+	if (info->type != "regular" || info->is_shared_train)
+		//Log info about any unusual hype trains. So far, I have only seen single-channel regular hype trains,
+		//but would be good to get info for Golden Kappa, Treasure, and other; and also for shared hype trains.
+		//Fetch up the info that we get when loading the page, and provide both eventsub and API info for me to
+		//eventually delve through, some day.
+		twitch_api_request("https://api.twitch.tv/helix/hypetrain/status?broadcaster_id=" + chan->userid,
+			(["Authorization": chan->userid]))->then() {
+				Stdio.append_file("evthook.log", sprintf("EVENT: Hype train [%O, %d]: %O\nFetched: %O\n", chan, time(), info, __ARGS__[0]));
+			};
+
+	send_updates_all(info->broadcaster_user_login, parse_hype_status(info));
 }
 
 __async__ mapping get_state(int|string chan)
 {
-	if (chan == "-") return 0; //FIXME: What causes a state of "-" and is that still a thing?
+	if (chan == "-") return 0; //Shouldn't happen - will be from a page with no for= and not logged in.
 	if (chan == "!demo") return ([
 		"expires": time() + 180, //Three minutes left on the demo hype train, as of when you load the page
 		"level": 2, "goal": 1800, "total": 500,
 		"conductors": ({([
-			"display_name": "Demo User",
 			"total": 100,
 			"type": "BITS",
 			"user": "49497888",
+			"user_name": "Demo User",
 		]), ([
-			"display_name": "MustardMine",
 			"total": 500,
 			"type": "SUBS",
 			"user": "279141671",
+			"user_name": "MustardMine",
 		])}),
-		"lastcontrib": ([
-			"display_name": "Demo User",
-			"total": 100,
-			"type": "BITS",
-			"user": "49497888",
-		]),
 	]);
 	mixed ex = catch {
 		int uid;
@@ -97,30 +96,24 @@ __async__ mapping get_state(int|string chan)
 			chan = await(get_user_info(uid))->login;
 		}
 		else uid = await(get_user_id(chan));
-		//TODO: Switch to using /hypetrain/status which is the modern API
-		//Need to get an example hype train, compare, and probably get rid of the remapping.
-		//The old API will vanish Dec 4th.
-		mapping info = await(twitch_api_request("https://api.twitch.tv/helix/hypetrain/events?broadcaster_id=" + uid,
+		mapping info = await(twitch_api_request("https://api.twitch.tv/helix/hypetrain/status?broadcaster_id=" + uid,
 				(["Authorization": uid])));
 		//If there's an error fetching events, don't set up hooks
 		establish_notifications(uid);
-		mapping data = (sizeof(info->data) && info->data[0]->event_data) || ([]);
-		return await(parse_hype_status(data));
+		mapping data = (sizeof(info->data) && info->data[0]) || ([]);
+		return parse_hype_status(data);
 	};
 	if (ex && arrayp(ex) && stringp(ex[0]) && has_value(ex[0], "Error from Twitch") && has_value(ex[0], "401"))
 		return (["error": "Authentication problem. It may help to ask the broadcaster to open this page: ", "errorlink": "https://mustardmine.com/hypetrain?for=" + chan]);
 	throw(ex);
 }
 
-void probe_hype_train(int channel) {
-	get_user_info(channel)->then() {send_updates_all(__ARGS__[0]->login);};
-}
-
-constant emotes = #"SpillTheTea ThatsAServe WhosThisDiva ConfettiHype
-RespectfullyNo ThatsIconique HerMind ImSpiraling
-NoComment DownBad UghMood ShyGhost
-TheyAte PlotTwist AnActualQueen LilTrickster
-PackItUp InTheirBag SpitTheTruth PufferPop";
+//Confirmed as all unlockable 20250915
+constant emotes = #"FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume SpillTheTea ThatsAServe WhosThisDiva ConfettiHype
+AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat RespectfullyNo ThatsIconique HerMind ImSpiraling
+MegaMlep RawkOut FallDamage RedCard ApplauseBreak TouchOfSalt NoComment DownBad UghMood ShyGhost
+KittyLove TurnUp CatScare LateSave NoTheyDidNot BeholdThis TheyAte PlotTwist AnActualQueen LilTrickster
+RaccoonPop GoblinJam YouMissed GriddyGoose CheersToThat StirThePot PackItUp InTheirBag SpitTheTruth PufferPop";
 string avail_emotes = "";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
@@ -149,7 +142,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if (req->misc->session->scopes[?"channel:read:hype_train"])
 			return redirect("hypetrain?for=" + req->misc->session->user->login);
 		return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
-			"vars": (["ws_type": "hypetrain", "ws_group": "-"]),
+			"vars": (["ws_type": "hypetrain", "ws_group": "-"]), //FIXME: Does removing this prevent the WS and look okay?
 			"loading": "(no channel selected)",
 			"channelname": "(no channel)",
 			//TODO: When emote IDs are easily available, provide the matrix of emotes
@@ -212,8 +205,8 @@ constant vars_provided = ([
 ]);
 
 string fmt_contrib(mapping c) {
-	if (c->type == "BITS") return sprintf("%s with %d bits", c->display_name, c->total);
-	return sprintf("%s with %d subs", c->display_name, c->total / 500);
+	if (c->type == "BITS") return sprintf("%s with %d bits", c->user_name, c->total);
+	return sprintf("%s with %d subs", c->user_name, c->total / 500);
 }
 
 __async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
