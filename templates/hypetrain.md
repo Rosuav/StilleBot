@@ -68,12 +68,16 @@ it cannot be seen outside of one).
 	position: relative;
 	width: 0; height: 0;
 }
-#emotes em:nth-of-type(0) {left: 0px;} /* Manually do the calculations :( */
-#emotes em:nth-of-type(1) {left: 30px;}
+#emotes em:nth-of-type(1) {left: 30px;} /* Manually do the calculations :( */
 #emotes em:nth-of-type(2) {left: 60px;}
 #emotes em:nth-of-type(3) {left: 90px;}
 #emotes em:nth-of-type(4) {left: 120px;}
 #emotes em:nth-of-type(5) {left: 150px;}
+#emotes em:nth-of-type(6) {left: 180px;}
+#emotes em:nth-of-type(7) {left: 210px;}
+#emotes em:nth-of-type(8) {left: 240px;}
+#emotes em:nth-of-type(9) {left: 270px;}
+#emotes em:nth-of-type(10) {left: 300px;}
 #emotes em img {
 	display: none;
 	position: absolute;
