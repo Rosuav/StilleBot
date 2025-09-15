@@ -279,3 +279,9 @@
     This might be the excuse needed to change that, and thus allow refreshing when a
     person's avatar is texturing a thing. In effect, we'd need to record not just the
     quantity, but an array of vital statistics: size, texture, label
+* Goal bar autoadvance is somewhat unintuitive.
+  - With a lot of them, the only sane values are 0 and 1. They should simply be
+    checkboxes - include it or don't.
+  - With shop support (other than dono), Off, Net, Gross, with the caveat that Net is
+    an estimate in some cases.
+  - Only subs really need a scaling factor.
