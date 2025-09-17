@@ -99,6 +99,10 @@ it cannot be seen outside of one).
 #emotes.emotes_large em:nth-of-type(4) {left: 375px;}
 #emotes.emotes_large em:nth-of-type(5) {left: 500px;}
 #emotes.emotes_large em:nth-of-type(6) {left: 625px;}
+#emotes.emotes_large em:nth-of-type(7) {left: 750px;}
+#emotes.emotes_large em:nth-of-type(8) {left: 875px;}
+#emotes.emotes_large em:nth-of-type(9) {left: 1000px;}
+#emotes.emotes_large em:nth-of-type(10) {left: 1125px;}
 #emotes.emotes_large li > em:last-of-type {display: none;}
 
 audio {display: none;}
