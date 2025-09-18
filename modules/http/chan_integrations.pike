@@ -81,7 +81,7 @@ constant fw_other = special_trigger("!fw_other", "Other notification from Fourth
 
 int to_cents(int|float amount) {
 	if (floatp(amount)) return (int)(amount * 100 + 0.5);
-	return amount * 100;
+	return (amount || 0) * 100;
 }
 
 __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req) {
