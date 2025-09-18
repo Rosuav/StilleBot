@@ -256,7 +256,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			amount -= to_cents(data->amounts->?prepaidShipping->?value); //Gifts can have an allocation to shipping, though the exact figure isn't known until a winner is selected
 			amount -= to_cents(data->amounts->?tax->?value);
 			foreach (Array.arrayify(data->offers), mapping offer)
-				amount -= to_cents(offer->variant->?cost->?value);
+				amount -= to_cents(offer->variant->?cost->?value) || 15; //Digital items have a fee of 15c, which isn't given in the cost field.
 			Stdio.append_file("fourthwall.log", sprintf("Calculated profit: %O\n", amount));
 		}
 		params["{profit}"] = (string)amount;
