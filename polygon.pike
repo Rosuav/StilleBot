@@ -37,16 +37,11 @@ array(int)|zero topleft_pixel(Image.Image searchme, int xlim, int ylim) {
 array(int)|zero scan_line(Image.Image searchme, int xlim, int ylim, array P, array Q, Image.Image hull) {
 	int dx = P[0] - Q[0], dy = P[1] - Q[1];
 	if (!dx && !dy) return 0; //Pn is actually on the boundary. Step to the next pixel.
-	int trace = 0;//Q[1] == 706 || Q[1] == ylim - 2;
-	if (trace) werror("TRACING: %d,%d -> %d,%d\n", @Q, @P);
 	if (abs(dx) > abs(dy)) {
 		int epsilon = abs(65536 * dy / dx);
 		int xsign = dx > 0 || -1, ysign = dy > 0 || -1;
 		int y = Q[1], frac = 32768;
-		if (trace) werror("HEpsilon %d, sign %d:%d\n", epsilon, xsign, ysign);
 		for (int x = Q[0]; x != P[0]; x += xsign) {
-			if (trace) hull->setpixel(x, y, 0, 255, 255);
-			if (trace) werror("---> %d,%d || %d,%d || %d,%d\n", @Q, x, y, @P);
 			if (searchme->getpixel(x, y)[0]) return ({x, y});
 			frac += epsilon;
 			if (frac >= 65536) {frac -= 65536; y += ysign;}
@@ -55,10 +50,7 @@ array(int)|zero scan_line(Image.Image searchme, int xlim, int ylim, array P, arr
 		int epsilon = abs(65536 * dx / dy);
 		int xsign = dx > 0 || -1, ysign = dy > 0 || -1;
 		int x = Q[0], frac = 32768;
-		if (trace) werror("VEpsilon %d, sign %d:%d\n", epsilon, xsign, ysign);
 		for (int y = Q[1]; y != P[1]; y += ysign) {
-			if (trace) hull->setpixel(x, y, 0, 255, 255);
-			if (trace) werror("---> %d,%d || %d,%d || %d,%d\n", @Q, x, y, @P);
 			if (searchme->getpixel(x, y)[0]) return ({x, y});
 			frac += epsilon;
 			if (frac >= 65536) {frac -= 65536; x += xsign;}
@@ -66,29 +58,66 @@ array(int)|zero scan_line(Image.Image searchme, int xlim, int ylim, array P, arr
 	}
 }
 
+float degrees(array to, array from) {
+	return atan2(to[1] - from[1] + 0.0, to[0] - from[0] + 0.0) * 180 / 3.141592653589793;
+}
+
 int main() {
-	//mapping img = Image.PNG._decode(Protocols.HTTP.get_url_data(emote));
+	mapping img = Image.PNG._decode(Protocols.HTTP.get_url_data(emote));
 	//write("%O\n", img);
 	//Ignore the image and work with the alpha
-	//Image.Image searchme = img->alpha->threshold(5);
-	Image.Image searchme = Image.JPEG.decode(Stdio.read_file("../CJAPrivate/FanartProjects/CandiCatSakura2022_ColoringPage.jpg"))->invert()->threshold(5);
+	Image.Image searchme = img->alpha->threshold(5);
+	//Image.Image searchme = Image.JPEG.decode(Stdio.read_file("../CJAPrivate/FanartProjects/CandiCatSakura2022_ColoringPage.jpg"))->invert()->threshold(5);
 	int xlim = searchme->xsize(), ylim = searchme->ysize();
-	Image.Image hull = Image.Image(xlim, ylim);
+	//Image.Image hull = Image.Image(xlim, ylim);
+	//~ Image.Image hull = searchme->copy();
+	Image.Image hull = img->image->copy();
 	//First, find a starting pixel P1.
 	array|zero P1 = topleft_pixel(searchme, xlim, ylim);
 	if (!P1) exit(1, "Entirely transparent image\n"); //Algorithm not useful, probably stick with a full-size hull or something.
 	werror("Got pixel %O\n", P1);
 	array Q = ({0, P1[1]});
 	array P = ({P1});
-	while (Q[1] < ylim) {
+	//Scan down the left border
+	while (Q[1] < ylim - 1) {
 		Q[1]++;
-		//Scan from Q to P[-1]
 		array Pn = scan_line(searchme, xlim, ylim, P[-1], Q, hull);
-		if (Pn) {werror("Found at %O: %O\n", Q[1], Pn); P += ({Pn});}
+		if (Pn) {werror("LFound at %d,%d: %d,%d: %.0f\n", @Q, @Pn, degrees(Pn, Q)); P += ({Pn});}
+	}
+	//Scan across the bottom border
+	while (Q[0] < xlim - 1) {
+		Q[0]++;
+		array Pn = scan_line(searchme, xlim, ylim, P[-1], Q, hull);
+		if (Pn) {werror("BFound at %d,%d: %d,%d: %.0f\n", @Q, @Pn, degrees(Pn, Q)); P += ({Pn});}
+	}
+	//Scan up the right border
+	while (Q[1] > 0) {
+		Q[1]--;
+		array Pn = scan_line(searchme, xlim, ylim, P[-1], Q, hull);
+		if (Pn) {werror("RFound at %d,%d: %d,%d: %.0f\n", @Q, @Pn, degrees(Pn, Q)); P += ({Pn});}
+	}
+	//Scan across the top border. Note that, as soon as we find a point at the
+	//same altitude as P1, we are done and can cut the hull across to close it.
+	//There cannot be anything above this (because P1 is the topmost opaque
+	//pixel), and so the hull must have a straight line here. Special case: If
+	//the termination point is, in fact, P1 itself, don't add it again.
+	while (Q[0] > 0) {
+		Q[0]--;
+		array Pn = scan_line(searchme, xlim, ylim, P[-1], Q, hull);
+		if (Pn) {
+			if (Pn[1] == P1[1]) {
+				werror("Terminus at %d,%d: %d,%d: %.0f\n", @Q, @Pn, degrees(Pn, Q));
+				if (Pn[0] != P1[0]) P += ({Pn});
+				break;
+			}
+			werror("TFound at %d,%d: %d,%d: %.0f\n", @Q, @Pn, degrees(Pn, Q));
+			P += ({Pn});
+		}
 	}
 	//werror("All pixels %O\n", P);
-	hull->setcolor(255, 255, 255);
+	hull->setcolor(255, 0, 128);
 	for (int i = 1; i < sizeof(P); ++i)
 		hull->line(@P[i-1], @P[i]);
+	if (sizeof(P) > 1) hull->line(@P[-1], @P[0]);
 	Stdio.write_file("hull.png", Image.PNG.encode(hull));
 }
