@@ -78,6 +78,7 @@ it cannot be seen outside of one).
 #emotes em:nth-of-type(8) {left: 240px;}
 #emotes em:nth-of-type(9) {left: 270px;}
 #emotes em:nth-of-type(10) {left: 300px;}
+#emotes em:nth-of-type(11) {left: 330px;}
 #emotes em img {
 	display: none;
 	position: absolute;
@@ -103,6 +104,7 @@ it cannot be seen outside of one).
 #emotes.emotes_large em:nth-of-type(8) {left: 875px;}
 #emotes.emotes_large em:nth-of-type(9) {left: 1000px;}
 #emotes.emotes_large em:nth-of-type(10) {left: 1125px;}
+#emotes.emotes_large em:nth-of-type(11) {left: 1250px;}
 #emotes.emotes_large li > em:last-of-type {display: none;}
 
 audio {display: none;}

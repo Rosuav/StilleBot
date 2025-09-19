@@ -108,11 +108,11 @@ __async__ mapping get_state(int|string chan)
 }
 
 //Confirmed as all unlockable 20250915
-constant emotes = #"FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume SpillTheTea ThatsAServe WhosThisDiva ConfettiHype
-AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat RespectfullyNo ThatsIconique HerMind ImSpiraling
-MegaMlep RawkOut FallDamage RedCard ApplauseBreak TouchOfSalt NoComment DownBad UghMood ShyGhost
-KittyLove TurnUp CatScare LateSave NoTheyDidNot BeholdThis TheyAte PlotTwist AnActualQueen LilTrickster
-RaccoonPop GoblinJam YouMissed GriddyGoose CheersToThat StirThePot PackItUp InTheirBag SpitTheTruth PufferPop";
+constant emotes = #"FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume SpillTheTea ThatsAServe WhosThisDiva ConfettiHype FrogWow
+AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat RespectfullyNo ThatsIconique HerMind ImSpiraling LuvLuvLUV
+MegaMlep RawkOut FallDamage RedCard ApplauseBreak TouchOfSalt NoComment DownBad UghMood ShyGhost MeSweat
+KittyLove TurnUp CatScare LateSave NoTheyDidNot BeholdThis TheyAte PlotTwist AnActualQueen LilTrickster HiHand
+RaccoonPop GoblinJam YouMissed GriddyGoose CheersToThat StirThePot PackItUp InTheirBag SpitTheTruth PufferPop IAmClap";
 string avail_emotes = "";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
