@@ -24,7 +24,7 @@ This will eventually be incorporated into chan_pile.pike so that, when you uploa
 to use as an object, it gets a plausible hull.
 */
 
-constant emote = "https://static-cdn.jtvnw.net/emoticons/v2/390023/default/light/3.0";
+constant emote = "https://static-cdn.jtvnw.net/emoticons/v2/390023/static/light/3.0";
 
 array(int)|zero topleft_pixel(Image.Image searchme, int xlim, int ylim) {
 	for (int y = 0; y < ylim; ++y)
@@ -64,37 +64,38 @@ float degrees(array to, array from) {
 
 int main() {
 	mapping img = Image.PNG._decode(Protocols.HTTP.get_url_data(emote));
-	//write("%O\n", img);
 	//Ignore the image and work with the alpha
 	Image.Image searchme = img->alpha->threshold(5);
-	//Image.Image searchme = Image.JPEG.decode(Stdio.read_file("../CJAPrivate/FanartProjects/CandiCatSakura2022_ColoringPage.jpg"))->invert()->threshold(5);
+	//Optionally crop away what we don't need. Probably not long-term necessary?
+	//array ac = searchme->find_autocrop();
+	//searchme = searchme->copy(@ac); img->alpha = img->alpha->copy(@ac); img->image = img->image->copy(@ac);
 	int xlim = searchme->xsize(), ylim = searchme->ysize();
 	//Image.Image hull = Image.Image(xlim, ylim);
 	//~ Image.Image hull = searchme->copy();
 	Image.Image hull = img->image->copy();
 	//First, find a starting pixel P1.
+	System.Timer tm = System.Timer();
 	array|zero P1 = topleft_pixel(searchme, xlim, ylim);
 	if (!P1) exit(1, "Entirely transparent image\n"); //Algorithm not useful, probably stick with a full-size hull or something.
-	werror("Got pixel %O\n", P1);
 	array Q = ({0, P1[1]});
 	array P = ({P1});
 	//Scan down the left border
 	while (Q[1] < ylim - 1) {
 		Q[1]++;
 		array Pn = scan_line(searchme, xlim, ylim, P[-1], Q, hull);
-		if (Pn) {werror("LFound at %d,%d: %d,%d: %.0f\n", @Q, @Pn, degrees(Pn, Q)); P += ({Pn});}
+		if (Pn) P += ({Pn});
 	}
 	//Scan across the bottom border
 	while (Q[0] < xlim - 1) {
 		Q[0]++;
 		array Pn = scan_line(searchme, xlim, ylim, P[-1], Q, hull);
-		if (Pn) {werror("BFound at %d,%d: %d,%d: %.0f\n", @Q, @Pn, degrees(Pn, Q)); P += ({Pn});}
+		if (Pn) P += ({Pn});
 	}
 	//Scan up the right border
 	while (Q[1] > 0) {
 		Q[1]--;
 		array Pn = scan_line(searchme, xlim, ylim, P[-1], Q, hull);
-		if (Pn) {werror("RFound at %d,%d: %d,%d: %.0f\n", @Q, @Pn, degrees(Pn, Q)); P += ({Pn});}
+		if (Pn) P += ({Pn});
 	}
 	//Scan across the top border. Note that, as soon as we find a point at the
 	//same altitude as P1, we are done and can cut the hull across to close it.
@@ -106,18 +107,22 @@ int main() {
 		array Pn = scan_line(searchme, xlim, ylim, P[-1], Q, hull);
 		if (Pn) {
 			if (Pn[1] == P1[1]) {
-				werror("Terminus at %d,%d: %d,%d: %.0f\n", @Q, @Pn, degrees(Pn, Q));
 				if (Pn[0] != P1[0]) P += ({Pn});
 				break;
 			}
-			werror("TFound at %d,%d: %d,%d: %.0f\n", @Q, @Pn, degrees(Pn, Q));
 			P += ({Pn});
 		}
 	}
 	//werror("All pixels %O\n", P);
+	werror("Found %d-segment hull in %.3fs\n", sizeof(P), tm->peek());
 	hull->setcolor(255, 0, 128);
-	for (int i = 1; i < sizeof(P); ++i)
+	for (int i = 1; i < sizeof(P); ++i) {
 		hull->line(@P[i-1], @P[i]);
-	if (sizeof(P) > 1) hull->line(@P[-1], @P[0]);
-	Stdio.write_file("hull.png", Image.PNG.encode(hull));
+		img->alpha->line(@P[i-1], @P[i], 255, 255, 255);
+	}
+	if (sizeof(P) > 1) {
+		hull->line(@P[-1], @P[0]);
+		img->alpha->line(@P[-1], @P[0], 255, 255, 255);
+	}
+	Stdio.write_file("hull.png", Image.PNG.encode(hull, (["alpha": img->alpha])));
 }
