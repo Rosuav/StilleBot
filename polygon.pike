@@ -22,6 +22,18 @@ top-left corner to re-find the original position of Q.
 
 This will eventually be incorporated into chan_pile.pike so that, when you upload an image
 to use as an object, it gets a plausible hull.
+
+NEXT STEPS
+1. Turn this into a module with an exportable entrypoint that takes an image and returns ({({x, y}), ...})
+2. Generate and save a hull for every image uploaded to the Pile of Pics
+3. Make use of these hulls in the pile itself. Note that the vertices need to be clockwise, so reverse the array
+   This should be an alternative to Rectangle and Circle, which will continue to behave as they now do.
+4. Maybe figure out a hull simplification algorithm to reduce the number of vertices? Provide that as an option
+   to the end user - more vertices will mean cleaner-looking collisions, but may impact framerate. Measure first;
+   it's possible that the cost is actually irrelevant. It's also possible that there doesn't need to be any
+   granularity between "detect the hull properly" and "use a rectangle/circle" - if frame rate is a problem,
+   select a simplified hull directly.
+5. Ensure that changing the shape type will correctly replace all elements (should already be the case but confirm).
 */
 
 constant emote = "https://static-cdn.jtvnw.net/emoticons/v2/390023/static/light/3.0";
@@ -64,6 +76,8 @@ float degrees(array to, array from) {
 
 int main() {
 	mapping img = Image.PNG._decode(Protocols.HTTP.get_url_data(emote));
+	//Image.Image base = Image.JPEG.decode(Stdio.read_file("../CJAPrivate/FanartProjects/CandiCatSakura2022_ColoringPage.jpg"));
+	//mapping img = (["image": base, "alpha": base->invert()]);
 	//Ignore the image and work with the alpha
 	Image.Image searchme = img->alpha->threshold(5);
 	//Optionally crop away what we don't need. Probably not long-term necessary?
