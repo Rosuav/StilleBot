@@ -1,17 +1,24 @@
-/*
-Desire: Take any PNG with transparency, and derive a convex hull for it.
+/* Desire: Take any PNG with transparency, and derive a convex hull for it.
 This should be able to take any arbitrary image and get some sort of hull, but it's okay
 if the hull isn't fully detailed. This will be used for simple collision detection, and
 it's better to be simple than perfect.
 
-Current theory: Crop to the bounding box, then remove one triangle from each corner such
-that all removed pixels were transparent. This will give an octagon (at most - if a corner
-can't be cut, it will be left square), which in theory should neatly contain the pixels
-of interest.
+Using an algorithm from Digital Picture Processing by A. Rosenfeld and A. C. Kak, page 269, 1982,
+as described in https://support.ptc.com/help/mathcad/r10.0/en/index.html#page/PTC_Mathcad_Help/example_convex_hull.html
+1. Locate the topmost opaque pixel row and the leftmost opaque pixel in that row. (Or: Find the first pixel by reading order.) Call this P1.
+2. Initial line is from P1 to the start of that row, calling that Q.
+3. Rotate the line (P1->Q) counterclockwise until it encounters another opaque pixel. Call this P2....Pn.
+4. Repeat this process until we reconnect with P1. At all times, the far pixel will be on the boundary of the image.
+5. May need a colinearity test to simplify the hull, as it's possible that multiple consecutive pixels will be selected.
 
-Current practice: The 45 deg line seems to be working but others not so much.
+To rotate the line P->Q counterclockwise:
+1. Increment the location of Q. If it's on the left edge of the image, move it down one pixel, etc.
+2. Iterate from P to Q', as if drawing those pixels, using standard algorithms.
 
-Need to test and visualize, or maybe just abandon this algorithm and find something better.
+Note that, in effect, "rotating" the line is actually done by scanning Q around the perimeter of the image.
+This will always start from the left edge, descending till it reaches the bottom, then proceed around; we
+will always return to point P1 before "running out of image", and thus will never need to descend from the
+top-left corner to re-find the original position of Q.
 
 This will eventually be incorporated into chan_pile.pike so that, when you upload an image
 to use as an object, it gets a plausible hull.
@@ -19,61 +26,69 @@ to use as an object, it gets a plausible hull.
 
 constant emote = "https://static-cdn.jtvnw.net/emoticons/v2/390023/default/light/3.0";
 
-void find_triangle(Image.Image img, int basex, int basey, int dx, int dy, int limitx, int limity) {
-	if (img->getpixel(basex, basey)[0]) return;
-	if (img->getpixel(basex + dx, basey)[0]) return;
-	if (img->getpixel(basex, basey + dy)[0]) return;
-	int x = basex + dx, y = basey + dy;
-	while (x != limitx && y != limity) {
-		x += dx; y += dy;
-		//Scan the line from (basex, y) to (x, basey)
-		//If we hit any non-transparent pixel, break.
-		//Simplification: This is a 45 degree line, and no fanciness is needed.
-		int safe = 1;
-		for (int tx = x, ty = basey; ty != y; tx -= dx, ty += dy) {
-			if (img->getpixel(tx, ty)[0]) {safe = 0; break;}
+array(int)|zero topleft_pixel(Image.Image searchme, int xlim, int ylim) {
+	for (int y = 0; y < ylim; ++y)
+		for (int x = 0; x < xlim; ++x)
+			if (searchme->getpixel(x, y)[0]) return ({x, y});
+}
+
+//Scan from Q to P, returning the first opaque pixel found. Will never return P itself;
+//if no other pixel is found, will return zero.
+array(int)|zero scan_line(Image.Image searchme, int xlim, int ylim, array P, array Q, Image.Image hull) {
+	int dx = P[0] - Q[0], dy = P[1] - Q[1];
+	if (!dx && !dy) return 0; //Pn is actually on the boundary. Step to the next pixel.
+	int trace = 0;//Q[1] == 706 || Q[1] == ylim - 2;
+	if (trace) werror("TRACING: %d,%d -> %d,%d\n", @Q, @P);
+	if (abs(dx) > abs(dy)) {
+		int epsilon = abs(65536 * dy / dx);
+		int xsign = dx > 0 || -1, ysign = dy > 0 || -1;
+		int y = Q[1], frac = 32768;
+		if (trace) werror("HEpsilon %d, sign %d:%d\n", epsilon, xsign, ysign);
+		for (int x = Q[0]; x != P[0]; x += xsign) {
+			if (trace) hull->setpixel(x, y, 0, 255, 255);
+			if (trace) werror("---> %d,%d || %d,%d || %d,%d\n", @Q, x, y, @P);
+			if (searchme->getpixel(x, y)[0]) return ({x, y});
+			frac += epsilon;
+			if (frac >= 65536) {frac -= 65536; y += ysign;}
 		}
-		if (!safe) break;
-	}
-	x -= dx; y -= dy;
-	write("At 45 degrees, got %d,%d\n", x, y);
-	//Now, try to advance one of the coordinates at a time.
-	/*while (x != limitx) {
-		x += dx;
-		int safe = 1;
-		float ty = basey + 0.5, ratio = (float)(y - basey) / (x - basex);
-		for (int tx = x; tx != basex; tx -= dx, ty += ratio) {
-			if (img->getpixel(tx, (int)ty)[0]) {safe = 0; break;}
+	} else {
+		int epsilon = abs(65536 * dx / dy);
+		int xsign = dx > 0 || -1, ysign = dy > 0 || -1;
+		int x = Q[0], frac = 32768;
+		if (trace) werror("VEpsilon %d, sign %d:%d\n", epsilon, xsign, ysign);
+		for (int y = Q[1]; y != P[1]; y += ysign) {
+			if (trace) hull->setpixel(x, y, 0, 255, 255);
+			if (trace) werror("---> %d,%d || %d,%d || %d,%d\n", @Q, x, y, @P);
+			if (searchme->getpixel(x, y)[0]) return ({x, y});
+			frac += epsilon;
+			if (frac >= 65536) {frac -= 65536; x += xsign;}
 		}
-		if (!safe) break;
 	}
-	x -= dx;
-	write("Incrementing x: %d,%d\n", x, y);*/
-	while (y != limity) {
-		y += dy;
-		int safe = 1;
-		float tx = basex + 0.5, ratio = (float)(x - basex) / (y - basey);
-		for (int ty = y; ty != basey; ty -= dy, tx += ratio) {
-			if (img->getpixel((int)tx, ty)[0]) {safe = 0; break;}
-		}
-		if (!safe) break;
-	}
-	y -= dy;
-	write("Incrementing y: %d,%d\n", x, y);
 }
 
 int main() {
-	mapping img = Image.PNG._decode(Protocols.HTTP.get_url_data(emote));
-	write("%O\n", img);
-	//Mostly ignore the image and work with the alpha
-	//Start with the bounding box. Everything outside that can be ignored.
-	//TODO: Make sure there is at least some transparency around the image before doing this
-	//Otherwise, there's nothing to do anyway
-	Image.Image searchme = img->alpha->threshold(5);
-	[int left, int top, int right, int bottom] = searchme->find_autocrop();
-	write("Bounding box: %d,%d,%d,%d\n", left, top, right, bottom);
-	//Attempt to find triangles that are fully transparent
-	//If the corner pixel is transparent, and the two pixels adjacent to it are also,
-	//expand a triangle from there until it hits something.
-	find_triangle(searchme, left, top, 1, 1, right, bottom);
+	//mapping img = Image.PNG._decode(Protocols.HTTP.get_url_data(emote));
+	//write("%O\n", img);
+	//Ignore the image and work with the alpha
+	//Image.Image searchme = img->alpha->threshold(5);
+	Image.Image searchme = Image.JPEG.decode(Stdio.read_file("../CJAPrivate/FanartProjects/CandiCatSakura2022_ColoringPage.jpg"))->invert()->threshold(5);
+	int xlim = searchme->xsize(), ylim = searchme->ysize();
+	Image.Image hull = Image.Image(xlim, ylim);
+	//First, find a starting pixel P1.
+	array|zero P1 = topleft_pixel(searchme, xlim, ylim);
+	if (!P1) exit(1, "Entirely transparent image\n"); //Algorithm not useful, probably stick with a full-size hull or something.
+	werror("Got pixel %O\n", P1);
+	array Q = ({0, P1[1]});
+	array P = ({P1});
+	while (Q[1] < ylim) {
+		Q[1]++;
+		//Scan from Q to P[-1]
+		array Pn = scan_line(searchme, xlim, ylim, P[-1], Q, hull);
+		if (Pn) {werror("Found at %O: %O\n", Q[1], Pn); P += ({Pn});}
+	}
+	//werror("All pixels %O\n", P);
+	hull->setcolor(255, 255, 255);
+	for (int i = 1; i < sizeof(P); ++i)
+		hull->line(@P[i-1], @P[i]);
+	Stdio.write_file("hull.png", Image.PNG.encode(hull));
 }
