@@ -14,10 +14,8 @@ int until(string ts, int now)
 	return tm && tm->unix_time() > now && tm->unix_time();
 }
 
-mapping parse_hype_status(mapping data)
-{
+mapping parse_hype_status(string channelid, mapping data) {
 	mapping current = data->current || data; //EventSub messages have nothing BUT the current info, queries also get the all-time high
-	string channelid = current->broadcaster_user_id;
 	mapping retained = hypetrain_info[channelid];
 	if (!retained) hypetrain_info[channelid] = retained = ([]);
 	if (data->all_time_high) retained->all_time_high = data->all_time_high;
@@ -39,10 +37,11 @@ mapping parse_hype_status(mapping data)
 		//otherwise, we have to guess that it's an hour after expiration.
 		cooldown = expires + 55 * 60;
 	}
+	retained->level = (int)current->level;
+	retained->goal = (int)current->goal;
+	retained->total = current->progress;
 	mapping state = retained | ([
 		"expires": expires,
-		"level": (int)current->level, "goal": (int)current->goal,
-		"total": current->progress,
 	]);
 	//The API has one format, the eventsub notification has another. Sigh. Synchronize manually.
 	foreach (data->top_contributions || ({ }), mapping user) {
@@ -68,7 +67,7 @@ void hypetrain_progression(object chan, mapping info) {
 				Stdio.append_file("evthook.log", sprintf("EVENT: Hype train [%O, %d]: %O\nFetched: %O\n", chan, time(), info, __ARGS__[0]));
 			};
 
-	send_updates_all(info->broadcaster_user_login, parse_hype_status(info));
+	send_updates_all(info->broadcaster_user_login, parse_hype_status(info->broadcaster_user_id, info));
 }
 
 __async__ mapping get_state(int|string chan)
@@ -101,7 +100,7 @@ __async__ mapping get_state(int|string chan)
 		//If there's an error fetching events, don't set up hooks
 		establish_notifications(uid);
 		mapping data = (sizeof(info->data) && info->data[0]) || ([]);
-		return parse_hype_status(data);
+		return parse_hype_status((string)uid, data);
 	};
 	if (ex && arrayp(ex) && stringp(ex[0]) && has_value(ex[0], "Error from Twitch") && has_value(ex[0], "401"))
 		return (["error": "Authentication problem. It may help to ask the broadcaster to open this page: ", "errorlink": "https://mustardmine.com/hypetrain?for=" + chan]);
