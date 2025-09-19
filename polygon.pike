@@ -34,6 +34,11 @@ NEXT STEPS
    granularity between "detect the hull properly" and "use a rectangle/circle" - if frame rate is a problem,
    select a simplified hull directly.
 5. Ensure that changing the shape type will correctly replace all elements (should already be the case but confirm).
+
+Can we draw the full extent of the search line at each point where it finds a new vertex? Would be dense in the
+regions where the hull is curved, but still probably okay. Would make a cool animation.
+
+What if the search line is drawn in a hue that corresponds to the atan2 of the search angle?
 */
 
 constant emote = "https://static-cdn.jtvnw.net/emoticons/v2/390023/static/light/3.0";
