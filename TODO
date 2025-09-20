@@ -292,3 +292,5 @@
   - Refreshing the page DOES show the CD so it must be being stored
   - Still getting "last hype train NaN%" sometimes
   - Command says cooldown for negative length. Did I just get a sign wrong somewhere?
+* Fourth Wall donations should be counted towards goal bars even if they are tacked onto
+  a shop sale. See example "Sun Sep 21 07:16:14 2025".
