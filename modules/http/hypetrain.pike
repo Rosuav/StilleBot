@@ -35,7 +35,7 @@ mapping parse_hype_status(string channelid, mapping data) {
 	if (expires && !cooldown) {
 		//Cooldowns are not always provided. We retain this info if we possibly can, but
 		//otherwise, we have to guess that it's an hour after expiration.
-		cooldown = expires + 55 * 60;
+		retained->cooldown = expires + 55 * 60;
 	}
 	retained->level = (int)current->level;
 	retained->goal = (int)current->goal;
