@@ -285,3 +285,9 @@
   - With shop support (other than dono), Off, Net, Gross, with the caveat that Net is
     an estimate in some cases.
   - Only subs really need a scaling factor.
+* Hype train bugs
+  - After a hype train ends, the page isn't showing a cooldown (unconfirmed details but was
+    reported multiple times by Faecakes' community - maybe catch a hype train there and eye
+    it manually)
+  - Refreshing the page DOES show the CD so it must be being stored
+  - Still getting "last hype train NaN%" sometimes
