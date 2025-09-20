@@ -291,3 +291,4 @@
     it manually)
   - Refreshing the page DOES show the CD so it must be being stored
   - Still getting "last hype train NaN%" sometimes
+  - Command says cooldown for negative length. Did I just get a sign wrong somewhere?
