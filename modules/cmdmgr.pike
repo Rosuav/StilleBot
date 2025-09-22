@@ -617,13 +617,14 @@ echoable_message|zero update_command(object channel, string mode, string cmdname
 
 constant builtin_description = "Manage channel commands";
 constant builtin_name = "Command manager";
-constant builtin_param = ({"/Action/Automate/Create/Delete", "Command name", "Time/message"});
+constant builtin_param = ({"/Action/Automate/Create/Delete/Access", "Command name", "Time/message/access type"});
 constant MOCKUP_builtin_param = ({
 	"/Action",
 	([
 		"Automate": ({"Command name", "Time"}),
 		"Create": ({"Command name", "Message"}),
 		"Delete": ({"Command name"}),
+		"Access": ({"Command name", "/Access/everyone/vip/mod/none"}),
 	]),
 });
 constant vars_provided = ([]);
@@ -697,6 +698,15 @@ mapping message_params(object channel, mapping person, array param) {
 			if (!channel->commands[cmd]) error("No echo command with that name exists here.\n");
 			_save_command(channel, cmd, 0);
 			return (["{result}": sprintf("Deleted command !%s", cmd)]);
+		}
+		case "Access": {
+			string cmd = command_casefold(param[1]);
+			echoable_message command = channel->commands[cmd];
+			if (!command) error("No command with that name exists here.\n");
+			if (!mappingp(command)) command = (["message": command]);
+			command->access = param[2];
+			_save_command(channel, cmd, command);
+			return (["{result}": sprintf("Updated command !%s", cmd)]);
 		}
 		default: error("Unknown subcommand\n");
 	}
