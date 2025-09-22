@@ -43,6 +43,7 @@ mapping parse_hype_status(string channelid, mapping data) {
 	mapping state = retained | ([
 		"expires": expires,
 	]);
+	if (state->cooldown < now) m_delete(state, "cooldown"); //Cooldowns in the past are irrelevant.
 	//The API has one format, the eventsub notification has another. Sigh. Synchronize manually.
 	foreach (data->top_contributions || ({ }), mapping user) {
 		//API says "bits", events say "BITS". This is inverted from how it used to be in v1,
