@@ -101,7 +101,7 @@ __async__ mapping get_state(int|string chan)
 		//When reevaluating previous hype status, grab the blob from evthook.log, and include the time_t as a third param.
 		//if (some_cond) return parse_hype_status((string)uid, ([... "goal": 1800, ...]), 1758336158);
 		mapping info = await(twitch_api_request("https://api.twitch.tv/helix/hypetrain/status?broadcaster_id=" + uid,
-				(["Authorization": uid])));
+				(["Authorization": "Bearer " + token_for_user_id(uid)[0]]))); //Note: using just uid here causes errors to be reported differently, which fails below
 		//If there's an error fetching events, don't set up hooks
 		establish_notifications(uid);
 		mapping data = (sizeof(info->data) && info->data[0]) || ([]);
