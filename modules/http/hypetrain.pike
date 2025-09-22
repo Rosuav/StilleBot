@@ -46,12 +46,13 @@ mapping parse_hype_status(string channelid, mapping data, int|void hack_now) { /
 	if (hack_now) state->hack_now = hack_now;
 	if (state->cooldown < now) m_delete(state, "cooldown"); //Cooldowns in the past are irrelevant.
 	//The API has one format, the eventsub notification has another. Sigh. Synchronize manually.
-	foreach (data->top_contributions || ({ }), mapping user) {
+	foreach (current->top_contributions || ({ }), mapping user) {
 		//API says "bits", events say "BITS". This is inverted from how it used to be in v1,
 		//and I still don't care about the distinction.
 		user->type = (["bits": "BITS", "subscription": "SUBS"])[user->type] || user->type;
 	}
-	state->conductors = data->top_contributions || ({ });
+	state->conductors = current->top_contributions || ({ });
+	state->type = current->type || "regular";
 	return state;
 }
 

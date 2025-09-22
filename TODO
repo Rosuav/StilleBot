@@ -285,12 +285,8 @@
   - With shop support (other than dono), Off, Net, Gross, with the caveat that Net is
     an estimate in some cases.
   - Only subs really need a scaling factor.
-* Hype train bugs
-  - After a hype train ends, the page isn't showing a cooldown (unconfirmed details but was
-    reported multiple times by Faecakes' community - maybe catch a hype train there and eye
-    it manually)
-  - Refreshing the page DOES show the CD so it must be being stored
-  - Still getting "last hype train NaN%" sometimes
-  - Command says cooldown for negative length. Did I just get a sign wrong somewhere?
+* Golden Kappa trains need proper support. Watch for one to happen and observe its events.
+  - Replace all the unlockable emotes with a single row with just the golden kappa, as it
+    can be unlocked by completing level 1.
 * Fourth Wall donations should be counted towards goal bars even if they are tacked onto
   a shop sale. See example "Sun Sep 21 07:16:14 2025".

@@ -1,6 +1,12 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {A, BUTTON, BR, P, SPAN} = choc;
 
+const hypelabel = {
+	regular: "HYPE",
+	treasure: "TREASURE",
+	//goldenkappa: "GOLDEN KAPPA", //Check me, need to see one happen
+};
+
 const ismobile = !DOM("#configform");
 let have_prefs = false, need_interaction = false;
 if (!ismobile) ws_sync.prefs_notify(prefs => { //Note: Even if no prefs are set, we need a notification that they're loaded, so this is unkeyed notification for now.
@@ -155,7 +161,7 @@ export let render = (state) => {
 	));
 	set_content("#hypeinfo", [
 		P({id: "status", className: state.expires ? "countdown active" : "countdown"}, [
-			state.expires ? "HYPE TRAIN ACTIVE! " : "The hype train is on cooldown. Next one can start in ",
+			state.expires ? (hypelabel[state.type] || "HYPE") + " TRAIN ACTIVE! " : "The hype train is on cooldown. Next one can start in ",
 			SPAN({id: "time"})
 		]),
 		conduc.BITS || P({id: "cond_bits"}, "No hype conductor for bits - cheer any number of bits to claim this spot!"),
