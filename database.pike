@@ -763,9 +763,7 @@ __async__ void notify_file_updated(int pid, string cond, string extra, string ho
 	if (!is_active_bot()) return; //Should be no websockets on an inactive bot anyway.
 	sscanf(extra, "%d-%s", int channel, string id);
 	if (!id) id = extra; //Legacy notification - no channel ID available
-	werror("FILE UPDATED! Getting file %O...\n", extra);
 	mapping file = await(get_file(id)) || (["id": id, "channel": channel]);
-	werror("FILE UPDATED! Got file %O\n", file);
 	if (file->expires) event_notify("ephemeral_file_edited", file);
 	else event_notify("uploaded_file_edited", file);
 }
