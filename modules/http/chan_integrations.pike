@@ -261,7 +261,11 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		}
 		params["{profit}"] = (string)amount;
 		req->misc->channel->trigger_special(special, (["user": req->misc->channel->login]), params);
-		if (amount) G->G->goal_bar_autoadvance(req->misc->channel, (["user": req->misc->channel->login, "from_name": data->username || "Anonymous"]), special[1..], amount);
+		if (amount) G->G->goal_bar_autoadvance(req->misc->channel,
+			(["user": req->misc->channel->login, "from_name": data->username || "Anonymous"]),
+			special[1..], amount,
+			(["partials": (["fw_dono": to_cents(data->amounts->?donation->?value)])]), //For shop orders that also include a donation portion.
+		);
 		return "Awesome, thanks!";
 	}
 	if (string sig = req->request_type == "POST" && req->request_headers["x-patreon-signature"]) {

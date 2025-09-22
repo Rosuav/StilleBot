@@ -659,6 +659,16 @@ void autoadvance(object channel, mapping person, string key, int weight, mapping
 		if (info->type != "goalbar" || !info->active) continue;
 		if (extra->is_gift_or_prime && info->exclude_gifts) continue;
 		int advance = key == "" ? weight : weight * (int)info[key];
+		if (!advance && extra->partials) {
+			//HACK: One event could include partial credit to other types. For example, a
+			//shop order could include a partial donation. If the main type affects this
+			//goal bar, the subtype will already have been included, and should not be
+			//double-counted; but if it isn't, then the subtype might be.
+			foreach (extra->partials; string subtype; int subweight) {
+				advance = subweight * (int)info[subtype];
+				if (advance) break;
+			}
+		}
 		if (!advance) continue;
 		advance_goalbar(channel, info, person, advance, extra);
 	}
