@@ -1,7 +1,11 @@
-/* Desire: Take any PNG with transparency, and derive a convex hull for it.
-This should be able to take any arbitrary image and get some sort of hull, but it's okay
-if the hull isn't fully detailed. This will be used for simple collision detection, and
-it's better to be simple than perfect.
+#if constant(G)
+inherit annotated;
+#else
+constant export = "export";
+#endif
+/* Take any image with transparency, and derive a convex hull for it.
+If the given image has no transparency (eg a JPEG), will attempt an autocrop, and if that would
+crop anything off, it uses that pixel to define transparency.
 
 Using an algorithm from Digital Picture Processing by A. Rosenfeld and A. C. Kak, page 269, 1982,
 as described in https://support.ptc.com/help/mathcad/r10.0/en/index.html#page/PTC_Mathcad_Help/example_convex_hull.html
@@ -19,9 +23,6 @@ Note that, in effect, "rotating" the line is actually done by scanning Q around 
 This will always start from the left edge, descending till it reaches the bottom, then proceed around; we
 will always return to point P1 before "running out of image", and thus will never need to descend from the
 top-left corner to re-find the original position of Q.
-
-This will eventually be incorporated into chan_pile.pike so that, when you upload an image
-to use as an object, it gets a plausible hull.
 
 NEXT STEPS
 1. Turn this into a module with an exportable entrypoint that takes an image and returns ({({x, y}), ...})
@@ -51,7 +52,7 @@ array(int)|zero topleft_pixel(Image.Image searchme, int xlim, int ylim) {
 
 //Scan from Q to P, returning the first opaque pixel found. Will never return P itself;
 //if no other pixel is found, will return zero.
-array(int)|zero scan_line(Image.Image searchme, int xlim, int ylim, array P, array Q, Image.Image hull) {
+array(int)|zero scan_line(Image.Image searchme, int xlim, int ylim, array P, array Q) {
 	int dx = P[0] - Q[0], dy = P[1] - Q[1];
 	if (!dx && !dy) return 0; //Pn is actually on the boundary. Step to the next pixel.
 	if (abs(dx) > abs(dy)) {
@@ -79,21 +80,14 @@ float degrees(array to, array from) {
 	return atan2(to[1] - from[1] + 0.0, to[0] - from[0] + 0.0) * 180 / 3.141592653589793;
 }
 
-int main() {
-	mapping img = Image.ANY._decode(Protocols.HTTP.get_url_data(emote));
-	//Image.Image base = Image.JPEG.decode(Stdio.read_file("../CJAPrivate/FanartProjects/CandiCatSakura2022_ColoringPage.jpg"));
-	//mapping img = (["image": base, "alpha": base->invert()]);
+@export: array(array(int)) find_convex_hull(mapping img) {
 	//Ignore the image and work with the alpha
 	Image.Image searchme = img->alpha->threshold(5);
 	//Optionally crop away what we don't need. Probably not long-term necessary?
 	//array ac = searchme->find_autocrop();
 	//searchme = searchme->copy(@ac); img->alpha = img->alpha->copy(@ac); img->image = img->image->copy(@ac);
 	int xlim = searchme->xsize(), ylim = searchme->ysize();
-	//Image.Image hull = Image.Image(xlim, ylim);
-	//~ Image.Image hull = searchme->copy();
-	Image.Image hull = img->image->copy();
 	//First, find a starting pixel P1.
-	System.Timer tm = System.Timer();
 	array|zero P1 = topleft_pixel(searchme, xlim, ylim);
 	if (!P1) exit(1, "Entirely transparent image\n"); //Algorithm not useful, probably stick with a full-size hull or something.
 	array Q = ({0, P1[1]});
@@ -101,19 +95,19 @@ int main() {
 	//Scan down the left border
 	while (Q[1] < ylim - 1) {
 		Q[1]++;
-		array Pn = scan_line(searchme, xlim, ylim, P[-1], Q, hull);
+		array Pn = scan_line(searchme, xlim, ylim, P[-1], Q);
 		if (Pn) P += ({Pn});
 	}
 	//Scan across the bottom border
 	while (Q[0] < xlim - 1) {
 		Q[0]++;
-		array Pn = scan_line(searchme, xlim, ylim, P[-1], Q, hull);
+		array Pn = scan_line(searchme, xlim, ylim, P[-1], Q);
 		if (Pn) P += ({Pn});
 	}
 	//Scan up the right border
 	while (Q[1] > 0) {
 		Q[1]--;
-		array Pn = scan_line(searchme, xlim, ylim, P[-1], Q, hull);
+		array Pn = scan_line(searchme, xlim, ylim, P[-1], Q);
 		if (Pn) P += ({Pn});
 	}
 	//Scan across the top border. Note that, as soon as we find a point at the
@@ -123,7 +117,7 @@ int main() {
 	//the termination point is, in fact, P1 itself, don't add it again.
 	while (Q[0] > 0) {
 		Q[0]--;
-		array Pn = scan_line(searchme, xlim, ylim, P[-1], Q, hull);
+		array Pn = scan_line(searchme, xlim, ylim, P[-1], Q);
 		if (Pn) {
 			if (Pn[1] == P1[1]) {
 				if (Pn[0] != P1[0]) P += ({Pn});
@@ -132,8 +126,17 @@ int main() {
 			P += ({Pn});
 		}
 	}
-	//werror("All pixels %O\n", P);
+	return P;
+}
+
+int main() {
+	mapping img = Image.ANY._decode(Protocols.HTTP.get_url_data(emote));
+	//Image.Image base = Image.JPEG.decode(Stdio.read_file("../CJAPrivate/FanartProjects/CandiCatSakura2022_ColoringPage.jpg"));
+	//mapping img = (["image": base, "alpha": base->invert()]);
+	System.Timer tm = System.Timer();
+	array P = find_convex_hull(img);
 	werror("Found %d-segment hull in %.3fs\n", sizeof(P), tm->peek());
+	Image.Image hull = img->image->copy();
 	hull->setcolor(255, 0, 128);
 	for (int i = 1; i < sizeof(P); ++i) {
 		hull->line(@P[i-1], @P[i]);
