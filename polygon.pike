@@ -80,7 +80,7 @@ float degrees(array to, array from) {
 }
 
 int main() {
-	mapping img = Image.PNG._decode(Protocols.HTTP.get_url_data(emote));
+	mapping img = Image.ANY._decode(Protocols.HTTP.get_url_data(emote));
 	//Image.Image base = Image.JPEG.decode(Stdio.read_file("../CJAPrivate/FanartProjects/CandiCatSakura2022_ColoringPage.jpg"));
 	//mapping img = (["image": base, "alpha": base->invert()]);
 	//Ignore the image and work with the alpha
