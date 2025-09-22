@@ -37,9 +37,9 @@ mapping parse_hype_status(string channelid, mapping data, int|void hack_now) { /
 		//otherwise, we have to guess that it's an hour after expiration.
 		retained->cooldown = expires + 55 * 60;
 	}
-	retained->level = (int)current->level;
-	retained->goal = (int)current->goal;
-	retained->total = current->progress;
+	//Grab what info we have, otherwise keep what we previously had.
+	foreach (({"level", "goal", "total"}), string key)
+		if (int val = (int)current[key]) retained[key] = val;
 	mapping state = retained | ([
 		"expires": expires,
 	]);
