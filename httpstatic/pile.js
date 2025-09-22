@@ -349,16 +349,23 @@ export function render(data) {
 					cat.xsize / 2, //Our idea of xsize is width, so the radius is half that
 					attrs);
 				break;
+				case "hull": if (img.hull) {
+					obj = Matter.Body.create({
+						position: {
+							x: Math.floor(Math.random() * (width - cat.xsize - 30) + cat.xsize / 2 + 15),
+							y: Math.floor(Math.random() * 100 + 10),
+						},
+						vertices: img.hull.map(([x, y]) => ({x: x * scale, y: y * scale})),
+						...attrs,
+					});
+					break;
+				}
+				//If no hull, fall through and make a simple rectangle.
 				default: obj = Rectangle(
 					Math.floor(Math.random() * (width - cat.xsize - 30) + cat.xsize / 2 + 15),
 					Math.floor(Math.random() * 100 + 10),
 					cat.xsize, Math.ceil(img.ysize * scale),
 					attrs);
-			}
-			if (img.hull && img.hull.length >= 4) {
-				const verts = Matter.Vertices.create(img.hull.map(([x, y]) => ({x, y})), obj);
-				obj = Matter.Bodies.fromVertices(obj.position.x, obj.position.y, Matter.Vertices.hull(verts), attrs);
-				Matter.Body.scale(obj, scale, scale);
 			}
 			//Angles are measured in radians. Angular velocity seems to be rad/frame and we're at
 			//60Hz physics rate, meaning that 0.01 will rotate you by 0.60 rad/sec (before friction is

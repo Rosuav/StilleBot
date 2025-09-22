@@ -251,6 +251,56 @@ __async__ void credentials() {
 	}
 }
 
+__async__ void hullcrop() {
+	int channel = 1234679646;
+	//list_channel_files but with the actual content
+	array files = await(G->G->DB->query_ro(
+		"select id, metadata, data from stillebot.uploads where channel = :channel and expires is null",
+		(["channel": channel]),
+	));
+	function find_convex_hull = G->bootstrap("modules/convexhull.pike")->find_convex_hull;
+	mapping hulls = ([]);
+	foreach (files, mapping file) {
+		mapping img = Image.ANY._decode(file->data);
+		//Autocrop to convex hull
+		array hull = find_convex_hull(img);
+		if (!hull) continue;
+		hulls[file->id] = hull;
+		//Find the extents of the hull. These will become our crop border.
+		array bounds = hull[0] * 2;
+		foreach (hull, [int x, int y]) {
+			if (x < bounds[0]) bounds[0] = x;
+			if (y < bounds[1]) bounds[1] = y;
+			if (x > bounds[2]) bounds[2] = x;
+			if (y > bounds[3]) bounds[3] = y;
+		}
+		if (bounds[0] || bounds[1] || bounds[2] < img->xsize - 1 || bounds[3] < img->ysize - 1) {
+			if (img->format == "image/webp")
+				file->data = Image.WebP.encode(img->image->copy(@bounds), (["alpha": img->alpha->copy(@bounds)]));
+			else {
+				file->data = Image.PNG.encode(img->image->copy(@bounds), (["alpha": img->alpha->copy(@bounds)]));
+				file->metadata->mimetype = "image/png";
+			}
+			werror("%s: Cropping from (%d,%d) to (%d,%d)-(%d,%d)\n", file->id, img->xsize, img->ysize, @bounds);
+			await(G->G->DB->update_file(file->id, file->metadata, file->data));
+		}
+	}
+	//Add hulls to all Things.
+	mapping monitors = await(G->G->DB->load_config(channel, "monitors", ([]), 1));
+	foreach (monitors; string id; mapping info) {
+		if (info->type != "pile") continue;
+		foreach (info->things, mapping thing) foreach (thing->images, mapping image) {
+			sscanf(image->url, "https://mustardmine.com/upload/%s", string fileid);
+			if (!fileid) continue;
+			if (hulls[fileid]) {
+				image->hull = hulls[fileid];
+				thing->shape = "hull";
+			}
+		}
+	}
+	await(G->G->DB->save_config(channel, "monitors", monitors));
+}
+
 @"This help information":
 void help() {
 	write("\nUSAGE: pike stillebot --exec=ACTION\nwhere ACTION is one of the following:\n");

@@ -113,69 +113,20 @@ __async__ mapping|zero get_image_dimensions(string url) {
 	object res = await(Protocols.HTTP.Promise.get_url(url));
 	if (res->status >= 400) return 0; //Bad URL, or server down. Don't save into the cache in case it's temporary.
 	mapping img = Image.ANY._decode(res->get());
-	if (!img->alpha) {
-		//No alpha? Just use the box itself.
+	array|zero hull = find_convex_hull(img);
+	if (!hull) {
+		//No hull? Possibly entirely transparent. Just use the full-size rectangle.
 		return bounding_box_cache[url] = ([
 			"url": url,
 			"xsize": img->xsize, "ysize": img->ysize,
 			"xoffset": 0, "yoffset": 0,
 		]);
 	}
-	Image.Image searchme = img->alpha->threshold(5);
-	[int left, int top, int right, int bottom] = searchme->find_autocrop();
-	//If we need to do any more sophisticated hull-finding, here's where to do it. For now, just the box.
-	//TODO: Allow the user to choose a circular hull, specifying the size and position.
-	//If we're cropping at all, add an extra pixel of room for safety. Note that this
-	//also protects against entirely transparent images, as it'll make a tiny box in
-	//the middle instead of a degenerate non-box.
-	array hull;
-	int leftedge = left > 0, topedge = top > 0; //Keep track of which edges we've nudged
-	int rightedge = right < img->xsize - 1, bottomedge = bottom < img->ysize - 1;
-	left -= leftedge; top -= topedge; right += rightedge; bottom += bottomedge;
-	int wid = right - left, hgh = bottom - top;
-	if (right - left > 4 && bottom - top > 4) {
-		hull = ({ });
-		//Attempt to find a convex hull. We iterate through the original autocropped bounds,
-		//but using the coordinate space of the nudged bounds, hence offsetting by *edge.
-		//Top boundary.
-		for (int x = left + leftedge; x < right - rightedge; ++x) {
-			//Drop a vertical until we find non-transparency
-			for (int y = top + topedge; y < bottom - bottomedge; ++y) {
-				if (img->alpha->getpixel(x, y)[0] > 5) {hull += ({({x, y})}); break;}
-			}
-			//Note: If we never find any solid pixel - if there's a stripe of full
-			//transparency - just skip that one and don't add a coordinate. We'll end
-			//up scanning this one again the other direction, which is a waste, but I
-			//don't really care enough to optimize that. This should not happen at the
-			//far left/right of the image, as the autocrop would have detected this;
-			//in the case of a fully transparent image, we're already on a too-small
-			//box to be even doing this check.
-		}
-		//Right boundary. Instead of starting all the way at the top, we start at the corner
-		//we just found. This ought to be in the correct column, so we're safe.
-		for (int y = hull[-1][1] + 1; y < bottom - bottomedge; ++y) {
-			for (int x = right - rightedge - 1; x >= left + leftedge; --x) {
-				if (img->alpha->getpixel(x, y)[0] > 5) {hull += ({({x, y})}); break;}
-			}
-		}
-		//Bottom boundary
-		for (int x = hull[-1][1] - 1; x >= left + leftedge; --x) {
-			for (int y = bottom - bottomedge - 1; y >= top + topedge; --y) {
-				if (img->alpha->getpixel(x, y)[0] > 5) {hull += ({({x, y})}); break;}
-			}
-		}
-		//Right boundary. We stop when we get back to the starting corner.
-		for (int y = hull[-1][1] - 1; y > hull[0][1]; --y) {
-			for (int x = left + leftedge; x < right - rightedge; ++x) {
-				if (img->alpha->getpixel(x, y)[0] > 5) {hull += ({({x, y})}); break;}
-			}
-		}
-	}
 	return bounding_box_cache[url] = ([
 		"url": url,
-		"xsize": wid, "ysize": hgh,
-		"xoffset": -left / (float)wid,
-		"yoffset": -top / (float)hgh,
+		"xsize": img->xsize, "ysize": img->ysize,
+		//"xoffset": -left / (float)wid, //TODO
+		//"yoffset": -top / (float)hgh,
 		"hull": hull,
 	]);
 }
@@ -475,7 +426,7 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 
 @"is_mod": __async__ mapping|zero wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	msg->owner = "monitors";
-	msg->autocrop = 1; //Request that the image be cropped after upload
+	msg->autocrop = 2; //Request that the image be cropped to hull after upload
 	mapping file = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, msg, 0));
 	if (file->error) return (["cmd": "uploaderror", "name": msg->name, "error": file->error]);
 	return (["cmd": "upload", "name": msg->name, "id": file->id]);
@@ -548,12 +499,11 @@ void wscmd_removed(object channel, mapping(string:mixed) conn, mapping(string:mi
 				mapping file = await(G->G->DB->get_file(fileid, 1));
 				if (file->?channel == channel->userid && has_prefix(file->metadata->?mimetype || "*/*", "image/")) {
 					mapping img; catch {img = Image.ANY._decode(file->data);};
-					//TODO maybe: Trim an all-transparent border? Would require saving back a cropped image somewhere.
-					//In case it's useful, img->alpha will be populated any time there's a valid alpha channel.
 					if (img) thing->images += ({([
 						"url": file->metadata->url,
 						"xsize": img->xsize,
 						"ysize": img->ysize,
+						"hull": find_convex_hull(img),
 					])});
 				}
 			}

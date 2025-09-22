@@ -476,7 +476,9 @@ set_content("#editthingcat form div", TABLE({border: 1}, [
 		SELECT({name: "shape"}, [
 			OPTION({value: ""}, "Rectangle"),
 			OPTION({value: "circle"}, "Circle"),
+			OPTION({value: "hull"}, "Hull"),
 		]),
+		BR(), "Hull gives the best results but may impact performance.",
 	])]),
 	TR([TH("Activations"), TD(ACTIVATIONS("thing"))]),
 	TR([TH("Images"), TD({id: "thingcatimages"})]),

@@ -52,28 +52,44 @@ Upload time: %s
 		if (mimetype) file->metadata->mimetype = mimetype;
 		string data = req->body_raw;
 		//Hack: Autocrop if it was marked for so doing
-		if (m_delete(file->metadata, "autocrop")) catch {
+		if (int ac = m_delete(file->metadata, "autocrop")) catch {
 			mapping img = Image.ANY._decode(data);
-			//Check the four corners. If the image is completely transparent in all four,
-			//autocrop away all transparency. TODO: If the image is transparent in any two
-			//adjacent corners, autocrop that edge, and if it is in three corners, autocrop
-			//both contained edges.
-			if (img->alpha && !sizeof((
-				img->alpha->getpixel(0, 0) +
-				img->alpha->getpixel(0, img->ysize - 1) +
-				img->alpha->getpixel(img->xsize - 1, 0) +
-				img->alpha->getpixel(img->xsize - 1, img->ysize - 1)
-			) - ({0}))) {
-				array bounds = img->alpha->find_autocrop();
-				//Should we always reencode back to the original format? For now just using WebP and PNG.
-				if (img->format == "image/webp")
-					data = Image.WebP.encode(img->image->copy(@bounds), (["alpha": img->alpha->copy(@bounds)]));
-				else {
-					data = Image.PNG.encode(img->image->copy(@bounds), (["alpha": img->alpha->copy(@bounds)]));
-					file->metadata->mimetype = "image/png";
+			array bounds;
+			if (ac == 2) {
+				//Autocrop to convex hull
+				array hull = find_convex_hull(img);
+				if (hull) {
+					//Find the extents of the hull. These will become our crop border.
+					bounds = hull[0] * 2;
+					foreach (hull, [int x, int y]) {
+						if (x < bounds[0]) bounds[0] = x;
+						if (y < bounds[1]) bounds[1] = y;
+						if (x > bounds[2]) bounds[2] = x;
+						if (y > bounds[3]) bounds[3] = y;
+					}
 				}
-				//TODO: Adjust the size and allocation
+			} else {
+				//Check the four corners. If the image is completely transparent in all four,
+				//autocrop away all transparency. TODO: If the image is transparent in any two
+				//adjacent corners, autocrop that edge, and if it is in three corners, autocrop
+				//both contained edges.
+				if (img->alpha && !sizeof((
+					img->alpha->getpixel(0, 0) +
+					img->alpha->getpixel(0, img->ysize - 1) +
+					img->alpha->getpixel(img->xsize - 1, 0) +
+					img->alpha->getpixel(img->xsize - 1, img->ysize - 1)
+				) - ({0}))) {
+					bounds = img->alpha->find_autocrop();
+				}
 			}
+			//Should we always reencode back to the original format? For now just using WebP and PNG.
+			if (img->format == "image/webp")
+				data = Image.WebP.encode(img->image->copy(@bounds), (["alpha": img->alpha->copy(@bounds)]));
+			else {
+				data = Image.PNG.encode(img->image->copy(@bounds), (["alpha": img->alpha->copy(@bounds)]));
+				file->metadata->mimetype = "image/png";
+			}
+			//TODO: Adjust the size and allocation
 		};
 		file->metadata->etag = String.string2hex(Crypto.SHA1.hash(data));
 		await(G->G->DB->update_file(file->id, file->metadata, data));

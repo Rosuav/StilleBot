@@ -720,7 +720,7 @@ __async__ mapping prepare_file(string|int channel, string|int uploader, mapping 
 			"mimetype": metadata->mimetype,
 			"owner": metadata->owner,
 		]);
-		if (metadata->autocrop) attrs->autocrop = 1;
+		if (metadata->autocrop) attrs->autocrop = metadata->autocrop;
 		metadata = attrs;
 	}
 	return await(query_rw(
