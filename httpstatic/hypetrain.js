@@ -25,8 +25,9 @@ if (!ismobile) ws_sync.prefs_notify(prefs => { //Note: Even if no prefs are set,
 });
 
 let expiry, updating = null;
+let offset = 0;
 function update() {
-	let tm = Math.floor((expiry - +new Date()) / 1000);
+	let tm = Math.floor((expiry - +new Date() + offset) / 1000);
 	const time = document.getElementById("time");
 	if (tm <= 0 || !time) {
 		clearInterval(updating); updating = null;
@@ -93,6 +94,7 @@ export let render = (state) => {
 		return;
 	}
 	check_interaction();
+	if (state.hack_now) offset = +new Date() - state.hack_now * 1000;
 	//Show the emotes that we could win (or could have won last hype train)
 	const lvl = state.cooldown && state.level; //If not active or cooling down, hide 'em all
 	//TODO: If state.is_golden_kappa_train, also show the golden Kappa

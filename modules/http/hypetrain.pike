@@ -14,13 +14,13 @@ int until(string ts, int now)
 	return tm && tm->unix_time() > now && tm->unix_time();
 }
 
-mapping parse_hype_status(string channelid, mapping data) {
+mapping parse_hype_status(string channelid, mapping data, int|void hack_now) { //Pass a hacked 'now' value when reconstructing previous events
 	mapping current = data->current || data; //EventSub messages have nothing BUT the current info, queries also get the all-time high
 	mapping retained = hypetrain_info[channelid];
 	if (!retained) hypetrain_info[channelid] = retained = ([]);
 	if (data->all_time_high) retained->all_time_high = data->all_time_high;
 	if (data->shared_all_time_high) retained->shared_all_time_high = data->shared_all_time_high;
-	int now = time();
+	int now = hack_now || time();
 	int cooldown = retained->cooldown = (until(current->cooldown_ends_at, now) || retained->cooldown);
 	int expires = until(current->expires_at, now);
 	int checktime = expires || cooldown;
@@ -43,6 +43,7 @@ mapping parse_hype_status(string channelid, mapping data) {
 	mapping state = retained | ([
 		"expires": expires,
 	]);
+	if (hack_now) state->hack_now = hack_now;
 	if (state->cooldown < now) m_delete(state, "cooldown"); //Cooldowns in the past are irrelevant.
 	//The API has one format, the eventsub notification has another. Sigh. Synchronize manually.
 	foreach (data->top_contributions || ({ }), mapping user) {
@@ -96,6 +97,8 @@ __async__ mapping get_state(int|string chan)
 			chan = await(get_user_info(uid))->login;
 		}
 		else uid = await(get_user_id(chan));
+		//When reevaluating previous hype status, grab the blob from evthook.log, and include the time_t as a third param.
+		//if (some_cond) return parse_hype_status((string)uid, ([... "goal": 1800, ...]), 1758336158);
 		mapping info = await(twitch_api_request("https://api.twitch.tv/helix/hypetrain/status?broadcaster_id=" + uid,
 				(["Authorization": uid])));
 		//If there's an error fetching events, don't set up hooks
