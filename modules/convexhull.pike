@@ -81,8 +81,15 @@ float degrees(array to, array from) {
 }
 
 @export: array(array(int)) find_convex_hull(mapping img) {
-	//Ignore the image and work with the alpha
-	Image.Image searchme = img->alpha->threshold(5);
+	//If we have an alpha channel, we use that. Easy.
+	Image.Image searchme = img->alpha;
+	if (!searchme) {
+		//Otherwise, assume for now that white is the background, and threshold the entire
+		//image accordingly. Note that the alpha channel uses high numbers for opaque, but
+		//here we'll treat low numbers as opaque.
+		searchme = img->image->grey()->invert();
+	}
+	searchme = searchme->threshold(5);
 	//Optionally crop away what we don't need. Probably not long-term necessary?
 	//array ac = searchme->find_autocrop();
 	//searchme = searchme->copy(@ac); img->alpha = img->alpha->copy(@ac); img->image = img->image->copy(@ac);
@@ -131,8 +138,7 @@ float degrees(array to, array from) {
 
 int main() {
 	mapping img = Image.ANY._decode(Protocols.HTTP.get_url_data(emote));
-	//Image.Image base = Image.JPEG.decode(Stdio.read_file("../CJAPrivate/FanartProjects/CandiCatSakura2022_ColoringPage.jpg"));
-	//mapping img = (["image": base, "alpha": base->invert()]);
+	//mapping img = Image.ANY._decode(Stdio.read_file("../CJAPrivate/FanartProjects/CandiCatSakura2022_ColoringPage.jpg"));
 	System.Timer tm = System.Timer();
 	array P = find_convex_hull(img);
 	werror("Found %d-segment hull in %.3fs\n", sizeof(P), tm->peek());
@@ -140,11 +146,11 @@ int main() {
 	hull->setcolor(255, 0, 128);
 	for (int i = 1; i < sizeof(P); ++i) {
 		hull->line(@P[i-1], @P[i]);
-		img->alpha->line(@P[i-1], @P[i], 255, 255, 255);
+		if (img->alpha) img->alpha->line(@P[i-1], @P[i], 255, 255, 255);
 	}
 	if (sizeof(P) > 1) {
 		hull->line(@P[-1], @P[0]);
-		img->alpha->line(@P[-1], @P[0], 255, 255, 255);
+		if (img->alpha) img->alpha->line(@P[-1], @P[0], 255, 255, 255);
 	}
 	Stdio.write_file("hull.png", Image.PNG.encode(hull, (["alpha": img->alpha])));
 }
