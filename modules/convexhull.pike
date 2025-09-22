@@ -42,8 +42,6 @@ regions where the hull is curved, but still probably okay. Would make a cool ani
 What if the search line is drawn in a hue that corresponds to the atan2 of the search angle?
 */
 
-constant emote = "https://static-cdn.jtvnw.net/emoticons/v2/390023/static/light/3.0";
-
 array(int)|zero topleft_pixel(Image.Image searchme, int xlim, int ylim) {
 	for (int y = 0; y < ylim; ++y)
 		for (int x = 0; x < xlim; ++x)
@@ -80,7 +78,7 @@ float degrees(array to, array from) {
 	return atan2(to[1] - from[1] + 0.0, to[0] - from[0] + 0.0) * 180 / 3.141592653589793;
 }
 
-@export: array(array(int)) find_convex_hull(mapping img) {
+@export: array(array(int))|zero find_convex_hull(mapping img) {
 	//If we have an alpha channel, we use that. Easy.
 	Image.Image searchme = img->alpha;
 	if (!searchme) {
@@ -96,7 +94,7 @@ float degrees(array to, array from) {
 	int xlim = searchme->xsize(), ylim = searchme->ysize();
 	//First, find a starting pixel P1.
 	array|zero P1 = topleft_pixel(searchme, xlim, ylim);
-	if (!P1) exit(1, "Entirely transparent image\n"); //Algorithm not useful, probably stick with a full-size hull or something.
+	if (!P1) return 0; //Algorithm not useful, probably stick with a full-size hull or something.
 	array Q = ({0, P1[1]});
 	array P = ({P1});
 	//Scan down the left border
@@ -136,9 +134,10 @@ float degrees(array to, array from) {
 	return P;
 }
 
-int main() {
-	mapping img = Image.ANY._decode(Protocols.HTTP.get_url_data(emote));
-	//mapping img = Image.ANY._decode(Stdio.read_file("../CJAPrivate/FanartProjects/CandiCatSakura2022_ColoringPage.jpg"));
+int main(int argc, array(string) argv) {
+	if (argc < 2) exit(0, "USAGE: convexhull filename_or_url");
+	string name = argv[1];
+	mapping img = Image.ANY._decode(has_value(name, "://") ? Protocols.HTTP.get_url_data(name) : Stdio.read_file(name));
 	System.Timer tm = System.Timer();
 	array P = find_convex_hull(img);
 	werror("Found %d-segment hull in %.3fs\n", sizeof(P), tm->peek());
