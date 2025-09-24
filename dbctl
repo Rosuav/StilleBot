@@ -36,6 +36,8 @@ EOF
 			-c "select client_addr from pg_replication_slots join pg_stat_activity on pid = active_pid"`
 		echo "$INFO" # Show the info to the user.
 		INACTIVE=`echo "$INFO" | tail -n 1` # And grab the last line for ourselves.
+		# If we're on Sikorsky and the inactive bot is also on Sikorsky, use the LAN IP
+		[ $INACTIVE = "159.196.70.86" -a `hostname` = "sikorsky" ] && INACTIVE=192.168.0.19
 		psql "host=$INACTIVE user=rosuav dbname=stillebot sslcert=certificate.pem sslkey=privkey.pem" \
 			-c "select received_lsn, latest_end_lsn from pg_stat_subscription"
 	;;
