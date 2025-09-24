@@ -285,6 +285,8 @@
   - With shop support (other than dono), Off, Net, Gross, with the caveat that Net is
     an estimate in some cases.
   - Only subs really need a scaling factor.
+  - When this is done, the presence/absence of a country code on /c/integrations will
+    no longer have magical effect - redescribe it.
 * Golden Kappa trains need proper support. Watch for one to happen and observe its events.
   - Replace all the unlockable emotes with a single row with just the golden kappa, as it
     can be unlocked by completing level 1.
