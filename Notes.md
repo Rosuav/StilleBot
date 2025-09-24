@@ -79,3 +79,10 @@ To hop the bot from Sikorsky to Gideon:
    unavailable at this time, the impact will be minimized.
 
 Hopping back is the same with the roles reversed.
+
+NOTE: In an emergency, if Sikorsky is already unavailable, simply running
+`./dbctl up` followed by `./dbctl ac` will bring everything up on Gideon. But
+unless everything had in fact been cleanly replicated before the outage, this
+may result in a conflict when the two databases reconnect. There's no easy fix
+for such a conflict, so it has to be done manually. Use of `./dbctl log` may
+help with the detection and diagnosis here.
