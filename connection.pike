@@ -1554,7 +1554,7 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 
 void conduit_fallen_over() {
 	werror("CONDUIT FALLEN OVER - active %O %O\n", is_active_bot(), get_active_bot());
-	setup_conduit();
+	if (is_active_bot()) setup_conduit();
 }
 
 //FIXME: Start with this null once initial testing is done. Hard-coding this saves a couple of seconds each startup.
