@@ -318,6 +318,10 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + userid),
 		));
 		array(string) ids = streams->user_id + ({(string)userid});
+		//CJA 20250926: If an ID is duplicated, Twitch mostly works fine, but for some reason which
+		//most likely has as much logic in it as Eccles's brain, the broadcaster_type field becomes
+		//blank for all users. So flip this through a mapping and back to deduplicate.
+		ids = indices(mkmapping(ids, ({0}) * sizeof(ids)));
 		follows_helix = streams + self->data;
 		users = await(get_helix_paginated("https://api.twitch.tv/helix/users", (["id": ids])));
 	}
@@ -343,7 +347,10 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		follows_helix += await(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (string)userid])));
 		//Grab some additional info from the Users API, including profile image and
 		//whether the person is partnered or affiliated.
-		users = await(get_helix_paginated("https://api.twitch.tv/helix/users", (["id": follows_helix->user_id + ({(string)userid})])));
+		array(string) ids = follows_helix->user_id + ({(string)userid});
+		//CJA 20250926: Duplicate IDs are a problem, see above.
+		ids = indices(mkmapping(ids, ({0}) * sizeof(ids)));
+		users = await(get_helix_paginated("https://api.twitch.tv/helix/users", (["id": ids])));
 	}
 	mapping your_stream;
 	foreach (follows_helix, mapping strm)
