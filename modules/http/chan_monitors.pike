@@ -887,11 +887,4 @@ protected void create(string name) {
 	::create(name);
 	G->G->goal_bar_autoadvance = autoadvance;
 	G->G->goal_bar_advance = advance_goalbar;
-	foreach (G->G->irc->channels;; object channel) {
-		foreach (G->G->DB->load_cached_config(channel->userid, "monitors"); string id; mapping info) {
-			foreach (info; string key; mixed val) {
-				if (has_prefix(key, "fw_") && (int)val) werror("%O %O %O %O\n", channel, id, key, val);
-			}
-		}
-	}
 }
