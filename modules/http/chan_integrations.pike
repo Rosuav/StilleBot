@@ -296,7 +296,8 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	if (!stringp(msg->token) && !stringp(msg->country)) return;
 	if (!(<"kofi", "fourthwall">)[msg->platform]) return;
 	await(G->G->DB->mutate_config(channel->userid, msg->platform) {mapping cfg = __ARGS__[0];
-		if (msg->token) cfg->verification_token = msg->token;
+		if (msg->token == "") m_delete(cfg, "verification_token");
+		else if (msg->token) cfg->verification_token = msg->token;
 		if (msg->country) cfg->country = msg->country;
 	});
 	send_updates_all(conn->group);
