@@ -284,3 +284,10 @@
     can be unlocked by completing level 1.
 * The emoji on the flags still aren't showing up for everyone. Font problem? Something else?
   Maybe they need to be replaced with SVGs?
+* Fourth Wall integrations enhancements
+  - Get API access - send the person to the same URL and get the Open API credentials
+    - Do they need to create them before they can be obtained? I already have them on mine.
+  - Make chan_integrations a builtin
+  - Subcommands for different APIs
+  - https://docs.fourthwall.com/open-api/#tag/Giveaway-links/operation/createGiveawayLinks
+  - Would it be easier to just get API credentials, and then create the webhook at our end?
