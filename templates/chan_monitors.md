@@ -15,6 +15,9 @@ input[type=number] {width: 4em;}
 .optionset tr:last-of-type td {padding-bottom: 0.25em;}
 .optionset td {padding: 0.01em 0.25em;}
 
+/* Some controls are irrelevant to Bit Boss monitors */
+.is-bitboss .not-boss {display: none;}
+
 #pilethings {
 	display: flex;
 	overflow-x: scroll;

@@ -270,17 +270,17 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 	])]),
 	TR([TH("Current"), TD([
 		"Value:", INPUT({name: "currentval", size: 10, "data-nocopy": 1}),
-		"Or tier:", SELECT({name: "tierpicker", "data-nocopy": 1}),
+		SPAN({class: "not-boss"}, ["Or tier:", SELECT({name: "tierpicker", "data-nocopy": 1})]),
 		BUTTON({type: "button", id: "setval"}, "Set"),
 		BR(), "NOTE: This will override any automatic advancement! Be careful!",
 		BR(), "Changes made here are NOT applied with the Save button.",
 	])]),
-	TR([TH("Text"), TD([
+	TR({class: "not-boss"}, [TH("Text"), TD([
 		INPUT({name: "text", size: 60, "data-nocopy": 1}),
 		BR(), "For tiered goals, put a '#' for the current tier - it'll be replaced",
 		BR(), "with the actual number.",
 	])]),
-	TR([TH("Goal(s)"), TD([
+	TR({class: "not-boss"}, [TH("Goal(s)"), TD([
 		INPUT({name: "thresholds", size: 60, "data-nocopy": 1}),
 		BR(), LABEL([INPUT({name: "progressive", type: "checkbox", "data-nocopy": 1}), "Progressive goals (begin each goal after the previous one)"]),
 		BR(), LABEL([INPUT({name: "infinitier", type: "checkbox", "data-nocopy": 1}), "Infinite goals (generate more goals after these)"]),
@@ -314,16 +314,18 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 		FIELDSET([LEGEND("Height"), INPUT({type: "number", name: "height"}), "px"]),
 		FIELDSET([LEGEND("V padding"), INPUT({type: "number", name: "padvert", min: 0, max: 2, step: "0.005"}), "em"]),
 	]))]),
-	TR([TH("Needle size"), TD([
+	TR({class: "not-boss"}, [TH("Needle size"), TD([
 		INPUT({name: "needlesize", type: "number", min: 0, max: 1, step: "0.005", value: 0.375}),
 		"Thickness of the red indicator needle",
 	])]),
-	TR([TH("Format"), TD([
+	TR({class: "not-boss"}, [TH("Format"), TD([
 		SELECT({name: "format", "data-nocopy": 1}, [
 			OPTION({value: "plain"}, "plain - ordinary numbers"),
 			OPTION({value: "currency"}, "currency - cents eg 2718 is $27.18"),
 			OPTION({value: "subscriptions"}, "subs or sub points - 500 each (roughly USD cents)"),
-			OPTION({value: "hitpoints"}, "Bit Boss hitpoints (complex, use as directed)")]),
+			//Hack: Hitpoints needs to be here to ensure that everything works correctly, but you should never
+			//select it unless something weird is happening.
+			OPTION({value: "hitpoints", style: "display: none"}, "Bit Boss hitpoints (complex, use as directed)")]),
 		//TODO: Change the label according to the format (eg if Plain, say "scale factor")
 		LABEL([SPAN(" Style: "), INPUT({name: "format_style"})]),
 		BR(), "Select the desired display format; note that everything is managed in cents still.",
@@ -370,7 +372,7 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 					["Commissions", "kofi_commission"],
 				].map(([lbl, name]) => TR([
 					TD(LABEL({for: name}, lbl)),
-					TD(SELECT({id: name, name, "data-nocopy": 1}, [OPTION({value: ""}, "No"), OPTION({value: 1}, "Yes")]))
+					TD(SELECT({id: name, name, "data-nocopy": 1}, [OPTION({value: ""}, "No"), OPTION({value: 1}, "Yes")])),
 				])),
 			]),
 			TABLE([
@@ -382,7 +384,7 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 					["Gifts", "fw_gift"],
 				].map(([lbl, name]) => TR([
 					TD(LABEL({for: name}, lbl)),
-					TD(SELECT({id: name, name, "data-nocopy": 1}, [OPTION({value: ""}, "No"), OPTION({value: 1}, "Yes")]))
+					TD(SELECT({id: name, name, "data-nocopy": 1}, [OPTION({value: ""}, "No"), OPTION({value: 1}, "Yes")])),
 				])),
 			]),
 		]),
@@ -397,7 +399,7 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 		//TODO: Have a "Show" button here that gives the same info as in the Variables page
 		//TODO: "Reset leaderboard" which will query all users and remove the per-user var for all of them
 	])]),
-	TR([TH("On level up"), TD([
+	TR({class: "not-boss"}, [TH("On level up"), TD([
 		SELECT({name: "lvlupcmd", id: "cmdpicker", "data-nocopy": 1}, [OPTION("Loading...")]),
 		BR(), "Add and edit commands ", A({href: "commands"}, "on the Commands page"),
 	])]),
@@ -553,6 +555,7 @@ on("click", ".editbtn", e => {
 	}
 	else {
 		set_values(mon, dlg);
+		if (mon.type === "goalbar") dlg.classList.toggle("is-bitboss", mon.format === "hitpoints");
 		dlg.showModal();
 	}
 });
