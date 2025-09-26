@@ -1683,6 +1683,7 @@ void establish_hook_notification(string|int channelid, string hook, mapping|void
 	int now_active = is_active_bot();
 	werror("kick_when_inactive: was %O now %O\n", is_active, now_active);
 	if (now_active && !is_active) call_out(reconnect, 0); //Just become active? Make sure we're connected.
+	if (!now_active) remove_call_out(G->G->conduit_fallen_over);
 	is_active = now_active;
 	string other = !is_active && get_active_bot();
 	if (!other) return; //We're active (or uncertain), don't kick clients.
