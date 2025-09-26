@@ -348,25 +348,32 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 		//TODO: Should these be done with checkboxes instead? It would be inconsistent with the ones
 		//that can have more options than just "include" or "don't include". Or what about radio buttons?
 		//That would allow a column of "No", a column of "Yes", and the occasional extra.
-		TABLE({class: "optiontable"}, [
-			TR(TH({colSpan: 2}, "Ko-fi support")),
-			[
-				["Donations", "kofi_dono"],
-				["Memberships", "kofi_member"],
-				["Renewals", "kofi_renew"],
-				["Shop sales", "kofi_shop"],
-				["Commissions", "kofi_commission"],
-			].map(([lbl, name]) => TR([
-				TD(LABEL({for: name}, lbl)),
-				TD(SELECT({id: name, name, "data-nocopy": 1}, [OPTION({value: ""}, "No"), OPTION({value: 1}, "Yes")]))
-			])),
-		]),
-		"And for Fourth Wall support (all scaled by number of cents)",
-		DIV({className: "optionset"}, [
-			FIELDSET([LEGEND("Donation"), INPUT({type: "number", name: "fw_dono", "data-nocopy": 1})]),
-			FIELDSET([LEGEND("Membership"), INPUT({type: "number", name: "fw_member", "data-nocopy": 1})]),
-			FIELDSET([LEGEND("Shop sale"), INPUT({type: "number", name: "fw_shop", "data-nocopy": 1})]),
-			FIELDSET([LEGEND("Gift"), INPUT({type: "number", name: "fw_gift", "data-nocopy": 1})]),
+		DIV({class: "optionset"}, [
+			TABLE([
+				TR(TH({colSpan: 2}, "Ko-fi")),
+				[
+					["Donations", "kofi_dono"],
+					["Memberships", "kofi_member"],
+					["Renewals", "kofi_renew"],
+					["Shop sales", "kofi_shop"],
+					["Commissions", "kofi_commission"],
+				].map(([lbl, name]) => TR([
+					TD(LABEL({for: name}, lbl)),
+					TD(SELECT({id: name, name, "data-nocopy": 1}, [OPTION({value: ""}, "No"), OPTION({value: 1}, "Yes")]))
+				])),
+			]),
+			TABLE([
+				TR(TH({colSpan: 2}, "Fourth Wall")),
+				[
+					["Donations", "fw_dono"],
+					["Memberships", "fw_member"],
+					["Shop sales", "fw_shop"],
+					["Gifts", "fw_gift"],
+				].map(([lbl, name]) => TR([
+					TD(LABEL({for: name}, lbl)),
+					TD(SELECT({id: name, name, "data-nocopy": 1}, [OPTION({value: ""}, "No"), OPTION({value: 1}, "Yes")]))
+				])),
+			]),
 		]),
 		"For events not listed, create a command or trigger.",
 		DIV(["Select preset: ", SELECT({name: "preset", "data-nocopy": 1}, [
