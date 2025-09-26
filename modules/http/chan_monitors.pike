@@ -609,6 +609,9 @@ void autoadvance(object channel, mapping person, string key, int weight, mapping
 		if (info->type != "goalbar" || !info->active) continue;
 		if (extra->is_gift_or_prime && info->exclude_gifts) continue;
 		int advance = key == "" ? weight : weight * (int)info[key];
+		//HACK: Fourth Wall can provide net or gross amounts. Select net revenue by setting the
+		//scale factor to 2, which is shown in the front end with a drop-down "No", "Gross", "Net".
+		if (has_prefix(key, "fw_") && (int)info[key] == 2) advance = weight * extra->net;
 		if (!advance && extra->partials) {
 			//HACK: One event could include partial credit to other types. For example, a
 			//shop order could include a partial donation. If the main type affects this
@@ -884,4 +887,11 @@ protected void create(string name) {
 	::create(name);
 	G->G->goal_bar_autoadvance = autoadvance;
 	G->G->goal_bar_advance = advance_goalbar;
+	foreach (G->G->irc->channels;; object channel) {
+		foreach (G->G->DB->load_cached_config(channel->userid, "monitors"); string id; mapping info) {
+			foreach (info; string key; mixed val) {
+				if (has_prefix(key, "fw_") && (int)val) werror("%O %O %O %O\n", channel, id, key, val);
+			}
+		}
+	}
 }

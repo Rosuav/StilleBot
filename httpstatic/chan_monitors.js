@@ -380,12 +380,20 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 				[
 					["Donations", "fw_dono"],
 					["Memberships", "fw_member"],
-					["Shop sales", "fw_shop"],
 					["Gifts", "fw_gift"],
 				].map(([lbl, name]) => TR([
 					TD(LABEL({for: name}, lbl)),
 					TD(SELECT({id: name, name, "data-nocopy": 1}, [OPTION({value: ""}, "No"), OPTION({value: 1}, "Yes")])),
 				])),
+				TR([
+					TD(LABEL({for: "fw_shop"}, "Shop sales")),
+					TD(SELECT({id: "fw_shop", name: "fw_shop", "data-nocopy": 1}, [
+						OPTION({value: ""}, "No"),
+						OPTION({value: 1}, "Gross"),
+						OPTION({value: 2}, "Net"),
+					])),
+				]),
+				TR(TD({colSpan: 2}, "Net revenue is estimated.")),
 			]),
 		]),
 		"For events not listed, create a command or trigger.",

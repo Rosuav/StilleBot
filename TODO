@@ -279,14 +279,6 @@
     This might be the excuse needed to change that, and thus allow refreshing when a
     person's avatar is texturing a thing. In effect, we'd need to record not just the
     quantity, but an array of vital statistics: size, texture, label
-* Goal bar autoadvance is somewhat unintuitive.
-  - With a lot of them, the only sane values are 0 and 1. They should simply be
-    checkboxes - include it or don't.
-  - With shop support (other than dono), Off, Net, Gross, with the caveat that Net is
-    an estimate in some cases.
-  - Only subs really need a scaling factor.
-  - When this is done, the presence/absence of a country code on /c/integrations will
-    no longer have magical effect - redescribe it.
 * Golden Kappa trains need proper support. Watch for one to happen and observe its events.
   - Replace all the unlockable emotes with a single row with just the golden kappa, as it
     can be unlocked by completing level 1.

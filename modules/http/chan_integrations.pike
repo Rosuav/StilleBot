@@ -34,10 +34,11 @@ that looks something like: `8e7d24cf-66b4-4695-a651-3e744df5a861`<br>Paste it he
 Once this is complete, Fourth Wall events will begin showing up in [Alerts](alertbox#fourthwall) and
 anywhere else they end up getting added.
 
-NOTE: By default, shop orders will be counted towards goal bars by their gross value. If you would prefer
-to have them contribute their net profit instead, enter your 2-letter country code here: <input id=fwcountry size=2>
-Orders from this country will be counted as domestic and presumed to have a slightly lower fee than
-international orders. Blank this field to return to ignoring all fees.
+NOTE: Shop orders can be counted towards goal bars by their gross value or net revenue. Calculation of revenue
+depends on knowing which sales attract a 2.9% fee rather than the international order fee of 3.9%; to indicate
+this, enter your 2-letter country code here: <input id=fwcountry size=2> Note that revenue is at best an estimate,
+particularly with PayPal orders, gifts via Twitch chat, and Buy Now Pay Later; it should generally be close, but
+may not be precise.
 
 ## Enabling Patreon notifications
 
@@ -236,7 +237,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			"amount": (string)data->amounts->?total->?value,
 			"msg": data->message || "",
 		]));
-		int amount = to_cents(data->amounts->?total->?value);
+		int grossamount = to_cents(data->amounts->?total->?value);
 		//To calculate the profit on a sale, we take the total amount as above, then remove the following:
 		//1) Shipping
 		//2) Tax
@@ -246,25 +247,27 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		//slightly higher fees). The two fee schedules listed on the Fourth Wall docs are, as of 20250904:
 		//https://help.fourthwall.com/hc/en-us/articles/13331335648283-Transaction-fees
 		//Domestic 2.9% + 30c, International 3.9% + 30c.
-		if (fw->country && fw->country != "") {
-			//Note that these calculations might be off by a little, but hopefully not hugely.
-			if (billing_country == fw->country)
-				amount -= (int)(amount * .029) + 30;
-			else
-				amount -= (int)(amount * .039) + 30;
-			amount -= to_cents(data->amounts->?shipping->?value);
-			amount -= to_cents(data->amounts->?prepaidShipping->?value); //Gifts can have an allocation to shipping, though the exact figure isn't known until a winner is selected
-			amount -= to_cents(data->amounts->?tax->?value);
-			foreach (Array.arrayify(data->offers), mapping offer)
-				amount -= to_cents(offer->variant->?cost->?value) || 15; //Digital items have a fee of 15c, which isn't given in the cost field.
-			Stdio.append_file("fourthwall.log", sprintf("Calculated profit: %O\n", amount));
-		}
-		params["{profit}"] = (string)amount;
+		int netamount = grossamount;
+		//Note that these calculations might be off by a little, but hopefully not hugely.
+		if (billing_country == fw->country) //If you haven't set a billing country, all countries will be calculated as foreign.
+			netamount -= (int)(netamount * .029) + 30;
+		else
+			netamount -= (int)(netamount * .039) + 30;
+		netamount -= to_cents(data->amounts->?shipping->?value);
+		netamount -= to_cents(data->amounts->?prepaidShipping->?value); //Gifts can have an allocation to shipping, though the exact figure isn't known until a winner is selected
+		netamount -= to_cents(data->amounts->?tax->?value);
+		foreach (Array.arrayify(data->offers), mapping offer)
+			netamount -= to_cents(offer->variant->?cost->?value) || 15; //Digital items have a fee of 15c, which isn't given in the cost field.
+		Stdio.append_file("fourthwall.log", sprintf("Calculated profit: %O\n", netamount));
+		params["{profit}"] = (string)netamount;
 		req->misc->channel->trigger_special(special, (["user": req->misc->channel->login]), params);
-		if (amount) G->G->goal_bar_autoadvance(req->misc->channel,
+		if (grossamount) G->G->goal_bar_autoadvance(req->misc->channel,
 			(["user": req->misc->channel->login, "from_name": data->username || "Anonymous"]),
-			special[1..], amount,
-			(["partials": (["fw_dono": to_cents(data->amounts->?donation->?value)])]), //For shop orders that also include a donation portion.
+			special[1..], grossamount,
+			([
+				"partials": (["fw_dono": to_cents(data->amounts->?donation->?value)]), //For shop orders that also include a donation portion.
+				"net": netamount,
+			]),
 		);
 		return "Awesome, thanks!";
 	}
