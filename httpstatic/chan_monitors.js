@@ -329,17 +329,22 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 		BR(), "Select the desired display format; note that everything is managed in cents still.",
 	])]),
 	TR([TH("Auto-count"), TD([
-		"Automatically advance the goal bar based on Twitch support",
-		DIV({className: "optionset"}, [
-			FIELDSET([LEGEND("Bits"), INPUT({type: "number", name: "bit", "data-nocopy": 1}), "per bit"]),
-			FIELDSET([LEGEND("Tip (each cent)"), INPUT({type: "number", name: "tip", "data-nocopy": 1})]), //TODO: Show somewhere what it takes to make this work
-			FIELDSET([LEGEND("Follow"), INPUT({type: "number", name: "follow", "data-nocopy": 1})]),
-			//FIELDSET([LEGEND("Raid"), INPUT({type: "number", name: "raid"})]), //Maybe have a tiered system for size of raid???
-		]),
+		"Automatically advance the goal bar based on viewer support",
 		//TODO: Should these be done with checkboxes instead? It would be inconsistent with the ones
 		//that can have more options than just "include" or "don't include". Or what about radio buttons?
 		//That would allow a column of "No", a column of "Yes", and the occasional extra.
 		DIV({class: "optionset"}, [
+			TABLE({style: "border: none"}, [
+				//TR(TH({colSpan: 2}, "Other")), //I detest calling this "Other", but what else is it??
+				[
+					["Cheers", "bit"],
+					["Streamlabs", "tip"],
+					["Follows", "follow"],
+				].map(([lbl, name]) => TR([
+					TD(LABEL({for: name}, lbl)),
+					TD(SELECT({id: name, name, "data-nocopy": 1}, [OPTION({value: ""}, "No"), OPTION({value: 1}, "Yes")]))
+				])),
+			]),
 			TABLE([
 				TR(TH({colSpan: 2}, "Twitch subs")),
 				[
