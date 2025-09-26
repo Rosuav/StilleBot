@@ -11,6 +11,12 @@ input[type=number] {width: 4em;}
 .preview-bg {padding: 6px;}
 .optionset {display: flex; padding: 0.125em 0;}
 .optionset fieldset {padding: 0.25em; margin-left: 1em;}
+.optiontable {
+	margin: 1em 1.5em;
+	border: 1px solid black;
+}
+.optiontable tr:last-of-type td {padding-bottom: 0.25em;}
+.optiontable td {padding: 0.01em 0.25em;}
 
 #pilethings {
 	display: flex;

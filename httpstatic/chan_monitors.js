@@ -345,13 +345,21 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 				" Exclude",
 			])]),
 		]),
-		"Similarly for Ko-fi support (all scaled by number of cents)",
-		DIV({className: "optionset"}, [
-			FIELDSET([LEGEND("Donation"), INPUT({type: "number", name: "kofi_dono", "data-nocopy": 1})]),
-			FIELDSET([LEGEND("Membership"), INPUT({type: "number", name: "kofi_member", "data-nocopy": 1})]),
-			FIELDSET([LEGEND("Renewal"), INPUT({type: "number", name: "kofi_renew", "data-nocopy": 1})]),
-			FIELDSET([LEGEND("Shop sale"), INPUT({type: "number", name: "kofi_shop", "data-nocopy": 1})]),
-			FIELDSET([LEGEND("Commission"), INPUT({type: "number", name: "kofi_commission", "data-nocopy": 1})]),
+		//TODO: Should these be done with checkboxes instead? It would be inconsistent with the ones
+		//that can have more options than just "include" or "don't include". Or what about radio buttons?
+		//That would allow a column of "No", a column of "Yes", and the occasional extra.
+		TABLE({class: "optiontable"}, [
+			TR(TH({colSpan: 2}, "Ko-fi support")),
+			[
+				["Donations", "kofi_dono"],
+				["Memberships", "kofi_member"],
+				["Renewals", "kofi_renew"],
+				["Shop sales", "kofi_shop"],
+				["Commissions", "kofi_commission"],
+			].map(([lbl, name]) => TR([
+				TD(LABEL({for: name}, lbl)),
+				TD(SELECT({id: name, name, "data-nocopy": 1}, [OPTION({value: ""}, "No"), OPTION({value: 1}, "Yes")]))
+			])),
 		]),
 		"And for Fourth Wall support (all scaled by number of cents)",
 		DIV({className: "optionset"}, [
