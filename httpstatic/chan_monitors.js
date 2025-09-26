@@ -336,19 +336,25 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 			FIELDSET([LEGEND("Follow"), INPUT({type: "number", name: "follow", "data-nocopy": 1})]),
 			//FIELDSET([LEGEND("Raid"), INPUT({type: "number", name: "raid"})]), //Maybe have a tiered system for size of raid???
 		]),
-		DIV({className: "optionset"}, [
-			FIELDSET([LEGEND("T1 sub"), INPUT({type: "number", name: "sub_t1", "data-nocopy": 1})]),
-			FIELDSET([LEGEND("T2 sub"), INPUT({type: "number", name: "sub_t2", "data-nocopy": 1})]),
-			FIELDSET([LEGEND("T3 sub"), INPUT({type: "number", name: "sub_t3", "data-nocopy": 1})]),
-			FIELDSET([LEGEND("Gift & Prime"), LABEL([
-				INPUT({type: "checkbox", name: "exclude_gifts", "data-nocopy": 1}),
-				" Exclude",
-			])]),
-		]),
 		//TODO: Should these be done with checkboxes instead? It would be inconsistent with the ones
 		//that can have more options than just "include" or "don't include". Or what about radio buttons?
 		//That would allow a column of "No", a column of "Yes", and the occasional extra.
 		DIV({class: "optionset"}, [
+			TABLE([
+				TR(TH({colSpan: 2}, "Twitch subs")),
+				[
+					["Tier 1", "sub_t1"],
+					["Tier 2", "sub_t2"],
+					["Tier 3", "sub_t3"],
+				].map(([lbl, name]) => TR([
+					TD(LABEL({for: name}, lbl)),
+					TD(INPUT({type: "number", id: name, name, "data-nocopy": 1})),
+				])),
+				TR([
+					TD(LABEL({for: "exclude_gifts"}, "Gift/Prime")),
+					TD(SELECT({id: "exclude_gifts", name: "exclude_gifts", "data-nocopy": 1}, [OPTION({value: ""}, "Keep"), OPTION({value: 1}, "Skip")])),
+				]),
+			]),
 			TABLE([
 				TR(TH({colSpan: 2}, "Ko-fi")),
 				[
