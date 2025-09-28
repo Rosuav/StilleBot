@@ -1554,7 +1554,7 @@ void ws_handler(array(string) proto, Protocols.WebSocket.Request req)
 
 void conduit_fallen_over() {
 	werror("CONDUIT FALLEN OVER - active %O %O\n", is_active_bot(), get_active_bot());
-	if (is_active_bot()) setup_conduit();
+	if (is_active_bot()) G->G->setup_conduit();
 }
 
 //FIXME: Start with this null once initial testing is done. Hard-coding this saves a couple of seconds each startup.
@@ -1603,7 +1603,7 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
 				break;
 			}
 			Stdio.append_file("conduit_reconnect.log", sprintf("%sRECONNECT: %O\n", ctime(time()), data));
-			setup_conduit(data->payload->?session->?reconnect_url);
+			G->G->setup_conduit(data->payload->?session->?reconnect_url);
 			break;
 		}
 		case "notification": { //Incoming notification. Send it to the appropriate module.
