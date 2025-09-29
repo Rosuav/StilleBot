@@ -1454,7 +1454,7 @@ __async__ void send_subbomb_alert(object channel, mapping args, string id) {
 	} else {
 		//The bomb wasn't sent. Queue up any of the existing alerts, and
 		//remove the marker so subsequent alerts will fire naturally.
-		foreach (m_delete(subbomb_ids, id), args) await(send_alert(channel, "sub", args, cfg));
+		foreach (m_delete(subbomb_ids, id) || ({ }), args) await(send_alert(channel, "sub", args, cfg));
 	}
 }
 
