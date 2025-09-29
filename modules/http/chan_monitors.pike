@@ -880,7 +880,7 @@ void check_for_resets(int broadcaster_id, int streamreset) {
 //hack_tip("devicat", "dkurtze", 2500);
 __async__ void hack_tip(string channel, string username, int cents) {
 	mapping user = await(get_user_info(username, "login"));
-	autoadvance(G->G->irc->channels["#" + channel], user | (["from_name": username]), "tip", 2500);
+	autoadvance(G->G->irc->channels["#" + channel], user | (["from_name": username]), "tip", cents);
 }
 
 protected void create(string name) {
