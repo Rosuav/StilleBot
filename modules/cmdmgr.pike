@@ -479,7 +479,7 @@ void scan_for_permissions(echoable_message response, mapping state) {
 	if (response->voice) state |= (["voice": response->voice]);
 	if (response->builtin) {
 		object builtin = G->G->builtins[response->builtin];
-		if (builtin->scope_required && builtin->scope_required != "")
+		if (builtin->?scope_required && builtin->scope_required != "")
 			state->needperms[state->broadcasterid] |= (<builtin->scope_required>);
 	}
 	scan_for_permissions(response->message, state);
