@@ -999,6 +999,7 @@ class channel(mapping identity) {
 						"{multimonth}": params->msg_param_multimonth_duration || "1", //Ditto re tenure
 						"{msg}": msg, "{msgid}": params->id || "",
 					]));
+					werror("SENDING SUBSCRIPTION %O %O %O %O %O %O %O\n", this, "resub", person, tier, 1, params, msg);
 					event_notify("subscription", this, "resub", person, tier, 1, params, msg);
 					break;
 				}

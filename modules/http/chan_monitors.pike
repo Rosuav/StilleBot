@@ -565,6 +565,7 @@ void cheer(object channel, mapping person, int bits, mapping extra, string msg) 
 int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
 	if (type == "subbomb") return 0; //Sometimes sub bombs come through AFTER their constituent parts :( Safer to count the parts and skip the bomb.
 	if (type == "subgift" || extra->msg_param_sub_plan == "Prime") extra->is_gift_or_prime = 1;
+	werror("SUBSCRIPTION %O %O %O %O %O\n", channel, person, "sub_t" + tier, qty, extra);
 	autoadvance(channel, person, "sub_t" + tier, qty, extra);
 }
 
@@ -876,15 +877,16 @@ void check_for_resets(int broadcaster_id, int streamreset) {
 
 @hook_channel_offline: int channel_offline(string chan, int uptime, int broadcaster_id) {check_for_resets(broadcaster_id, 1);}
 
-//Untested, use next time StreamLabs falls over
-//hack_tip("devicat", "dkurtze", 2500);
-__async__ void hack_tip(string channel, string username, int cents) {
+//Use when StreamLabs falls over or something fails to track for whatever reason
+//hack_support("devicat", "dkurtze", "tip", 2500);
+__async__ void hack_support(string channel, string username, string type, int cents) {
 	mapping user = await(get_user_info(username, "login"));
-	autoadvance(G->G->irc->channels["#" + channel], user | (["from_name": username]), "tip", cents);
+	autoadvance(G->G->irc->channels["#" + channel], user | (["from_name": username]), type, cents);
 }
 
 protected void create(string name) {
 	::create(name);
 	G->G->goal_bar_autoadvance = autoadvance;
 	G->G->goal_bar_advance = advance_goalbar;
+	//hack_support("devicat", "mrcrazysailor", "sub_t1", 1);
 }
