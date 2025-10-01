@@ -612,7 +612,9 @@ void autoadvance(object channel, mapping person, string key, int weight, mapping
 		int advance = key == "" ? weight : weight * (int)info[key];
 		//HACK: Fourth Wall can provide net or gross amounts. Select net revenue by setting the
 		//scale factor to 2, which is shown in the front end with a drop-down "No", "Gross", "Net".
-		if (has_prefix(key, "fw_") && (int)info[key] == 2) advance = weight * extra->net;
+		//For most other keys, info[key] is either 1 or 0, so the multiplication is usually just
+		//keep or don't (subscriptions being the only common exception).
+		if (has_prefix(key, "fw_") && (int)info[key] == 2) advance = extra->net;
 		if (!advance && extra->partials) {
 			//HACK: One event could include partial credit to other types. For example, a
 			//shop order could include a partial donation. If the main type affects this
