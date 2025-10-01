@@ -565,7 +565,6 @@ void cheer(object channel, mapping person, int bits, mapping extra, string msg) 
 int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
 	if (type == "subbomb") return 0; //Sometimes sub bombs come through AFTER their constituent parts :( Safer to count the parts and skip the bomb.
 	if (type == "subgift" || extra->msg_param_sub_plan == "Prime") extra->is_gift_or_prime = 1;
-	werror("SUBSCRIPTION %O %O %O %O %O\n", channel, person, "sub_t" + tier, qty, extra);
 	autoadvance(channel, person, "sub_t" + tier, qty, extra);
 }
 
@@ -606,9 +605,11 @@ void advance_goalbar(object channel, mapping|string info, mapping person, int ad
 //Otherwise, simply assigning to the variable won't trigger the level-up command.
 void autoadvance(object channel, mapping person, string key, int weight, mapping|void extra) {
 	if (!extra) extra = ([]);
+	if (extra->debug) werror("autoadvance %O [%O] %O %O\n", channel, person->from_name || person->user, key, weight);
 	foreach (G->G->DB->load_cached_config(channel->userid, "monitors"); string id; mapping info) {
 		if (info->type != "goalbar" || !info->active) continue;
-		if (extra->is_gift_or_prime && info->exclude_gifts) continue;
+		if (extra->debug) werror("- %O: [%O/%O] weight %O %O %O\n", id, extra->is_gift_or_prime, info->exclude_gifts, info[key], extra->net, extra->partials);
+		if (extra->is_gift_or_prime && (int)info->exclude_gifts) continue;
 		int advance = key == "" ? weight : weight * (int)info[key];
 		//HACK: Fourth Wall can provide net or gross amounts. Select net revenue by setting the
 		//scale factor to 2, which is shown in the front end with a drop-down "No", "Gross", "Net".
@@ -625,6 +626,7 @@ void autoadvance(object channel, mapping person, string key, int weight, mapping
 				if (advance) break;
 			}
 		}
+		if (extra->debug) werror("- %O: advance %O\n", id, advance);
 		if (!advance) continue;
 		advance_goalbar(channel, info, person, advance, extra);
 	}
