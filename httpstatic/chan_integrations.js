@@ -7,6 +7,10 @@ export function render(data) {
 	if (data.fwtoken) DOM("#fwtoken").value = data.fwtoken;
 	if (data.fwusername) DOM("#fwusername").value = data.fwusername;
 	if (data.fwcountry) DOM("#fwcountry").value = data.fwcountry;
+	if (data.fwshopname) set_content("#fwstatus", [
+		"Your Fourth Wall shop is: ",
+		data.fwshopname,
+	]);
 	if (data.paturl) set_content("#patreonstatus", [
 		"Your Patreon campaign is: ",
 		A({href: data.paturl}, data.paturl),

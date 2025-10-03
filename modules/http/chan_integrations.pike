@@ -1,5 +1,6 @@
 inherit http_websocket;
 inherit hook;
+inherit annotated;
 
 /* TODO: UI to configure global settings.
 
@@ -111,6 +112,10 @@ constant fw_member = special_trigger("!fw_member", "New monthly membership on Fo
 constant fw_shop = special_trigger("!fw_shop", "Shop sale on Fourth Wall.", "The broadcaster", "is_test, amount, msg, from_name, shop_item_ids", "Fourth Wall");
 constant fw_gift = special_trigger("!fw_gift", "Gift purchase on Fourth Wall.", "The broadcaster", "amount, msg, from_name, shop_item_ids", "Fourth Wall");
 constant fw_other = special_trigger("!fw_other", "Other notification from Fourth Wall - not usually useful.", "The broadcaster", "notif_type", "Fourth Wall");
+
+//fourthwall_access_token[channelid] = ({auth token, expiration time})
+//If the expiration time is still in the future, use the auth token, otherwise fetch the refresh token from database.
+@retain: mapping(int:array(string|int)) fourthwall_access_token = ([]);
 
 int to_cents(int|float amount) {
 	if (floatp(amount)) return (int)(amount * 100 + 0.5);
@@ -345,17 +350,10 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping kofi = await(G->G->DB->load_config(channel->userid, "kofi"));
 	mapping fw = await(G->G->DB->load_config(channel->userid, "fourthwall"));
 	mapping pat = await(G->G->DB->load_config(channel->userid, "patreon"));
-	string|zero fwusername = 0;
-	if (fw->username) {
-		//Try to pull out an interesting part of the username. If not, just give the first and last few characters.
-		if (sscanf(fw->username, "fw_api_%s@%s", string username, string domain) && domain == "fourthwall.com")
-			fwusername = "fw_api..." + username[<3..] + "@" + domain; //If they change the domain, would it be okay to share that?
-		else fwusername = "..." + fw->username[<3..];
-	}
 	return ([
 		"kofitoken": stringp(kofi->verification_token) && "..." + kofi->verification_token[<3..],
 		"fwtoken": stringp(fw->verification_token) && "..." + fw->verification_token[<3..], //Deprecated
-		"fwusername": fwusername,
+		"fwshopname": fw->refresh_token ? "TODO" : 0,
 		"fwcountry": fw->country || "",
 		"paturl": pat->campaign_url, //May be null
 	]);

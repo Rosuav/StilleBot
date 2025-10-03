@@ -320,9 +320,7 @@ __async__ void delayed() {
 __async__ void test() {
 	mapping cfg = await(G->G->DB->load_config(49497888, "fourthwall"));
 	werror("Config: %O\n", indices(cfg));
-	foreach (await(G->G->DB->load_all_configs("fourthwall")); int twitchid; mapping cfg) {
-		if (cfg->verification_token) werror("%d: %s\n", twitchid, "..." + cfg->verification_token[<3..]);
-	}
+	
 }
 
 protected void create(string name) {

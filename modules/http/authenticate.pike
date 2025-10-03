@@ -19,9 +19,6 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 
 __async__ void handle_fourthwall(Protocols.HTTP.Server.Request req, mapping state) {
 	mapping cfg = await(G->G->DB->load_config(0, "fourthwall"));
-	werror("Got variables: %O\n", req->variables);
-	werror("Constructed: %O\n", "grant_type=authorization_code&redirect_uri=https://" + G->G->instance_config->local_address + "/authenticate&client_id="
-			+ cfg->clientid + "&client_secret=" + cfg->secret + "&code=" + req->variables->code);
 	object res = await(Protocols.HTTP.Promise.post_url("https://api.fourthwall.com/open-api/v1.0/platform/token",
 		Protocols.HTTP.Promise.Arguments((["headers": ([
 			"Content-Type": "application/x-www-form-urlencoded",
@@ -36,7 +33,13 @@ __async__ void handle_fourthwall(Protocols.HTTP.Server.Request req, mapping stat
 		]))]))
 	));
 	mapping auth = Standards.JSON.decode_utf8(res->get());
-	werror("Got auth: %O\n", auth);
+	//Since the access token lasts for just five minutes, we don't bother saving it to the database.
+	//Instead, we save the refresh token, and then prepopulate the in-memory cache.
+	G->G->fourthwall_access_token[state->channel] = ({auth->access_token, time() + auth->expires_in});
+	await(G->G->DB->mutate_config(state->channel, "fourthwall") {mapping cfg = __ARGS__[0];
+		cfg->refresh_token = auth->refresh_token;
+	});
+	G->G->websocket_types->chan_integrations->send_updates_all("#" + state->channel);
 }
 
 protected void create(string name) {::create(name);}
