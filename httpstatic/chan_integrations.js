@@ -22,14 +22,16 @@ on("submit", ".token", e => {
 	ws_sync.send(msg);
 });
 
-on("change", "#fwcountry", e => ws_sync.send({cmd: "settoken", country: e.match.value, platform: "fourthwall"}));
+on("change", "#fwcountry", e => ws_sync.send({cmd: "settoken", country: e.match.value, platform: "fourthwall"})); //deprecated in favour of oauth
+
+on("click", "#fwlogin", e => ws_sync.send({cmd: "fwlogin"}));
 
 on("click", "#patreonlogin", e => {
 	e.preventDefault();
 	ws_sync.send({cmd: "patreonlogin"});
 });
 
-export function sockmsg_patreonlogin(msg) {
+export function sockmsg_oauthpopup(msg) {
 	window.open(msg.uri, "login", "width=525, height=900");
 }
 

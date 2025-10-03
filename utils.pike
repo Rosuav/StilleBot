@@ -318,19 +318,11 @@ __async__ void delayed() {
 }
 
 __async__ void test() {
-	write("Getting a UUID...\n");
-	write("Got %O\n", await(G->G->DB->query_ro("select gen_random_uuid()")));
-	write("Casting to UUID\n");
-	write("Got %O\n", await(G->G->DB->query_ro("select :id::uuid", (["id": "e9f68b01-61fb-4013-9db2-6af3baa6bcea"]))));
-	mixed other = delayed();
-	write("Miscasting to UUID\n");
-	if (mixed ex = catch {
-		write("Got %O\n", await(G->G->DB->query_ro("select :id::uuid", (["id": "49497888-e9f68b01-61fb-4013-9db2-6af3baa6bcea"]))));
-	}) write("Unable to miscast:\n%s\n", describe_backtrace(ex));
-	write("One last query\n");
-	write("Got %O\n", await(G->G->DB->query_ro("select 42")));
-	write("Waiting for other...\n"); await(other);
-	write("Done\n");
+	mapping cfg = await(G->G->DB->load_config(49497888, "fourthwall"));
+	werror("Config: %O\n", indices(cfg));
+	foreach (await(G->G->DB->load_all_configs("fourthwall")); int twitchid; mapping cfg) {
+		if (cfg->verification_token) werror("%d: %s\n", twitchid, "..." + cfg->verification_token[<3..]);
+	}
 }
 
 protected void create(string name) {

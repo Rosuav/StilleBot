@@ -1,6 +1,19 @@
 inherit http_websocket;
 inherit hook;
 
+/* TODO: UI to configure global settings.
+
+Currently, Patreon's clientid/secret are stored in instance-config.json, which requires copying those
+to each instance. Instead, migrate them to G->G->DB->load_config(0, "patreon") to match the way that
+Fourth Wall secrets are stored.
+
+There is currently no UI to configure these. It's an unusual thing to need to do, but it will happen,
+so it would be useful to have somewhere.
+
+Fourth Wall: hmac_key, clientid, secret
+Patreon: (eventually) clientid, secret
+*/
+
 constant markdown = #"
 # Support Platform Integrations
 
@@ -31,7 +44,7 @@ Subscription Purchased. Click Save.
 that looks something like: `8e7d24cf-66b4-4695-a651-3e744df5a861`<br>Paste it here to complete integration:
 <input name=token id=fwtoken size=40><input type=submit value=\"Save token\"></form>
 
-**New way:**
+**Beta test way:**
 Go to [Fourth Wall's configuration](https://my-shop.fourthwall.com/admin/dashboard/settings/for-developers?redirect)
 and select \"Create API user\". Copy the given username and password, and paste them here:
 
@@ -41,6 +54,9 @@ and select \"Create API user\". Copy the given username and password, and paste 
 </table>
 <input type=submit value=Save>
 </form>
+
+[Link your Fourth Wall shop](:#fwlogin)
+{:#fwstatus}
 
 Once this is complete, Fourth Wall events will begin showing up in [Alerts](alertbox#fourthwall) and
 anywhere else they end up getting added.
@@ -359,7 +375,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		"redirect_uri": "https://" + G->G->instance_config->local_address + "/patreon", //Or should it always go to mustardmine.com?
 		"state": tok,
 	]));
-	return (["cmd": "patreonlogin", "uri": (string)uri]);
+	return (["cmd": "oauthpopup", "uri": (string)uri]);
 }
 
 @"is_mod": __async__ mapping|zero wscmd_resyncpatreon(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -400,6 +416,19 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		])});
 	}
 	return ret;
+}
+
+@"is_mod": @"demo_ok": __async__ mapping wscmd_fwlogin(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping cfg = await(G->G->DB->load_config(0, "fourthwall"));
+	string tok = String.string2hex(random_string(8));
+	G->G->oauth_csrf_states[tok] = (["platform": "fourthwall", "timestamp": time(), "channel": channel->userid]);
+	object uri = Standards.URI("https://my-shop.fourthwall.com/admin/platform-apps/" + cfg->clientid + "/connect");
+	uri->set_query_variables(([
+		//"scope": "", //Can we configure these on a per-login basis?
+		"redirect_uri": "https://" + G->G->instance_config->local_address + "/authenticate",
+		"state": tok,
+	]));
+	return (["cmd": "oauthpopup", "uri": (string)uri]);
 }
 
 protected void create(string name) {::create(name);}
