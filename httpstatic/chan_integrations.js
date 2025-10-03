@@ -5,6 +5,7 @@ export function render(data) {
 	//Note that the entire token will never be shown, only the last few characters
 	if (data.kofitoken) DOM("#kofitoken").value = data.kofitoken;
 	if (data.fwtoken) DOM("#fwtoken").value = data.fwtoken;
+	if (data.fwusername) DOM("#fwusername").value = data.fwusername;
 	if (data.fwcountry) DOM("#fwcountry").value = data.fwcountry;
 	if (data.paturl) set_content("#patreonstatus", [
 		"Your Patreon campaign is: ",
@@ -16,8 +17,9 @@ export function render(data) {
 
 on("submit", ".token", e => {
 	e.preventDefault();
-	ws_sync.send({cmd: "settoken", token: e.match.elements.token.value, platform: e.match.dataset.platform});
-	e.match.elements.token.value = "";
+	const msg = {cmd: "settoken", platform: e.match.dataset.platform};
+	for (const el of e.match.elements) if (el.name) {msg[el.name] = el.value; el.value = "";}
+	ws_sync.send(msg);
 });
 
 on("change", "#fwcountry", e => ws_sync.send({cmd: "settoken", country: e.match.value, platform: "fourthwall"}));

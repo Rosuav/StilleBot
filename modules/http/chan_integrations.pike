@@ -21,7 +21,7 @@ Once authenticated, Ko-fi events will begin showing up in [Special Triggers](spe
 
 ## Enabling Fourth Wall notifications
 
-Go to [Fourth Wall's configuration](https://my-shop.fourthwall.com/admin/dashboard/settings/for-developers?redirect)
+**Old way:** Go to [Fourth Wall's configuration](https://my-shop.fourthwall.com/admin/dashboard/settings/for-developers?redirect)
 and select \"Create webhook\". Paste this value in as the URL: <input readonly value=\"$$webhook_url$$\" size=60>
 
 Select the events you want integrations for; I suggest Order Placed, Gift Purchase, Donation, and
@@ -30,6 +30,17 @@ Subscription Purchased. Click Save.
 <form class=token data-platform=fourthwall autocomplete=off>There will be a secret signing token on the settings page
 that looks something like: `8e7d24cf-66b4-4695-a651-3e744df5a861`<br>Paste it here to complete integration:
 <input name=token id=fwtoken size=40><input type=submit value=\"Save token\"></form>
+
+**New way:**
+Go to [Fourth Wall's configuration](https://my-shop.fourthwall.com/admin/dashboard/settings/for-developers?redirect)
+and select \"Create API user\". Copy the given username and password, and paste them here:
+
+<form class=token data-platform=fourthwall autocomplete=off><table>
+<tr><td><label for=fwusername>Username</label></td><td><input id=fwusername name=username size=50></td></tr>
+<tr><td><label for=fwpassword>Password</label></td><td><input id=fwpassword name=password type=password autocomplete=new-password size=50></td></tr>
+</table>
+<input type=submit value=Save>
+</form>
 
 Once this is complete, Fourth Wall events will begin showing up in [Alerts](alertbox#fourthwall) and
 anywhere else they end up getting added.
@@ -65,6 +76,11 @@ $$loginprompt||$$
 vertical-align: middle;
 </style>
 ";
+
+constant platform_config_fields = ([
+	"kofi": (<"token">),
+	"fourthwall": (<"token", "username", "password">),
+]);
 
 //NOTE: Currently this is only used by chan_vipleaders, which is alphabetically after
 //chan_kofi. If others start using it, it may be necessary to move this to some higher
@@ -296,12 +312,14 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 }
 
 @"is_mod": __async__ void wscmd_settoken(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!stringp(msg->token) && !stringp(msg->country)) return;
 	if (!(<"kofi", "fourthwall">)[msg->platform]) return;
 	await(G->G->DB->mutate_config(channel->userid, msg->platform) {mapping cfg = __ARGS__[0];
-		if (msg->token == "") m_delete(cfg, "verification_token");
-		else if (msg->token) cfg->verification_token = msg->token;
-		if (msg->country) cfg->country = msg->country;
+		foreach (platform_config_fields[msg->platform]; string field;) {
+			//Special case: "token" is stored as "verification_token" for hysterical raisins
+			string fld = field == "token" ? "verification_token" : field;
+			if (msg[field] == "") m_delete(cfg, fld);
+			else if (msg[field]) cfg[fld] = msg[field];
+		}
 	});
 	send_updates_all(conn->group);
 }
@@ -311,9 +329,17 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping kofi = await(G->G->DB->load_config(channel->userid, "kofi"));
 	mapping fw = await(G->G->DB->load_config(channel->userid, "fourthwall"));
 	mapping pat = await(G->G->DB->load_config(channel->userid, "patreon"));
+	string|zero fwusername = 0;
+	if (fw->username) {
+		//Try to pull out an interesting part of the username. If not, just give the first and last few characters.
+		if (sscanf(fw->username, "fw_api_%s@%s", string username, string domain) && domain == "fourthwall.com")
+			fwusername = "fw_api..." + username[<3..] + "@" + domain; //If they change the domain, would it be okay to share that?
+		else fwusername = "..." + fw->username[<3..];
+	}
 	return ([
 		"kofitoken": stringp(kofi->verification_token) && "..." + kofi->verification_token[<3..],
-		"fwtoken": stringp(fw->verification_token) && "..." + fw->verification_token[<3..],
+		"fwtoken": stringp(fw->verification_token) && "..." + fw->verification_token[<3..], //Deprecated
+		"fwusername": fwusername,
 		"fwcountry": fw->country || "",
 		"paturl": pat->campaign_url, //May be null
 	]);
