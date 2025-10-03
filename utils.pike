@@ -341,7 +341,6 @@ __async__ void test() {
 		Stdio.write_file("temp.json", encode_value(G->G->fourthwall_access_token));
 	}
 	object res = await(Protocols.HTTP.Promise.get_url("https://api.fourthwall.com/open-api/v1.0/webhooks",
-	//~ object res = await(Protocols.HTTP.Promise.get_url("https://api.fourthwall.com/open-api/v1.0/shops/current",
 		Protocols.HTTP.Promise.Arguments((["headers": ([
 			"User-Agent": "MustardMine", //Having a user-agent that suggest that it's Mozilla will cause 403s from Fourth Wall's API.
 			"Accept": "*/*",
@@ -349,7 +348,8 @@ __async__ void test() {
 		])]))
 	));
 	werror("Got %d %s %O\n", res->status, res->status_description, res->headers);
-	werror("Result: %O\n", res->get());
+	mapping data = Standards.JSON.decode_utf8(res->get());
+	werror("Result: %O\n", data);
 }
 
 protected void create(string name) {

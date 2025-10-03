@@ -36,7 +36,18 @@ __async__ void handle_fourthwall(Protocols.HTTP.Server.Request req, mapping stat
 	//Since the access token lasts for just five minutes, we don't bother saving it to the database.
 	//Instead, we save the refresh token, and then prepopulate the in-memory cache.
 	G->G->fourthwall_access_token[state->channel] = ({auth->access_token, time() + auth->expires_in});
+	res = await(Protocols.HTTP.Promise.get_url("https://api.fourthwall.com/open-api/v1.0/shops/current",
+		Protocols.HTTP.Promise.Arguments((["headers": ([
+			"User-Agent": "MustardMine",
+			"Accept": "*/*",
+			"Authorization": "Bearer " + auth->access_token,
+		])]))
+	));
+	mapping data = Standards.JSON.decode_utf8(res->get());
 	await(G->G->DB->mutate_config(state->channel, "fourthwall") {mapping cfg = __ARGS__[0];
+		cfg->username = data->name;
+		cfg->shopname = data->domain;
+		cfg->url = data->publicDomain; //Does this always exist?
 		cfg->refresh_token = auth->refresh_token;
 	});
 	G->G->websocket_types->chan_integrations->send_updates_all("#" + state->channel);

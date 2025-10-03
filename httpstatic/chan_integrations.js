@@ -9,7 +9,8 @@ export function render(data) {
 	if (data.fwcountry) DOM("#fwcountry").value = data.fwcountry;
 	if (data.fwshopname) set_content("#fwstatus", [
 		"Your Fourth Wall shop is: ",
-		data.fwshopname,
+		A({href: "https://" + data.fwurl}, data.fwshopname),
+		" Welcome, ", data.fwusername, ".",
 	]);
 	if (data.paturl) set_content("#patreonstatus", [
 		"Your Patreon campaign is: ",
