@@ -296,7 +296,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		netamount -= to_cents(data->amounts->?tax->?value);
 		foreach (Array.arrayify(data->offers), mapping offer)
 			netamount -= to_cents(offer->variant->?cost->?value) || 15; //Digital items have a fee of 15c, which isn't given in the cost field.
-		Stdio.append_file("fourthwall.log", sprintf("Calculated profit: %O\n", netamount));
+		if (netamount) Stdio.append_file("fourthwall.log", sprintf("Calculated profit: %O\n", netamount));
 		params["{profit}"] = (string)netamount;
 		req->misc->channel->trigger_special(special, (["user": req->misc->channel->login]), params);
 		if (grossamount) G->G->goal_bar_autoadvance(req->misc->channel,
