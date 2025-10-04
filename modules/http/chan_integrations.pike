@@ -286,10 +286,11 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		//Domestic 2.9% + 30c, International 3.9% + 30c.
 		int netamount = grossamount;
 		//Note that these calculations might be off by a little, but hopefully not hugely.
+		if (data->amounts) netamount -= 30; //Assume a baseline 30c fee on every sale or sale-adjacent action
 		if (billing_country == fw->country) //If you haven't set a billing country, all countries will be calculated as foreign.
-			netamount -= (int)(netamount * .029) + 30;
+			netamount -= (int)(netamount * .029);
 		else
-			netamount -= (int)(netamount * .039) + 30;
+			netamount -= (int)(netamount * .039);
 		netamount -= to_cents(data->amounts->?shipping->?value);
 		netamount -= to_cents(data->amounts->?prepaidShipping->?value); //Gifts can have an allocation to shipping, though the exact figure isn't known until a winner is selected
 		netamount -= to_cents(data->amounts->?tax->?value);
