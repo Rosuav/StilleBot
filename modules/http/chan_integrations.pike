@@ -228,12 +228,13 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		mapping fw_core = await(G->G->DB->load_config(0, "fourthwall"));
 		object signer = Crypto.SHA256.HMAC(fw_core->hmac_key || "");
 		if (sig != MIME.encode_base64(signer(req->body_raw))) {
-			werror("Failed check with core hmac\n");
+			werror("Fourth Wall webhook - Failed check with core hmac\n");
 			//It might be a deprecated legacy hook, with a unique verification token for each shop.
 			//Newer hooks will all use the application key from fw_core, but try this key too.
+			//Although.... the newer hooks seem to use this key too? Am confused.
 			signer = Crypto.SHA256.HMAC(fw->verification_token || "");
 			if (sig != MIME.encode_base64(signer(req->body_raw))) {
-				werror("Also failed check with unique token\n");
+				werror("Fourth Wall webhook - Also failed check with unique token\n");
 				Stdio.append_file("fourthwall.log", sprintf("\n%sFAILED INTEGRATION for %O: %O\nSig: %O\nHeaders %O\n", ctime(time()), req->misc->channel->login, req->body_raw, sig, req->request_headers));
 				return (["error": 418, "data": "My teapot thinks your signature is wrong."]);
 			}

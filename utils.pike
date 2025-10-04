@@ -360,7 +360,7 @@ __async__ void test() {
 				"Content-Type": "application/json",
 			]), "data": Standards.JSON.encode(([
 				"url": "https://mustardmine.com/channels/rosuav/integrations",
-				"allowedTypes": ({"ORDER_PLACED", "GIFT_PURCHASE", "DONATION", "SUBSCRIPTION_PURCHASED", "THANK_YOU_SENT"}),
+				"allowedTypes": ({"ORDER_PLACED", "GIFT_PURCHASE", "DONATION", "SUBSCRIPTION_PURCHASED", "PRODUCT_UPDATED"}),
 			]))]))
 		));
 		werror("Got %d %s %O\n", res->status, res->status_description, res->headers);
