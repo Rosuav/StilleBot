@@ -225,10 +225,18 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		//Fourth Wall integration - could be a sale, donation, subscription, etc
 		//TODO: Deduplicate based on the ID
 		mapping fw = await(G->G->DB->load_config(req->misc->channel->userid, "fourthwall"));
-		object signer = Crypto.SHA256.HMAC(fw->verification_token || "");
+		mapping fw_core = await(G->G->DB->load_config(0, "fourthwall"));
+		object signer = Crypto.SHA256.HMAC(fw_core->hmac_key || "");
 		if (sig != MIME.encode_base64(signer(req->body_raw))) {
-			Stdio.append_file("fourthwall.log", sprintf("\n%sFAILED INTEGRATION for %O: %O\nSig: %O\nHeaders %O\n", ctime(time()), req->misc->channel->login, req->body_raw, sig, req->request_headers));
-			return (["error": 418, "data": "My teapot thinks your signature is wrong."]);
+			werror("Failed check with core hmac\n");
+			//It might be a deprecated legacy hook, with a unique verification token for each shop.
+			//Newer hooks will all use the application key from fw_core, but try this key too.
+			signer = Crypto.SHA256.HMAC(fw->verification_token || "");
+			if (sig != MIME.encode_base64(signer(req->body_raw))) {
+				werror("Also failed check with unique token\n");
+				Stdio.append_file("fourthwall.log", sprintf("\n%sFAILED INTEGRATION for %O: %O\nSig: %O\nHeaders %O\n", ctime(time()), req->misc->channel->login, req->body_raw, sig, req->request_headers));
+				return (["error": 418, "data": "My teapot thinks your signature is wrong."]);
+			}
 		}
 		mapping body = Standards.JSON.decode_utf8(req->body_raw);
 		mapping data = mappingp(body) && body->data;

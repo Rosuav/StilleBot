@@ -350,6 +350,23 @@ __async__ void test() {
 	werror("Got %d %s %O\n", res->status, res->status_description, res->headers);
 	mapping data = Standards.JSON.decode_utf8(res->get());
 	werror("Result: %O\n", data);
+	if (!data->results || !sizeof(data->results)) {
+		werror("Creating a webhook.\n");
+		object res = await(Protocols.HTTP.Promise.post_url("https://api.fourthwall.com/open-api/v1.0/webhooks",
+			Protocols.HTTP.Promise.Arguments((["headers": ([
+				"User-Agent": "MustardMine", //Having a user-agent that suggest that it's Mozilla will cause 403s from Fourth Wall's API.
+				"Accept": "*/*",
+				"Authorization": "Bearer " + G->G->fourthwall_access_token[49497888][0],
+				"Content-Type": "application/json",
+			]), "data": Standards.JSON.encode(([
+				"url": "https://mustardmine.com/channels/rosuav/integrations",
+				"allowedTypes": ({"ORDER_PLACED", "GIFT_PURCHASE", "DONATION", "SUBSCRIPTION_PURCHASED", "THANK_YOU_SENT"}),
+			]))]))
+		));
+		werror("Got %d %s %O\n", res->status, res->status_description, res->headers);
+		mapping data = Standards.JSON.decode_utf8(res->get());
+		werror("Result: %O\n", data);
+	}
 }
 
 protected void create(string name) {
