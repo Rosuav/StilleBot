@@ -35,29 +35,14 @@ Once authenticated, Ko-fi events will begin showing up in [Special Triggers](spe
 
 ## Enabling Fourth Wall notifications
 
-**Old way:** Go to [Fourth Wall's configuration](https://my-shop.fourthwall.com/admin/dashboard/settings/for-developers?redirect)
-and select \"Create webhook\". Paste this value in as the URL: <input readonly value=\"$$webhook_url$$\" size=60>
-
-Select the events you want integrations for; I suggest Order Placed, Gift Purchase, Donation, and
-Subscription Purchased. Click Save.
-
-<form class=token data-platform=fourthwall autocomplete=off>There will be a secret signing token on the settings page
-that looks something like: `8e7d24cf-66b4-4695-a651-3e744df5a861`<br>Paste it here to complete integration:
-<input name=token id=fwtoken size=40><input type=submit value=\"Save token\"></form>
-
-**Beta test way:**
-Go to [Fourth Wall's configuration](https://my-shop.fourthwall.com/admin/dashboard/settings/for-developers?redirect)
-and select \"Create API user\". Copy the given username and password, and paste them here:
-
-<form class=token data-platform=fourthwall autocomplete=off><table>
-<tr><td><label for=fwusername>Username</label></td><td><input id=fwusername name=username size=50></td></tr>
-<tr><td><label for=fwpassword>Password</label></td><td><input id=fwpassword name=password type=password autocomplete=new-password size=50></td></tr>
-</table>
-<input type=submit value=Save>
-</form>
-
 [Link your Fourth Wall shop](:#fwlogin)
 {:#fwstatus}
+
+<form class=token data-platform=fourthwall autocomplete=off>
+Once linked, go to [Fourth Wall's configuration](https://my-shop.fourthwall.com/admin/dashboard/settings/for-developers?redirect).
+There will be a secret signing token on the settings page<br>
+that looks something like: `8e7d24cf-66b4-4695-a651-3e744df5a861`<br>Paste it here to complete integration:
+<input name=token id=fwtoken size=40><input type=submit value=\"Save token\"></form>
 
 Once this is complete, Fourth Wall events will begin showing up in [Alerts](alertbox#fourthwall) and
 anywhere else they end up getting added.
@@ -96,7 +81,7 @@ vertical-align: middle;
 
 constant platform_config_fields = ([
 	"kofi": (<"token">),
-	"fourthwall": (<"token", "username", "password">),
+	"fourthwall": (<"token">), //Shouldn't need this, ideally - it should all be done with OAuth.
 ]);
 
 //NOTE: Currently this is only used by chan_vipleaders, which is alphabetically after

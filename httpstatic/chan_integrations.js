@@ -5,7 +5,6 @@ export function render(data) {
 	//Note that the entire token will never be shown, only the last few characters
 	if (data.kofitoken) DOM("#kofitoken").value = data.kofitoken;
 	if (data.fwtoken) DOM("#fwtoken").value = data.fwtoken;
-	if (data.fwusername) DOM("#fwusername").value = data.fwusername;
 	if (data.fwcountry) DOM("#fwcountry").value = data.fwcountry;
 	if (data.fwshopname) set_content("#fwstatus", [
 		"Your Fourth Wall shop is: ",
