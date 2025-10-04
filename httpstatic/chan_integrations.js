@@ -9,7 +9,8 @@ export function render(data) {
 	if (data.fwshopname) set_content("#fwstatus", [
 		"Your Fourth Wall shop is: ",
 		A({href: "https://" + data.fwurl}, data.fwshopname),
-		" Welcome, ", data.fwusername, ".",
+		" Welcome, ", data.fwusername, ". ",
+		BUTTON({id: "fwlogin"}, "Reauthenticate"),
 	]);
 	if (data.paturl) set_content("#patreonstatus", [
 		"Your Patreon campaign is: ",
