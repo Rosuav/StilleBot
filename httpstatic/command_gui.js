@@ -942,6 +942,13 @@ function limit_width(ctx, txt, width) {
 	return textlimit_cache[key] = txt.slice(0, fits) + "…";
 }
 
+const image_cache = {}; //Never emptied; if you use a lot of different emotes in your text, this will grow until you refresh the page.
+function preload_icon(url, needed) { //Set needed to true to trigger a repaint as soon as this is loaded
+	image_cache[url] = IMG({src: url, crossOrigin: "anonymous", onload: needed && repaint});
+}
+//TODO: Pick up all of these in some declarative way
+["/static/MustardMineSquavatar.png"].forEach(icon => preload_icon(icon));
+
 let max_descent = 0;
 let draw_focus_ring = false; //Set to true when keyboard changes focus, false when mouse does
 function draw_at(ctx, el, parent, reposition) {
@@ -1005,6 +1012,14 @@ function draw_at(ctx, el, parent, reposition) {
 				ctx.fillText(drawme, x, path.labelpos[i]);
 				if (drawme !== part) break; //If we ellipsize, don't draw anything further.
 				x += ctx.measureText(part).width; //This might be duplicating work. It also might not be necessary, if this is the last part in the label.
+			} else if (part.icon) {
+				const img = image_cache[part.icon];
+				if (!img) {preload_icon(part.icon, true); continue;}
+				if (!img.naturalWidth) continue; //Probably not loaded yet
+				const scale = 24 / img.naturalHeight;
+				//Height above the baseline is a bit tricky to measure, this is kinda eyeballed for aesthetics.
+				ctx.drawImage(img, x, path.labelpos[i] - 14, img.naturalWidth * scale, 24);
+				x += img.naturalWidth * scale;
 			}
 		}
 	}
