@@ -695,7 +695,10 @@ const types = {
 		typedesc: "Send a message in the channel or execute a slash command.",
 	},
 	test_element: {
-		color: "#b399cc", width: 400, label: el => [[IMG({src: "/static/MustardMineSquavatar.png", style: "height: 24px"}), " This is", " ", "a test"]],
+		color: "#b399cc", width: 400, label: el => [[
+			{icon: "/static/MustardMineSquavatar.png"},
+			" This is", " ", "a test",
+		]],
 		typedesc: "Test something out",
 	},
 	group: {
@@ -988,13 +991,23 @@ function draw_at(ctx, el, parent, reposition) {
 	}
 	ctx.fillStyle = "black";
 	const labels = arrayify(type.label(el));
+	if (!Array.isArray(labels[0])) labels[0] = [labels[0]];
 	let label_x = 20;
 	if (type.style === "flag") label_x = 6; //Hack!
-	else if (el.template) labels[0] = "⯇ " + labels[0];
-	else if (!type.fixed) labels[0] = "⣿ " + labels[0];
-	if (draw_focus_ring && el.hotkey) labels[0] = "[" + el.hotkey + "] " + labels[0]; //FIXME: Ugly
-	const w = (type.width || 200) - label_x - right_margin;
-	for (let i = 0; i < labels.length; ++i) ctx.fillText(limit_width(ctx, labels[i], w), label_x, path.labelpos[i]);
+	else if (el.template) labels[0].unshift("⯇ ");
+	else if (!type.fixed) labels[0].unshift("⣿ ");
+	if (draw_focus_ring && el.hotkey) labels[0].unshift("[" + el.hotkey + "] "); //FIXME: Ugly
+	for (let i = 0; i < labels.length; ++i) {
+		let x = label_x;
+		for (let part of arrayify(labels[i])) {
+			if (typeof part === "string") {
+				const drawme = limit_width(ctx, part, (type.width || 200) - x - right_margin);
+				ctx.fillText(drawme, x, path.labelpos[i]);
+				if (drawme !== part) break; //If we ellipsize, don't draw anything further.
+				x += ctx.measureText(part).width; //This might be duplicating work. It also might not be necessary, if this is the last part in the label.
+			}
+		}
+	}
 	ctx.stroke(path.path);
 	let flag_x = 220;
 	for (let attr in flags) {
