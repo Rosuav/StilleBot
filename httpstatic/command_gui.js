@@ -10,6 +10,10 @@ to say "no I don't want this to be mod-only any more". Or alternatively, always 
 
 Pipe dream: Can the label for a text message show emotes graphically?
 
+Label can be a single string, an array of strings, or (TODO) an array of labels, where each label can be
+a string or an array of parts. Thus you can turn a single string into [["piece one", " ", "piece two"]]
+to make it a set of parts. Parts can be images (TODO).
+
 Note that some legacy forms are not supported and will not be. If you have an old command in such a
 form, edit and save it in the default or raw UIs, then open this one.
 
@@ -690,6 +694,10 @@ const types = {
 		params: [{attr: "message", label: "Text", values: text_message}],
 		typedesc: "Send a message in the channel or execute a slash command.",
 	},
+	test_element: {
+		color: "#b399cc", width: 400, label: el => [[IMG({src: "/static/MustardMineSquavatar.png", style: "height: 24px"}), " This is", " ", "a test"]],
+		typedesc: "Test something out",
+	},
 	group: {
 		color: "#66dddd", children: ["message"], label: el => "Group",
 		typedesc: "Group some elements for convenience. Has no inherent effect.",
@@ -817,6 +825,7 @@ const tray_tabs = [
 		{type: "builtin_chan_giveaway"},
 		{type: "builtin_hypetrain"},
 		{type: "try_catch"},
+		{type: "test_element"},
 	]},
 ];
 const seen_types = {trashcan: 1};
