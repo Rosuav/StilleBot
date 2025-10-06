@@ -693,13 +693,6 @@ const types = {
 		params: [{attr: "message", label: "Text", values: text_message}],
 		typedesc: "Send a message in the channel or execute a slash command.",
 	},
-	test_element: {
-		color: "#b399cc", width: 400, label: el => [[
-			{icon: "/static/MustardMineSquavatar.png"},
-			" This is", " ", "a test",
-		]],
-		typedesc: "Test something out",
-	},
 	group: {
 		color: "#66dddd", children: ["message"], label: el => "Group",
 		typedesc: "Group some elements for convenience. Has no inherent effect.",
@@ -827,7 +820,6 @@ const tray_tabs = [
 		{type: "builtin_chan_giveaway"},
 		{type: "builtin_hypetrain"},
 		{type: "try_catch"},
-		{type: "test_element"},
 	]},
 ];
 const seen_types = {trashcan: 1};
