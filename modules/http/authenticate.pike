@@ -47,8 +47,9 @@ __async__ void handle_fourthwall(Protocols.HTTP.Server.Request req, mapping stat
 		}
 	}
 	werror("Creating webhook\n");
+	object channel = G->G->irc->id[state->channel];
 	mapping created = await(fourthwall_request(state->channel, "POST", "/webhooks", ([
-		"url": "https://mustardmine.com/channels/rosuav/integrations",
+		"url": "https://mustardmine.com/channels/" + channel->login + "/integrations",
 		"allowedTypes": ({"ORDER_PLACED", "GIFT_PURCHASE", "DONATION", "SUBSCRIPTION_PURCHASED"}),
 	])));
 	werror("Result: %O\n", created);
