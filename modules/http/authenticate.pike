@@ -35,15 +35,23 @@ __async__ void handle_fourthwall(Protocols.HTTP.Server.Request req, mapping stat
 	mapping auth = Standards.JSON.decode_utf8(res->get());
 	//Since the access token lasts for just five minutes, we don't bother saving it to the database.
 	//Instead, we save the refresh token, and then prepopulate the in-memory cache.
-	G->G->fourthwall_access_token[state->channel] = ({auth->access_token, time() + auth->expires_in});
-	res = await(Protocols.HTTP.Promise.get_url("https://api.fourthwall.com/open-api/v1.0/shops/current",
-		Protocols.HTTP.Promise.Arguments((["headers": ([
-			"User-Agent": "MustardMine",
-			"Accept": "*/*",
-			"Authorization": "Bearer " + auth->access_token,
-		])]))
-	));
-	mapping data = Standards.JSON.decode_utf8(res->get());
+	G->G->fourthwall_access_token[state->channel] = ({auth->access_token, time() + auth->expires_in - 2});
+	mapping data = await(fourthwall_request(state->channel, "GET", "/shops/current"));
+	werror("Shop info: %O\n", data);
+	mapping existing = await(fourthwall_request(state->channel, "GET", "/webhooks"));
+	if (existing && existing->results) {
+		werror("Removing old webhooks\n");
+		foreach (existing->results, mapping hook) {
+			werror("Deleting %O\n", hook);
+			await(fourthwall_request(state->channel, "DELETE", "/webhooks/" + hook->id));
+		}
+	}
+	werror("Creating webhook\n");
+	mapping created = await(fourthwall_request(state->channel, "POST", "/webhooks", ([
+		"url": "https://mustardmine.com/channels/rosuav/integrations",
+		"allowedTypes": ({"ORDER_PLACED", "GIFT_PURCHASE", "DONATION", "SUBSCRIPTION_PURCHASED"}),
+	])));
+	werror("Result: %O\n", created);
 	await(G->G->DB->mutate_config(state->channel, "fourthwall") {mapping cfg = __ARGS__[0];
 		cfg->username = data->name;
 		cfg->shopname = data->domain;

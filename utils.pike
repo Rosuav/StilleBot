@@ -318,55 +318,8 @@ __async__ void delayed() {
 }
 
 __async__ void test() {
-	mapping cfg = await(G->G->DB->load_config(0, "fourthwall"));
-	mapping fw = await(G->G->DB->load_config(49497888, "fourthwall"));
-	catch {G->G->fourthwall_access_token = decode_value(Stdio.read_file("temp.json"));};
-	if (!G->G->fourthwall_access_token) G->G->fourthwall_access_token = ([]);
-	if (!G->G->fourthwall_access_token[49497888] || G->G->fourthwall_access_token[49497888][1] < time()) {
-		werror("Renewing access token...\n");
-		object res = await(Protocols.HTTP.Promise.post_url("https://api.fourthwall.com/open-api/v1.0/platform/token",
-			Protocols.HTTP.Promise.Arguments((["headers": ([
-				"Content-Type": "application/x-www-form-urlencoded",
-				"User-Agent": "MustardMine", //Having a user-agent that suggest that it's Mozilla will cause 403s from Fourth Wall's API.
-				"Accept": "*/*",
-			]), "data": Protocols.HTTP.http_encode_query(([
-				"grant_type": "refresh_token",
-				"client_id": cfg->clientid,
-				"client_secret": cfg->secret,
-				"refresh_token": fw->refresh_token,
-			]))]))
-		));
-		mapping auth = Standards.JSON.decode_utf8(res->get());
-		G->G->fourthwall_access_token[49497888] = ({auth->access_token, time() + auth->expires_in});
-		Stdio.write_file("temp.json", encode_value(G->G->fourthwall_access_token));
-	}
-	object res = await(Protocols.HTTP.Promise.get_url("https://api.fourthwall.com/open-api/v1.0/webhooks",
-		Protocols.HTTP.Promise.Arguments((["headers": ([
-			"User-Agent": "MustardMine", //Having a user-agent that suggest that it's Mozilla will cause 403s from Fourth Wall's API.
-			"Accept": "*/*",
-			"Authorization": "Bearer " + G->G->fourthwall_access_token[49497888][0],
-		])]))
-	));
-	werror("Got %d %s %O\n", res->status, res->status_description, res->headers);
-	mapping data = Standards.JSON.decode_utf8(res->get());
-	werror("Result: %O\n", data);
-	if (!data->results || !sizeof(data->results)) {
-		werror("Creating a webhook.\n");
-		object res = await(Protocols.HTTP.Promise.post_url("https://api.fourthwall.com/open-api/v1.0/webhooks",
-			Protocols.HTTP.Promise.Arguments((["headers": ([
-				"User-Agent": "MustardMine", //Having a user-agent that suggest that it's Mozilla will cause 403s from Fourth Wall's API.
-				"Accept": "*/*",
-				"Authorization": "Bearer " + G->G->fourthwall_access_token[49497888][0],
-				"Content-Type": "application/json",
-			]), "data": Standards.JSON.encode(([
-				"url": "https://mustardmine.com/channels/rosuav/integrations",
-				"allowedTypes": ({"ORDER_PLACED", "GIFT_PURCHASE", "DONATION", "SUBSCRIPTION_PURCHASED", "PRODUCT_UPDATED"}),
-			]))]))
-		));
-		werror("Got %d %s %O\n", res->status, res->status_description, res->headers);
-		mapping data = Standards.JSON.decode_utf8(res->get());
-		werror("Result: %O\n", data);
-	}
+	//Recode this to whatever's needed, and use "pike stillebot --test" to run it.
+	werror("Nothing to see here, move along.\n");
 }
 
 protected void create(string name) {

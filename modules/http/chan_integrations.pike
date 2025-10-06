@@ -38,12 +38,6 @@ Once authenticated, Ko-fi events will begin showing up in [Special Triggers](spe
 [Link your Fourth Wall shop](:#fwlogin)
 {:#fwstatus}
 
-<form class=token data-platform=fourthwall autocomplete=off>
-Once linked, go to [Fourth Wall's configuration](https://my-shop.fourthwall.com/admin/dashboard/settings/for-developers?redirect).
-There will be a secret signing token on the settings page<br>
-that looks something like: `8e7d24cf-66b4-4695-a651-3e744df5a861`<br>Paste it here to complete integration:
-<input name=token id=fwtoken size=40><input type=submit value=\"Save token\"></form>
-
 Once this is complete, Fourth Wall events will begin showing up in [Alerts](alertbox#fourthwall) and
 anywhere else they end up getting added.
 
@@ -98,10 +92,6 @@ constant fw_shop = special_trigger("!fw_shop", "Shop sale on Fourth Wall.", "The
 constant fw_gift = special_trigger("!fw_gift", "Gift purchase on Fourth Wall.", "The broadcaster", "amount, msg, from_name, shop_item_ids", "Fourth Wall");
 constant fw_other = special_trigger("!fw_other", "Other notification from Fourth Wall - not usually useful.", "The broadcaster", "notif_type", "Fourth Wall");
 
-//fourthwall_access_token[channelid] = ({auth token, expiration time})
-//If the expiration time is still in the future, use the auth token, otherwise fetch the refresh token from database.
-@retain: mapping(int:array(string|int)) fourthwall_access_token = ([]);
-
 int to_cents(int|float amount) {
 	if (floatp(amount)) return (int)(amount * 100 + 0.5);
 	return (amount || 0) * 100;
@@ -111,7 +101,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	if (string other = req->request_type == "POST" && !is_active_bot() && get_active_bot()) {
 		//POST requests are likely to be webhooks. Forward them to the active bot, including whichever
 		//of the relevant headers we spot. Add headers to this as needed.
-		constant headers = (<"x-fourthwall-hmac-sha256", "content-type", "x-patreon-event", "x-patreon-signature">);
+		constant headers = (<"x-fourthwall-hmac-apps-sha256", "x-fourthwall-hmac-sha256", "content-type", "x-patreon-event", "x-patreon-signature">);
 		werror("Forwarding webhook...\n");
 		Concurrent.Future fwd = Protocols.HTTP.Promise.post_url("https://" + other + req->not_query,
 			Protocols.HTTP.Promise.Arguments((["headers": req->request_headers & headers, "data": req->body_raw])));
@@ -206,7 +196,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		G->G->goal_bar_autoadvance(req->misc->channel, (["user": chan, "from_name": data->from_name || "Anonymous"]), special[1..], cents);
 		return "Cool thanks!";
 	}
-	if (string sig = req->request_type == "POST" && req->request_headers["x-fourthwall-hmac-sha256"]) {
+	if (string sig = req->request_type == "POST" && req->request_headers["x-fourthwall-hmac-apps-sha256"]) {
 		//Fourth Wall integration - could be a sale, donation, subscription, etc
 		//TODO: Deduplicate based on the ID
 		mapping fw = await(G->G->DB->load_config(req->misc->channel->userid, "fourthwall"));
@@ -216,9 +206,9 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			werror("Fourth Wall webhook - Failed check with core hmac\n");
 			//It might be a deprecated legacy hook, with a unique verification token for each shop.
 			//Newer hooks will all use the application key from fw_core, but try this key too.
-			//Although.... the newer hooks seem to use this key too? Am confused.
+			//Note that the signature is in a different header here.
 			signer = Crypto.SHA256.HMAC(fw->verification_token || "");
-			if (sig != MIME.encode_base64(signer(req->body_raw))) {
+			if (req->request_headers["x-fourthwall-hmac-sha256"] != MIME.encode_base64(signer(req->body_raw))) {
 				werror("Fourth Wall webhook - Also failed check with unique token\n");
 				Stdio.append_file("fourthwall.log", sprintf("\n%sFAILED INTEGRATION for %O: %O\nSig: %O\nHeaders %O\n", ctime(time()), req->misc->channel->login, req->body_raw, sig, req->request_headers));
 				return (["error": 418, "data": "My teapot thinks your signature is wrong."]);
