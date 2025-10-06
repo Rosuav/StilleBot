@@ -325,7 +325,7 @@ __async__ void websocket_cmd_list_emotes(mapping(string:mixed) conn, mapping(str
 	if (!voices[voice]) return; //TODO: Send an error back?
 	mapping emotes = G_G_("voice_emotes", (string)channel->userid, voice);
 	//Send the existing emotes, then update them once they're fetched.
-	if (emotes->emotes) conn->sock->send_text(Standards.JSON.encode((["cmd": "emotes_available", "voice": voices[voice], "emotes": emotes]), 4));
+	if (emotes->emotes) conn->sock->send_text(Standards.JSON.encode((["cmd": "emotes_available", "voice": msg->voice, "emotes": emotes]), 4));
 	if (emotes->fetched > time() - 60) return; //Or not. I mean, one minute, it can have stale data if it wants.
 	emotes->voice = voices[voice]->id;
 	emotes->voice_name = voices[voice]->desc; //Or should it use voices[voice]->name?
