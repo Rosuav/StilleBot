@@ -8,11 +8,9 @@ early file history, check that repository.
 Allow a flag to be removed. Currently, you have to drag a replacement flag, but it should make sense
 to say "no I don't want this to be mod-only any more". Or alternatively, always show the default flag??
 
-Pipe dream: Can the label for a text message show emotes graphically?
-
-Label can be a single string, an array of strings, or (TODO) an array of labels, where each label can be
+Label can be a single string, an array of strings, or an array of labels, where each label can be
 a string or an array of parts. Thus you can turn a single string into [["piece one", " ", "piece two"]]
-to make it a set of parts. Parts can be images (TODO).
+to make it a set of parts. Parts can be images {icon: "https://..."} or text.
 
 Note that some legacy forms are not supported and will not be. If you have an old command in such a
 form, edit and save it in the default or raw UIs, then open this one.
@@ -35,6 +33,7 @@ let voices_available = {"": "Channel default"}; //Note that this will show up af
 Object.keys(voices).forEach(id => voices_available[id] = voices[id].name);
 let alertcfg = {stdalerts: [], personals: [], loading: true};
 fetch("alertbox?summary", {credentials: "include"}).then(r => r.json()).then(c => alertcfg = c);
+const emotes_available = { };
 
 document.body.appendChild(DIALOG({id: "properties"}, SECTION([
 	HEADER([H3("Properties"), DIV([BUTTON({type: "button", className: "dialog_cancel"}, "x"), BR(), BUTTON({type: "button", id: "toggle_favourite"}, "fav")])]),
@@ -521,7 +520,7 @@ const types = {
 		typedesc: ["Select a different ", A({href: "voices"}, "voice"), " for messages - only available if alternate voices are authorized"],
 	},
 	whisper_back: {
-		color: "#99ffff", width: 400, label: el => "🤫 " + el.message,
+		color: "#99ffff", width: 400, label: el => [["🤫 ", ...emotify(el.message)]],
 		params: [{attr: "dest", values: "/w"}, {attr: "target", values: "$$"}, {attr: "message", label: "Text", values: text_message}],
 		typedesc: "Whisper to the person who ran the command",
 	},
@@ -531,7 +530,7 @@ const types = {
 		typedesc: "Whisper to a specific person",
 	},
 	reply_back: {
-		color: "#aaeeff", width: 400, label: el => "🧵 " + el.message,
+		color: "#aaeeff", width: 400, label: el => [["🧵 ", ...emotify(el.message)]],
 		params: [{attr: "dest", values: "/reply"}, {attr: "target", values: "{msgid}"}, {attr: "message", label: "Text", values: text_message}],
 		typedesc: "Reply to the command/message that triggered this (if applicable)",
 	},
@@ -690,7 +689,7 @@ const types = {
 			BR(), "of being selected. (Non-weighted entries have a weight of 1.)"],
 	},
 	text: {
-		color: "#77eeee", width: 400, label: el => el.message,
+		color: "#77eeee", width: 400, label: el => [emotify(el.message, el)],
 		params: [{attr: "message", label: "Text", values: text_message}],
 		typedesc: "Send a message in the channel or execute a slash command.",
 	},
@@ -1018,8 +1017,8 @@ function draw_at(ctx, el, parent, reposition) {
 				if (!img.naturalWidth) continue; //Probably not loaded yet
 				const scale = 24 / img.naturalHeight;
 				//Height above the baseline is a bit tricky to measure, this is kinda eyeballed for aesthetics.
-				ctx.drawImage(img, x, path.labelpos[i] - 14, img.naturalWidth * scale, 24);
-				x += img.naturalWidth * scale;
+				ctx.drawImage(img, x + 3, path.labelpos[i] - 16, img.naturalWidth * scale, 24);
+				x += img.naturalWidth * scale + 6; //Give images a bit of extra gap (2px each side)
 			}
 		}
 	}
@@ -1137,7 +1136,12 @@ function repaint() {
 	const focus = document.activeElement?.getAttribute("key");
 	if (next_key_idx > 0) replace_content(canvas, actives.map((el, idx) => {
 		if (!el.key) el.key = next_key_idx++;
-		return lindt.DIV({key: el.key, tabindex: idx}, types[el.type].label(el));
+		const label = types[el.type].label(el);
+		//CJA 20251006: What is this div actually used for? Does it need to display images
+		//correctly, or can it use a simplified version? For now, stripping out all images.
+		if (Array.isArray(label) && Array.isArray(label[0]))
+			label.forEach(lbl => lbl.forEach((part, i) => typeof part !== "string" && (lbl[i] = "")));
+		return lindt.DIV({key: el.key, tabindex: idx}, label);
 	}));
 	const focusel = focus && canvas.querySelector('[key="' + focus + '"]');
 	if (focusel) focusel.focus({preventScroll: true});
@@ -1773,7 +1777,6 @@ on("click", "#clonetemplate", e => {
 
 on("input", "#properties [name]", e => set_content("#saveprops", [U("A"), "pply changes"]));
 
-const emotes_available = { };
 function update_emote_picker(voice) {
 	const emav = emotes_available[voice];
 	console.log("Update emote picker!", emav);
@@ -1797,21 +1800,40 @@ function update_emote_picker(voice) {
 			]),
 	);
 }
+function find_active_voice(node) {
+	while (node) {
+		if (node.type === "voice") return node.voice;
+		node = node.parent?.[0];
+	}
+	return ""; //If we never find a Voice node, empty string means "channel default".
+}
+
 on("click", ".emotepicker", e => {
 	//Scan up for a "Change Voice" node. As soon as we find one, accept it - assume that
 	//it's valid, if it isn't, the back end will just reject this.
-	let voice = ""; //If we never find a Voice node, empty string means "channel default".
-	for (let node = propedit; node; node = node.parent?.[0])
-		if (node.type === "voice") {voice = node.voice; break;}
+	const voice = find_active_voice(propedit);
 	update_emote_picker(voice);
 	if (!emotes_available[voice]) ws_sync.send({cmd: "list_emotes", voice});
+	DOM("#emotepicker").dataset.voice = voice; //Not cleared when the dialog is closed, though this might save some processing
 	DOM("#emotepicker").showModal();
 });
 ws_sync.register_callback(function chan_commands_emotes_available(msg) {
+	//Build a quick lookup table and cache it.
+	const lookup = { };
+	Object.values(msg.emotes.emotes).forEach(grp => grp.forEach(em =>
+		lookup[em.name] = msg.emotes.template
+			.replace("{{id}}", em.id)
+			.replace("{{format}}", em.format[0]) //NOTE: Unlike the emote picker, here we take the first format, which should always be "static"
+			.replace("{{theme_mode}}", em.theme_mode[0])
+			.replace("{{scale}}", em.scale[0])
+	));
+	msg.emotes.lookup = lookup;
 	//Note that msg.voice is the ID we requested, which might be "", but msg.emotes.voice
 	//is the actual ID of the voice. If both are numbers, they will be the same number.
+	const want_repaint = emotes_available[msg.voice] === 0;
 	emotes_available[msg.voice] = emotes_available[msg.emotes.voice] = msg.emotes;
-	update_emote_picker(msg.voice); //TODO: Only if emote picker is still open with this voice
+	if (DOM("#emotepicker").dataset.voice === msg.voice) update_emote_picker(msg.voice); //TODO: Only if emote picker is still open with this voice
+	if (want_repaint) repaint();
 });
 
 on("click", ".emoteset img", e => {
@@ -1819,6 +1841,28 @@ on("click", ".emoteset img", e => {
 	textarea.setRangeText(e.match.title + " ", textarea.selectionEnd, textarea.selectionEnd, "end");
 	if (!e.ctrlKey) {DOM("#emotepicker").close(); textarea.focus();}
 });
+
+function emotify(text, el) {
+	const voice = find_active_voice(el);
+	if (!emotes_available[voice]) {
+		if (typeof emotes_available[voice] === "undefined") ws_sync.send({cmd: "list_emotes", voice});
+		emotes_available[voice] = 0; //Flag that we don't have them, but shouldn't reload
+		return text;
+	}
+	const lookup = emotes_available[voice].lookup;
+	//Naive emote detection. There has to be a space either side of the emote name (or start/end of text).
+	const ret = [];
+	const words = text.split(" ");
+	for (let i = 0; i < words.length; ++i) {
+		const word = words[i];
+		if (lookup[word]) {ret.push({icon: lookup[word]}); continue;}
+		if (typeof ret[ret.length - 1] !== "string") //Note that this will be the case when there's nothing in the array
+			ret.push(word);
+		else
+			ret[ret.length - 1] += " " + word;
+	}
+	return ret;
+}
 
 function slashcommands(e) {
 	//Note that e is either an event or the input string - in the latter case, we're not in the DOM yet
