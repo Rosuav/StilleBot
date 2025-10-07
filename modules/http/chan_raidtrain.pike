@@ -134,7 +134,7 @@ __async__ void check_schedules(object channel, mapping cfg) {
 
 bool need_mod(string grp) {return grp == "control";}
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
-	mapping cfg = await(G->G->DB->load_config(channel->userid, "raidtrain"))->cfg;
+	mapping cfg = await(G->G->DB->load_config(channel->userid, "raidtrain"))->cfg || ([]);
 	//Populate a mapping of people info for the front end. It contains only what we
 	//already have in cache.
 	mapping people = (["": (<>)]);
