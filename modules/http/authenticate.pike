@@ -5,10 +5,21 @@
 inherit annotated;
 inherit http_endpoint;
 
+/*
+jierenchen — 4:58 AM
+So what should happen is 
+1. from apps page: click connect
+2. shows fourthwall grant screen, click allow
+3. this goes through fourthwall oauth dance and then lands on your redirect
+4. Exchange code for the fourthwall oauth token
+5. If they are cookied, they are good. If not, show them the login register screen for your site
+*/
 @retain: mapping oauth_csrf_states = ([]);
 
 __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->variables->code) return redirect("/c/integrations");
+	//TODO: Handle requests that originate from FW.
+	//if (!req->variables->state) ...
 	mapping state = m_delete(oauth_csrf_states, req->variables->state);
 	if (!state) return "Unable to login, please close this window and try again";
 	function handler = this["handle_" + state->platform];
