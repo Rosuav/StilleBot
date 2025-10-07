@@ -815,7 +815,6 @@ mapping|Concurrent.Future message_params(object channel, mapping person, array p
 
 @retain: mapping queued_offline_resets = ([]);
 void reset_goal_bar(int broadcaster_id, string id) {
-	werror("Reset goal bar %O/%O\n", broadcaster_id, id);
 	object channel = G->G->irc->id[broadcaster_id]; if (!channel) return;
 	remove_call_out(m_delete(queued_offline_resets, id + "#" + channel->userid));
 	mapping info = G->G->DB->load_cached_config(channel->userid, "monitors")[id];
@@ -833,8 +832,8 @@ void reset_goal_bar(int broadcaster_id, string id) {
 				break;
 			}
 			//Normal goal bar: Zero out the one variable that governs it.
-			werror("Resetting goal bar by setting %O to 0\n", info->varname);
-			channel->set_variable(info->varname, "0", "set");
+			sscanf(info->text, "$%s$:", string varname);
+			if (varname) channel->set_variable(varname, "0", "set");
 			break;
 		}
 		default: break; //No need to autoreset text or countdown.
@@ -849,12 +848,10 @@ string timepart_monthly(object ts) {
 }
 
 void check_for_resets(int broadcaster_id, int streamreset) {
-	werror("Check for resets [%d, %d]\n", broadcaster_id, streamreset);
 	object channel = G->G->irc->id[broadcaster_id]; if (!channel) return;
 	int changed = 0;
 	mapping mon = G->G->DB->load_cached_config(channel->userid, "monitors");
 	foreach (mon; string id; mapping info) {
-		if (info->autoreset && info->autoreset != "") werror("--> %O autoreset every %s\n", id, info->autoreset);
 		int reset = streamreset && info->autoreset == "stream";
 		//If we're past a month end, it's time to reset (eg if you went past midnight while live,
 		//then the reset happens after the stream goes offline).
@@ -866,7 +863,6 @@ void check_for_resets(int broadcaster_id, int streamreset) {
 			}
 		}
 		if (reset) {
-			werror("--!! Reset required!\n");
 			string key = id + "#" + channel->userid;
 			remove_call_out(m_delete(queued_offline_resets, key));
 			//When we go offline, delay the reset by half an hour. When online, do it as quickly as possible.
