@@ -1289,6 +1289,7 @@ void irc_closed(mapping options) {
 void autoreward(object channel, mapping data) {
 	//Some automatic rewards (eg "unlock emote") cost channel points. Others (eg "gigantify")
 	//cost bits. The ones that cost bits count as cheers and advance goal bars.
+	werror("AUTO REWARD %O %O\n", channel, data);
 	if ((<"message_effect", "gigantify_an_emote", "celebration">)[data->reward->type]) {
 		//These three rewards cost bits, the others cost points.
 		mapping person = (["uid": data->user_id, "user": data->user_login, "displayname": data->user_name]);
