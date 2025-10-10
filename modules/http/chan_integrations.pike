@@ -21,6 +21,7 @@ Available integrations:
 * [Alerts]($$fwembed1||$$alertbox#fourthwall$$fwembed2||$$) on shop sales, donations, etc
 * [Chat responses]($$fwembed1||$$specials#Fourth-Wall$$fwembed2||$$) on shop sales, donations, etc
 * [Goal bars]($$fwembed1||$$monitors$$fwembed2||$$) that advance based on activity on your shop and/or elsewhere
+* Coming Soon: Create giveaway links from chat commands, channel point redemptions, or anything else!
 ";
 
 constant markdown = #"
