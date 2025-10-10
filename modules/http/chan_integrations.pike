@@ -22,7 +22,7 @@ Mustard Mine can integrate with several other web sites where your community can
 When linked together, these services can trigger actions within the bot, such as goal bar
 advancement, on-stream alerts, or in-chat appreciative notes.
 
-## Enabling Ko-fi notifications
+## Ko-fi
 
 Go to [Ko-Fi's configuration](https://ko-fi.com/manage/webhooks) and paste
 this value into the Webhook URL: <input readonly value=\"$$webhook_url$$\" size=60>
@@ -33,7 +33,7 @@ this value into the Webhook URL: <input readonly value=\"$$webhook_url$$\" size=
 Once authenticated, Ko-fi events will begin showing up in [Special Triggers](specials),
 [Alerts](alertbox#kofi), and [Goal Bars](monitors).
 
-## Enabling Fourth Wall notifications
+## Fourth Wall
 
 [Link your Fourth Wall shop](:#fwlogin)
 {:#fwstatus}
@@ -47,7 +47,7 @@ this, enter your 2-letter country code here: <input id=fwcountry size=2> Note th
 particularly with PayPal orders, gifts via Twitch chat, and Buy Now Pay Later; it should generally be close, but
 may not be precise.
 
-## Enabling Patreon notifications
+## Patreon
 
 [Link your Patreon account](:#patreonlogin)
 {:#patreonstatus}

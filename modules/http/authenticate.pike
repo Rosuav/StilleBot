@@ -5,6 +5,13 @@
 inherit annotated;
 inherit http_endpoint;
 
+//Used if the user isn't logged in, attempts an OAuth consent flow, and needs to link to
+//a Twitch account.
+constant markdown = #"# Authenticate Mustard Mine
+
+To complete the process, we will need to connect your Twitch account. [Connect with Twitch](:.twitchlogin data-scopes=@$$scopes$$@)
+";
+
 /*
 jierenchen — 4:58 AM
 So what should happen is 
@@ -18,13 +25,41 @@ So what should happen is
 
 __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->variables->code) return redirect("/c/integrations");
-	//TODO: Handle requests that originate from FW.
-	//if (!req->variables->state) ...
 	mapping state = m_delete(oauth_csrf_states, req->variables->state);
+	if (!req->variables->state) {
+		//Requests that originate from FW have no state parameter, and should be linked to
+		//the currently-logged-in user; if you aren't, invite a login and auto-activate.
+		int userid = (int)req->misc->session->?user->?id;
+		string|zero scopes = "chat:read channel:bot"; //Must match the scopes from /activate
+		if (userid && !G->G->irc->id[userid]) {
+			//CORNER CASE: If you are already logged in, but the bot is not active for
+			//your channel, attempt to auto-activate.
+			array havescopes = G->G->user_credentials[userid]->?scopes || ({ });
+			multiset wantscopes = (multiset)(scopes / " ");
+			multiset needscopes = (multiset)havescopes | wantscopes;
+			if (sizeof(needscopes) > sizeof(havescopes)) {
+				//We need more permissions to make this happen. Ask the user to log in.
+				//Note that this MAY result in the OAuth timing out, in which case it will
+				//need to be restarted.
+				userid = 0; //Give the same login page as if the user wasn't logged in at all.
+				scopes = sort(indices(needscopes)) * " ";
+			}
+			else {
+				string login = req->misc->session->user->login;
+				Stdio.append_file("activation.log", sprintf("[%d] Account activated after Fourth Wall OAuth: uid %d login %O\n", time(), userid, login));
+				await(connect_to_channel(userid));
+				//Give the rest of the bot a chance to connect. TODO: Actually get notified somehow
+				while (!G->G->irc->id[userid]) sleep(1);
+			}
+		}
+		if (!userid) return render_template(markdown, (["scopes": scopes]));
+		state = (["platform": "fourthwall", "channel": userid, "next": "/c/integrations"]); //What should happen if other platforms also need this support?
+	}
 	if (!state) return "Unable to login, please close this window and try again";
 	function handler = this["handle_" + state->platform];
 	if (!handler) return "Bwark?"; //Shouldn't happen, internal problem within the bot. Everything that creates an entry in csrf_states should include the platform.
 	await(handler(req, state));
+	if (state->next) return redirect(state->next);
 	return (["data": "<script>window.close(); window.opener.location.reload();</script>", "type": "text/html"]);
 }
 
@@ -43,6 +78,8 @@ __async__ void handle_fourthwall(Protocols.HTTP.Server.Request req, mapping stat
 			"redirect_uri": "https://" + G->G->instance_config->local_address + "/authenticate",
 		]))]))
 	));
+	//TODO: Cope with a delayed callback, which could happen if the user needs to authenticate with Twitch.
+	//(Return to /c/integrations and let them restart the process?)
 	mapping auth = Standards.JSON.decode_utf8(res->get());
 	//Since the access token lasts for just five minutes, we don't bother saving it to the database.
 	//Instead, we save the refresh token, and then prepopulate the in-memory cache.

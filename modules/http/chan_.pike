@@ -1,3 +1,4 @@
+#charset utf8
 inherit http_endpoint;
 inherit menu_item;
 constant menu_label = "Localhost Mod Override";
@@ -196,6 +197,15 @@ mapping(string:mixed) your_channel(Protocols.HTTP.Server.Request req, string|voi
 	//Redirect /c/commands to /channels/YOURNAME/commands
 	string user = req->misc->session->?user->?login;
 	if (!G->G->irc->channels["#" + user]) user = "demo";
+	//Special case: If you aren't logged in, but the page is actually a Fourth Wall embed,
+	//redirect to the relevant shop channel, and grant access as if logged in as the
+	//broadcaster. Note that this special access should apply ONLY to Fourth Wall configs,
+	//and only if the HMAC checks out. For now, we just invite the user to log in.
+	if (tail == "integrations" && user == "demo" && req->variables->shop_id && req->variables->hmac) {
+		return render_template("# Coming Soon: Direct configuration\n\nFor now, you can configure the Mustard Mine [at its main page](/c/features :target=_blank).", ([]));
+		//TODO: Figure out the Twitch user, then verify the HMAC, and redirect.
+		return render_template("login.md", (["msg": "Twitch authentication - direct embed access Coming Soon™"]));
+	}
 	return redirect(sprintf("/channels/%s/%s", user, tail || ""), 302); //Not a 301, since it depends on the user
 }
 
