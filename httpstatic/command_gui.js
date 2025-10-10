@@ -35,6 +35,10 @@ let alertcfg = {stdalerts: [], personals: [], loading: true};
 fetch("alertbox?summary", {credentials: "include"}).then(r => r.json()).then(c => alertcfg = c);
 const emotes_available = { };
 
+//See rebuild_spritesheet for how this is generated. Whenever it needs updating, call that,
+//commit the change.
+const spritesheet = {"🔒":1,"🗡️":19,"💎":37,"👪":55,"🌞":73,"🌚":91,"":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAABtCAYAAACoT+F+AAALxUlEQVR4AexYaXRV1RXe5w7vvfsmEhIaCAkhISRggGCxKoOAWFGXjAKygB8KzrWgBNBiEVPDYlBsbVlSrBaU1qJVQRkWooAQQYjEQpBQDGNDnpnzkrz53eF07ysvZiDRZVfXal3edb6zz97n298599z77j33CfAfHlcVeH7PkQV/PV7W+OK+4kjBtgNlK947NLOzcToIrNhWeH1i925rK6vrjvr9gQIO7AJwY/2z2w/lXE2kgwAAf8hTUVO65PYRty+bPGaFVRBnABiNzDAe+k4CnPFEg8HFGPnJyaN8BsB5YEaPWKy17TADDsDiharU5sOZf/J9mv1B86H+G9xifRJwxuAqRxsB78F+pQNdJyemOj3XORLiH7B3d9/mSIx7qKe9asggd/FM7/6Mw+012ggEa7zu8dLvYbxrI0R8wRZM6rYebmYvgb+uMa5LAT1qGE2eeqg76+mA5soG4KqhdynQuvPsZQmWbkiGy9Vi63CHdptTaN1rt+kQijBwKFrrcId2pwJ1TTLEuSLQ0Cx3SGodaCPAgZfFOnMzo5A/rw4yU76ZAd4jLf0xXhuBtDlNt0qg92DApwOHua0whXPePW120/RYYsy2EaBg8mxfXerspnf7zGl8rRXeR3Ev9bdHB4H2hG/z/w8Fthcoq9/Jh+tip9blKbzyhJISI5J9ZHjWlC+O9Z3p8zn2k0/oUiArSdy+KU+5kYgLRg74bUq8Y5vPLyY0euUFFCN0KaAx/8S0XvJbq2b95J0Ep2VhMKJBY1CbtHBj42uUTOhSIH5WZVTJfVT5V88p08SkxkpfKPrkhqNnDlBiDJ0KFDc0dIuq/GA07d7ynAwOPXtFpNwR5Z/EEmO2gwDesuNKa2qcmj+8L6rp4QOnKnO8vedslIXqgcDZg5sWWQbEksmaAphkRYyjwKVL8Kk/on6kahoUnrg4kAHb8PTUMXn3rIL6+14IzhWYbCFeDKYAYyyC2I8iSdXiVzuiqmE/WHJpoM6NlcunjVmI5P7Yp6CFe9YGTpKNwRQgBwlJn1VUblB13qPw5Pl+OhiLn5k2toD6ULwYEaJ2e7QIFFVUPq/pemZhyYUMEcRfLJ8yZiORUXgZ2c4gUAcmz9ANY+iBkospmmHc96spN23GESPUh3YF2c5gCoQi6qyDJy6E8ZwnLZ86ZheOmttZQvu4KfD5+YqXnpo8+vrlU8Z+giMGESXtiZ35psCi8SP2dUb4trgp8G2krvp/aAK7KnjWdo/21g6PZiB4DBjTd3ylvba7kvdtvx4ta1Ae4JMNpu9lAHcjCQ3WVwo6AnC4J6iqH8KqE+OvhE1jClRwnsA5/3OmWwhgtBnRoXAO9Qt3XZBRbCPklzpjBFMgFDBePN2sf7nLozXvPacdKzyrni316EcNgO3JNjjazymcUyThxF3DUiuHpSWUy3Yjv43Aso+DUmEVHxTQ4HqrjSV4A7w/l3QdLMEJsmwoDgkyz/i0tHi7PHzq0J6ZL0zu724jcLgksviNPbU1Ow83FkaBu10KL81JUa/F6QqXwuHkgG4Uo7iY5WKHBneDmnSX9ak2AhXLEj2qCDOrG9ShWz+uz8hNgIs5irMsx+Y4kaM4PAFNrMlxC+lOiQ1gTJo+MZnVtREgp/KJ3v9AOw1wJ/T+F8F0SWBDryC3STWG4iKGOBcnYvIZ5LUUcxFjXvnS3nuBwQOfV0RzgurXmw3N4CeDGu/JBJgzKYUdjXFjto0ABcufTHkdr/lvPjgTrCK/NsqDAmOLJiZL28hvjw4CRMCZ5L95PHhK51BRH+FHJiSLL1L8ariqABGLHkl6tMijPXtnsryI/M7QqQAlzMq2vEK2K3Qp0FVirO9HAYD/2hqk4iqLCCr0Ok+mxtUQmwGRerUi7MH2XQgqD2O1FRErfbDBEGaJCcxCbx2CymysPIifIyTEcIQPcRuCyg6sRiLMQgKkOAE9O2IugnYqlJyB7dWIJMQgBD1sH0dbg5iHMJ+LJPAYOrR5uBYtJb6HlsrHWGUhTiFsiCOIaxDECaN9AGFeheexMQrRHbEXsRMRRHDEJMQwBH2tFaE9jqCShtXLCFMggg1aQFpIcx+EPq0BGqA1oC9W+lZIx8DbiEsIWmQaBAR0qPNVtAcR6xFUDKoQ9L2zHS1trMjSrOjdQRbDYM6AGmexOoaIlcPYoJHQwDmsYn1RbNNj7TJas9AiUuMPWC1BxMp92NiCoLIBq1gfXc770Y8tdMsMMPb9SmwG3y8bs34U+OY+wOX4pvDj2XP40ZQhFCGrHR9Il47cDjAXEV+cjBcNSOClGX14CTgg1HwnV6Pr+ZGeY7kWXS8EvVP5HnDwkswUk8fxDXpFyhTANgOLNtjwRZ8xmhOXcBCHcKt9pGFxbeayfSRn0gBDSVxkBIPPgKANNvlYURGoYgwMaPIGmKb+FCzOp7jdNQCs+HgQpVSw4u/L7kwDm+PXTNeGQwB5xKdEhMAPZbt4ccYoENhYEGQZREmGSEAEXwNo1fg7a2oACPrw+cgsIIgSMD5GRX4t5mE+CCD7LbhDW2wAPM0NPdtbFYRNb9kBP/LAf06FxmofvLzFBfUe/BFqaj9g7GmRG4sTMQ/wENgNnnrWUDVf0PVCFglLVr8XsuPrwSaqIFk0MJpFGJjYADY/7v5CQQnU6CHWUD2f8jAfBJ6Ps7A5E8FQ7TwaAhtE4Wd9G4DhlCJ+ESTGYXg/FJRUwGTghqEA8s08VBDgjt7xht2ZB0zMEkAPiy4GQYsMZ75yQpNTgwt+KwQkC0huAZgAERDEbLDb8ygP82n0hLAgwzoD2HN4fmWMAcRhYneXCrVNVkhwRyEe2xQHUbiAdg3IwjqwJYRNAZZ7MsCGXvxMl8UibrUzHCGKJC0tKQTDr/ECWfR1jEe4rAggK0XEpzzAQ0AA/zuIsiPexhXXhyCLvwRJLuECXTl2zrSypYziTHG9pzlxG8oBOykT8BTQsrtBB9FXLBh8JfQMvm64uv8THO6PANQJYHd/CM64sxjf3KQJayTBdwwY3niYR8WcATVYbnWAjahoYDkQ5c74rcxlncvugC+Z2zoPXPFbKB53U7nX5OFulHIILQLkxCANPrWNDa0w3w1k2aDSN2N97e1VBdqTuvL/xwQy58+3jlu0Nm3cwlVTb81bs/K2Jc/9kewtj6+ZPnpxQfrYe/Nt0O5oOYVhD67uli4m3yUzvtlmtW2xKfalVpv9YZuioJXfsHHr38R4y0zitdYwBYY9mG932/SZ+DhYabHaRmOy1eZwgIIga7M7MGy7URLlAuIRPyZCAswlwhBRFPNk2dLXYrOB1aaA1WoDiwVhVcCCPkG2WFJFUcgjPgowBAh43hYmCTNEUcqSLDJIoggMuwRRhEg4jG0GoiAAfjPg88ECAvI48jPvmG8BPISkgGLhwCaKksi4GoHq08VwauurEKj1QG1lBahBH5w/uAPO798K0WYviKLI8BExMamX8rVAWGICcJ4BOKrN4YT0IcOg1zXX4o/OBZIkQVQzoM+w0dCrXza4urmBCUgEyDDzaAYIMDjXDfxMBEMHh8sJWTeMAtnuQAEZwjgDd0IiZF43HKyKghT8fwcfnpRHEFySogM3yjRVg2A4CjVeP1RX1UKgoQa0sB9skgiN9XVQVe+DxuYgaFF8tBlGmYvyUEGoqQXatuzUNdVQI2EIh0IQQbGmynII1Hig/vIFUDUdQqEwRLCfeMDZzit5IJx+O18VBPYugHE6ioRICEcxODh69wNnSibYe6WDjn44FADqB8ZPCxJ7l/JwAkD3AVdY9y8sdmuBJIlniBTy+yHk9wG+LwBHhCC2aXayJJ5X7PYC4mMyR5gCsHvdgkhz1LLD4bQviIt377bbLSHgBhi4qGQVxRaJ7x6339nN+Zg3Ku4gPiUTaAZk4cjv8kLbhMZ9zqA6o0dCws1pqcmL0/okryabmBB3i8jEyUN4w27imQlXqhYB08/PN/6ydklg05J5Ra/m3fvCxry5S8m+/sT9h9/Of9Sfj/0mr1XVVqBVx3dt/gAE/g0AAP///uRwQwAAAAZJREFUAwCmdsYXkG3MWgAAAABJRU5ErkJggg=="};
+
 document.body.appendChild(DIALOG({id: "properties"}, SECTION([
 	HEADER([H3("Properties"), DIV([BUTTON({type: "button", className: "dialog_cancel"}, "x"), BR(), BUTTON({type: "button", id: "toggle_favourite"}, "fav")])]),
 	DIV(FORM({id: "setprops", method: "dialog"}, [
@@ -57,10 +61,10 @@ fix_dialogs();
 
 //Perform one-time initialization of the display context. It's not strictly one-time though,
 //as this seems to get reset when the canvas is resized.
-function initctx() {
+function initctx(ctx) {
 	ctx.font = "12px 'Lexend', 'Noto Color Emoji', 'Noto Sans Symbols 2', sans-serif"; //Match the font names with the ones used in stillebot.css
 }
-initctx();
+initctx(ctx);
 
 const in_rect = (x, y, rect) => x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
 const arrayify = x => Array.isArray(x) ? x : [x];
@@ -698,12 +702,12 @@ const types = {
 		typedesc: "Group some elements for convenience. Has no inherent effect.",
 	},
 	flag: {
-		color: "#aaddff", label: el => [[el.icon]],
+		color: "#aaddff", label: el => [[{sprite: el.sprite}]],
 		style: "flag", width: 25,
 		actionlbl: null,
 	},
 	dragflag: {
-		color: "#aaddff", label: el => [[el.icon, " " + el.desc]],
+		color: "#aaddff", label: el => [[{sprite: el.sprite}, " " + el.desc]],
 		style: "flag", width: 150,
 		actionlbl: null,
 	},
@@ -871,14 +875,14 @@ let dragging = null, dragbasex = 50, dragbasey = 10;
 //There must always be an empty-string option, which is also used if the attribute isn't set.
 const flags = {
 	access: {
-		"none": {icon: "🔒", desc: "Access: None"},
-		"mod": {icon: "🗡️", color: "#44bb44", desc: "Access: Mods"},
-		"vip": {icon: "💎", color: "#ff88ff", desc: "Access: Mods/VIPs"},
-		"": {icon: "👪", desc: "Access: Everyone"},
+		"none": {sprite: "🔒", desc: "Access: None"},
+		"mod": {sprite: "🗡️", color: "#44bb44", desc: "Access: Mods"},
+		"vip": {sprite: "💎", color: "#ff88ff", desc: "Access: Mods/VIPs"},
+		"": {sprite: "👪", desc: "Access: Everyone"},
 	},
 	visibility: {
-		"": {icon: "🌞", desc: "Public command"},
-		"hidden": {icon: "🌚", desc: "Secret command"},
+		"": {sprite: "🌞", desc: "Public command"},
+		"hidden": {sprite: "🌚", desc: "Secret command"},
 	},
 };
 function make_flag_flags() {
@@ -939,6 +943,7 @@ function preload_icon(url, needed) { //Set needed to true to trigger a repaint a
 }
 //TODO: Pick up all of these in some declarative way
 ["/static/MustardMineSquavatar.png"].forEach(icon => preload_icon(icon));
+image_cache[""] = IMG({src: spritesheet[""]});
 
 let max_descent = 0;
 let draw_focus_ring = false; //Set to true when keyboard changes focus, false when mouse does
@@ -1011,6 +1016,12 @@ function draw_at(ctx, el, parent, reposition) {
 				//Height above the baseline is a bit tricky to measure, this is kinda eyeballed for aesthetics.
 				ctx.drawImage(img, x + 3, path.labelpos[i] - 16, img.naturalWidth * scale, 24);
 				x += img.naturalWidth * scale + 6; //Give images a bit of extra gap (2px each side)
+			} else if (part.sprite) {
+				if (!spritesheet[part.sprite]) {console.warn("Need sprite for", part.sprite); continue;}
+				const img = image_cache[""];
+				if (!img?.naturalWidth) continue; //As above, probably not loaded yet. Note that this should be preloaded on startup.
+				ctx.drawImage(img, 0, spritesheet[part.sprite], 16, 16, x, path.labelpos[i] - 10, 16, 16);
+				x += 16;
 			}
 		}
 	}
@@ -1032,6 +1043,38 @@ function draw_at(ctx, el, parent, reposition) {
 		}
 	}
 }
+
+function rebuild_spritesheet(height) {
+	if (!height) height = 18;
+	const canvas = choc.CANVAS({width: 16, height});
+	const ctx = canvas.getContext("2d");
+	ctx.fillStyle = "black";
+	ctx.textBaseline = "top"; //Measure text from the top left, not the baseline - lets us use DOM measurement for pixel positions
+	initctx(ctx); //Set up the styles to match the main canvas
+	const sprites = { };
+	let y = 1;
+
+	function add_sprite(text) {
+		if (!text || sprites[text]) return; //Already got this one
+		ctx.fillText(text, 0, y);
+		sprites[text] = y;
+		y += 18;
+	}
+
+	for (let attr in flags)
+		for (let value in flags[attr])
+			add_sprite(flags[attr][value].sprite);
+	//Add any other sources of sprites
+
+	if (y > height) return rebuild_spritesheet(y);
+	sprites[""] = canvas.toDataURL();
+	console.log("Click back on the page...");
+	setTimeout(() => {
+		navigator.clipboard.writeText(JSON.stringify(sprites));
+		console.log("Copied to clipboard.");
+	}, 1000);
+}
+window.rebuild_spritesheet = rebuild_spritesheet;
 
 function render(set, y) {
 	set.forEach(el => {
@@ -1140,7 +1183,7 @@ function repaint() {
 	actives.forEach(el => el.parent || el === dragging || draw_at(ctx, el));
 	//if (focus) repaint_that_element(); //TODO: Repaint the element with focus, or at least its focus ring
 	if (dragging) draw_at(ctx, dragging); //Anything being dragged gets drawn last, ensuring it is at the top of z-order.
-	if (max_descent != canvas.height) {canvas.height = max_descent; initctx(); repaint();}
+	if (max_descent != canvas.height) {canvas.height = max_descent; initctx(ctx); repaint();}
 }
 repaint();
 
