@@ -10,6 +10,7 @@ inherit annotated;
 		werror("Renewing FW access token [%d]...\n", userid);
 		mapping cfg = await(G->G->DB->load_config(0, "fourthwall"));
 		mapping fw = await(G->G->DB->load_config(userid, "fourthwall"));
+		if (!fw->refresh_token) error("No Fourth Wall token available for user %d\n", userid);
 		object res = await(Protocols.HTTP.Promise.post_url("https://api.fourthwall.com/open-api/v1.0/platform/token",
 			Protocols.HTTP.Promise.Arguments((["headers": ([
 				"Content-Type": "application/x-www-form-urlencoded",
