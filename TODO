@@ -291,3 +291,4 @@
   - Subcommands for different APIs
   - https://docs.fourthwall.com/open-api/#tag/Giveaway-links/operation/createGiveawayLinks
   - Would it be easier to just get API credentials, and then create the webhook at our end?
+  - Provide a cut-down config page instead of /c/integrations, designed for iframe embed
