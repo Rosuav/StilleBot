@@ -15,6 +15,14 @@ Fourth Wall: hmac_key, clientid, secret
 Patreon: (eventually) clientid, secret
 */
 
+//Used both in /c/integrations normal mode, and the mini mode for embeds
+constant fourthwall_integrations = #"
+Available integrations:
+* [Alerts]($$fwembed1||$$alertbox#fourthwall$$fwembed2||$$) on shop sales, donations, etc
+* [Chat responses]($$fwembed1||$$specials#Fourth-Wall$$fwembed2||$$) on shop sales, donations, etc
+* [Goal bars]($$fwembed1||$$monitors$$fwembed2||$$) that advance based on activity on your shop and/or elsewhere
+";
+
 constant markdown = #"
 # Support Platform Integrations
 
@@ -38,14 +46,7 @@ Once authenticated, Ko-fi events will begin showing up in [Special Triggers](spe
 [Link your Fourth Wall shop](:#fwlogin)
 {:#fwstatus}
 
-Once this is complete, Fourth Wall events will begin showing up in [Alerts](alertbox#fourthwall) and
-anywhere else they end up getting added.
-
-NOTE: Shop orders can be counted towards goal bars by their gross value or net revenue. Calculation of revenue
-depends on knowing which sales attract a 2.9% fee rather than the international order fee of 3.9%; to indicate
-this, enter your 2-letter country code here: <input id=fwcountry size=2> Note that revenue is at best an estimate,
-particularly with PayPal orders, gifts via Twitch chat, and Buy Now Pay Later; it should generally be close, but
-may not be precise.
+" + fourthwall_integrations + #"
 
 ## Patreon
 
@@ -98,6 +99,18 @@ int to_cents(int|float amount) {
 }
 
 __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req) {
+	if (!req->misc->channel->userid && req->variables->shop_id && req->variables->hmac) {
+		//We're embedded in the Fourth Wall page.
+		//Special case: If you aren't logged in, but the page is actually a Fourth Wall embed,
+		//grant access as if logged in as the broadcaster. Note that this special access
+		//should apply ONLY to Fourth Wall configs, and only if the HMAC checks out.
+		//This will become relevant when quick-activation buttons are added (see fourthwall_integrations above).
+		return render_template("# Mustard Mine + Fourth Wall\n" + fourthwall_integrations, ([
+			//Make all the links take you to your own site (if logged in) in another tab
+			"fwembed1": "/c/",
+			"fwembed2": " :target=_blank",
+		]));
+	}
 	if (string other = req->request_type == "POST" && !is_active_bot() && get_active_bot()) {
 		//POST requests are likely to be webhooks. Forward them to the active bot, including whichever
 		//of the relevant headers we spot. Add headers to this as needed.
