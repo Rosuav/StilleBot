@@ -357,7 +357,22 @@ class channel(mapping identity) {
 	mapping(string:string) get_channel_variables(int|string|void uid) {
 		mapping vars = G->G->DB->load_cached_config(userid, "variables");
 		mapping ephemvars = G->G->variables[?(string)userid];
-		if (ephemvars) return vars | ephemvars;
+		if (ephemvars) {
+			//Merge the base variables, and separately merge the per-user vars for each user.
+			mapping peruser = vars["*"];
+			mapping merged = vars | ephemvars;
+			if (peruser && ephemvars["*"]) {
+				//This is a lot of work. Maybe it'd be better to have a separate m["*?"] for the per-user ephemvars?
+				mapping m = merged["*"] = ([]);
+				foreach (peruser; string uid; mapping v)
+					m[uid] = v | ([]);
+				foreach (ephemvars["*"]; string uid; mapping v) {
+					if (!m[uid]) m[uid] = ([]); //Unnecessary?
+					m[uid] |= v;
+				}
+			}
+			return merged;
+		}
 		return vars;
 	}
 
