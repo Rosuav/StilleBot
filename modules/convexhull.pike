@@ -24,18 +24,6 @@ This will always start from the left edge, descending till it reaches the bottom
 will always return to point P1 before "running out of image", and thus will never need to descend from the
 top-left corner to re-find the original position of Q.
 
-NEXT STEPS
-1. Turn this into a module with an exportable entrypoint that takes an image and returns ({({x, y}), ...})
-2. Generate and save a hull for every image uploaded to the Pile of Pics
-3. Make use of these hulls in the pile itself. Note that the vertices need to be clockwise, so reverse the array
-   This should be an alternative to Rectangle and Circle, which will continue to behave as they now do.
-4. Maybe figure out a hull simplification algorithm to reduce the number of vertices? Provide that as an option
-   to the end user - more vertices will mean cleaner-looking collisions, but may impact framerate. Measure first;
-   it's possible that the cost is actually irrelevant. It's also possible that there doesn't need to be any
-   granularity between "detect the hull properly" and "use a rectangle/circle" - if frame rate is a problem,
-   select a simplified hull directly.
-5. Ensure that changing the shape type will correctly replace all elements (should already be the case but confirm).
-
 Can we draw the full extent of the search line at each point where it finds a new vertex? Would be dense in the
 regions where the hull is curved, but still probably okay. Would make a cool animation.
 
