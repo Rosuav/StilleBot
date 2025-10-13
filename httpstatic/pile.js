@@ -9,10 +9,14 @@ const renderer = Matter.Render.create({element: document.getElementById("display
 	background: "transparent", width, height,
 }});
 const Rectangle = Matter.Bodies.rectangle, Circle = Matter.Bodies.circle;
+//Increase precision at the cost of computational power. TODO: Make this broadcaster-configurable?
+engine.positionIterations *= 2;
+engine.velocityIterations *= 2;
 Matter.Render.run(renderer);
 Matter.Runner.run(Matter.Runner.create(), engine);
 renderer.options.wireframes = false;
 window.renderer = renderer; //For debugging, eg toggle wireframes mode
+window.wf = () => renderer.options.wireframes = !renderer.options.wireframes;
 
 //Map a category ID to the array of things
 const thingcategories = { };
