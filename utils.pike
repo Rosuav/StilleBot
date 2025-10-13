@@ -301,6 +301,120 @@ __async__ void hullcrop() {
 	await(G->G->DB->save_config(channel, "monitors", monitors));
 }
 
+//Draw a green line from P to Q, leaving existing red and blue components untouched.
+//This will turn black into green, red into yellow, etc.
+void green_pixel(Image.Image img, int x, int y) {
+	array col = img->getpixel(x, y);
+	col[1] = 255;
+	img->setpixel(x, y, @col);
+}
+void green_line(Image.Image img, array P, array Q) {
+	int dx = P[0] - Q[0], dy = P[1] - Q[1];
+	if (!dx && !dy) {green_pixel(img, @P); return;} //Degenerate line. Just set the pixel itself.
+	if (abs(dx) > abs(dy)) {
+		int epsilon = abs(65536 * dy / dx);
+		int xsign = dx > 0 || -1, ysign = dy > 0 || -1;
+		int y = Q[1], frac = 32768;
+		for (int x = Q[0]; x != P[0]; x += xsign) {
+			green_pixel(img, x, y);
+			frac += epsilon;
+			if (frac >= 65536) {frac -= 65536; y += ysign;}
+		}
+	} else {
+		int epsilon = abs(65536 * dx / dy);
+		int xsign = dx > 0 || -1, ysign = dy > 0 || -1;
+		int x = Q[0], frac = 32768;
+		for (int y = Q[1]; y != P[1]; y += ysign) {
+			green_pixel(img, x, y);
+			frac += epsilon;
+			if (frac >= 65536) {frac -= 65536; x += xsign;}
+		}
+	}
+}
+
+__async__ void hullsimplify() {
+	int channel = 49497888;
+	//list_channel_files but with the actual content
+	array files = await(G->G->DB->query_ro(
+		"select id, metadata, data from stillebot.uploads where channel = :channel and expires is null",
+		(["channel": channel]),
+	));
+	function find_convex_hull = G->bootstrap("modules/convexhull.pike")->find_convex_hull;
+	mapping simplehulls = ([]);
+	constant MIN_VERTEX_DISTANCE = 25; //Measured in pixels squared. No two adjacent vertices are allowed to be closer than this.
+	foreach (files, mapping file) {
+		//if (file->id != "a265a757-596b-4700-8ce8-02da303ffdef") continue;
+		if (!has_prefix(file->metadata->mimetype || "*/*", "image/")) continue;
+		werror("%s %O\n", file->metadata->mimetype, file->id);
+		mapping img = Image.ANY._decode(file->data);
+		array hull = find_convex_hull(img);
+		if (!hull) continue;
+		object|zero trace;
+		if (file->id != "a265a757-596b-4700-8ce8-02da303ffdef") trace = Image.Image(img->xsize, img->ysize); //Pick one to draw a trace for.
+		//Start by drawing out the existing (complex) hull
+		if (trace) for (int i = 1; i < sizeof(hull); ++i) trace->line(@hull[i-1], @hull[i], 255, 0, 0);
+		//Find any two vertices that are too close, and drop one of them.
+		//What we actually do here is find a consecutive chain of vertices such that adjacent pairs are all
+		//within the minimum, and then we keep either the middle one, or the two endpoints, depending on
+		//whether the endpoints are themselves within the distance. In the likely case where there are just
+		//two vertices in the chain, we will keep the first vertex.
+		werror("[%3d/%-3d] %3d,%-4d\n", 0, sizeof(hull), @hull[0]);
+		int removed = 0;
+		for (int i = 1; i < sizeof(hull); ++i) {
+			int d2 = (hull[i][0] - hull[i-1][0]) ** 2 + (hull[i][1] - hull[i-1][1]) ** 2;
+			werror("[%3d/%-3d] %3d,%-4d %d\n", i, sizeof(hull), @hull[i], d2);
+			if (d2 < MIN_VERTEX_DISTANCE) {
+				int chain_start = i - 1;
+				//Find the end of the chain. As soon as the distance exceeds the minimum, the chain
+				//is over.
+				for (++i; i < sizeof(hull); ++i) {
+					int d2 = (hull[i][0] - hull[i-1][0]) ** 2 + (hull[i][1] - hull[i-1][1]) ** 2;
+					werror("[%3d/%-3d] %3d,%-4d %d CHAIN\n", i, sizeof(hull), @hull[i], d2);
+					if (d2 >= MIN_VERTEX_DISTANCE) break;
+				}
+				int chain_end = i - 1;
+				werror("CHAIN LENGTH: %d\n", chain_end - chain_start + 1);
+				//Should we keep both ends, or just the middle?
+				d2 = (hull[chain_end][0] - hull[chain_start][0]) ** 2 + (hull[chain_end][1] - hull[chain_start][1]) ** 2;
+				if (d2 < MIN_VERTEX_DISTANCE) {
+					//Both ends are close together. In theory, this could be because the arc curves all the way
+					//around the image and there's no hull to speak of; in that case, we'll probably create a
+					//degenerate hull, and you'll do better to make a simple rectangle or circle. More likely,
+					//this will happen when the chain is very short. Either way, we keep just one vertex - the
+					//middle one, biased towards earlier. In the minimal case of just two nearby vertices, this
+					//means we keep the first and discard the second.
+					int keep = (chain_end + chain_start) / 2;
+					hull = hull[..chain_start - 1] + ({hull[keep]}) + hull[chain_end + 1..];
+					i = chain_start + 1;
+				} else {
+					//The ends are themselves some distance apart. Keep both ends, but nothing else.
+					hull = hull[..chain_start] + hull[chain_end..];
+					i = chain_start + 2;
+				}
+			}
+		}
+		werror("Total hull size now %d\n", sizeof(hull));
+		//Now draw over the old hull to show the new one.
+		if (trace) {
+			for (int i = 1; i < sizeof(hull); ++i)
+				green_line(trace, hull[i-1], hull[i]);
+			Stdio.write_file("trace.png", Image.PNG.encode(trace));
+		}
+		simplehulls[file->id] = hull;
+	}
+	mapping monitors = await(G->G->DB->load_config(channel, "monitors", ([]), 1));
+	foreach (monitors; string id; mapping info) {
+		if (info->type != "pile") continue;
+		foreach (info->things, mapping thing) foreach (thing->images, mapping image) {
+			sscanf(image->url, "https://mustardmine.com/upload/%s", string fileid);
+			if (!fileid) continue;
+			if (simplehulls[fileid] && thing->shape == "hull")
+				image->simplehull = simplehulls[fileid];
+		}
+	}
+	await(G->G->DB->save_config(channel, "monitors", monitors));
+}
+
 @"This help information":
 void help() {
 	write("\nUSAGE: pike stillebot --exec=ACTION\nwhere ACTION is one of the following:\n");
