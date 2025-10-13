@@ -359,6 +359,12 @@ __async__ void hullsimplify() {
 		//whether the endpoints are themselves within the distance. In the likely case where there are just
 		//two vertices in the chain, we will keep the first vertex.
 		if (trace) werror("[%3d/%-3d] %3d,%-4d\n", 0, sizeof(hull), @hull[0]);
+		int CAP = img->xsize ** 2 + img->ysize ** 2; //It makes absolutely no sense to go past this distance
+		int last_hull_size = sizeof(hull);
+		array orig_hull = hull;
+		//for (int MIN_VERTEX_DISTANCE = 1; MIN_VERTEX_DISTANCE < CAP; ++MIN_VERTEX_DISTANCE) //Test out different distance options
+		{
+		hull = orig_hull;
 		int removed = 0;
 		for (int i = 1; i < sizeof(hull); ++i) {
 			int d2 = (hull[i][0] - hull[i-1][0]) ** 2 + (hull[i][1] - hull[i-1][1]) ** 2;
@@ -393,14 +399,17 @@ __async__ void hullsimplify() {
 				}
 			}
 		}
-		werror("Total hull size now %d\n", sizeof(hull));
+		if (sizeof(hull) < last_hull_size) werror("With min vertex distance %d, total hull size now %d\n", MIN_VERTEX_DISTANCE, sizeof(hull));
+		last_hull_size = sizeof(hull);
 		//Now draw over the old hull to show the new one.
 		if (trace) {
 			for (int i = 1; i < sizeof(hull); ++i)
 				green_line(trace, hull[i-1], hull[i]);
 			Stdio.write_file("trace.png", Image.PNG.encode(trace));
 		}
-		simplehulls[file->id] = hull;
+		if (sizeof(hull) > 4) simplehulls[file->id] = hull; //Degenerate simplified hulls aren't worth keeping.
+		//if (sizeof(hull) < 10) break;
+		}
 	}
 	mapping monitors = await(G->G->DB->load_config(channel, "monitors", ([]), 1));
 	foreach (monitors; string id; mapping info) {

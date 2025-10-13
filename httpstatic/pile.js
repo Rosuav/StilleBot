@@ -349,13 +349,13 @@ export function render(data) {
 					cat.xsize / 2, //Our idea of xsize is width, so the radius is half that
 					attrs);
 				break;
-				case "hull": if (img.simplehull || img.hull) {
+				case "hull": if (/*img.simplehull || */img.hull) {
 					obj = Matter.Body.create({
 						position: {
 							x: Math.floor(Math.random() * (width - cat.xsize - 30) + cat.xsize / 2 + 15),
 							y: Math.floor(Math.random() * 100 + 10),
 						},
-						vertices: (img.simplehull || img.hull).map(([x, y]) => ({x: x * scale, y: y * scale})),
+						vertices: (/*img.simplehull || */img.hull).map(([x, y]) => ({x: x * scale, y: y * scale})),
 						...attrs,
 					});
 					break;
