@@ -350,7 +350,7 @@ __async__ void hullsimplify() {
 		array hull = find_convex_hull(img);
 		if (!hull) continue;
 		object|zero trace;
-		if (file->id != "a265a757-596b-4700-8ce8-02da303ffdef") trace = Image.Image(img->xsize, img->ysize); //Pick one to draw a trace for.
+		//if (file->id != "a265a757-596b-4700-8ce8-02da303ffdef") trace = Image.Image(img->xsize, img->ysize); //Pick one to draw a trace for.
 		//Start by drawing out the existing (complex) hull
 		if (trace) for (int i = 1; i < sizeof(hull); ++i) trace->line(@hull[i-1], @hull[i], 255, 0, 0);
 		//Find any two vertices that are too close, and drop one of them.
@@ -358,22 +358,22 @@ __async__ void hullsimplify() {
 		//within the minimum, and then we keep either the middle one, or the two endpoints, depending on
 		//whether the endpoints are themselves within the distance. In the likely case where there are just
 		//two vertices in the chain, we will keep the first vertex.
-		werror("[%3d/%-3d] %3d,%-4d\n", 0, sizeof(hull), @hull[0]);
+		if (trace) werror("[%3d/%-3d] %3d,%-4d\n", 0, sizeof(hull), @hull[0]);
 		int removed = 0;
 		for (int i = 1; i < sizeof(hull); ++i) {
 			int d2 = (hull[i][0] - hull[i-1][0]) ** 2 + (hull[i][1] - hull[i-1][1]) ** 2;
-			werror("[%3d/%-3d] %3d,%-4d %d\n", i, sizeof(hull), @hull[i], d2);
+			if (trace) werror("[%3d/%-3d] %3d,%-4d %d\n", i, sizeof(hull), @hull[i], d2);
 			if (d2 < MIN_VERTEX_DISTANCE) {
 				int chain_start = i - 1;
 				//Find the end of the chain. As soon as the distance exceeds the minimum, the chain
 				//is over.
 				for (++i; i < sizeof(hull); ++i) {
 					int d2 = (hull[i][0] - hull[i-1][0]) ** 2 + (hull[i][1] - hull[i-1][1]) ** 2;
-					werror("[%3d/%-3d] %3d,%-4d %d CHAIN\n", i, sizeof(hull), @hull[i], d2);
+					if (trace) werror("[%3d/%-3d] %3d,%-4d %d CHAIN\n", i, sizeof(hull), @hull[i], d2);
 					if (d2 >= MIN_VERTEX_DISTANCE) break;
 				}
 				int chain_end = i - 1;
-				werror("CHAIN LENGTH: %d\n", chain_end - chain_start + 1);
+				if (trace) werror("CHAIN LENGTH: %d\n", chain_end - chain_start + 1);
 				//Should we keep both ends, or just the middle?
 				d2 = (hull[chain_end][0] - hull[chain_start][0]) ** 2 + (hull[chain_end][1] - hull[chain_start][1]) ** 2;
 				if (d2 < MIN_VERTEX_DISTANCE) {
