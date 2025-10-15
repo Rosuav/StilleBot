@@ -227,7 +227,7 @@ constant command_description = "Manage channel point rewards - fulfil and cancel
 constant builtin_name = "Points rewards";
 //TODO: In the front end, label them as "[En/Dis]able reward", "Mark complete", "Refund points"
 //TODO: Allow setting more than one attribute, eg setting both title and desc atomically
-constant builtin_param = ({"/Reward/reward_id", "/Action/enable/disable/cost/title/desc/query/fulfil/cancel", "Redemption ID"});
+constant builtin_param = ({"/Reward/reward_id", "/Action/enable/disable/cost/title/desc/cooldown/query/fulfil/cancel", "Redemption ID"});
 constant MOCKUP_builtin_param = ({
 	"/Reward/reward_id",
 	"/Action",
@@ -237,6 +237,7 @@ constant MOCKUP_builtin_param = ({
 		"cost": ({"New cost"}),
 		"title": ({"New title"}),
 		"desc": ({"New description"}),
+		"cooldown": ({"New description"}),
 		"query": ({ }),
 		"fulfil": ({"Redemption ID"}),
 		"cancel": ({"Redemption ID"}),
@@ -267,6 +268,11 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 			case "cost": params->cost = (int)arg; break;
 			case "title": params->title = arg; break; //With legacy form, these would be unable to set more than one word.
 			case "desc": params->prompt = arg; break; //Use array parameter form instead.
+			case "cooldown":
+				//A cooldown of zero means "no cooldown", otherwise it's enabled.
+				params->global_cooldown_seconds = (int)arg;
+				params->is_global_cooldown_enabled = (int)arg ? Val.true : Val.false;
+			break;
 			case "fulfil": case "cancel": if (arg != "") { //Not an error to attempt to mark nothing
 				complete_redemption(channel->name[1..], reward_id, arg, cmd == "fulfil" ? "FULFILLED" : "CANCELED");
 			} //fallthrough
