@@ -47,6 +47,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 		"db_fast": G->G->DB->fastdb,
 		"db_live": G->G->DB->livedb,
 	]));
+	string group = "";
+	if (req->misc->session->user->id == (string)G->G->bot_uid) group = "control"; //If logged in as the bot's intrinsic voice, permit interaction.
 	return render(req, (["vars": (["ws_group": ""])]));
 }
 
@@ -72,15 +74,23 @@ void ensure_updater() {
 }
 
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//The bot's intrinsic voice is the only one permitted to use the control connection.
+	if (msg->group == "control" && conn->session->user->id != (string)G->G->bot_uid)
+		return "Control connection restricted to admin";
 	//return "Server status unavailable"; //If desired, control access based on IP or whatever
 	ensure_updater();
 }
 
-mapping get_state(string|int group) {return state;}
+mapping get_state(string|int group) {
+	//TODO: More info for the control connection (lifted from `./dbctl status` and maybe `./dbctl repl`)
+	if (group == "control") return state | (["admin": "control"]); //hack for testing
+	return state;
+}
 
-__async__ void checkdb(string which, System.Timer tm) {
+__async__ void checkdb(string which) {
 	string db = G->G->DB[which];
 	if (!db || (which == "fastdb" && db == G->G->DB->livedb)) {state[which] = ([]); return;}
+	System.Timer tm = System.Timer();
 	await(G->G->DB->pg_connections[db]->conn->query("select 1"));
 	state[which] = (["host": (db / ".")[0], "ping": tm->peek()]);
 }
@@ -109,9 +119,8 @@ void update() {
 	//Check database timings periodically
 	if (time() - lastdbcheck > 30) {
 		lastdbcheck = time();
-		System.Timer tm = System.Timer();
-		checkdb("fastdb", tm);
-		checkdb("livedb", tm);
+		checkdb("fastdb");
+		checkdb("livedb");
 	}
 	//How many current websocket connections do we have?
 	state->socket_count = concurrent_websockets();
