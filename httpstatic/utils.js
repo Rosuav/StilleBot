@@ -96,6 +96,8 @@ on("click", ".twitchlogout", async e => {
 	location.reload();
 });
 
+//NOTE: This is very similar to the behaviour of <button command=show-modal command-for=some-dlg-id>
+//which was added to Chrome 135 and Firefox 144 (2025). Consider switching to that, eventually.
 on("click", ".opendlg", e => {e.preventDefault(); DOM("#" + e.match.dataset.dlg).showModal();});
 
 /* General-purpose text formatting configuration. Supports the following config params:
@@ -215,6 +217,8 @@ export function copytext(copyme) {
 }
 
 //Note that this uses #copied for hysterical raisins, but any quick description label will work.
+//NOTE: CSS Anchor positioning could be useful for this element, but as of 2025, Firefox doesn't
+//support it, so we have to wait. Once Ff supports it, Chrome should be fine.
 export function notify(elem, x, y, label) {
 	const c = document.getElementById("copied") || DIV({id: "copied"});
 	const par = (elem && elem.closest("dialog")) || document.body;
