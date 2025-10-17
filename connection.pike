@@ -880,7 +880,7 @@ class channel(mapping identity) {
 			nonce_callbacks[nonce] = ({cfg->callback, vars | ([])});
 		}
 		if (voice == (string)G->G->bot_uid) voice = 0; //Use the intrinsic connection if possible.
-		if (objectp(irc_connections[voice])) irc_connections[voice]->send(name, msgs[*], tags);
+		if (objectp(irc_connections[voice]) && !irc_connections[voice]->options->outdated) irc_connections[voice]->send(name, msgs[*], tags);
 		else {
 			if (!arrayp(irc_connections[voice])) spawn_task(voice_enable(voice, name, tags));
 			irc_connections[voice] += msgs;
