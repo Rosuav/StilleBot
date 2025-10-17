@@ -48,7 +48,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 		"db_live": G->G->DB->livedb,
 	]));
 	string group = "";
-	if (req->misc->session->user->id == (string)G->G->bot_uid) group = "control"; //If logged in as the bot's intrinsic voice, permit interaction.
+	if (req->misc->session->user->?id == (string)G->G->bot_uid) group = "control"; //If logged in as the bot's intrinsic voice, permit interaction.
 	return render(req, (["vars": (["ws_group": group])]));
 }
 
@@ -75,7 +75,7 @@ void ensure_updater() {
 
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//The bot's intrinsic voice is the only one permitted to use the control connection.
-	if (msg->group == "control" && conn->session->user->id != (string)G->G->bot_uid)
+	if (msg->group == "control" && conn->session->user->?id != (string)G->G->bot_uid)
 		return "Control connection restricted to admin";
 	//return "Server status unavailable"; //If desired, control access based on IP or whatever
 	ensure_updater();
