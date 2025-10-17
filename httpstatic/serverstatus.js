@@ -1,5 +1,5 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BR, EM, FIELDSET, H3, LEGEND, LI, P, SPAN, UL} = choc; //autoimport
+const {BR, BUTTON, EM, FIELDSET, H3, LEGEND, LI, P, SPAN, UL} = choc; //autoimport
 
 const sharedattrs = {cpu: "CPU", ram: "RAM", spinner: -1};
 const attrs = {
@@ -27,6 +27,7 @@ function minify() {
 if (location.hash === "#mini") minify();
 on("click", 'a[href="#mini"]', minify);
 
+let active_bot = null;
 function update(data, par) {
 	Object.keys(data).forEach(name => attrs[par][name] && set_content("#" + par + " ." + name, ""+data[name]));
 	set_content("#" + par + " .db", [
@@ -39,6 +40,9 @@ function update(data, par) {
 		" ",
 		data.admin && "Admin powers active. ", //Debug hack
 	]);
+	//The two bots should agree on which one is active. If they don't, there is likely to be a crisis
+	//brewing. Currently we don't report such a discrepancy.
+	active_bot = data.active_bot;
 }
 export function render(data) {update(data, "Sikorsky");}
 export const ws_host = "sikorsky.mustardmine.com";
@@ -46,9 +50,25 @@ export const ws_config = {quiet: {msg: 1}};
 ws_sync.send({cmd: "graph"});
 
 if (ws_group === "control") { //Don't bother doing this on the default connection - the dialog will never be opened and has no useful functionality.
-	set_content("#servers", ["Sikorsky", "General", "Gideon"].map(srv => FIELDSET({id: srv.toLowerCase()}, [
+	const actions = ["DB down", "DB up"];
+	const general_actions = ["IRC reconnect"];
+	set_content("#servers", ["Sikorsky", "General", "Gideon"].map(srv => FIELDSET({id: srv.toLowerCase(), "data-sendid": srv}, [
 		LEGEND(srv),
+		(srv === "General" ? general_actions : actions).map(ac => BUTTON(
+			{class: "dbctl", "data-action": ac.toLowerCase().replace(/ /g, "_")},
+			ac,
+		)),
 	])));
+	on("click", ".dbctl", e => {
+		let sendid = e.match.closest_data("sendid");
+		if (sendid === "General") {
+			//General requests get sent to the active bot, whichever it is at the time.
+			//Kinda hacky to look at it this way but whatever.
+			if (active_bot === "gideon.mustardmine.com") sendid = "Gideon";
+			else sendid = "Sikorsky";
+		}
+		ws_sync.send({cmd: e.match.dataset.action}, sendid);
+	}
 }
 
 function number(n) {
@@ -116,8 +136,9 @@ export function sockmsg_graph(msg) {
 	}
 }
 
-ws_sync.connect("", {
+ws_sync.connect(ws_group, {
 	ws_config: {quiet: {msg: 1}},
 	ws_host: "gideon.mustardmine.com",
+	ws_sendid: "Gideon",
 	render: data => update(data, "Gideon"),
 });

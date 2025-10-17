@@ -50,6 +50,9 @@ constant markdown = #"# StilleBot server status
 }
 #servers fieldset {
 	background: aliceblue;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
 }
 </style>
 ";
@@ -142,6 +145,7 @@ void update() {
 	}
 	//How many current websocket connections do we have?
 	state->socket_count = concurrent_websockets();
+	state->active_bot = get_active_bot();
 	//If there's nobody listening, stop monitoring.
 	send_updates_all(""); send_updates_all("control");
 	if (!sizeof(websocket_groups[""] || ({ })) && !sizeof(websocket_groups["control"] || ({ }))) G->G->serverstatus_updater = 0;
@@ -222,6 +226,21 @@ void loadstats() {
 }
 
 void websocket_cmd_graph(mapping(string:mixed) conn, mapping(string:mixed) msg) {send_graph(({conn->sock}));}
+
+void websocket_cmd_db_down(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->group != "control") return;
+	werror("TODO: Bring database down\n");
+}
+
+void websocket_cmd_db_up(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->group != "control") return;
+	werror("TODO: Bring database up\n");
+}
+
+void websocket_cmd_irc_reconnect(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->group != "control") return;
+	werror("TODO: Force IRC reconnect\n");
+}
 
 protected void create(string name) {
 	::create(name);
