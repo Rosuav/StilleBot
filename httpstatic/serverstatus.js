@@ -1,5 +1,5 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, EM, FIELDSET, H3, LEGEND, LI, P, SPAN, UL} = choc; //autoimport
+const {BR, BUTTON, DIV, EM, FIELDSET, H3, LEGEND, LI, P, SPAN, UL} = choc; //autoimport
 
 const sharedattrs = {cpu: "CPU", ram: "RAM", spinner: -1};
 const attrs = {
@@ -38,7 +38,10 @@ function update(data, par) {
 	set_content("#" + par + " .sockets", [
 		"Users: ", data.socket_count,
 		" ",
-		data.admin && "Admin powers active. ", //Debug hack
+	]);
+	if (data.readonly) set_content("#admin-" + par + " .status", [
+		"R/O " + data.readonly,
+		//TODO.
 	]);
 	//The two bots should agree on which one is active. If they don't, there is likely to be a crisis
 	//brewing. Currently we don't report such a discrepancy.
@@ -52,12 +55,13 @@ ws_sync.send({cmd: "graph"});
 if (ws_group === "control") { //Don't bother doing this on the default connection - the dialog will never be opened and has no useful functionality.
 	const actions = ["DB down", "DB up"];
 	const general_actions = ["IRC reconnect"];
-	set_content("#servers", ["Sikorsky", "General", "Gideon"].map(srv => FIELDSET({id: srv.toLowerCase(), "data-sendid": srv}, [
+	set_content("#servers", ["Sikorsky", "General", "Gideon"].map(srv => FIELDSET({id: "admin-" + srv, "data-sendid": srv}, [
 		LEGEND(srv),
 		(srv === "General" ? general_actions : actions).map(ac => BUTTON(
 			{class: "dbctl", "data-action": ac.toLowerCase().replace(/ /g, "_")},
 			ac,
 		)),
+		DIV({class: "status"}),
 	])));
 	on("click", ".dbctl", e => {
 		let sendid = e.match.closest_data("sendid");

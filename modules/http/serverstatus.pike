@@ -61,7 +61,7 @@ constant markdown = #"# StilleBot server status
 }
 </style>
 ";
-mapping state = ([]);
+mapping state = ([]), admin_state = ([]);
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	state->responder = G->G->instance_config->local_address;
 	if (req->variables->which) return jsonify(([
@@ -101,15 +101,17 @@ void ensure_updater() {
 
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//The bot's intrinsic voice is the only one permitted to use the control connection.
-	if (msg->group == "control" && conn->session->user->?id != (string)G->G->bot_uid)
-		return "Control connection restricted to admin";
+	if (msg->group == "control") {
+		if (conn->session->user->?id != (string)G->G->bot_uid) return "Control connection restricted to admin";
+		//If this is the first control connection, trigger an update to get the extra info.
+		if (!sizeof(websocket_groups["control"] || ({ }))) call_out(update, 0.125);
+	}
 	//return "Server status unavailable"; //If desired, control access based on IP or whatever
 	ensure_updater();
 }
 
 mapping get_state(string|int group) {
-	//TODO: More info for the control connection (lifted from `./dbctl status` and maybe `./dbctl repl`)
-	if (group == "control") return state | (["admin": "control"]); //hack for testing
+	if (group == "control") return state | admin_state; //More info for the control connection
 	return state;
 }
 
@@ -119,6 +121,14 @@ __async__ void checkdb(string which) {
 	System.Timer tm = System.Timer();
 	await(G->G->DB->pg_connections[db]->conn->query("select 1"));
 	state[which] = (["host": (db / ".")[0], "ping": tm->peek()]);
+}
+
+__async__ void database_status() {
+	admin_state->readonly = await(G->G->DB->query_ro("show default_transaction_read_only"))[0]->default_transaction_read_only;
+	admin_state->active_bot = await(G->G->DB->query_ro("select active_bot from stillebot.settings"))[0]->active_bot;
+	admin_state->replication = (int)await(G->G->DB->query_ro("select pid from pg_stat_subscription where subname = 'multihome'"))[0]->pid ? "active" : "inactive";
+	//TODO: IPv6 is coming through as binary
+	admin_state->clients = await(G->G->DB->query_ro("select client_addr, application_name, xact_start, state from pg_stat_activity where usename = 'rosuav' and pid != pg_backend_pid()"));
 }
 
 int lastdbcheck;
@@ -151,6 +161,8 @@ void update() {
 	//How many current websocket connections do we have?
 	state->socket_count = concurrent_websockets();
 	state->active_bot = get_active_bot();
+	//If the control connection is active, gather additional stats.
+	if (sizeof(websocket_groups["control"] || ({ }))) database_status();
 	//If there's nobody listening, stop monitoring.
 	send_updates_all(""); send_updates_all("control");
 	if (!sizeof(websocket_groups[""] || ({ })) && !sizeof(websocket_groups["control"] || ({ }))) G->G->serverstatus_updater = 0;
