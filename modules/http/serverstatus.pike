@@ -2,6 +2,11 @@
 inherit http_websocket;
 inherit annotated;
 
+//TODO: Figure out what's going on when the bot hops.
+//The bot instance that became inactive seems to kick the serverstatus websocket,
+//but that socket isn't getting reconnected afterwards. Does there need to be another
+//special case to prevent that kick?
+
 constant markdown = #"# StilleBot server status
 
 [Mini-view](#mini) $$guest||[Manage active servers](: .opendlg data-dlg=servercontrol)$$
