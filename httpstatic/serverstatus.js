@@ -1,5 +1,5 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BR, EM, H3, LI, P, SPAN, UL} = choc; //autoimport
+const {BR, EM, FIELDSET, H3, LEGEND, LI, P, SPAN, UL} = choc; //autoimport
 
 const sharedattrs = {cpu: "CPU", ram: "RAM", spinner: -1};
 const attrs = {
@@ -44,6 +44,12 @@ export function render(data) {update(data, "Sikorsky");}
 export const ws_host = "sikorsky.mustardmine.com";
 export const ws_config = {quiet: {msg: 1}};
 ws_sync.send({cmd: "graph"});
+
+if (ws_group === "control") { //Don't bother doing this on the default connection - the dialog will never be opened and has no useful functionality.
+	set_content("#servers", ["Sikorsky", "General", "Gideon"].map(srv => FIELDSET({id: srv.toLowerCase()}, [
+		LEGEND(srv),
+	])));
+}
 
 function number(n) {
 	if (n < 0) return "-" + number(-n);

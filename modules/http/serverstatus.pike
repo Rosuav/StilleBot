@@ -4,12 +4,19 @@ inherit annotated;
 
 constant markdown = #"# StilleBot server status
 
-[Mini-view](#mini)
+[Mini-view](#mini) $$guest||[Manage active servers](: .opendlg data-dlg=servercontrol)$$
 
 <script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>
 
 <p id=content></p>
 <figure id=graph><div style=\"width: 900px; height: 450px;\"><canvas></canvas></div><figcaption></figcaption></figure>
+
+> ### Server Control
+>
+> <div id=servers></div>
+>
+> [Close](:.dialog_close)
+{: tag=dialog #servercontrol}
 
 <style>
 .label {
@@ -36,6 +43,14 @@ constant markdown = #"# StilleBot server status
 #graph figcaption {
 	max-width: unset;
 }
+#servers {
+	display: flex;
+	gap: 0.5em;
+	padding-inline-start: 0;
+}
+#servers fieldset {
+	background: aliceblue;
+}
 </style>
 ";
 mapping state = ([]);
@@ -47,9 +62,12 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 		"db_fast": G->G->DB->fastdb,
 		"db_live": G->G->DB->livedb,
 	]));
-	string group = "";
-	if (req->misc->session->user->?id == (string)G->G->bot_uid) group = "control"; //If logged in as the bot's intrinsic voice, permit interaction.
-	return render(req, (["vars": (["ws_group": group])]));
+	mapping params = (["vars": (["ws_group": ""])]);
+	if (req->misc->session->user->?id == (string)G->G->bot_uid)
+		params->vars->ws_group = "control"; //If logged in as the bot's intrinsic voice, permit interaction.
+	else
+		params->guest = ""; //Otherwise, hide all the admin-specific controls.
+	return render(req, params);
 }
 
 array(int) cputime() {
