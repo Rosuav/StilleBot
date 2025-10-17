@@ -68,7 +68,7 @@ if (ws_group === "control") { //Don't bother doing this on the default connectio
 			else sendid = "Sikorsky";
 		}
 		ws_sync.send({cmd: e.match.dataset.action}, sendid);
-	}
+	});
 }
 
 function number(n) {
