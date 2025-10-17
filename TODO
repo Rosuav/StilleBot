@@ -300,7 +300,4 @@
     - Activate bot. Can only be done on the bot that is to become active, and only if
       the database is Up on that node.
     - Log analysis. Look for any signs of replication failures.
-  - Force disconnect/reconnect. This should purge G->G->irc_callbacks[*]->?connection_cache
-    (preferably not just emptying those out but triggering a disconnect), and then cause
-    a reconnect() via G->G->on_botservice_change().
   - It's okay if get_state() is slow and/or costly. This page will not normally be open.

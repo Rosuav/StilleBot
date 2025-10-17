@@ -244,7 +244,17 @@ void websocket_cmd_db_up(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 
 void websocket_cmd_irc_reconnect(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->group != "control") return;
-	werror("TODO: Force IRC reconnect\n");
+	werror("Forcing IRC reconnect.\n");
+	foreach (G->G->irc_callbacks; string name; object module) {
+		werror("IRC module %O:\n", name);
+		foreach (module->connection_cache; string voice; object irc) {
+			werror("\t%s: %O\n", voice, irc->sock);
+			irc->options->outdated = 1;
+			irc->quit();
+		}
+		werror("%d connections kicked.\n", sizeof(module->connection_cache));
+	}
+	G->G->on_botservice_change();
 }
 
 protected void create(string name) {
