@@ -37,6 +37,7 @@ function update(data, par) {
 	set_content("#" + par + " .sockets", [
 		"Users: ", data.socket_count,
 		" ",
+		data.admin && "Admin powers active. ", //Debug hack
 	]);
 }
 export function render(data) {update(data, "Sikorsky");}

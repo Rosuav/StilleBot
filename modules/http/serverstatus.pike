@@ -49,7 +49,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	]));
 	string group = "";
 	if (req->misc->session->user->id == (string)G->G->bot_uid) group = "control"; //If logged in as the bot's intrinsic voice, permit interaction.
-	return render(req, (["vars": (["ws_group": ""])]));
+	return render(req, (["vars": (["ws_group": group])]));
 }
 
 array(int) cputime() {
@@ -125,8 +125,8 @@ void update() {
 	//How many current websocket connections do we have?
 	state->socket_count = concurrent_websockets();
 	//If there's nobody listening, stop monitoring.
-	send_updates_all("");
-	if (!sizeof(websocket_groups[""])) G->G->serverstatus_updater = 0;
+	send_updates_all(""); send_updates_all("control");
+	if (!sizeof(websocket_groups[""] || ({ })) && !sizeof(websocket_groups["control"] || ({ }))) G->G->serverstatus_updater = 0;
 }
 
 constant LOAD_DEFINITIONS = ([
@@ -199,7 +199,7 @@ void loadstats() {
 	));
 	stats->time = time();
 	stats->websocket_hwm = concurrent_websockets();
-	array ws = websocket_groups[""] || ({ });
+	array ws = (websocket_groups[""] || ({ })) + (websocket_groups["control"] || ({ }));
 	if (sizeof(ws)) send_graph(ws);
 }
 
