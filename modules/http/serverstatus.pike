@@ -125,7 +125,6 @@ __async__ void checkdb(string which) {
 
 __async__ void database_status() {
 	admin_state->readonly = await(G->G->DB->query_ro("show default_transaction_read_only"))[0]->default_transaction_read_only;
-	admin_state->active_bot = await(G->G->DB->query_ro("select active_bot from stillebot.settings"))[0]->active_bot;
 	admin_state->replication = (int)await(G->G->DB->query_ro("select pid from pg_stat_subscription where subname = 'multihome'"))[0]->pid ? "active" : "inactive";
 	//TODO: IPv6 is coming through as binary
 	admin_state->clients = await(G->G->DB->query_ro("select client_addr, application_name, xact_start, state from pg_stat_activity where usename = 'rosuav' and pid != pg_backend_pid()"));
