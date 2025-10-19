@@ -190,6 +190,7 @@ void send_graph(array socks) {
 		ld->prefix = pfx;
 		ld->hexcolor = sprintf("#%02X%02X%02X", @ld->color);
 	}
+	int active = 0;
 	foreach (lines, string line) {
 		array parts = line / " ";
 		if (sizeof(parts) < 2) continue;
@@ -199,6 +200,7 @@ void send_graph(array socks) {
 		foreach (parts[2..], string part) {
 			sscanf(part, "%[A-Za-z]%d", string pfx, int|float val);
 			if (pfx == "D") {if (!val) break; duration = (float)val;} //Duration zero? Ignore the line.
+			if (pfx == "A") active = (int)val; //Retain the active status from the very last parseable line
 			mapping ld = LOAD_DEFINITIONS[pfx]; if (!ld) continue; //Unknowns do not get displayed
 			if (!ld->unscaled) val /= duration; //Some plots are not per-second (most are)
 			data[plots[pfx]] += ({val});
@@ -208,7 +210,7 @@ void send_graph(array socks) {
 	array peaks = ({ });
 	foreach (data, array plot) peaks += ({max(@plot)});
 	string msg = Standards.JSON.encode(([
-		"cmd": "graph",
+		"cmd": "graph", "active": active,
 		"defns": defns, "peaks": peaks,
 		"plots": data, "times": times,
 	]), 4);

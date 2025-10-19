@@ -95,6 +95,7 @@ function highlight(idx) {
 }
 
 export function sockmsg_graph(msg) {
+	if (!msg.active) return; //TODO: If we haven't heard from an active bot in a while, render even from an inactive.
 	const fig = DOM("#graph figcaption"); //Absent in mini-mode
 	if (!fig) return;
 	set_content(fig, [
@@ -145,4 +146,5 @@ ws_sync.connect(ws_group, {
 	ws_host: "gideon.mustardmine.com",
 	ws_sendid: "Gideon",
 	render: data => update(data, "Gideon"),
+	sockmsg_graph, //Send the graphs through just the same.
 });
