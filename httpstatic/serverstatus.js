@@ -39,13 +39,21 @@ function update(data, par) {
 		"Users: ", data.socket_count,
 		" ",
 	]);
+	//Note that data.readonly is either "on" or "off", it's not a truthy value. Absence means that we don't have that data at all.
 	if (data.readonly) set_content("#admin-" + par + " .status", [
-		"R/O " + data.readonly,
+		data.readonly === "on"
+			? DIV({style: "color: #008; font-weight: bold"}, "Read only")
+			: DIV({style: "color: #090; font-weight: bold"}, "Read/write"),
 		//TODO.
 	]);
-	//The two bots should agree on which one is active. If they don't, there is likely to be a crisis
-	//brewing. Currently we don't report such a discrepancy.
-	active_bot = data.active_bot;
+	if (data.active_bot) {
+		//The two bots should agree on which one is active. If they don't, there is likely to be a crisis
+		//brewing. Currently we don't report such a discrepancy.
+		active_bot = data.active_bot;
+		set_content("#admin-General .status", [
+			DIV(["Active: ", SPAN({style: "color: rebeccapurple; font-weight: bold"}, active_bot.replace(".mustardmine.com", ""))]),
+		]);
+	}
 }
 export function render(data) {update(data, "Sikorsky");}
 export const ws_host = "sikorsky.mustardmine.com";
