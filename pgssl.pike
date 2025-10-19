@@ -87,7 +87,20 @@ mixed decode_as_type(string val, int type) {
 		break;
 		//case "D": //Date/time
 		//case "G": //Geometric
-		//case "I": //Internet address
+		case "I": { //Internet address. Note that macaddr, though listed in the docs alongside inet and cidr, is type "U".
+			//Ideally, the last two fields (addrlen and addr) should be treated as a Hollerith integer.
+			//But that's not a thing, so we just assume that we want all the remaining bytes as an integer.
+			sscanf(val, "%c%c%c%c%" + (sizeof(val) - 4) + "c", int proto, int pfxlen, int is_cidr, int addrlen, int addr);
+			//prpto is 0x02 for IPv4, 0x03 for IPv6.
+			//pfxlen is the number of bits in the network part, will be 32 or 128 for a single address
+			//is_cidr is 1 for CIDR (should have no nonzero bits after the network prefix) or 0 for INET (nonzero bits are fine)
+			//assert(addrlen == sizeof(val) - 4);
+			//assert((proto == 2 && addrlen == 4) || (proto == 3 && addrlen == 16));
+			string ip = NetUtils.ip_to_string(addr, proto == 3);
+			//CIDR notation wants the prefix length; otherwise, don't show it for single addresses.
+			if (is_cidr || pfxlen < addrlen * 8) ip += "/" + pfxlen;
+			return ip;
+		}
 		case "N": {sscanf(val, "%" + sizeof(val) + "c", int v); return v;} //Numeric. Anything non-integer needs to be in the primary switch above.
 		//case "R": //Range types (including multiranges)
 		case "S": return utf8_to_string(val);
