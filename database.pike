@@ -248,12 +248,14 @@ void notify_readonly(int pid, string cond, string extra, string host) {
 		//If this one was the live (read-write) DB, we no longer have a read-write DB.
 		//However, it's still allowed to continue serving as the fast DB.
 		if (livedb == host) {livedb = 0; spawn_task(reconnect(0));}
+		if (G->G->database_status_changed) G->G->database_status_changed();
 	} else if (extra == "off" && db->readonly) {
 		werror("SWITCHING TO READ-WRITE MODE: %O\n", host);
 		db->conn->query(#"select set_config('application_name', 'stillebot', false),
 				set_config('default_transaction_read_only', 'off', false)");
 		db->readonly = 0;
 		if (!livedb) _have_livedb(host);
+		if (G->G->database_status_changed) G->G->database_status_changed();
 	}
 	//Else we're setting the mode we're already in. This may indicate a minor race
 	//condition on startup, but we're already going to be in the right state anyway.

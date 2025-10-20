@@ -133,6 +133,7 @@ __async__ void database_status() {
 	// - The absence of replication??
 	//This will be important during an automated hop procedure though (wait for all active bots to disappear).
 	//admin_state->clients = await(G->G->DB->query_ro("select client_addr, application_name, xact_start, state from pg_stat_activity where usename = 'rosuav' and pid != pg_backend_pid()"));
+	send_updates_all("control");
 }
 
 int lastdbcheck;
@@ -168,7 +169,7 @@ void update() {
 	//If the control connection is active, gather additional stats.
 	if (sizeof(websocket_groups["control"] || ({ }))) database_status();
 	//If there's nobody listening, stop monitoring.
-	send_updates_all(""); send_updates_all("control");
+	send_updates_all("");
 	if (!sizeof(websocket_groups[""] || ({ })) && !sizeof(websocket_groups["control"] || ({ }))) G->G->serverstatus_updater = 0;
 }
 
@@ -250,12 +251,18 @@ void loadstats() {
 
 void websocket_cmd_graph(mapping(string:mixed) conn, mapping(string:mixed) msg) {send_graph(({conn->sock}));}
 
-void websocket_cmd_db_down(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void websocket_cmd_db_down(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->group != "control") return;
-	werror("TODO: Bring database down\n");
+	werror("Bringing database down...\n");
+	//Using query_ro to keep it on the local database.
+	await(G->G->DB->query_ro(({
+		"alter database stillebot set default_transaction_read_only = on",
+		"notify readonly, 'on'",
+	})));
+	//When the change takes effect, we should get a notification.
 }
 
-void websocket_cmd_db_up(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void websocket_cmd_db_up(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->group != "control") return;
 	werror("TODO: Bring database up\n");
 }
@@ -277,6 +284,7 @@ void websocket_cmd_irc_reconnect(mapping(string:mixed) conn, mapping(string:mixe
 
 protected void create(string name) {
 	::create(name);
+	G->G->database_status_changed = database_status; //Called by database.pike whenever vital status changes
 	G->G->serverstatus_updatefunc = update;
 	remove_call_out(G->G->serverstatus_loadstats);
 	G->G->serverstatus_loadstats = call_out(loadstats, LOADSTATS_PERIOD - (time() % LOADSTATS_PERIOD));
