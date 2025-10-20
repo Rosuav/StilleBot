@@ -251,6 +251,10 @@ void loadstats() {
 
 void websocket_cmd_graph(mapping(string:mixed) conn, mapping(string:mixed) msg) {send_graph(({conn->sock}));}
 
+void websocket_cmd_hello(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	werror("HELLO! I am %O and the active bot is %O\n", G->G->instance_config->local_address, get_active_bot());
+}
+
 __async__ void websocket_cmd_db_down(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->group != "control") return;
 	werror("Bringing database down...\n");
