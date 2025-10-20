@@ -126,7 +126,13 @@ __async__ void checkdb(string which) {
 __async__ void database_status() {
 	admin_state->readonly = await(G->G->DB->query_ro("show default_transaction_read_only"))[0]->default_transaction_read_only;
 	admin_state->replication = (int)await(G->G->DB->query_ro("select pid from pg_stat_subscription where subname = 'multihome'"))[0]->pid ? "active" : "inactive";
-	admin_state->clients = await(G->G->DB->query_ro("select client_addr, application_name, xact_start, state from pg_stat_activity where usename = 'rosuav' and pid != pg_backend_pid()"));
+	//Not currently reporting this. You can see it in ./dbctl stat, just not in the UI.
+	//It might be worth querying this, and then reporting only the lines that could represent issues, eg:
+	// - An active bot on a read-only database (application_name == "stillebot" and readonly == "on")
+	// - An external connection not from the bot IPs??
+	// - The absence of replication??
+	//This will be important during an automated hop procedure though (wait for all active bots to disappear).
+	//admin_state->clients = await(G->G->DB->query_ro("select client_addr, application_name, xact_start, state from pg_stat_activity where usename = 'rosuav' and pid != pg_backend_pid()"));
 }
 
 int lastdbcheck;
