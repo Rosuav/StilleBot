@@ -134,7 +134,7 @@ mapping parse_result_row(array fields, string row) {
 
 string encode_as_type(mixed value, int typeoid) {
 	if (objectp(value) && value->is_val_null) return "\377\377\377\377"; //Any NULL is encoded as length -1
-	switch (typeoid) {
+	switch (typeoid) { //As with decoding, handle some OIDs directly...
 		case 16: value = value ? "\1" : "\0"; break;
 		case 18: case 25: value = string_to_utf8((string)value); break;
 		case 20: value = sprintf("%8c", (int)value); break;
@@ -156,8 +156,10 @@ string encode_as_type(mixed value, int typeoid) {
 			value = sprintf("%4c%4c", n1, n2);
 			break;
 		}
-		default:
-			if (int elemoid = arrayp(value) && array_oid[typeoid]) {
+		default: switch (typcategory[typeoid]) { //... and everything else based on its category.
+			case "A": {
+				if (!arrayp(value)) error("Need array parameter for array data type [OID %O]\n", typeoid);
+				int elemoid = array_oid[typeoid];
 				if (!sizeof(value)) {
 					value = sprintf("%4c%4c%4c", 0, 0, elemoid);
 					break;
@@ -175,7 +177,18 @@ string encode_as_type(mixed value, int typeoid) {
 					dims, encode_as_type(value[*], elemoid));
 				break;
 			}
-			else value = (string)value;
+			case "I": {
+				int pfxlen = -1;
+				sscanf(value, "%s/%d", value, pfxlen); //Remove any prefix length, not all the functions will ignore it
+				int family = 2, addrlen = 4;
+				if (NetUtils.is_ipv6(value)) {family = 3; addrlen = 16;}
+				if (pfxlen == -1) pfxlen = addrlen * 8; //Address length counts bytes, prefix length counts bits
+				int is_cidr = typeoid == 650; //Hack. Not sure how to recognize whether to package it up as CIDR or INET.
+				value = sprintf("%c%c%c%c%" + addrlen + "c", family, pfxlen, is_cidr, addrlen, NetUtils.string_to_ip(value));
+				break;
+			}
+			default: value = (string)value; break;
+		}
 	}
 	return sprintf("%4H", value);
 }
