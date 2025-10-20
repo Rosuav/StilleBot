@@ -1,6 +1,7 @@
 #charset utf-8
 inherit http_websocket;
 inherit annotated;
+constant valid_on_inactive_bot = 1;
 
 //TODO: Figure out what's going on when the bot hops.
 //The bot instance that became inactive seems to kick the serverstatus websocket,

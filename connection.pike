@@ -1443,8 +1443,8 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 	if (!stringp(data->cmd)) return;
 	if (data->cmd == "init")
 	{
-		//HACK: Allow a select few types of queries on a non-active bot.
-		if (string other = !(<"serverstatus", "admin">)[data->type] && !is_active && get_active_bot()) {
+		object handler = G->G->websocket_types[data->type];
+		if (string other = !handler->?valid_on_inactive_bot && !is_active && get_active_bot()) {
 			//If we are definitely not active and there's someone who is,
 			//send the request over there instead. Browsers don't all follow
 			//302 redirects for websockets, and even if they did, session and
@@ -1471,7 +1471,6 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 		//The type has to match a module ("inherit websocket_handler")
 		//The group has to be a string or integer.
 		if (conn->type) return; //Can't init twice
-		object handler = G->G->websocket_types[data->type];
 		if (!handler) return; //Ignore any unknown types.
 		//If this socket was redirected from a different node, it will include a
 		//session transfer cookie. (See above; currently, a "transfer cookie" is

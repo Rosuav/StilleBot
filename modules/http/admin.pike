@@ -1,6 +1,7 @@
 //Local admin actions eg message sending
 //Unauthenticated, but can only be used from localhost
 inherit http_websocket;
+constant valid_on_inactive_bot = 1;
 
 mapping handle_send_message(mapping body, object req) {
 	if (!body->channel || !body->msg) return 0;
