@@ -301,6 +301,7 @@ void websocket_cmd_activate(mapping(string:mixed) conn, mapping(string:mixed) ms
 	//7) update stillebot.settings set active_bot = :self, (["self": instance_config->local_address]);
 	//8) Notify in the log when we are fully active, by some definition.
 	//Until we reach step 8, disable all the buttons in the UI?
+	//Time out after some reasonable maximum (eg 60 seconds) in case something breaks front-end wise.
 }
 
 protected void create(string name) {
