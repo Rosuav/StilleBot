@@ -791,6 +791,13 @@ void emergency(int pid, string cond, string extra, string host) {
 	if (G->G->emergency) G->G->emergency();
 }
 
+//Run a read/write transaction on the local database. NOT a normal thing to do.
+Concurrent.Future local_read_write_transaction(function body) {
+	mapping db = pg_connections[fastdb] || pg_connections[livedb];
+	if (!db) return Concurrent.reject(({"No database to perform on.\n", backtrace()}));
+	return db->conn->transaction(body);
+}
+
 string|zero last_desync_lsn = 0; //Null if the last check showed we were in sync
 __async__ void replication_watchdog() {
 	G->G->repl_wdog_call_out = call_out(replication_watchdog, 60);

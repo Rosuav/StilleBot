@@ -264,7 +264,11 @@ __async__ void websocket_cmd_db_down(mapping(string:mixed) conn, mapping(string:
 
 __async__ void websocket_cmd_db_up(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->group != "control") return;
-	werror("TODO: Bring database up\n");
+	werror("Bringing database up...\n");
+	await(G->G->DB->local_read_write_transaction(__async__ lambda(function query) {
+		await(query("alter database stillebot reset default_transaction_read_only"));
+		await(query("notify readonly, 'off'"));
+	}));
 }
 
 void websocket_cmd_irc_reconnect(mapping(string:mixed) conn, mapping(string:mixed) msg) {
