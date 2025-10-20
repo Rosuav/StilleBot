@@ -44,7 +44,9 @@ function update(data, par) {
 		data.readonly === "on"
 			? DIV({style: "color: #008; font-weight: bold"}, "Read only")
 			: DIV({style: "color: #090; font-weight: bold"}, "Read/write"),
-		//TODO.
+		DIV({style: data.replication === "inactive" ? "color: #b00; font-weight: bold" : ""},
+			"Replication " + data.replication
+		),
 	]);
 	if (data.active_bot) {
 		//The two bots should agree on which one is active. If they don't, there is likely to be a crisis
