@@ -85,7 +85,7 @@ array(int) cputime() {
 
 __async__ void updater() {
 	while (G->G->serverstatus_updater) {
-		await(task_sleep(0.25));
+		await(task_sleep(1));
 		mixed ex = catch {G->G->serverstatus_updatefunc();};
 		if (ex) {G->G->serverstatus_updater = 0; werror("ERROR IN SERVER STATUS UPDATE:\n%s\n", describe_backtrace(ex));}
 	}
