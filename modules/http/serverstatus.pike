@@ -286,6 +286,22 @@ void websocket_cmd_irc_reconnect(mapping(string:mixed) conn, mapping(string:mixe
 	G->G->on_botservice_change();
 }
 
+void websocket_cmd_activate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->group != "control") return;
+	werror("TODO: Activate the bot here.\n");
+	//This should take care of everything with a single click.
+	//TODO: Add a logging system so that updates can be pushed out smoothly
+	//1) If the database is Up on the other system, error. Require that it be brought down first.
+	//-- If the database is Up here, skip to step 6.
+	//2) Check replication status. Report if not synchronized.
+	//3) Check currently-connected clients. Report if any are read-write (application_name == "stillebot").
+	//4) Repeat from step 2 until all is clear.
+	//5) Bring database Up here. Monitor until we get the notification that the DB is now up.
+	//6) update stillebot.settings set active_bot = :self, (["self": instance_config->local_address]);
+	//7) Notify in the log when we are fully active, by some definition.
+	//Until we reach step 7, disable all the buttons in the UI?
+}
+
 protected void create(string name) {
 	::create(name);
 	G->G->database_status_changed = database_status; //Called by database.pike whenever vital status changes
