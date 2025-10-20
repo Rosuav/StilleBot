@@ -1703,6 +1703,7 @@ void establish_hook_notification(string|int channelid, string hook, mapping|void
 	string other = !is_active && get_active_bot();
 	if (!other) return; //We're active (or uncertain), don't kick clients.
 	foreach (G->G->websocket_groups; string type; mapping groups) {
+		if (type == "prefs") continue; //Prefs sockets are also elsewhere and might well be valid on inactive
 		object handler = G->G->websocket_types[type];
 		if (handler->?valid_on_inactive_bot) continue; //This socket type shouldn't be disconnected.
 		foreach (groups; string group; array socks)
