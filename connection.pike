@@ -1702,7 +1702,9 @@ void establish_hook_notification(string|int channelid, string hook, mapping|void
 	is_active = now_active;
 	string other = !is_active && get_active_bot();
 	if (!other) return; //We're active (or uncertain), don't kick clients.
-	foreach (G->G->websocket_groups; string type; mapping groups)
+	foreach (G->G->websocket_groups; string type; mapping groups) {
+		object handler = G->G->websocket_types[type];
+		if (handler->?valid_on_inactive_bot) continue; //This socket type shouldn't be disconnected.
 		foreach (groups; string group; array socks)
 			foreach (socks, object sock) {
 				mapping conn = sock && sock->query_id();
@@ -1714,6 +1716,7 @@ void establish_hook_notification(string|int channelid, string hook, mapping|void
 					"xfr": conn->session->cookie,
 				])));
 			}
+	}
 }
 
 //If desired, sharding of the primary connection can be done using the !demo channel's
