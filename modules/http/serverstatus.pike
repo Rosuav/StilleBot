@@ -288,7 +288,12 @@ void websocket_cmd_irc_reconnect(mapping(string:mixed) conn, mapping(string:mixe
 
 void websocket_cmd_activate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->group != "control") return;
-	werror("TODO: Activate the bot here.\n");
+	G->G->DB->query_rw("update stillebot.settings set active_bot = :me", (["me": G->G->instance_config->local_address]));
+}
+
+void websocket_cmd_transfer(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->group != "control") return;
+	werror("TODO: Transfer the bot here.\n");
 	//This should take care of everything with a single click.
 	//The front end should first send a "DB down" request to the up database, unless that is the one being activated.
 	//TODO: Add a logging system so that updates can be pushed out smoothly

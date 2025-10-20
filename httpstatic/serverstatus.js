@@ -63,7 +63,7 @@ export const ws_config = {quiet: {msg: 1}};
 ws_sync.send({cmd: "graph"});
 
 if (ws_group === "control") { //Don't bother doing this on the default connection - the dialog will never be opened and has no useful functionality.
-	const actions = ["DB down", "DB up", /*"Hello"*/];
+	const actions = ["DB down", "DB up", "Activate", /*"Hello"*/];
 	const general_actions = ["IRC reconnect"];
 	set_content("#servers", ["Sikorsky", "General", "Gideon"].map(srv => FIELDSET({id: "admin-" + srv, "data-sendid": srv}, [
 		LEGEND(srv),
