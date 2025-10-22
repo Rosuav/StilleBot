@@ -280,3 +280,10 @@
   - Make chan_integrations a builtin
   - Subcommands for different APIs
   - https://docs.fourthwall.com/open-api/#tag/Giveaway-links/operation/createGiveawayLinks
+* Pile of Pics BRB game: Rock Paper Scissors
+  - People can join by selecting Rock, Paper, or Scissors, via a channel point reward or command
+  - Bounce around. Would be best without gravity and with full walls.
+  - On contact, the winner takes over, as per current "Merge" behaviour.
+  - If you don't want people to rejoin, set a per-user cooldown on the join command
+  - Collab with Devi and develop it in real time
+  - Maybe this is a modification of the existing Merge behaviour?
