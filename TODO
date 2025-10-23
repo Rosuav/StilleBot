@@ -300,3 +300,15 @@
     - A ghost
   - Thanks to AnbuOlive, DokiOken, DragonBloodthirsty, Enchanting_Elk, galraboi,
     SquibbleDesign, and ZacharyLumsden, for contributing ideas and discussion.
+* UNTRACKED BUG: Sometimes, if replication ceases, it doesn't resume.
+  - It may help to use `./dbctl refreshrepl` to force it to restart. Not sure if it makes
+    any difference but it can cause an error message. See if we get that error any other
+    way (check the logs).
+  - If it reports "certificate verify failed", it's probably that certificate rollover has
+    happened and the other end isn't using the new cert. Go to the other end and run
+    `sudo systemctl reload postgres` which shouldn't otherwise break anything. I hope.
+  - Why is this even a thing? Shouldn't the cert rollover automatically signal all apps?
+  - Actually maybe it isn't signalling all apps, but that would be stillebot itself, so
+    unrelated to this symptom. Unsure. That should probably be fixed too - at the moment,
+    the bot has to have at least some level of major development every month or so, which
+    is fine so long as it's getting that multiple times a week, but eventually it won't be.
