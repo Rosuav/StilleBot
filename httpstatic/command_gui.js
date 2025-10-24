@@ -1027,13 +1027,14 @@ function draw_at(ctx, el, parent, reposition) {
 				if (!img.naturalWidth) continue; //Probably not loaded yet
 				const scale = 24 / img.naturalHeight;
 				const wid = img.naturalWidth * scale + 6; //Give images a bit of extra gap (2px each side)
-				if (wid > remaining) {ctx.fillText("…", x, path.labelpos[i]); break;}
+				if (remaining < wid - 2) {ctx.fillText("…", x, path.labelpos[i]); break;}
 				//Height above the baseline is a bit tricky to measure, this is kinda eyeballed for aesthetics.
 				ctx.drawImage(img, x + 3, path.labelpos[i] - 16, img.naturalWidth * scale, 24);
 				x += wid;
 			} else if (part.sprite) {
 				if (!spritesheet[part.sprite]) {console.warn("Need sprite for", part.sprite); continue;}
-				if (16 > remaining) {ctx.fillText("…", x, path.labelpos[i]); break;} //All sprites get 16x16px of space.
+				//All sprites get 16x16px of space. Of that, 1px is the gap after, and we can include the sprite if it fits without that.
+				if (remaining < 15) {ctx.fillText("…", x, path.labelpos[i]); break;}
 				const img = image_cache[""];
 				if (!img?.naturalWidth) continue; //As above, probably not loaded yet. Note that this should be preloaded on startup.
 				ctx.drawImage(img, 0, spritesheet[part.sprite], 16, 16, x, path.labelpos[i] - 10, 16, 16);
