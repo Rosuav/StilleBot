@@ -130,6 +130,27 @@ __async__ void checkdb(string which) {
 	state[which] = (["host": (db / ".")[0], "ping": tm->peek()]);
 }
 
+__async__ string replication_status() {
+	mapping here, there;
+	foreach (G->G->DB->pg_connections; string host; mapping db) {
+		if (host == G->G->instance_config->local_address)
+			here = await(G->G->DB->query(db, "select received_lsn, latest_end_lsn from pg_stat_subscription"))[0];
+		else
+			there = await(G->G->DB->query(db, "select active, confirmed_flush_lsn from pg_replication_slots"))[0];
+	}
+	//Cross-check. Each database should have a confirmed_flush_lsn reporting what it's sent,
+	//and received and latest end reporting what it's received. Thus stable replication is
+	//signalled by Gideon's confirmed_flush matching Sikorsky's received/latest_end, and
+	//vice versa. Any mismatch should be reported, and is a reason to delay the transfer.
+	//What we actually check here is just one of those: we check our local received against
+	//the other end's confirmed_flush. To future maintainers/deployers, I'm sorry, I don't
+	//know how much of this code will need to be rewritten!
+	if (!there->active || there->confirmed_flush_lsn != here->latest_end_lsn || here->latest_end_lsn != here->received_lsn)
+		return sprintf("%s : %s : %s", there->confirmed_flush_lsn, here->latest_end_lsn, here->received_lsn);
+	else
+		return "Stable";
+}
+
 __async__ void database_status() {
 	admin_state->readonly = await(G->G->DB->query_ro("show default_transaction_read_only"))[0]->default_transaction_read_only;
 	admin_state->replication = (int)await(G->G->DB->query_ro("select pid from pg_stat_subscription where subname = 'multihome'"))[0]->pid ? "active" : "inactive";
@@ -145,24 +166,7 @@ __async__ void database_status() {
 	if (!G->G->DB->livedb && sizeof(G->G->DB->pg_connections) == 2) {
 		//Both databases are down. This likely means we're in the early phases of a transition, so
 		//check the replication status to see if we can advance.
-		mapping here, there;
-		foreach (G->G->DB->pg_connections; string host; mapping db) {
-			if (host == G->G->instance_config->local_address)
-				here = await(G->G->DB->query(db, "select received_lsn, latest_end_lsn from pg_stat_subscription"))[0];
-			else
-				there = await(G->G->DB->query(db, "select active, confirmed_flush_lsn from pg_replication_slots"))[0];
-		}
-		//Cross-check. Each database should have a confirmed_flush_lsn reporting what it's sent,
-		//and received and latest end reporting what it's received. Thus stable replication is
-		//signalled by Gideon's confirmed_flush matching Sikorsky's received/latest_end, and
-		//vice versa. Any mismatch should be reported, and is a reason to delay the transfer.
-		//What we actually check here is just one of those: we check our local received against
-		//the other end's confirmed_flush. To future maintainers/deployers, I'm sorry, I don't
-		//know how much of this code will need to be rewritten!
-		if (!there->active || there->confirmed_flush_lsn != here->latest_end_lsn || here->latest_end_lsn != here->received_lsn)
-			admin_state->replication_status = sprintf("%s : %s : %s", there->confirmed_flush_lsn, here->latest_end_lsn, here->received_lsn);
-		else
-			admin_state->replication_status = "Stable";
+		admin_state->replication_status = await(replication_status());
 	}
 	else m_delete(admin_state, "replication_status");
 
@@ -289,9 +293,13 @@ mapping websocket_cmd_hello(mapping(string:mixed) conn, mapping(string:mixed) ms
 	return (["cmd": "log", "text": sprintf("HELLO! I am %O and the active bot is %O\n", G->G->instance_config->local_address, get_active_bot())]);
 }
 
+void log(mapping(string:mixed) conn, string text) {
+	send_msg(conn, (["cmd": "log", "text": text]));
+}
+
 __async__ void websocket_cmd_db_down(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->group != "control") return;
-	werror("Bringing database down...\n");
+	log(conn, "Bringing database down");
 	//Using query_ro to keep it on the local database.
 	await(G->G->DB->query_ro(({
 		"alter database stillebot set default_transaction_read_only = on",
@@ -302,7 +310,7 @@ __async__ void websocket_cmd_db_down(mapping(string:mixed) conn, mapping(string:
 
 __async__ void websocket_cmd_db_up(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->group != "control") return;
-	werror("Bringing database up...\n");
+	log(conn, "Bringing database up");
 	await(G->G->DB->local_read_write_transaction(__async__ lambda(function query) {
 		await(query("alter database stillebot reset default_transaction_read_only"));
 		await(query("notify readonly, 'off'"));
@@ -311,7 +319,7 @@ __async__ void websocket_cmd_db_up(mapping(string:mixed) conn, mapping(string:mi
 
 void websocket_cmd_irc_reconnect(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->group != "control") return;
-	werror("Forcing IRC reconnect.\n");
+	log(conn, "Forcing IRC reconnect");
 	foreach (G->G->irc_callbacks; string name; object module) {
 		werror("IRC module %O:\n", name);
 		foreach (module->connection_cache; string voice; object irc) {
@@ -326,25 +334,44 @@ void websocket_cmd_irc_reconnect(mapping(string:mixed) conn, mapping(string:mixe
 
 void websocket_cmd_activate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->group != "control") return;
+	log(conn, "Activating bot on " + G->G->instance_config->local_address);
 	G->G->DB->query_rw("update stillebot.settings set active_bot = :me", (["me": G->G->instance_config->local_address]));
 }
 
-void websocket_cmd_transfer(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void websocket_cmd_transfer(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->group != "control") return;
-	werror("TODO: Transfer the bot here.\n");
+	log(conn, "Transferring bot...");
+	int cutoff_time = time() + 10; //It should normally be pretty quick. Should the timeout go up to 30s?
 	//This should take care of everything with a single click.
-	//The front end should first send a "DB down" request to the up database, unless that is the one being activated.
-	//TODO: Add a logging system so that updates can be pushed out smoothly
-	//1) If the database is Up here, skip to step 7.
-	//2) Wait until database is Down on both nodes (when we have no G->G->DB->livedb).
-	//3) Check replication status. Report if not synchronized.
-	//4) Check currently-connected clients. Report if any are read-write (application_name == "stillebot").
-	//5) Repeat from step 3 until all is clear.
-	//6) Bring database Up here. Monitor until we get the notification that the DB is now up.
-	//7) update stillebot.settings set active_bot = :self, (["self": instance_config->local_address]);
-	//8) Notify in the log when we are fully active, by some definition.
-	//Until we reach step 8, disable all the buttons in the UI?
-	//Time out after some reasonable maximum (eg 60 seconds) in case something breaks front-end wise.
+	int may_other_down = 1, may_self_up = 1;
+	//Wait until the local database is the one that's up.
+	while (G->G->DB->livedb != G->G->instance_config->local_address) {
+		if (G->G->DB->livedb && may_other_down) {
+			//The other database is up. Request that it go down.
+			may_other_down = 0; //Don't send this request twice.
+			log(conn, "Sending other database down");
+			await(G->G->DB->query_rw(({ //This should be sent to the active database.
+				"alter database stillebot set default_transaction_read_only = on",
+				"notify readonly, 'on'",
+			})));
+		}
+		if (!G->G->DB->livedb && may_self_up) {
+			string status = await(replication_status());
+			log(conn, "Replication: " + status);
+			//TODO maybe: Check the client list and see if there are any read/write connections pending.
+			if (status == "Stable") {
+				may_self_up = 0; //Again, just one shot at this
+				websocket_cmd_db_up(conn, ([]));
+			}
+		}
+		if (time() > cutoff_time) {
+			log(conn, "Timeout, transfer took too long. Debug manually.");
+			return;
+		}
+		sleep(0.25);
+	}
+	log(conn, "Database here is up.");
+	websocket_cmd_activate(conn, ([]));
 }
 
 protected void create(string name) {
