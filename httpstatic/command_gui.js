@@ -1855,7 +1855,7 @@ on("click", ".emotepicker", e => {
 ws_sync.register_callback(function chan_commands_emotes_available(msg) {
 	//Build a quick lookup table and cache it.
 	const lookup = { };
-	Object.values(msg.emotes.emotes).forEach(grp => grp.forEach(em =>
+	if (msg.emotes.emotes) Object.values(msg.emotes.emotes).forEach(grp => grp.forEach(em =>
 		lookup[em.name] = msg.emotes.template
 			.replace("{{id}}", em.id)
 			.replace("{{format}}", em.format[0]) //NOTE: Unlike the emote picker, here we take the first format, which should always be "static"
