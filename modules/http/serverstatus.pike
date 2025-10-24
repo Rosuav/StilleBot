@@ -155,14 +155,6 @@ __async__ void database_status() {
 	admin_state->readonly = await(G->G->DB->query_ro("show default_transaction_read_only"))[0]->default_transaction_read_only;
 	admin_state->replication = (int)await(G->G->DB->query_ro("select pid from pg_stat_subscription where subname = 'multihome'"))[0]->pid ? "active" : "inactive";
 
-	//Not currently reporting this. You can see it in ./dbctl stat, just not in the UI.
-	//It might be worth querying this, and then reporting only the lines that could represent issues, eg:
-	// - An active bot on a read-only database (application_name == "stillebot" and readonly == "on")
-	// - An external connection not from the bot IPs??
-	// - The absence of replication??
-	//This will be important during an automated hop procedure though (wait for all active bots to disappear).
-	//admin_state->clients = await(G->G->DB->query_ro("select client_addr, application_name, xact_start, state from pg_stat_activity where usename = 'rosuav' and pid != pg_backend_pid()"));
-
 	if (!G->G->DB->livedb && sizeof(G->G->DB->pg_connections) == 2) {
 		//Both databases are down. This likely means we're in the early phases of a transition, so
 		//check the replication status to see if we can advance.
@@ -293,8 +285,8 @@ mapping websocket_cmd_hello(mapping(string:mixed) conn, mapping(string:mixed) ms
 	return (["cmd": "log", "text": sprintf("HELLO! I am %O and the active bot is %O\n", G->G->instance_config->local_address, get_active_bot())]);
 }
 
-void log(mapping(string:mixed) conn, string text) {
-	send_msg(conn, (["cmd": "log", "text": text]));
+void log(mapping(string:mixed) conn, strict_sprintf_format fmt, sprintf_args ... args) {
+	send_msg(conn, (["cmd": "log", "text": sprintf(fmt, args)]));
 }
 
 __async__ void websocket_cmd_db_down(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -358,8 +350,28 @@ __async__ void websocket_cmd_transfer(mapping(string:mixed) conn, mapping(string
 		if (!G->G->DB->livedb && may_self_up) {
 			string status = await(replication_status());
 			log(conn, "Replication: " + status);
-			//TODO maybe: Check the client list and see if there are any read/write connections pending.
-			if (status == "Stable") {
+			//Check for any active clients. An instance of the bot that hasn't marked itself read-only,
+			//or any client with an open transaction, is active, and we shouldn't bring the new DB up
+			//yet. Ideally, these should all vanish within the first quarter-second after the other
+			//database goes down; worst case, we'll time out waiting, and the admin can deal with it.
+			array clients = await(G->G->DB->query_ro("select client_addr, application_name, xact_start, state from pg_stat_activity where usename = 'rosuav' and pid != pg_backend_pid()"));
+			int active = 0;
+			foreach (clients, mapping cli) {
+				if (cli->xact_start) {
+					active = 1;
+					log(conn, "Open transaction %O %O %O %O", cli->application_name, cli->client_addr, cli->xact_start, cli->state);
+					continue;
+				}
+				if ((<"multihome", "stillebot-ro">)[cli->application_name]) continue; //Known and fine
+				if (cli->application_name == "stillebot") {
+					active = 1;
+					log(conn, "Active bot %O", cli->client_addr);
+					continue;
+				}
+				//Otherwise it's an unknown connected client. Might be fine. Log it but don't block on it.
+				log(conn, "Connected DB client %O %O", cli->application_name, cli->client_addr);
+			}
+			if (status == "Stable" && !active) {
 				may_self_up = 0; //Again, just one shot at this
 				websocket_cmd_db_up(conn, ([]));
 			}
