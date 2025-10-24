@@ -1014,8 +1014,10 @@ function draw_at(ctx, el, parent, reposition) {
 			//Note that, if there's anything after this one and we couldn't fit an ellipsis after this one, we will
 			//skip it and just put the ellipsis - even if the last node would have been very narrow. The small minsize
 			//means that this won't often cause problems.
+			let remaining = (type.width || 200) - x - right_margin;
+			if (j < parts.length - 1) remaining -= minsize;
 			if (typeof part === "string") {
-				const drawme = limit_width(ctx, part, (type.width || 200) - x - right_margin);
+				const drawme = limit_width(ctx, part, remaining);
 				ctx.fillText(drawme, x, path.labelpos[i]);
 				if (drawme !== part) break; //If we ellipsize, don't draw anything further.
 				x += ctx.measureText(part).width; //This might be duplicating work. It also might not be necessary, if this is the last part in the label.
@@ -1024,11 +1026,14 @@ function draw_at(ctx, el, parent, reposition) {
 				if (!img) {preload_icon(part.icon, true); continue;}
 				if (!img.naturalWidth) continue; //Probably not loaded yet
 				const scale = 24 / img.naturalHeight;
+				const wid = img.naturalWidth * scale + 6; //Give images a bit of extra gap (2px each side)
+				if (wid > remaining) {ctx.fillText("…", x, path.labelpos[i]); break;}
 				//Height above the baseline is a bit tricky to measure, this is kinda eyeballed for aesthetics.
 				ctx.drawImage(img, x + 3, path.labelpos[i] - 16, img.naturalWidth * scale, 24);
-				x += img.naturalWidth * scale + 6; //Give images a bit of extra gap (2px each side)
+				x += wid;
 			} else if (part.sprite) {
 				if (!spritesheet[part.sprite]) {console.warn("Need sprite for", part.sprite); continue;}
+				if (16 > remaining) {ctx.fillText("…", x, path.labelpos[i]); break;} //All sprites get 16x16px of space.
 				const img = image_cache[""];
 				if (!img?.naturalWidth) continue; //As above, probably not loaded yet. Note that this should be preloaded on startup.
 				ctx.drawImage(img, 0, spritesheet[part.sprite], 16, 16, x, path.labelpos[i] - 10, 16, 16);
