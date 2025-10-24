@@ -304,3 +304,6 @@
     unrelated to this symptom. Unsure. That should probably be fixed too - at the moment,
     the bot has to have at least some level of major development every month or so, which
     is fine so long as it's getting that multiple times a week, but eventually it won't be.
+* Issues with graphical display of emotes in commands
+  - "Cannot convert undefined or null to object" on line 1858?
+  - Flowing way off the right hand side
