@@ -15,6 +15,7 @@ constant markdown = #"# StilleBot server status
 > ### Server Control
 >
 > <div id=servers></div>
+> <ul id=serverlog></ul>
 >
 > [Close](:.dialog_close)
 {: tag=dialog #servercontrol}
@@ -48,12 +49,20 @@ constant markdown = #"# StilleBot server status
 	display: flex;
 	gap: 0.5em;
 	padding-inline-start: 0;
+	justify-content: center;
 }
 #servers fieldset {
 	background: aliceblue;
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
+}
+#serverlog {
+	padding-left: 0;
+	list-style-type: none;
+}
+#serverlog li {
+	border-bottom: 1px solid #bbb;
 }
 </style>
 ";
@@ -273,8 +282,9 @@ void loadstats() {
 
 void websocket_cmd_graph(mapping(string:mixed) conn, mapping(string:mixed) msg) {send_graph(({conn->sock}));}
 
-void websocket_cmd_hello(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	werror("HELLO! I am %O and the active bot is %O\n", G->G->instance_config->local_address, get_active_bot());
+mapping websocket_cmd_hello(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	werror("CONSOLE HELLO! I am %O and the active bot is %O\n", G->G->instance_config->local_address, get_active_bot());
+	return (["cmd": "log", "text": sprintf("HELLO! I am %O and the active bot is %O\n", G->G->instance_config->local_address, get_active_bot())]);
 }
 
 __async__ void websocket_cmd_db_down(mapping(string:mixed) conn, mapping(string:mixed) msg) {

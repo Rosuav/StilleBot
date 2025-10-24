@@ -1,5 +1,5 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DIV, EM, FIELDSET, H3, LEGEND, LI, P, SPAN, UL} = choc; //autoimport
+const {B, BR, BUTTON, DIV, EM, FIELDSET, H3, LEGEND, LI, P, SPAN, UL} = choc; //autoimport
 
 const sharedattrs = {cpu: "CPU", ram: "RAM", spinner: -1};
 const attrs = {
@@ -65,7 +65,7 @@ export const ws_config = {quiet: {msg: 1}};
 ws_sync.send({cmd: "graph"});
 
 if (ws_group === "control") { //Don't bother doing this on the default connection - the dialog will never be opened and has no useful functionality.
-	const actions = ["DB down", "DB up", "Activate", /*"Hello"*/];
+	const actions = ["DB down", "DB up", "Activate", "Hello"];
 	const general_actions = ["IRC reconnect"];
 	set_content("#servers", ["Sikorsky", "General", "Gideon"].map(srv => FIELDSET({id: "admin-" + srv, "data-sendid": srv}, [
 		LEGEND(srv),
@@ -86,6 +86,11 @@ if (ws_group === "control") { //Don't bother doing this on the default connectio
 		ws_sync.send({cmd: e.match.dataset.action}, sendid);
 	});
 }
+
+function log(server, msg) {
+	DOM("#serverlog").append(LI([B(server + ": "), msg.text]));
+}
+export function sockmsg_log(msg) {log("Sikorsky", msg);}
 
 function number(n) {
 	if (n < 0) return "-" + number(-n);
@@ -159,4 +164,5 @@ ws_sync.connect(ws_group, {
 	ws_sendid: "Gideon",
 	render: data => update(data, "Gideon"),
 	sockmsg_graph, //Send the graphs through just the same.
+	sockmsg_log: msg => log("Gideon", msg),
 });
