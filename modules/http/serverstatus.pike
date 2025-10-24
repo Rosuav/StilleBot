@@ -122,6 +122,7 @@ __async__ void checkdb(string which) {
 __async__ void database_status() {
 	admin_state->readonly = await(G->G->DB->query_ro("show default_transaction_read_only"))[0]->default_transaction_read_only;
 	admin_state->replication = (int)await(G->G->DB->query_ro("select pid from pg_stat_subscription where subname = 'multihome'"))[0]->pid ? "active" : "inactive";
+
 	//Not currently reporting this. You can see it in ./dbctl stat, just not in the UI.
 	//It might be worth querying this, and then reporting only the lines that could represent issues, eg:
 	// - An active bot on a read-only database (application_name == "stillebot" and readonly == "on")
@@ -129,6 +130,31 @@ __async__ void database_status() {
 	// - The absence of replication??
 	//This will be important during an automated hop procedure though (wait for all active bots to disappear).
 	//admin_state->clients = await(G->G->DB->query_ro("select client_addr, application_name, xact_start, state from pg_stat_activity where usename = 'rosuav' and pid != pg_backend_pid()"));
+
+	if (!G->G->DB->livedb && sizeof(G->G->DB->pg_connections) == 2) {
+		//Both databases are down. This likely means we're in the early phases of a transition, so
+		//check the replication status to see if we can advance.
+		mapping here, there;
+		foreach (G->G->DB->pg_connections; string host; mapping db) {
+			if (host == G->G->instance_config->local_address)
+				here = await(G->G->DB->query(db, "select received_lsn, latest_end_lsn from pg_stat_subscription"))[0];
+			else
+				there = await(G->G->DB->query(db, "select active, confirmed_flush_lsn from pg_replication_slots"))[0];
+		}
+		//Cross-check. Each database should have a confirmed_flush_lsn reporting what it's sent,
+		//and received and latest end reporting what it's received. Thus stable replication is
+		//signalled by Gideon's confirmed_flush matching Sikorsky's received/latest_end, and
+		//vice versa. Any mismatch should be reported, and is a reason to delay the transfer.
+		//What we actually check here is just one of those: we check our local received against
+		//the other end's confirmed_flush. To future maintainers/deployers, I'm sorry, I don't
+		//know how much of this code will need to be rewritten!
+		if (!there->active || there->confirmed_flush_lsn != here->latest_end_lsn || here->latest_end_lsn != here->received_lsn)
+			admin_state->replication_status = sprintf("%s : %s : %s", there->confirmed_flush_lsn, here->latest_end_lsn, here->received_lsn);
+		else
+			admin_state->replication_status = "Stable";
+	}
+	else m_delete(admin_state, "replication_status");
+
 	send_updates_all("control");
 }
 

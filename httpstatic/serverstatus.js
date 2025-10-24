@@ -47,6 +47,8 @@ function update(data, par) {
 		DIV({style: data.replication === "inactive" ? "color: #b00; font-weight: bold" : ""},
 			"Replication " + data.replication
 		),
+		data.replication_status && DIV({style: data.replication_status === "Stable" ? "" : "color: #b00; font-weight: bold"},
+			data.replication_status),
 	]);
 	if (data.active_bot) {
 		//The two bots should agree on which one is active. If they don't, there is likely to be a crisis
