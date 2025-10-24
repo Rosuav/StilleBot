@@ -286,7 +286,7 @@ mapping websocket_cmd_hello(mapping(string:mixed) conn, mapping(string:mixed) ms
 }
 
 void log(mapping(string:mixed) conn, strict_sprintf_format fmt, sprintf_args ... args) {
-	send_msg(conn, (["cmd": "log", "text": sprintf(fmt, args)]));
+	send_msg(conn, (["cmd": "log", "text": sprintf(fmt, @args)]));
 }
 
 __async__ void websocket_cmd_db_down(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -357,12 +357,12 @@ __async__ void websocket_cmd_transfer(mapping(string:mixed) conn, mapping(string
 			array clients = await(G->G->DB->query_ro("select client_addr, application_name, xact_start, state from pg_stat_activity where usename = 'rosuav' and pid != pg_backend_pid()"));
 			int active = 0;
 			foreach (clients, mapping cli) {
+				if ((<"multihome", "stillebot-ro">)[cli->application_name]) continue; //Known and fine
 				if (cli->xact_start) {
 					active = 1;
 					log(conn, "Open transaction %O %O %O %O", cli->application_name, cli->client_addr, cli->xact_start, cli->state);
 					continue;
 				}
-				if ((<"multihome", "stillebot-ro">)[cli->application_name]) continue; //Known and fine
 				if (cli->application_name == "stillebot") {
 					active = 1;
 					log(conn, "Active bot %O", cli->client_addr);
