@@ -198,14 +198,6 @@
   - Try to get both the URL and the song title (as Unicode, no mojibake thanks)
 * In interactive mode, have an explore(mixed value) that will create a GTK window to
   show the value, same as Internals does
-* Bug note: Waydroid, command viewer, pre-opened command GUI.
-  - If mouse is over canvas on load, will blank canvas on first mouse move
-  - If mouse is not over canvas, will blank canvas if moved over, sometimes after a
-    delay, sometimes immediate
-  - No JS console output sighted
-  - Does not occur if command GUI closed and reopened within the page.
-  - Happens only in Waydroid Firefox, not in desktop Firefox. Not tested in Waydroid
-    Chromium-based browsers as I haven't managed to get any of them working.
 * Patreon integration
   - Alerts. Include a field showing the membership tier, to allow variants, eg no
     alert for free members (aka followers)
