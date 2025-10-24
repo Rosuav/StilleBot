@@ -1000,9 +1000,20 @@ function draw_at(ctx, el, parent, reposition) {
 	else if (el.template) labels[0].unshift("⯇ ");
 	else if (!type.fixed) labels[0].unshift("⣿ ");
 	if (draw_focus_ring && el.hotkey) labels[0].unshift("[" + el.hotkey + "] "); //FIXME: Ugly
+	const minsize = limit_width(ctx, "…", ""); //Once we have less than this amount of space, stick in an ellipsis and stop.
 	for (let i = 0; i < labels.length; ++i) {
 		let x = label_x;
-		for (let part of arrayify(labels[i])) {
+		const parts = arrayify(labels[i]);
+		//If there are any whitespace-only parts at the end, drop them. They don't need to be rendered,
+		//especially not if it triggers ellipsization.
+		while (parts.length > 1 && typeof parts[parts.length - 1] === "string" && parts[parts.length - 1].trim() === "")
+			parts.pop();
+		for (let j = 0; j < parts.length; ++j) {
+			const part = parts[j];
+			//Would be nice if "for (let part of arrayify(labels[i]))" would allow me to know when it's the last one.
+			//Note that, if there's anything after this one and we couldn't fit an ellipsis after this one, we will
+			//skip it and just put the ellipsis - even if the last node would have been very narrow. The small minsize
+			//means that this won't often cause problems.
 			if (typeof part === "string") {
 				const drawme = limit_width(ctx, part, (type.width || 200) - x - right_margin);
 				ctx.fillText(drawme, x, path.labelpos[i]);
