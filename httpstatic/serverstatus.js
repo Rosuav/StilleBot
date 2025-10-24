@@ -88,7 +88,9 @@ if (ws_group === "control") { //Don't bother doing this on the default connectio
 }
 
 function log(server, msg) {
-	DOM("#serverlog").append(LI([B(server + ": "), msg.text]));
+	const li = LI([B(server + ": "), msg.text]);
+	DOM("#serverlog").append(li);
+	li.scrollIntoView();
 }
 export function sockmsg_log(msg) {log("Sikorsky", msg);}
 

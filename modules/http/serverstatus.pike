@@ -60,6 +60,8 @@ constant markdown = #"# StilleBot server status
 #serverlog {
 	padding-left: 0;
 	list-style-type: none;
+	max-height: 10em;
+	overflow-y: scroll;
 }
 #serverlog li {
 	border-bottom: 1px solid #bbb;
