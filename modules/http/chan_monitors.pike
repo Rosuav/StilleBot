@@ -727,7 +727,7 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 				sscanf(args, "%d/%s", int userid, string augment);
 				if (!userid) userid = (int)args;
 				if (!userid) break;
-				mapping user = await(get_user_info((int)args, "id"));
+				mapping user = await(get_user_info(userid, "id"));
 				if (user) {
 					image = user->profile_image_url;
 					//TODO: If the augment is recognized, overlay the augmentation image over the
