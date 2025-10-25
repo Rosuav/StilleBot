@@ -723,10 +723,21 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 				if (emoteid) image = "https://static-cdn.jtvnw.net/emoticons/v2/" + emoteid + "/static/light/3.0";
 				break;
 			}
-			case "avatar":
+			case "avatar": {
+				sscanf(args, "%d/%s", int userid, string augment);
+				if (!userid) userid = (int)args;
+				if (!userid) break;
 				mapping user = await(get_user_info((int)args, "id"));
-				if (user) image = user->profile_image_url;
+				if (user) {
+					image = user->profile_image_url;
+					//TODO: If the augment is recognized, overlay the augmentation image over the
+					//profile image, and provide that to the front end.
+					//TODO: Have a simple in-memory cache for URLs like https://mustardmine.com/c/monitors?augment=X&userid=Y
+					//TODO: Check that the augmentation is, in fact, making the conflict category work.
+					if (augment) xtra->conflict_category = augment;
+				}
 				break;
+			}
 		}
 		if (image) xtra->image = await(get_image_dimensions(image));
 	}
