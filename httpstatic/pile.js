@@ -18,6 +18,17 @@ renderer.options.wireframes = false;
 window.renderer = renderer; //For debugging, eg toggle wireframes mode
 window.wf = () => renderer.options.wireframes = !renderer.options.wireframes;
 
+//Conflict category definitions. If two objects have an assigned category, and A_B is in this
+//list, then A wins. If B_A is in this list, then B wins. If neither, they bounce off each other.
+const conflict_resolution = {
+	rock_scissors: "Rock smashes Scissors",
+	scissors_paper: "Scissors cut Paper",
+	paper_rock: "Paper covers Rock",
+	knife_pumpkin: "Knife carves Pumpkin",
+	pumpkin_ghost: "Pumpkin scares Ghost",
+	ghost_knife: "Ghost possesses Knife",
+};
+
 //Map a category ID to the array of things
 const thingcategories = { };
 //Map category ID to the server-provided information about it
@@ -259,7 +270,25 @@ export function render(data) {
 					//If there is a conflict category for exactly one, or if they both have categories but
 					//there is no defined resolution, then the objects bounce (just return).
 					//Otherwise, the resolution will be either "A wins" or "B wins".
-					const winner = pair.bodyA, loser = pair.bodyB;
+					let winner = pair.bodyA, loser = pair.bodyB;
+					const confcatA = pair.bodyA.plugin.mustardmine_conflict;
+					const confcatB = pair.bodyB.plugin.mustardmine_conflict;
+					console.log("Conflict:", confcatA, confcatB);
+					let conflict_description = null;
+					if (confcatA && confcatB) {
+						//Do we have a description showing that A beats B? If so, save that description
+						//and carry on, letting A win.
+						conflict_description = conflict_resolution[confcatA + "_" + confcatB];
+						if (!conflict_description) {
+							//Do we have one showing that B beats A? If so, swap winner and loser.
+							conflict_description = conflict_resolution[confcatB + "_" + confcatA];
+							if (conflict_description) {winner = pair.bodyB; loser = pair.bodyA;}
+							//Otherwise, they bounce off. Paper collides with Paper.
+							else return;
+						}
+					}
+					//If one (but not both) has a category, they bounce off. Don't merge with the walls.
+					else if (confcatA || confcatB) return;
 					//So. To merge two objects, we add all the mass and momentum from bodyB onto bodyA,
 					//then delete bodyB. If this results in bodyA becoming larger than the default size
 					//for another body type, we should switch its type.
@@ -287,7 +316,7 @@ export function render(data) {
 					id_to_category[loser.id] = null;
 					const idx = things.findIndex(t => t.id === loser.id);
 					if (idx >= 0) things.splice(idx, 1);
-					if (!window.frameElement) ws_sync.send({cmd: "removed", thingtype, label: loser.label});
+					if (!window.frameElement) ws_sync.send({cmd: "removed", thingtype, conflict_description, label: loser.label});
 					Matter.Composite.remove(engine.world, loser);
 				}));
 			}
