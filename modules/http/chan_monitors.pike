@@ -695,7 +695,7 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 	//for some reason does NOT update (shouldn't happen!), the addxtra will linger,
 	//potentially resulting in a future change to the qty getting this xtra; but it
 	//will be overwritten by any subsequent add command.
-	string label; string|mapping|zero image;
+	mapping xtra = ([]);
 	if (sizeof(param) > 3 && param[3] != "") {
 		//Set the label to a piece of text, or to "emote:{@emoted}" to get the name of the
 		//first emote used. Note that, for complete reliability, set the label to "text:%s"
@@ -703,9 +703,9 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 		sscanf(param[3], "%s:%s", string code, string args);
 		if (!args) {code = "text"; args = param[3];}
 		switch (code) {
-			case "text": label = args; break;
+			case "text": xtra->label = args; break;
 			case "emote": {
-				sscanf(args, "%*s\ufffae%s:%s\ufffb", string emoteid, label);
+				sscanf(args, "%*s\ufffae%s:%s\ufffb", string emoteid, xtra->label);
 				//If not found, leave label as null
 				break;
 			}
@@ -714,6 +714,7 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 	if (sizeof(param) > 4 && param[4] != "") {
 		sscanf(param[4], "%s:%s", string code, string args);
 		if (!args) {code = "text"; args = param[4];} //No useful default currently. The default is *not* URL - be explicit.
+		string|zero image;
 		switch (code) {
 			case "url": image = args; break;
 			case "emote": {
@@ -727,9 +728,9 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 				if (user) image = user->profile_image_url;
 				break;
 		}
-		if (image) image = await(get_image_dimensions(image));
+		if (image) xtra->image = await(get_image_dimensions(image));
 	}
-	if (label || image) send_updates_all(channel, monitor, (["addxtra": param[2], "xtra": (["label": label, "image": image])]));
+	if (sizeof(xtra)) send_updates_all(channel, monitor, (["addxtra": param[2], "xtra": xtra]));
 	string newcount = channel->set_variable(info->varname + ":" + param[2], 1, "add");
 	return (["{type}": info->type, "{value}": newcount]);
 }
