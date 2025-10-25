@@ -273,7 +273,6 @@ export function render(data) {
 					let winner = pair.bodyA, loser = pair.bodyB;
 					const confcatA = pair.bodyA.plugin.mustardmine_conflict;
 					const confcatB = pair.bodyB.plugin.mustardmine_conflict;
-					console.log("Conflict:", confcatA, confcatB);
 					let conflict_description = null;
 					if (confcatA && confcatB) {
 						//Do we have a description showing that A beats B? If so, save that description
@@ -382,6 +381,7 @@ export function render(data) {
 				...default_attrs,
 			};
 			if (xtra.label) attrs.label = "label-" + xtra.label; //Force a prefix so we can do hit-detection based on label category
+			if (xtra.conflict_category) attrs.plugin = {mustardmine_conflict: xtra.conflict_category};
 			let obj;
 			switch (cat.shape) {
 				case "circle": obj = Circle(
