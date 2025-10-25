@@ -251,36 +251,44 @@ export function render(data) {
 			if (!_bounce_events_created && bouncemode === "Merge") {
 				_bounce_events_created = true;
 				Matter.Events.on(engine, "collisionStart", e => bouncemode === "Merge" && e.pairs.forEach(pair => {
-					const catA = id_to_category[pair.bodyA.id], catB = id_to_category[pair.bodyB.id];
-					if (!catA || !catB) return;
+					if (!id_to_category[pair.bodyA.id] || !id_to_category[pair.bodyB.id]) return;
+					//To support Rock-Paper-Scissors merge, we need:
+					//1) Conflict category for A and B
+					//2) Conflict resolution for the pair of categories
+					//If there is no conflict category for either object, merge B into A (ie A is winner).
+					//If there is a conflict category for exactly one, or if they both have categories but
+					//there is no defined resolution, then the objects bounce (just return).
+					//Otherwise, the resolution will be either "A wins" or "B wins".
+					const winner = pair.bodyA, loser = pair.bodyB;
 					//So. To merge two objects, we add all the mass and momentum from bodyB onto bodyA,
 					//then delete bodyB. If this results in bodyA becoming larger than the default size
 					//for another body type, we should switch its type.
-					const massA = pair.bodyA.mass, massB = pair.bodyB.mass, massAB = massA + massB;
+					const massA = winner.mass, massB = loser.mass, massAB = massA + massB;
 					const scale = (massAB / massA) ** 0.5;
 					//True conservation of angular momentum is a pain. We cheat. Each body contributes
 					//an amount of pseudo-momentum equal to its velocity times its mass, which completely
 					//ignores the size. Realistically, two objects with identical velocity and mass, but
 					//different sizes, will have different angular momentum, but we assume uniform density
 					//anyway, so this is massively fudged.
-					const ang_vel = (pair.bodyA.angularVelocity * massA + pair.bodyB.angularVelocity * massB) / massAB;
+					const ang_vel = (winner.angularVelocity * massA + loser.angularVelocity * massB) / massAB;
 					//Linear momentum is simpler. Velocity (in each basis direction) times mass.
 					const lin_vel = {
-						x: (pair.bodyA.velocity.x * massA + pair.bodyB.velocity.x * massB) / massAB,
-						y: (pair.bodyA.velocity.y * massA + pair.bodyB.velocity.y * massB) / massAB,
+						x: (winner.velocity.x * massA + loser.velocity.x * massB) / massAB,
+						y: (winner.velocity.y * massA + loser.velocity.y * massB) / massAB,
 					};
-					Matter.Body.scale(pair.bodyA, scale, scale);
-					Matter.Body.setAngularVelocity(pair.bodyA, ang_vel);
-					Matter.Body.setVelocity(pair.bodyA, lin_vel);
+					Matter.Body.scale(winner, scale, scale);
+					Matter.Body.setAngularVelocity(winner, ang_vel);
+					Matter.Body.setVelocity(winner, lin_vel);
 					//TODO: Reposition to the barycenter of the two objects?
-					pair.bodyA.render.sprite.xScale *= scale;
-					pair.bodyA.render.sprite.yScale *= scale;
-					const things = thingcategories[catB];
-					id_to_category[pair.bodyB.id] = null;
-					const idx = things.findIndex(t => t.id === pair.bodyB.id);
+					winner.render.sprite.xScale *= scale;
+					winner.render.sprite.yScale *= scale;
+					const thingtype = id_to_category[loser.id];
+					const things = thingcategories[thingtype];
+					id_to_category[loser.id] = null;
+					const idx = things.findIndex(t => t.id === loser.id);
 					if (idx >= 0) things.splice(idx, 1);
-					if (!window.frameElement) ws_sync.send({cmd: "removed", thingtype: catB, label: pair.bodyB.label});
-					Matter.Composite.remove(engine.world, pair.bodyB);
+					if (!window.frameElement) ws_sync.send({cmd: "removed", thingtype, label: loser.label});
+					Matter.Composite.remove(engine.world, loser);
 				}));
 			}
 		}
