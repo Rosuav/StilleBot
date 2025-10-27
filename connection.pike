@@ -1161,8 +1161,15 @@ class channel(mapping identity) {
 				if (type != "WHISPER" || config->whispers_as_commands) //Whispers aren't normally counted as commands
 					handle_command(person, msg, responsedefaults, params);
 				if (params->bits && (int)params->bits) {
-					event_notify("cheer", this, person, (int)params->bits, params, msg);
-					trigger_special("!cheer", person, (["{bits}": params->bits, "{msg}": msg, "{msgid}": params->id || ""]));
+					//Bits cheered during shared chat will be seen on both channels, but should only trigger
+					//specials in the origin channel. TODO: Should this check be done at a high level so we
+					//completely ignore everything from other rooms?
+					if (!params->source_room_id || (int)params->source_room_id == userid) {
+						event_notify("cheer", this, person, (int)params->bits, params, msg);
+						trigger_special("!cheer", person, (["{bits}": params->bits, "{msg}": msg, "{msgid}": params->id || ""]));
+					}
+					//If it's from a different channel, the bits attribute is still there, but it won't
+					//advance goal bars etc.
 				}
 				msg = person->displayname + (person->is_action_msg ? " " : ": ") + msg;
 				string pfx = sprintf("[%s%s] ", type == "PRIVMSG" ? "" : type, name);
