@@ -327,3 +327,5 @@
     unrelated to this symptom. Unsure. That should probably be fixed too - at the moment,
     the bot has to have at least some level of major development every month or so, which
     is fine so long as it's getting that multiple times a week, but eventually it won't be.
+* /serverstatus during hop from Gideon to Sikorsky might be losing the Gideon socket?? It's
+  staying with the Gideon database reporting that it's read/write but it isn't actually RW.
