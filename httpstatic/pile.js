@@ -362,6 +362,7 @@ export function render(data) {
 		if (+data.data.clawsize) create_claw(data.data);
 	}
 	if (data.addxtra) addxtra[data.addxtra] = data.xtra;
+	if (data.addthing) data.newcount = {[data.addthing]: (thingcategories[data.addthing]?.length||0) + 1};
 	if (data.newcount) Object.entries(data.newcount).forEach(([thingtype, newcount]) => {
 		const cat = thingtypes[thingtype];
 		if (!cat) return;

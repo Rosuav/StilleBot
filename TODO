@@ -293,10 +293,6 @@
   - Thanks to AnbuOlive, DokiOken, DragonBloodthirsty, Enchanting_Elk, galraboi,
     SquibbleDesign, and ZacharyLumsden, for contributing ideas and discussion.
   - NEXT STEPS:
-    - Make a Devi monitor for the new system
-    - Make three commands to add a person with an augment
-    - Make the augments show visually
-    - Test the augments for their conflict resolution
     - Maybe have a gravity-on but infinite bounce mode? So, no friction, works well with all walls,
       but there's still gravity so they aren't just drifting?
     - What happens if someone is already in and asks to rejoin? We might end up in a situation

@@ -153,6 +153,28 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			"styles": monitorstyles,
 		]));
 	}
+	if (AUGMENTATIONS[req->variables->augment]) {
+		//Render an augmented user's avatar
+		mapping user = await(get_user_info(req->variables->userid, "id"));
+		object res = await(Protocols.HTTP.Promise.get_url(user->profile_image_url));
+		mapping avatar = Image.ANY._decode(res->get());
+		mapping aug = Image.ANY._decode(Stdio.read_file("httpstatic/" + req->variables->augment + ".webp"));
+		//We need the augmentation to be on top, but the avatar is smaller. So we start with a blank canvas.
+		Image.Image image = Image.Image(aug->xsize, aug->ysize);
+		Image.Image alpha = Image.Image(aug->xsize, aug->ysize);
+		int xpos = (aug->xsize - avatar->xsize) / 2;
+		int ypos = (aug->ysize - avatar->ysize) / 2;
+		if (avatar->alpha) {
+			image->paste_mask(avatar->image, avatar->alpha, xpos, ypos);
+			alpha->paste_mask(avatar->alpha, avatar->alpha, xpos, ypos);
+		} else {
+			image->paste(avatar->image, xpos, ypos);
+			alpha->box(xpos, ypos, xpos + avatar->xsize, ypos + avatar->ysize, 255, 255, 255);
+		}
+		image->paste_mask(aug->image, aug->alpha);
+		alpha->paste_mask(aug->alpha, aug->alpha);
+		return (["type": "image/png", "data": Image.PNG.encode(image, (["alpha": alpha]))]);
+	}
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
 	return render(req, ([
 		"vars": (["ws_group": ""]) | G->G->command_editor_vars(req->misc->channel),
@@ -737,15 +759,24 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 					//profile image, and provide that to the front end.
 					//TODO: Have a simple in-memory cache for URLs like https://mustardmine.com/c/monitors?augment=X&userid=Y
 					//TODO: Check that the augmentation is, in fact, making the conflict category work.
-					if (augment) xtra->conflict_category = augment;
+					if (augment) {
+						xtra->conflict_category = augment;
+						image = "monitors?augment=" + augment + "&userid=" + userid;
+						//HACK: There's no point augmenting the image just to get its dimensions.
+						bounding_box_cache[image] = ([
+							"url": image,
+							"xsize": 448, "ysize": 448,
+						]);
+					}
 				}
 				break;
 			}
 		}
 		if (image) xtra->image = await(get_image_dimensions(image));
 	}
-	if (sizeof(xtra)) send_updates_all(channel, monitor, (["addxtra": param[2], "xtra": xtra]));
-	string newcount = channel->set_variable(info->varname + ":" + param[2], 1, "add");
+	string newcount = "Added.";
+	if (sizeof(xtra)) send_updates_all(channel, monitor, (["addthing": param[2], "addxtra": param[2], "xtra": xtra]));
+	else newcount = channel->set_variable(info->varname + ":" + param[2], 1, "add");
 	return (["{type}": info->type, "{value}": newcount]);
 }
 
