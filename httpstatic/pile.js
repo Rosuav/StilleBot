@@ -424,6 +424,7 @@ export function render(data) {
 			//A new thing has been added! Make the pile visible.
 			unfade();
 		}
+		if (data.addthing) ws_sync.send({cmd: "added", thingtype, newcount});
 	});
 	if (data.claw && CLAW.claw) {
 		clawqueue.push(data.claw);

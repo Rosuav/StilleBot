@@ -775,9 +775,21 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 		if (image) xtra->image = await(get_image_dimensions(image));
 	}
 	string newcount = "Added.";
+	//NOTE: If xtra is being used, we don't update the counter here. The front end should let us know, and we'll update
+	//our counter then.
 	if (sizeof(xtra)) send_updates_all(channel, monitor, (["addthing": param[2], "addxtra": param[2], "xtra": xtra]));
 	else newcount = channel->set_variable(info->varname + ":" + param[2], 1, "add");
 	return (["{type}": info->type, "{value}": newcount]);
+}
+
+//Response from the front end after an addthing gets sent through
+void wscmd_added(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
+	mapping info = monitors[conn->subgroup]; if (!info) return;
+	if (has_value(info->things->id, msg->thingtype)) {
+		werror("Setting thing type %O to count %O\n", msg->thingtype, msg->newcount);
+		channel->set_variable(info->varname + ":" + msg->thingtype, (string)msg->newcount);
+	}
 }
 
 mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
