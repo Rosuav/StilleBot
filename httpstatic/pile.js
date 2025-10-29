@@ -386,19 +386,21 @@ export function render(data) {
 			if (xtra.label) attrs.label = "label-" + xtra.label; //Force a prefix so we can do hit-detection based on label category
 			if (xtra.conflict_category) attrs.plugin = {mustardmine_conflict: xtra.conflict_category};
 			let obj;
+			const ysize = Math.ceil(img.ysize * scale);
+			const xpos = Math.floor(Math.random() * (width - cat.xsize - 30) + cat.xsize / 2 + 15);
+			//When things float around, start them anywhere. When they fall, start them near the top.
+			const ypos = behaviour === "Floating"
+				? Math.floor(Math.random() * (height - ysize - 30) + ysize / 2 + 15)
+				: Math.floor(Math.random() * 100 + 10);
 			switch (cat.shape) {
 				case "circle": obj = Circle(
-					Math.floor(Math.random() * (width - cat.xsize - 30) + cat.xsize / 2 + 15),
-					Math.floor(Math.random() * 100 + 10),
+					xpos, ypos,
 					cat.xsize / 2, //Our idea of xsize is width, so the radius is half that
 					attrs);
 				break;
 				case "hull": if (/*img.simplehull || */img.hull) {
 					obj = Matter.Body.create({
-						position: {
-							x: Math.floor(Math.random() * (width - cat.xsize - 30) + cat.xsize / 2 + 15),
-							y: Math.floor(Math.random() * 100 + 10),
-						},
+						position: {x: xpos, y: ypos},
 						vertices: (/*img.simplehull || */img.hull).map(([x, y]) => ({x: x * scale, y: y * scale})),
 						...attrs,
 					});
@@ -406,9 +408,8 @@ export function render(data) {
 				}
 				//If no hull, fall through and make a simple rectangle.
 				default: obj = Rectangle(
-					Math.floor(Math.random() * (width - cat.xsize - 30) + cat.xsize / 2 + 15),
-					Math.floor(Math.random() * 100 + 10),
-					cat.xsize, Math.ceil(img.ysize * scale),
+					xpos, ypos,
+					cat.xsize, ysize,
 					attrs);
 			}
 			//Angles are measured in radians. Angular velocity seems to be rad/frame and we're at

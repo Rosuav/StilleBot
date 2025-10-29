@@ -298,10 +298,6 @@
     - What happens if someone is already in and asks to rejoin? We might end up in a situation
       where everyone's using the same throw, though that would mean someone else can come in and
       swoop everything.
-    - When adding to a gravity-off, randomize the Y as well as the X. Maybe try to avoid being too
-      near to another? Go through all existing ones, find the nearest, and reroll if random(distsq)
-      is less than size squared (whichever size is greater). Max 10 iterations in case something
-      is too big. Don't worry about shapes, just use centroid distance.
 * UNTRACKED BUG: Sometimes, if replication ceases, it doesn't resume.
   - It may help to use `./dbctl refreshrepl` to force it to restart. Not sure if it makes
     any difference but it can cause an error message. See if we get that error any other
