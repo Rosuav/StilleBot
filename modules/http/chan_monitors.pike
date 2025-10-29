@@ -11,6 +11,11 @@ inherit annotated;
     putting them into "inactive" state.
   - Allow custom textformatting for Completed and Inactive, but have a "delete" button that leaves it unchanged
     (ie identical to Active) as this will be the most common.
+  - Maybe have a gravity-on but infinite bounce mode? So, no friction, works well with all walls,
+    but there's still gravity so they aren't just drifting?
+
+Thanks to AnbuOlive, DokiOken, DragonBloodthirsty, Enchanting_Elk, galraboi, SquibbleDesign, and
+ZacharyLumsden, for contributing ideas and discussion to the Rock-Paper-Scissors variation!
 */
 
 //Note that "#display" gets replaced with ".preview" for the preview styles
