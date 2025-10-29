@@ -99,6 +99,8 @@ constant saveable_attributes = "previewbg barcolor fillcolor altcolor needlesize
 constant retained_attributes = (<"boss_selfheal", "boss_giftrecipient">); //Attributes set externally, not editable with wscmd_updatemonitor.
 constant valid_types = (<"text", "goalbar", "countdown", "pile">);
 
+constant AUGMENTATIONS = (<"knife", "ghost", "pumpkin">); //TODO: Add rock/paper/scissors if we get assets?
+
 constant default_thing_image = (["url": "/static/MustardMineAvatar.png", "xsize": 844, "ysize": 562]);
 constant default_thing_type = ([
 	"id": "default", "xsize": 50,
@@ -724,7 +726,8 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 				break;
 			}
 			case "avatar": {
-				sscanf(args, "%d/%s", int userid, string augment);
+				sscanf(args, "%d/%s", int userid, string|zero augment);
+				if (!AUGMENTATIONS[augment]) augment = 0;
 				if (!userid) userid = (int)args;
 				if (!userid) break;
 				mapping user = await(get_user_info(userid, "id"));
