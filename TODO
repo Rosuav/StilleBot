@@ -292,6 +292,29 @@
     - A ghost
   - Thanks to AnbuOlive, DokiOken, DragonBloodthirsty, Enchanting_Elk, galraboi,
     SquibbleDesign, and ZacharyLumsden, for contributing ideas and discussion.
+  - NEXT STEPS:
+    - Whitelist valid augment keywords
+    - Make a Devi monitor for the new system
+    - Make three commands to add a person with an augment
+    - Make the augments show visually
+    - Test the augments for their conflict resolution
+    - Maybe have a gravity-on but infinite bounce mode? So, no friction, works well with all walls,
+      but there's still gravity so they aren't just drifting?
+    - What happens if someone is already in and asks to rejoin? We might end up in a situation
+      where everyone's using the same throw, though that would mean someone else can come in and
+      swoop everything.
+    - Can we have a "freeze physics" operation? If so, design a command or redemption that:
+      - Freezes physics
+      - Announces in chat to tell people to type one of the three commands
+      - Enables the three commands, each of which adds a person
+      - Waits a minute or two
+      - Unfreezes physics and disables the commands
+    - Alternatively or as well, have a "disable merging" so people bounce around but won't fight
+      until the time expires.
+    - When adding to a gravity-off, randomize the Y as well as the X. Maybe try to avoid being too
+      near to another? Go through all existing ones, find the nearest, and reroll if random(distsq)
+      is less than size squared (whichever size is greater). Max 10 iterations in case something
+      is too big. Don't worry about shapes, just use centroid distance.
 * UNTRACKED BUG: Sometimes, if replication ceases, it doesn't resume.
   - It may help to use `./dbctl refreshrepl` to force it to restart. Not sure if it makes
     any difference but it can cause an error message. See if we get that error any other
