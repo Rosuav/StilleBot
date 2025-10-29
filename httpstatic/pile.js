@@ -28,6 +28,7 @@ const conflict_resolution = {
 	pumpkin_ghost: "Pumpkin scares Ghost",
 	ghost_knife: "Ghost possesses Knife",
 };
+let merge_allowed = true;
 
 //Map a category ID to the array of things
 const thingcategories = { };
@@ -263,6 +264,7 @@ export function render(data) {
 				_bounce_events_created = true;
 				Matter.Events.on(engine, "collisionStart", e => bouncemode === "Merge" && e.pairs.forEach(pair => {
 					if (!id_to_category[pair.bodyA.id] || !id_to_category[pair.bodyB.id]) return;
+					if (!merge_allowed) return; //The server can choose to (temporarily) disable all merging
 					//To support Rock-Paper-Scissors merge, we need:
 					//1) Conflict category for A and B
 					//2) Conflict resolution for the pair of categories
@@ -475,6 +477,7 @@ export function render(data) {
 			return;
 		}
 	}
+	if (data.merge) merge_allowed = data.merge === "on";
 }
 ws_sync.send({cmd: "querycounts"});
 
