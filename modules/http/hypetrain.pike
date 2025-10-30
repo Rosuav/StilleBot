@@ -61,7 +61,7 @@ mapping parse_hype_status(string channelid, mapping data, int|void hack_now) { /
 @EventNotify("channel.hype_train.end=2"):
 void hypetrain_progression(object chan, mapping info) {
 	if (info->type != "regular" || info->is_shared_train)
-		//Log info about any unusual hype trains. So far, I have only seen single-channel regular hype trains,
+		//Log info about any unusual hype trains. So far, I have mostly seen single-channel regular hype trains,
 		//but would be good to get info for Golden Kappa, Treasure, and other; and also for shared hype trains.
 		//Fetch up the info that we get when loading the page, and provide both eventsub and API info for me to
 		//eventually delve through, some day.
