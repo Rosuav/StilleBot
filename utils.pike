@@ -446,6 +446,7 @@ __async__ void test() {
 }
 
 __async__ void augment() {
+	//TODO: Crop to a circle, then apply the same change in chan_monitors::http_request
 	string username = "rosuav";
 	string augmentation = "ghost";
 	mapping user = await(get_user_info(username, "login"));
