@@ -67,9 +67,10 @@ mapping parse_hype_status(string channelid, mapping data, int|void hack_now) { /
 @EventNotify("channel.hype_train.progress=2"):
 @EventNotify("channel.hype_train.end=2"):
 void hypetrain_progression(object chan, mapping info) {
-	if (info->type != "regular" || info->is_shared_train)
-		//Log info about any unusual hype trains. So far, I have mostly seen single-channel regular hype trains,
-		//but would be good to get info for Golden Kappa, Treasure, and other; and also for shared hype trains.
+	if (info->type != "regular" && info->type != "golden_kappa")
+		//Log info about any unusual hype trains. Anything we don't understand, log; also, I haven't yet seen
+		//a successful Treasure Train, so it would be useful to see that happen. As of 20251031, only three
+		//types are officially supported (regular/golden_kappa/treasure), but if more get added, log them too.
 		//Fetch up the info that we get when loading the page, and provide both eventsub and API info for me to
 		//eventually delve through, some day.
 		twitch_api_request("https://api.twitch.tv/helix/hypetrain/status?broadcaster_id=" + chan->userid,
