@@ -139,7 +139,7 @@ export let render = (state) => {
 	if (state.expires)
 	{
 		//Active hype train!
-		goal = `Level ${state.level} requires ${state.goal} bits or ${subs(state.goal)} tier one subs.`;
+		goal = `Level ${state.level} requires ${state.goal} bits or equivalent.`;
 		let need = state.goal - state.progress;
 		if (need <= 0) goal += " HYPE TRAIN COMPLETE!"; //Probably never going to happen
 		else {
