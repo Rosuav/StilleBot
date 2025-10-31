@@ -107,6 +107,7 @@ nav a {
 	background-color: #a0ffa0;
 	font-weight: bold;
 }
+#all_time {background-color: gold;}
 /* It'd be really cool to get the conductors' chat colours, but probably impractical */
 #cond_bits.present, #cond_subs.present {background-color: #e060e0;}
 

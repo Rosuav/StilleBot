@@ -97,6 +97,11 @@ __async__ mapping get_state(int|string chan)
 			"user": "279141671",
 			"user_name": "MustardMine",
 		])}),
+		"all_time_high": ([
+			"achieved_at": "2024-06-03T00:54:34.843901245Z",
+			"level": 4,
+			"total": 5500
+		]),
 	]);
 	mixed ex = catch {
 		int uid;

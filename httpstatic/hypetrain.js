@@ -94,6 +94,13 @@ function level_color(level) {
 	return "#ffff" + (degree < 0 ? "00" : ("0" + degree.toString(16)).slice(-2));
 }
 
+function all_time_stats(all_time_high) {
+	return all_time_high && P({id: "all_time"}, [
+		"All-time high: Level ", all_time_high.level, " at ", all_time_high.total, " total bits,",
+		" achieved ", new Date(all_time_high.achieved_at).toLocaleDateString(),
+	]);
+}
+
 let last_rendered = null;
 export let render = (state) => {
 	if (state.error) {
@@ -120,6 +127,7 @@ export let render = (state) => {
 				{"title": "The hype train is awaiting activity. If they're enabled, one can be started!", "href": "", class: "cookiesinfo"},
 				"Cookies are done!"
 			)),
+			all_time_stats(state.all_time_high),
 			//Note that we might not have conductors (or any data). It lasts a few days at most.
 		]);
 		document.querySelectorAll("#emotes li").forEach(li => li.className = "");
@@ -161,7 +169,7 @@ export let render = (state) => {
 		{id: "cond_" + c.type.toLowerCase(), className: "present"},
 		c.type + " conductor: " + fmt_contrib(c)
 	));
-	document.body.dataset.hypetype = state.type;
+	document.body.dataset.hypetype = state.type || "none";
 	set_content("#hypeinfo", [
 		P({id: "status", className: state.expires ? "countdown active" : "countdown"}, [
 			state.expires ? (hypelabel[state.type] || "HYPE") + " TRAIN ACTIVE! " : "The hype train is on cooldown. Next one can start in ",
@@ -175,8 +183,9 @@ export let render = (state) => {
 					"!",
 				])
 			),
-			SPAN({id: "time"})
+			SPAN({id: "time"}),
 		]),
+		all_time_stats(state.all_time_high),
 		conduc.BITS || P({id: "cond_bits"}, "No hype conductor for bits - cheer any number of bits to claim this spot!"),
 		conduc.SUBS || P({id: "cond_subs"}, "No hype conductor for subs - subscribe/resub/subgift to claim this spot!"),
 		P(goalattrs, goal),
