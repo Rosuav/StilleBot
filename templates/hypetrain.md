@@ -92,7 +92,7 @@ it cannot be seen outside of one).
 
 /* With class emotes_large, show those larger-format ones instead of the small ones. No hover. */
 #emotes.emotes_large img {display: none;}
-#emotes.emotes_large li {height: 140px;}
+#emotes.emotes_large li {height: 280px;}
 #emotes.emotes_large em img {display: block; box-shadow: none; border: none;}
 #emotes.emotes_large em:nth-of-type(1) {left: 0px;} /* Reposition since we have to do it manually anyway :( */
 #emotes.emotes_large em:nth-of-type(2) {left: 125px;}
@@ -100,12 +100,12 @@ it cannot be seen outside of one).
 #emotes.emotes_large em:nth-of-type(4) {left: 375px;}
 #emotes.emotes_large em:nth-of-type(5) {left: 500px;}
 #emotes.emotes_large em:nth-of-type(6) {left: 625px;}
-#emotes.emotes_large em:nth-of-type(7) {left: 750px;}
-#emotes.emotes_large em:nth-of-type(8) {left: 875px;}
-#emotes.emotes_large em:nth-of-type(9) {left: 1000px;}
-#emotes.emotes_large em:nth-of-type(10) {left: 1125px;}
-#emotes.emotes_large em:nth-of-type(11) {left: 1250px;}
-#emotes.emotes_large li > em:last-of-type {display: none;}
+/* If Twitch rolls out a twelfth emote for each row, reset these to start at zero instead of staggering them. */
+#emotes.emotes_large em:nth-of-type(7) {top: 118px; left: 62.5px;}
+#emotes.emotes_large em:nth-of-type(8) {top: 118px; left: 187.5px;}
+#emotes.emotes_large em:nth-of-type(9) {top: 118px; left: 312.5px;}
+#emotes.emotes_large em:nth-of-type(10) {top: 118px; left: 437.5px;}
+#emotes.emotes_large em:nth-of-type(11) {top: 118px; left: 562.5px;}
 
 audio {display: none;}
 #config ul.gapbelow li {margin-bottom: 1.5em;}
