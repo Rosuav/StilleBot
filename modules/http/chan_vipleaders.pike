@@ -129,6 +129,7 @@ __async__ void force_recalc(object channel, int|void fast) {
 		array mods = await(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?first=100&broadcaster_id=" + chanid,
 			(["Authorization": "Bearer " + token_for_user_id(chanid)[0]])))->data;
 		stats->mods = mkmapping(mods->user_id, mods->user_name);
+		stats->mods[(string)chanid] = channel->login;
 	}
 
 	//Collect bit stats for that time period. NOTE: Periods other than "monthly" are basically broken. FIXME.
