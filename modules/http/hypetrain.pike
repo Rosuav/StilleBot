@@ -117,7 +117,8 @@ constant emotes = #"FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume
 AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat RespectfullyNo ThatsIconique HerMind ImSpiraling LuvLuvLUV
 MegaMlep RawkOut FallDamage RedCard ApplauseBreak TouchOfSalt NoComment DownBad UghMood ShyGhost MeSweat
 KittyLove TurnUp CatScare LateSave NoTheyDidNot BeholdThis TheyAte PlotTwist AnActualQueen LilTrickster HiHand
-RaccoonPop GoblinJam YouMissed GriddyGoose CheersToThat StirThePot PackItUp InTheirBag SpitTheTruth PufferPop IAmClap";
+RaccoonPop GoblinJam YouMissed GriddyGoose CheersToThat StirThePot PackItUp InTheirBag SpitTheTruth PufferPop IAmClap
+Bonus emotes for high level hype trains: BleedPurpleHD HeyHeyGuys PogChomp KappaInfinite";
 string avail_emotes = "";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
@@ -132,7 +133,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			foreach (level / " ", string emote)
 			{
 				string id = botemotes[emote] || emoteids[emote];
-				if (!id) continue;
+				if (!id) {avail_emotes += " " + emote; continue;} //Label text gets kept; so will any emotes missed from the ID lookups
 				string md = sprintf("![%s](%s)", emote, emote_url(id, 1));
 				if (!md) {avail_emotes += " " + emote; continue;}
 				avail_emotes += sprintf(" %s*%s*", md, replace(md, "/1.0", "/3.0"));

@@ -61,6 +61,7 @@ it cannot be seen outside of one).
 #emotes li:before {content: "Pending: ";}
 #emotes li.available:before {content: "Earnable: ";}
 #emotes li.next:before {content: "Next goal: ";}
+#emotes li:last-of-type:before {content: "";} /* The last row isn't a single level */
 #emotes:not(.emotes_allrows) li:not(.next):not(.available) {display: none;}
 
 /* Show a larger version of the emotes on hover */
