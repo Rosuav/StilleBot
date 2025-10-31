@@ -201,13 +201,11 @@ if (ismobile) render = (state) => {
 		//Technically this allows content to linger in the DOM. This is sort of a feature. Almost.
 		return;
 	}
-	if (state.expires)
-	{
+	if (state.expires) {
 		//Active hype train!
 		set_content("#status", ["ACTIVE", BR(), SPAN({id: "time"})]).className = "active";
 		let need = state.goal - state.total;
-		if (need < 0) set_content("#nextlevel", "HYPE TRAIN COMPLETE!");
-		else set_content("#nextlevel", [
+		set_content("#nextlevel", [
 			`Level ${state.level} needs`, BR(),
 			need + " bits", BR(),
 			subs(need) + " subs",
@@ -224,7 +222,6 @@ if (ismobile) render = (state) => {
 			set_content("#nextlevel", `Finished level ${state.level - 1}!`);
 	}
 	expiry = (state.expires || state.cooldown) * 1000;
-	const contrib = state.lastcontrib.type === "BITS" ? `${state.lastcontrib.total} bits` : `${state.lastcontrib.total / 500} subs`;
 	let have_bits = 0, have_subs = 0;
 	state.conductors.forEach(c => {
 		let sel, desc;
