@@ -4,7 +4,7 @@ const {A, BUTTON, BR, P, SPAN} = choc;
 const hypelabel = {
 	regular: "HYPE",
 	treasure: "TREASURE",
-	//goldenkappa: "GOLDEN KAPPA", //Check me, need to see one happen
+	golden_kappa: "GOLDEN KAPPA",
 };
 
 const ismobile = !DOM("#configform");
@@ -24,7 +24,10 @@ if (!ismobile) ws_sync.prefs_notify(prefs => { //Note: Even if no prefs are set,
 		const audio = DOM("#sfx_" + which);
 		if (type === "use") {el[name].checked = config[name]; audio.preload = config[name] ? "auto" : "none";}
 		else if (type === "vol") {el[name].value = config[name]; audio.volume = config[name] / 100;}
-		else if (type === "emotes") {el[name].checked = config[name]; DOM("#emotes").classList.toggle(name, config[name]);}
+		else if (type === "emotes") {
+			el[name].checked = config[name];
+			document.body.classList.toggle(name, config[name]);
+		}
 		//That should be all the configs that get saved
 	}
 	need_interaction = config.use_ding || config.use_insistent || config.use_start;
@@ -104,14 +107,12 @@ export let render = (state) => {
 	if (state.hack_now) offset = +new Date() - state.hack_now * 1000;
 	//Show the emotes that we could win (or could have won last hype train)
 	const lvl = state.cooldown && state.level; //If not active or cooling down, hide 'em all
-	//TODO: If state.is_golden_kappa_train, also show the golden Kappa
-	//Might need some magic handling (on the back end) to remember that it's a golden Kappa train
-	//and keep the golden Kappa visible even if you refresh the page.
-	//Image for the golden Kappa: https://static-cdn.jtvnw.net/emoticons/v2/80393/default/light/3.0
-	document.querySelectorAll("#emotes li").forEach((li, idx) => li.className =
-		lvl >= idx + 2 || state.total >= state.goal ? "available" :
-		state.expires && lvl === idx + 1 ? "next" : ""); //Only show "next" during active hype trains
-
+	["#emotes", "#goldenkappa"].forEach(par =>
+		document.querySelectorAll(par + " li").forEach((li, idx) => li.className =
+			lvl >= idx + 2 || state.total >= state.goal ? "available" :
+			state.expires && lvl === idx + 1 ? "next" : "" //Only show "next" during active hype trains
+		)
+	);
 	if (!state.expires && !state.cooldown) {
 		//Idle state. If we previously had a cooldown, it's now expired.
 		set_content("#hypeinfo", [
@@ -160,6 +161,7 @@ export let render = (state) => {
 		{id: "cond_" + c.type.toLowerCase(), className: "present"},
 		c.type + " conductor: " + fmt_contrib(c)
 	));
+	document.body.dataset.hypetype = state.type;
 	set_content("#hypeinfo", [
 		P({id: "status", className: state.expires ? "countdown active" : "countdown"}, [
 			state.expires ? (hypelabel[state.type] || "HYPE") + " TRAIN ACTIVE! " : "The hype train is on cooldown. Next one can start in ",

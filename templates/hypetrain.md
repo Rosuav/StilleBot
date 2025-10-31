@@ -10,7 +10,12 @@ Click anywhere to enable alerts.
 <button type=button id=refresh>Refresh</button>
 
 $$emotes$$
-{:#emotes}
+{:.emotelevels #emotes}
+
+<!-- -->
+
+* The Golden Kappa: ![Kappa](https://static-cdn.jtvnw.net/emoticons/v2/80393/default/light/1.0)*![Kappa](https://static-cdn.jtvnw.net/emoticons/v2/80393/default/light/3.0)*
+{:.emotelevels #goldenkappa}
 
 [Check which hype emotes you have](/checklist)
 
@@ -58,29 +63,34 @@ it cannot be seen outside of one).
 	border: 1px solid;
 }
 
-#emotes li:before {content: "Pending: ";}
-#emotes li.available:before {content: "Earnable: ";}
-#emotes li.next:before {content: "Next goal: ";}
+.emotelevels li:before {content: "Pending: ";}
+.emotelevels li.available:before {content: "Earnable: ";}
+.emotelevels li.next:before {content: "Next goal: ";}
 #emotes li:last-of-type:before {content: "";} /* The last row isn't a single level */
-#emotes:not(.emotes_allrows) li:not(.next):not(.available) {display: none;}
+body:not(.emotes_allrows) #emotes li:not(.next):not(.available) {display: none;}
+
+/* During a golden kappa train, hide the regular emotes and just show the one row with one emote. */
+#goldenkappa {display: none;}
+[data-hypetype=golden_kappa] #goldenkappa {display: block;}
+[data-hypetype=golden_kappa] #emotes {display: none;}
 
 /* Show a larger version of the emotes on hover */
-#emotes em {
+.emotelevels em {
 	position: relative;
 	width: 0; height: 0;
 }
-#emotes em:nth-of-type(1) {left: 30px;} /* Manually do the calculations :( */
-#emotes em:nth-of-type(2) {left: 60px;}
-#emotes em:nth-of-type(3) {left: 90px;}
-#emotes em:nth-of-type(4) {left: 120px;}
-#emotes em:nth-of-type(5) {left: 150px;}
-#emotes em:nth-of-type(6) {left: 180px;}
-#emotes em:nth-of-type(7) {left: 210px;}
-#emotes em:nth-of-type(8) {left: 240px;}
-#emotes em:nth-of-type(9) {left: 270px;}
-#emotes em:nth-of-type(10) {left: 300px;}
-#emotes em:nth-of-type(11) {left: 330px;}
-#emotes em img {
+.emotelevels em:nth-of-type(1) {left: 30px;} /* Manually do the calculations :( */
+.emotelevels em:nth-of-type(2) {left: 60px;}
+.emotelevels em:nth-of-type(3) {left: 90px;}
+.emotelevels em:nth-of-type(4) {left: 120px;}
+.emotelevels em:nth-of-type(5) {left: 150px;}
+.emotelevels em:nth-of-type(6) {left: 180px;}
+.emotelevels em:nth-of-type(7) {left: 210px;}
+.emotelevels em:nth-of-type(8) {left: 240px;}
+.emotelevels em:nth-of-type(9) {left: 270px;}
+.emotelevels em:nth-of-type(10) {left: 300px;}
+.emotelevels em:nth-of-type(11) {left: 330px;}
+.emotelevels em img {
 	display: none;
 	position: absolute;
 	background: white;
@@ -89,24 +99,25 @@ it cannot be seen outside of one).
 	padding: 2px;
 	margin: 2px;
 }
-#emotes img:hover + em img {display: block;}
+.emotelevels img:hover + em img {display: block;}
 
 /* With class emotes_large, show those larger-format ones instead of the small ones. No hover. */
-#emotes.emotes_large img {display: none;}
-#emotes.emotes_large li {height: 280px;}
-#emotes.emotes_large em img {display: block; box-shadow: none; border: none;}
-#emotes.emotes_large em:nth-of-type(1) {left: 0px;} /* Reposition since we have to do it manually anyway :( */
-#emotes.emotes_large em:nth-of-type(2) {left: 125px;}
-#emotes.emotes_large em:nth-of-type(3) {left: 250px;}
-#emotes.emotes_large em:nth-of-type(4) {left: 375px;}
-#emotes.emotes_large em:nth-of-type(5) {left: 500px;}
-#emotes.emotes_large em:nth-of-type(6) {left: 625px;}
+.emotes_large .emotelevels img {display: none;}
+.emotes_large .emotelevels li {height: 280px;}
+.emotes_large .emotelevels li:last-of-type {height: 140px;} /* The last row (or the only row for Golden Kappa) doesn't need to wrap */
+.emotes_large .emotelevels em img {display: block; box-shadow: none; border: none;}
+.emotes_large .emotelevels em:nth-of-type(1) {left: 0px;} /* Reposition since we have to do it manually anyway :( */
+.emotes_large .emotelevels em:nth-of-type(2) {left: 125px;}
+.emotes_large .emotelevels em:nth-of-type(3) {left: 250px;}
+.emotes_large .emotelevels em:nth-of-type(4) {left: 375px;}
+.emotes_large .emotelevels em:nth-of-type(5) {left: 500px;}
+.emotes_large .emotelevels em:nth-of-type(6) {left: 625px;}
 /* If Twitch rolls out a twelfth emote for each row, reset these to start at zero instead of staggering them. */
-#emotes.emotes_large em:nth-of-type(7) {top: 118px; left: 62.5px;}
-#emotes.emotes_large em:nth-of-type(8) {top: 118px; left: 187.5px;}
-#emotes.emotes_large em:nth-of-type(9) {top: 118px; left: 312.5px;}
-#emotes.emotes_large em:nth-of-type(10) {top: 118px; left: 437.5px;}
-#emotes.emotes_large em:nth-of-type(11) {top: 118px; left: 562.5px;}
+.emotes_large .emotelevels em:nth-of-type(7) {top: 118px; left: 62.5px;}
+.emotes_large .emotelevels em:nth-of-type(8) {top: 118px; left: 187.5px;}
+.emotes_large .emotelevels em:nth-of-type(9) {top: 118px; left: 312.5px;}
+.emotes_large .emotelevels em:nth-of-type(10) {top: 118px; left: 437.5px;}
+.emotes_large .emotelevels em:nth-of-type(11) {top: 118px; left: 562.5px;}
 
 audio {display: none;}
 #config ul.gapbelow li {margin-bottom: 1.5em;}

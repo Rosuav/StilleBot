@@ -265,9 +265,6 @@
     This might be the excuse needed to change that, and thus allow refreshing when a
     person's avatar is texturing a thing. In effect, we'd need to record not just the
     quantity, but an array of vital statistics: size, texture, label
-* Golden Kappa trains need proper support. Watch for one to happen and observe its events.
-  - Replace all the unlockable emotes with a single row with just the golden kappa, as it
-    can be unlocked by completing level 1.
 * Fourth Wall integrations enhancements
   - Make chan_integrations a builtin
   - Subcommands for different APIs
