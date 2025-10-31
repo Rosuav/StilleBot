@@ -20,6 +20,7 @@ if (!ismobile) ws_sync.prefs_notify(prefs => { //Note: Even if no prefs are set,
 	const el = DOM("#configform").elements;
 	for (let name in config) {
 		const [type, which] = name.split("_");
+		if (!el[name]) continue; //Probably a former config setting, no longer in use (eg emotes_checklist)
 		const audio = DOM("#sfx_" + which);
 		if (type === "use") {el[name].checked = config[name]; audio.preload = config[name] ? "auto" : "none";}
 		else if (type === "vol") {el[name].value = config[name]; audio.volume = config[name] / 100;}

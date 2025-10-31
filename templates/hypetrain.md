@@ -150,7 +150,6 @@ audio {display: none;}
 >
 > Emote display:
 > * <label><input type=checkbox name=emotes_large>Large format</label>
-> * <label><input type=checkbox name=emotes_checklist>Highlight emotes you don't yet have</label>
 > * <label><input type=checkbox name=emotes_allrows>Keep all rows visible</label>
 >
 > [Save](:#save_prefs type=submit) [Cancel](:.dialog_close)
