@@ -51,6 +51,13 @@ mapping parse_hype_status(string channelid, mapping data, int|void hack_now) { /
 		//and I still don't care about the distinction.
 		user->type = (["bits": "BITS", "subscription": "SUBS"])[user->type] || user->type;
 	}
+	//For shared hype trains, show other participants, including their avatars etc
+	foreach (current->shared_train_participants || ({ }), mapping chan) {
+		if (chan->broadcaster_user_id == channelid) continue;
+		mapping|zero chaninfo = cached_user_info((int)chan->broadcaster_user_id);
+		if (chaninfo) chan |= chaninfo;
+		state->shared_train_participants += ({chan});
+	}
 	state->conductors = current->top_contributions || ({ });
 	state->type = current->type || "regular";
 	return state;

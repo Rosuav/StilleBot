@@ -46,11 +46,11 @@ it cannot be seen outside of one).
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
 #hypeinfo {font-family: 'Inter', sans-serif;}
-.countdown a {
+.cookiesinfo {
 	color: black;
 	text-decoration: none;
 }
-.countdown a:after {
+.cookiesinfo:after {
 	content: "?";
 	font-family: sans-serif;
 	display: inline-block;
@@ -62,6 +62,8 @@ it cannot be seen outside of one).
 	padding: 0.13em 0.2em 0.09em 0.2em;
 	border: 1px solid;
 }
+
+.avatar {max-width: 40px; vertical-align: middle;}
 
 .emotelevels li:before {content: "Pending: ";}
 .emotelevels li.available:before {content: "Earnable: ";}

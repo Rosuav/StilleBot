@@ -1,5 +1,5 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, BUTTON, BR, P, SPAN} = choc;
+const {A, BR, BUTTON, DIV, IMG, P, SPAN} = choc; //autoimport
 
 const hypelabel = {
 	regular: "HYPE",
@@ -117,7 +117,7 @@ export let render = (state) => {
 		//Idle state. If we previously had a cooldown, it's now expired.
 		set_content("#hypeinfo", [
 			P({id: "status", className: "countdown"}, A(
-				{"title": "The hype train is awaiting activity. If they're enabled, one can be started!", "href": "",},
+				{"title": "The hype train is awaiting activity. If they're enabled, one can be started!", "href": "", class: "cookiesinfo"},
 				"Cookies are done!"
 			)),
 			//Note that we might not have conductors (or any data). It lasts a few days at most.
@@ -165,6 +165,16 @@ export let render = (state) => {
 	set_content("#hypeinfo", [
 		P({id: "status", className: state.expires ? "countdown active" : "countdown"}, [
 			state.expires ? (hypelabel[state.type] || "HYPE") + " TRAIN ACTIVE! " : "The hype train is on cooldown. Next one can start in ",
+			state.shared_train_participants && state.shared_train_participants.map(chan =>
+				DIV([
+					"Hype train also shared with ",
+					A({href: "https://twitch.tv/" + chan.broadcaster_user_login, target: "_blank"}, [
+						chan.profile_image_url && [IMG({class: "avatar", src: chan.profile_image_url}), " "],
+						chan.broadcaster_user_name,
+					]),
+					"!",
+				])
+			),
 			SPAN({id: "time"})
 		]),
 		conduc.BITS || P({id: "cond_bits"}, "No hype conductor for bits - cheer any number of bits to claim this spot!"),
@@ -233,7 +243,7 @@ if (!ismobile) {
 	on("click", ".play", e => {
 		play(e.match.id.split("_")[1], 1);
 	});
-	on("click", ".countdown a", e => {
+	on("click", ".cookiesinfo", e => {
 		e.preventDefault();
 		set_content("#infopopup div", [
 			P("The hype train is not currently active, nor is it cooling down. If hype trains are active, this means" +
