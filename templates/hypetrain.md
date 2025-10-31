@@ -7,7 +7,7 @@ WARNING: Audio alerts may not play if you have not interacted with the page.
 Click anywhere to enable alerts.
 {:#interact-warning .hidden}
 
-<button type=button id=refresh>Refresh</button>
+$$nojs||<button type=button id=refresh>Refresh</button>$$
 
 $$emotes$$
 {:.emotelevels #emotes}
@@ -19,7 +19,7 @@ $$emotes$$
 
 [Check which hype emotes you have](/checklist)
 
-<button type=button id=configure>Configure</button>
+$$nojs||<button type=button id=configure>Configure</button>$$
 
 NOTE: Anonymous events will not be reported here (as of June 2020 - this may
 change in the future). If an anonymous cheer or sub causes the hype train to

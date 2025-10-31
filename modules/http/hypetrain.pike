@@ -160,12 +160,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if (req->misc->session->scopes[?"channel:read:hype_train"])
 			return redirect("hypetrain?for=" + req->misc->session->user->login);
 		return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
-			"vars": (["ws_type": "hypetrain", "ws_group": "-"]), //FIXME: Does removing this prevent the WS and look okay?
 			"loading": "(no channel selected)",
 			"channelname": "(no channel)",
-			//TODO: When emote IDs are easily available, provide the matrix of emotes
-			//and their IDs to the front end, instead of doing it with a Markdown list.
-			"emotes": avail_emotes,
+			"nojs": "", //Remove JS-controlled buttons
+			"emotes": "",
 			"backlink": !req->variables->mobile && "<a href=\"hypetrain?mobile\">Switch to mobile view</a>",
 		]));
 	}
@@ -177,6 +175,8 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
 		"vars": (["ws_type": "hypetrain", "ws_group": chan, "need_scopes": scopes || ""]),
 		"loading": "Loading hype status...",
+		//TODO: When emote IDs are easily available, provide the matrix of emotes
+		//and their IDs to the front end, instead of doing it with a Markdown list.
 		"channelname": chan, "emotes": avail_emotes,
 		"backlink": !req->variables->mobile && sprintf("<a href=\"hypetrain?for=%s&mobile\">Switch to mobile view</a>", chan),
 	]));
