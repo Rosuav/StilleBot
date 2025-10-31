@@ -116,7 +116,7 @@ export let render = (state) => {
 	const lvl = state.cooldown && state.level; //If not active or cooling down, hide 'em all
 	["#emotes", "#goldenkappa"].forEach(par =>
 		document.querySelectorAll(par + " li").forEach((li, idx) => li.className =
-			lvl >= idx + 2 || state.total >= state.goal ? "available" :
+			lvl >= idx + 2 || state.progress >= state.goal ? "available" :
 			state.expires && lvl === idx + 1 ? "next" : "" //Only show "next" during active hype trains
 		)
 	);
@@ -140,11 +140,11 @@ export let render = (state) => {
 	{
 		//Active hype train!
 		goal = `Level ${state.level} requires ${state.goal} bits or ${subs(state.goal)} tier one subs.`;
-		let need = state.goal - state.total;
+		let need = state.goal - state.progress;
 		if (need <= 0) goal += " HYPE TRAIN COMPLETE!"; //Probably never going to happen
 		else {
 			goal += ` Need ${need} more bits, or ${subs(need)} more subs.`;
-			let mark = state.total / state.goal * 100;
+			let mark = state.progress / state.goal * 100;
 			let delta = 0.375; //Width of the red marker line (each side)
 			const from_color = level_color(state.level + 1);
 			const to_color = level_color(state.level);
@@ -156,9 +156,9 @@ export let render = (state) => {
 	else
 	{
 		if (state.level === 1)
-			goal = `The last hype train reached ${state.total} out of ${state.goal} to complete level 1.`;
-		else if (state.total >= state.goal) //Probably never going to happen
-			goal = `The last hype train finished level ${state.level} at ${Math.round(100 * state.total / state.goal)}%!!`;
+			goal = `The last hype train reached ${state.progress} out of ${state.goal} to complete level 1.`;
+		else if (state.progress >= state.goal) //Probably never going to happen
+			goal = `The last hype train finished level ${state.level} at ${Math.round(100 * state.progress / state.goal)}%!!`;
 		else
 			goal = `The last hype train completed level ${state.level - 1}! Good job!`;
 		last_rendered = "cooldown"; //No audio cue when changing from active to cooldown
@@ -204,7 +204,7 @@ if (ismobile) render = (state) => {
 	if (state.expires) {
 		//Active hype train!
 		set_content("#status", ["ACTIVE", BR(), SPAN({id: "time"})]).className = "active";
-		let need = state.goal - state.total;
+		let need = state.goal - state.progress;
 		set_content("#nextlevel", [
 			`Level ${state.level} needs`, BR(),
 			need + " bits", BR(),
@@ -215,9 +215,9 @@ if (ismobile) render = (state) => {
 	{
 		set_content("#status", ["Cooling down", BR(), SPAN({id: "time"})]);
 		if (state.level === 1)
-			set_content("#nextlevel", `Reached ${state.total} out of ${state.goal}`);
-		else if (state.total >= state.goal)
-			set_content("#nextlevel", `Finished level ${state.level} at ${Math.round(100 * state.total / state.goal)}%!!`);
+			set_content("#nextlevel", `Reached ${state.progress} out of ${state.goal}`);
+		else if (state.progress >= state.goal)
+			set_content("#nextlevel", `Finished level ${state.level} at ${Math.round(100 * state.progress / state.goal)}%!!`);
 		else
 			set_content("#nextlevel", `Finished level ${state.level - 1}!`);
 	}
@@ -229,6 +229,11 @@ if (ismobile) render = (state) => {
 		else {have_subs = 1; sel = "#cond_subs"; desc = (c.total/500) + " subs";}
 		set_content(sel, ["Conductor:", BR(), c.user_name, BR(), desc]).className = "present";
 	});
+	if (state.all_time_high) set_content("#alltimetile", [
+		"All-time high:", BR(),
+		"L", state.all_time_high.level, " (", state.all_time_high.total, " bits)", BR(),
+		new Date(state.all_time_high.achieved_at).toLocaleDateString(),
+	]);
 	if (!have_bits) set_content("#cond_bits", "").className = "";
 	if (!have_subs) set_content("#cond_subs", "").className = "";
 	if (updating) clearInterval(updating);
@@ -277,13 +282,4 @@ if (!ismobile) {
 		DOM("#config").close();
 	};
 	document.onclick = () => {interacted = 1; check_interaction();}
-}
-else
-{
-	DOM("#emotestile").onclick = e => {
-		set_content("#infopopup div", [
-			P("TODO: This would get info about the earnable emotes."),
-		]);
-		DOM("#infopopup").showModal();
-	};
 }
