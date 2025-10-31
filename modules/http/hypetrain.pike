@@ -86,7 +86,7 @@ __async__ mapping get_state(int|string chan)
 	if (chan == "-") return 0; //Shouldn't happen - will be from a page with no for= and not logged in.
 	if (chan == "!demo") return ([
 		"expires": time() + 180, //Three minutes left on the demo hype train, as of when you load the page
-		"level": 2, "goal": 1800, "total": 500,
+		"level": 2, "goal": 1800, "progress": 700, "total": 2100,
 		"conductors": ({([
 			"total": 100,
 			"type": "BITS",
