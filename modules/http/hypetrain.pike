@@ -131,7 +131,7 @@ AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat RespectfullyN
 MegaMlep RawkOut FallDamage RedCard ApplauseBreak TouchOfSalt NoComment DownBad UghMood ShyGhost MeSweat
 KittyLove TurnUp CatScare LateSave NoTheyDidNot BeholdThis TheyAte PlotTwist AnActualQueen LilTrickster HiHand
 RaccoonPop GoblinJam YouMissed GriddyGoose CheersToThat StirThePot PackItUp InTheirBag SpitTheTruth PufferPop IAmClap
-Bonus emotes for high level hype trains: BleedPurpleHD HeyHeyGuys PogChomp KappaInfinite";
+Bonus emotes for even higher levels: BleedPurpleHD HeyHeyGuys PogChomp KappaInfinite";
 string avail_emotes = "";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
