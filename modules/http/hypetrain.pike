@@ -155,6 +155,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		}
 	}
 	string chan = lower_case(req->variables["for"] || "");
+	if (chan == "demo") return redirect("hypetrain?for=!demo");
 	if (chan == "") {
 		//If you've just logged in, assume that you want your own hype train stats.
 		//Make sure that the page link is viably copy-pastable.
