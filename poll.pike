@@ -6,7 +6,10 @@ inherit annotated;
 @retain: mapping category_names = ([]);
 @retain: mapping user_info = ([]);
 
-mapping cached_user_info(int|string user) {
+//If available, gives the same result as get_user_info(user, "id") if user is an int,
+//or get_user_info(user, "login") if it's a string. Synchronous and may return null if
+//not available; will not populate the cache.
+@export: mapping cached_user_info(int|string user) {
 	mapping info = user_info[user];
 	if (info && time() - info->_fetch_time < 3600) return info;
 }
