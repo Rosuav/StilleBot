@@ -4,7 +4,7 @@ inherit hook;
 //Keyword checks to see if someone's trying to sell us followers. Will be
 //added to as necessary, and all users of this blacklist will automatically
 //start noticing the new ones.
-constant buyfollows = ({"cheap viewers on", "cheap followers on", "best viewers on", "best followers on"});
+constant buyfollows = ({"cheap viewers", "cheap followers", "best viewers", "best followers"});
 
 @hook_allmsgs:
 int message(object channel, mapping person, string msg)
@@ -15,5 +15,5 @@ int message(object channel, mapping person, string msg)
 	//NFKD normalization should split off any combining characters, and fold all kinds of
 	//equivalent characters together. This might still give wrong results though - test.
 	msg = lower_case(filter(Unicode.normalize(msg, "NFKD")) {return __ARGS__[0] < 256;});
-	foreach (buyfollows, string badword) if (has_value(msg, badword)) person->vars["{@buyfollows}"] = "1";
+	foreach (buyfollows, string badword) if (has_value(msg, badword) && has_value(msg, ".ru")) person->vars["{@buyfollows}"] = "1";
 }
