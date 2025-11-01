@@ -447,6 +447,10 @@ set_content("#editpile form div", [
 				OPTION("Bounce"),
 				OPTION("Merge"),
 			]),
+			SELECT({name: "addmode"}, [
+				OPTION("Quantities"),
+				OPTION("Explicit only"),
+			]),
 		])]),
 		TR([TH("Background"), TD([
 			LABEL(["Color: ", INPUT({name: "bgcolor", type: "color"})]),

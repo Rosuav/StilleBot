@@ -34,7 +34,7 @@ let merge_allowed = true;
 const thingcategories = { };
 //Map category ID to the server-provided information about it
 let thingtypes = { };
-let fadeouttime = 0, fader = 0, bouncemode = "Bounce";
+let fadeouttime = 0, fader = 0, bouncemode = "Bounce", addmode = "Quantities";
 let wall_config = { }, wall_objects = { };
 const clawqueue = []; //If empty, the claw isn't active. If >1 entries, after the current one, the next will autostart.
 //NOTE: These attributes will be applied any time the behaviour is reselected, so ensure that they don't need
@@ -258,6 +258,7 @@ export function render(data) {
 				for (let attr in default_attrs) body[attr] = default_attrs[attr];
 			});
 		}
+		if (data.data.addmode) addmode = data.data.addmode;
 		if (data.data.bouncemode) {
 			bouncemode = data.data.bouncemode;
 			if (!_bounce_events_created && bouncemode === "Merge") {
@@ -317,7 +318,7 @@ export function render(data) {
 					id_to_category[loser.id] = null;
 					const idx = things.findIndex(t => t.id === loser.id);
 					if (idx >= 0) things.splice(idx, 1);
-					if (!window.frameElement) ws_sync.send({cmd: "removed", thingtype, conflict_description, label: loser.label});
+					if (!window.frameElement) ws_sync.send({cmd: "removed", thingtype, conflict_description, label: loser.label, newcount: things.length});
 					Matter.Composite.remove(engine.world, loser);
 				}));
 			}
@@ -372,6 +373,7 @@ export function render(data) {
 		const things = thingcategories[thingtype];
 		while (things.length > newcount) Matter.Composite.remove(engine.world, things.pop());
 		while (things.length < newcount) {
+			if (addmode === "Explicit only" && !addxtra[thingtype]) break;
 			const xtra = addxtra[thingtype] || { }; delete addxtra[thingtype];
 			const img = xtra.image || cat.images[Math.floor(Math.random() * cat.images.length)] || default_thing_image;
 			const scale = cat.xsize / img.xsize;

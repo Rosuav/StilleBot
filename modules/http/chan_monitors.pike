@@ -100,7 +100,7 @@ constant saveable_attributes = "previewbg barcolor fillcolor altcolor needlesize
 	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip follow kofi_dono kofi_member kofi_renew kofi_shop kofi_commission "
 	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive startonscene startonscene_time record_leaderboard "
 	"twitchsched twitchsched_offset fadeouttime wall_top wall_left wall_right wall_floor autoreset clawsize "
-	"wallcolor wallalpha clawcolor clawthickness behaviour bouncemode" / " " + TEXTFORMATTING_ATTRS;
+	"wallcolor wallalpha clawcolor clawthickness behaviour bouncemode addmode" / " " + TEXTFORMATTING_ATTRS;
 constant retained_attributes = (<"boss_selfheal", "boss_giftrecipient">); //Attributes set externally, not editable with wscmd_updatemonitor.
 constant valid_types = (<"text", "goalbar", "countdown", "pile">);
 
@@ -488,8 +488,13 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 void wscmd_removed(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
 	mapping info = monitors[conn->subgroup]; if (!info) return;
-	if (has_value(info->things->id, msg->thingtype))
-		channel->set_variable(info->varname + ":" + msg->thingtype, 1, "spend");
+	if (has_value(info->things->id, msg->thingtype)) {
+		//With explicit-add mode, it's more useful to ensure that the count here correctly reflects the
+		//number of things in the front end. With quantity-add mode, it's more useful to ensure that
+		//exactly one thing gets removed, even if multiple messages are flying back and forth at once.
+		if (info->addmode == "Explicit only") channel->set_variable(info->varname + ":" + msg->thingtype, (string)msg->newcount);
+		else channel->set_variable(info->varname + ":" + msg->thingtype, 1, "spend");
+	}
 }
 
 @"is_mod": __async__ void wscmd_managethings(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -781,8 +786,9 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 	}
 	string newcount = "Added.";
 	//NOTE: If xtra is being used, we don't update the counter here. The front end should let us know, and we'll update
-	//our counter then.
-	if (sizeof(xtra)) send_updates_all(channel, monitor, (["addthing": param[2], "addxtra": param[2], "xtra": xtra]));
+	//our counter then. Explicit adds mode assumes that there is an addthing message, so that goes the same way. (The
+	//two work well together; explicit adds permit you to guarantee that there's extra info on every add.)
+	if (sizeof(xtra) || info->addmode == "Explicit only") send_updates_all(channel, monitor, (["addthing": param[2], "addxtra": param[2], "xtra": xtra]));
 	else newcount = channel->set_variable(info->varname + ":" + param[2], 1, "add");
 	return (["{type}": info->type, "{value}": newcount]);
 }
@@ -791,10 +797,8 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 void wscmd_added(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
 	mapping info = monitors[conn->subgroup]; if (!info) return;
-	if (has_value(info->things->id, msg->thingtype)) {
-		werror("Setting thing type %O to count %O\n", msg->thingtype, msg->newcount);
+	if (has_value(info->things->id, msg->thingtype))
 		channel->set_variable(info->varname + ":" + msg->thingtype, (string)msg->newcount);
-	}
 }
 
 mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
