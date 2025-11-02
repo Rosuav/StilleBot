@@ -801,6 +801,15 @@ void wscmd_added(object channel, mapping(string:mixed) conn, mapping(string:mixe
 		channel->set_variable(info->varname + ":" + msg->thingtype, (string)msg->newcount);
 }
 
+void wscmd_contestwinner(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
+	mapping info = monitors[conn->subgroup]; if (!info) return;
+	object prom = m_delete(clawids_pending, conn->subgroup);
+	if (prom) prom->success(([
+		"{winner}": msg->mergemode,
+	]));
+}
+
 mapping|Concurrent.Future message_params(object channel, mapping person, array param) {
 	string monitor = param[0];
 	mapping info = G->G->DB->load_cached_config(channel->userid, "monitors")[monitor];
@@ -863,9 +872,12 @@ mapping|Concurrent.Future message_params(object channel, mapping person, array p
 				case "shake": case "rattle": case "roll":
 					send_updates_all(channel, monitor, ([param[1]: (sizeof(param) > 2 && (int)param[2]) || 1]));
 					break;
-				case "merge":
-					send_updates_all(channel, monitor, (["merge": (sizeof(param) > 2 && param[2]) || "normal"]));
+				case "merge": {
+					string mode = (sizeof(param) > 2 && param[2]) || "normal";
+					send_updates_all(channel, monitor, (["merge": mode]));
+					if (mode == "contest") return (clawids_pending[monitor] = Concurrent.Promise())->future();
 					break;
+				}
 				case "add": return pile_add(channel, info, person, param);
 				case "remove": {
 					if (param[2] == "*") {
