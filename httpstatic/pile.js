@@ -295,7 +295,8 @@ export function render(data) {
 					//then delete bodyB. If this results in bodyA becoming larger than the default size
 					//for another body type, we should switch its type.
 					const massA = winner.mass, massB = loser.mass, massAB = massA + massB;
-					const scale = (massAB / massA) ** 0.5;
+					let scale = (massAB / massA) ** 0.5;
+					if (scale > 4.0) scale = 1.0; //Muahahaha. If you get too big, you get shrunked down to size!
 					//True conservation of angular momentum is a pain. We cheat. Each body contributes
 					//an amount of pseudo-momentum equal to its velocity times its mass, which completely
 					//ignores the size. Realistically, two objects with identical velocity and mass, but
@@ -320,6 +321,18 @@ export function render(data) {
 					if (idx >= 0) things.splice(idx, 1);
 					if (!window.frameElement) ws_sync.send({cmd: "removed", thingtype, conflict_description, label: loser.label, newcount: things.length});
 					Matter.Composite.remove(engine.world, loser);
+					if (merge_mode === "contest") {
+						//Once there's only one merge mode left, that is the winner!
+						const mergemode = winner.plugin.mustardmine_conflict;
+						let allsame = true;
+						Object.values(thingcategories).forEach(cat => cat.forEach(thing => {
+							if (thing.plugin.mustardmine_conflict !== mergemode) allsame = false;
+						}));
+						if (allsame) {
+							ws_sync.send({cmd: "contestwinner", mergemode});
+							merge_mode = "normal";
+						}
+					}
 				}));
 			}
 		}
