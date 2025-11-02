@@ -163,19 +163,22 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		mapping user = await(get_user_info(req->variables->userid, "id"));
 		object res = await(Protocols.HTTP.Promise.get_url(user->profile_image_url));
 		mapping avatar = Image.ANY._decode(res->get());
+		//Crop the image to a circle, same as is often how they're shown on Twitch. This
+		//allows the "picture frame" of the augmentation to show just the disc in the
+		//middle. Note that the cropping is done by mutating the alpha channel only; the
+		//chroma channel is thus irrelevant.
+		if (!avatar->alpha) avatar->alpha = Image.Image(avatar->xsize, avatar->ysize, 255, 255, 255);
 		mapping aug = Image.ANY._decode(Stdio.read_file("httpstatic/" + req->variables->augment + ".webp"));
 		//We need the augmentation to be on top, but the avatar is smaller. So we start with a blank canvas.
 		Image.Image image = Image.Image(aug->xsize, aug->ysize);
 		Image.Image alpha = Image.Image(aug->xsize, aug->ysize);
-		int xpos = (aug->xsize - avatar->xsize) / 2;
-		int ypos = (aug->ysize - avatar->ysize) / 2;
-		if (avatar->alpha) {
-			image->paste_mask(avatar->image, avatar->alpha, xpos, ypos);
-			alpha->paste_mask(avatar->alpha, avatar->alpha, xpos, ypos);
-		} else {
-			image->paste(avatar->image, xpos, ypos);
-			alpha->box(xpos, ypos, xpos + avatar->xsize, ypos + avatar->ysize, 255, 255, 255);
-		}
+		//TODO: The current set of augmentations is slightly not centered, but consistent
+		//within the set. Will future augmentations also be offset 3px,3px or will we need
+		//to track separate paste positions for separate augmentations?
+		int xpos = (aug->xsize - avatar->xsize) / 2 + 3;
+		int ypos = (aug->ysize - avatar->ysize) / 2 + 3;
+		image->paste_mask(avatar->image, avatar->alpha, xpos, ypos);
+		alpha->paste_mask(avatar->alpha, avatar->alpha, xpos, ypos);
 		image->paste_mask(aug->image, aug->alpha);
 		alpha->paste_mask(aug->alpha, aug->alpha);
 		return (["type": "image/png", "data": Image.PNG.encode(image, (["alpha": alpha]))]);
