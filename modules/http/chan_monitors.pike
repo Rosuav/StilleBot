@@ -168,6 +168,20 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		//middle. Note that the cropping is done by mutating the alpha channel only; the
 		//chroma channel is thus irrelevant.
 		if (!avatar->alpha) avatar->alpha = Image.Image(avatar->xsize, avatar->ysize, 255, 255, 255);
+		int ctr = avatar->xsize / 2, rad = ctr * ctr; //Radius squared for convenience
+		//Naive check for position within the circle. This is not unlike the strategy
+		//employed by the Mathstronauts headed up by Matt Parker: we take a huge number
+		//of points (he's using moon rover data for this, we're exhaustively checking
+		//every pixel), see whether they're within the correct distance, and discarding
+		//everything that isn't.
+		//It's probably possible to optimize this. I don't really care; the work of image
+		//manipulation is significantly more effort than the mathematics of Pythagoras,
+		//and the work of transmitting the resultant image over the network is another
+		//order or so of magnitude above the image manipulation.
+		for (int x = 0; x < avatar->xsize; ++x) for (int y = 0; y < avatar->ysize; ++y) {
+			int r = (x - ctr) ** 2 + (y - ctr) ** 2;
+			if (r > rad) avatar->alpha->setpixel(x, y, 0, 0, 0);
+		}
 		mapping aug = Image.ANY._decode(Stdio.read_file("httpstatic/" + req->variables->augment + ".webp"));
 		//We need the augmentation to be on top, but the avatar is smaller. So we start with a blank canvas.
 		Image.Image image = Image.Image(aug->xsize, aug->ysize);
