@@ -204,8 +204,11 @@ __async__ void update_rps(object channel, mapping game) {
 		return;
 	}
 	mapping cfg = sections->rps | game;
-	if (!game->monitorid) {
-		[game->monitorid, mapping info] = G->G->websocket_types->chan_monitors->create_monitor(channel, ([
+	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
+	mapping info = monitors[game->monitorid];
+	int xsize = (["small": 50, "medium": 75, "large": 150])[cfg->size] || 75;
+	if (!info) { //Most likely this will be because game->monitorid is absent, but if you go delete the monitor, it can get recreated here
+		[game->monitorid, info] = G->G->websocket_types->chan_monitors->create_monitor(channel, ([
 			"type": "pile",
 			"label": "Rock-Paper-Scissors",
 			"behaviour": "Floating",
@@ -221,12 +224,31 @@ __async__ void update_rps(object channel, mapping game) {
 				"id": "avatar",
 				"images": ({ }),
 				"shape": "",
-				"xsize": 75, //TODO: Use 50/75/150 depending on choice of size
+				"xsize": xsize,
 			])}),
                 ]));
 		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->rps = game;});
+	} else {
+		int changed = 0;
+		int idx = search(info->things->id, "avatar");
+		if (idx == -1) {
+			changed = 1;
+			info->things += ({([
+				"id": "avatar",
+				"images": ({ }),
+				"shape": "",
+				"xsize": xsize,
+			])});
+		} else {
+			mapping thing = info->things[idx];
+			if (thing->xsize != xsize) {changed = 1; thing->xsize = xsize;}
+		}
+		if (changed) {
+			await(G->G->DB->save_config(channel->userid, "monitors", monitors));
+			G->G->websocket_types->chan_monitors->send_updates_all(channel, game->monitorid);
+			G->G->websocket_types->chan_monitors->update_one(channel, "", game->monitorid);
+		}
 	}
-	//TODO: Adjust things[0]->xsize to match the desired size
 	rpsrebuild(channel);
 }
 

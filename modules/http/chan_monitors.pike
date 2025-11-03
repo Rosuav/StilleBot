@@ -421,7 +421,7 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 	]);
 	if (msg->type == "pile") monitors[nonce] |= ([
 		"wall_top": 0, "wall_left": 100, "wall_right": 100, "wall_floor": 100,
-		"things": ({default_thing_type | ([])}),
+		"things": msg->things || ({default_thing_type | ([])}), //If you provide an array of things, note that it is not validated in any way
 	]);
 	mapping info = monitors[nonce];
 	//Hack: Create a new variable for a new goal bar etc.
