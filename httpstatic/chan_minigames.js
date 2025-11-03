@@ -1,8 +1,46 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, CODE, INPUT, LABEL, LI, OPTION, SELECT, SPAN, STYLE, UL} = lindt; //autoimport
+const {A, BR, BUTTON, CODE, I, INPUT, LABEL, LI, OPTION, SELECT, SPAN, STYLE, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 export function render(data) {
+	const rps = {...sections.rps, ...(data.rps || { })};
+	replace_content("#rps", UL([
+		LI([
+			"Enabled? ",
+			SELECT({name: "enabled", value: rps.enabled, "data-dangerous": rps.enabled ? "Are you sure you want to delete the rock/paper/scissors tournament entirely?" : ""}, [
+				OPTION({value: "0"}, "No"),
+				OPTION({value: "1"}, "Yes"),
+			]),
+			" Set to Yes to make the magic possible!",
+		]),
+		LI([
+			"Theme ",
+			SELECT({name: "theme", value: rps.theme}, [
+				//OPTION({value: "default"}, "Default - rock/paper/scissors"), //Vanilla theme, may or may not happen
+				OPTION({value: "cute", disabled: true}, "Cute - rock/paper/scissors"), //DeviCat upcoming theme
+				OPTION({value: "halloween"}, "Halloween - knife/pumpkin/ghost"),
+			]),
+		]),
+		LI([
+			"Commands available: ",
+			rps.commands && rps.commands.map(cmd => [" ", CODE("!" + cmd)]),
+			!rps.commands?.length && I("(none currently)"),
+		]),
+		LI([
+			"Avatar size ",
+			SELECT({name: "size", value: rps.size}, [
+				OPTION({value: "small"}, "Small"),
+				OPTION({value: "medium"}, "Medium"),
+				OPTION({value: "large"}, "Large"),
+			]),
+			" Initial size of all avatars; winners grow, losers disappear",
+		]),
+		LI([
+			BUTTON({".onclick": () => ws_sync.send({cmd: "rpsrebuild"})}, "Recreate commands"),
+			" If something gets messed up, the default commands can be recreated.",
+		]),
+		//TODO maybe: Channel point redemption for triggering a merge party
+	]));
 	const boss = {...sections.boss, ...(data.boss || { })};
 	replace_content("#boss", UL([
 		LI([

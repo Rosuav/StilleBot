@@ -8,6 +8,17 @@ Want to add some fun minigames to your channel? These are all built using Twitch
 channel points and other related bot features. Note that these will require that
 the channel be affiliated/partnered in order to use channel points.
 
+Rock-Paper-Scissors
+-------------------
+
+Great for a BRB screen or a special party time, let your users battle it out in an
+epic winner-takes-all rock/paper/scissors competition! Can be played in ongoing mode
+or as a tournament. Viewers can use commands to add themselves, and then the results
+are determined by physics, luck, and the rules of rock-paper-scissors.
+
+loading...
+{:#rps .game}
+
 Bit Boss
 --------
 
@@ -52,6 +63,12 @@ First, and optionally Second, Third, and Last
 //Valid sections, valid attributes, and their default values
 //Note that the default value also governs the stored data type.
 constant sections = ([
+	"rps": ([
+		"enabled": 0,
+		"theme": "halloween", //Change the default to "cute" (or maybe "default") when it's available
+		"size": "medium",
+		"commands": ({ }),
+	]),
 	"boss": ([
 		"enabled": 0,
 		"initialhp": 1000,
@@ -82,6 +99,24 @@ constant sections = ([
 	]),
 ]);
 
+constant rps_commands = ([
+	"default": ([
+		"rock": "{username} throws a closed fist - ROCK!",
+		"paper": "{username} opens a flat palm - PAPER!",
+		"scissors": "{username} shows two fingers - SCISSORS!",
+	]),
+	"halloween": ([
+		"knife": "Enjoy the stabbing, {username}!",
+		"pumpkin": "{username} is now wearing a pumpkin like a suit of armor!",
+		"ghost": "Rest in peace, {username}, you are now a ghost.",
+	]),
+	"cute": ([
+		"rock": "Omnomnom! Rock candy is the best lithography, {username}!",
+		"paper": "{username} starts folding paper for maximum cuteness.",
+		"scissors": "Ready to open a bag of candy, {username} takes up the scissors!",
+	]),
+]);
+
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo); //Should there be non-privileged info shown?
 	//TODO: If broadcaster hasn't granted channel:manage:redemptions, have an auth button
@@ -97,6 +132,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	return render(req, (["vars": (["ws_group": "", "sections": sections, "voices": voices])]) | req->misc->chaninfo);
 }
 
+bool need_mod(string grp) {return 1;} //Is this redundant with anything else?
 Concurrent.Future get_chan_state(object channel, string grp, string|void id) {
 	return G->G->DB->load_config(channel->userid, "minigames");
 }
@@ -123,7 +159,76 @@ __async__ void wscmd_configure(object channel, mapping(string:mixed) conn, mappi
 }
 
 //Boolify for JSON purposes
-object bool(mixed val) {return val ? Val.true : Val.false;}
+object boolify(mixed val) {return val ? Val.true : Val.false;}
+
+__async__ void rpsrebuild(object channel) {
+	mapping game = await(G->G->DB->load_config(channel->userid, "minigames"))->rps;
+	mapping cfg = sections->rps | game;
+	array|zero orig = game->commands;
+	mapping commands = rps_commands[cfg->theme] || ([]);
+	array unwanted = cfg->commands - indices(commands);
+	foreach (unwanted, string cmdname) {
+		G->G->cmdmgr->update_command(channel, "", cmdname, "");
+		game->commands -= ({cmdname});
+	}
+	foreach (commands; string cmdname; string response) {
+		if (channel->commands[cmdname]) continue; //If you already have the command, even if unrelated, ignore it.
+		G->G->cmdmgr->update_command(channel, "", cmdname, sprintf(#{
+			test ("$rpsactive$") {
+				if ("$*rpsparty$" == "1") ""
+				else {
+					chan_monitors(%q, "add", "avatar", "{username}", "avatar:{uid}/%s") %q
+					if ("$rpsactive$" == "2") ""
+					else $*rpsparty$ = "1"
+				}
+			}
+		#}, cfg->monitorid, cmdname, response), (["language": "mustard"]));
+		if (!has_value(game->commands || ({ }), cmdname)) game->commands += ({cmdname});
+	}
+	if (game->commands != orig) {
+		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->rps = game;});
+		send_updates_all(channel, "");
+	}
+}
+
+void wscmd_rpsrebuild(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {rpsrebuild(channel);}
+
+__async__ void update_rps(object channel, mapping game) {
+	if (!game->enabled) {
+		foreach (m_delete(game, "commands") || ({ }), string cmdname) G->G->cmdmgr->update_command(channel, "", cmdname, "");
+		if (string nonce = m_delete(game, "monitorid")) {
+			G->G->websocket_types->chan_monitors->delete_monitor(channel, nonce);
+		}
+		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->rps = game;});
+		send_updates_all(channel, "");
+		return;
+	}
+	mapping cfg = sections->rps | game;
+	if (!game->monitorid) {
+		[game->monitorid, mapping info] = G->G->websocket_types->chan_monitors->create_monitor(channel, ([
+			"type": "pile",
+			"label": "Rock-Paper-Scissors",
+			"behaviour": "Floating",
+			"bouncemode": "Merge",
+			"addmode": "Explicit only",
+			"bgcolor": "#BEFEFA", "bgalpha": "100",
+			"wallcolor": "#0051a8", "wallalpha": "100",
+			"wall_top": "100",
+			"wall_left": "100",
+			"wall_right": "100",
+			"wall_floor": "100",
+			"things": ({([
+				"id": "avatar",
+				"images": ({ }),
+				"shape": "",
+				"xsize": 75, //TODO: Use 50/75/150 depending on choice of size
+			])}),
+                ]));
+		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->rps = game;});
+	}
+	//TODO: Adjust things[0]->xsize to match the desired size
+	rpsrebuild(channel);
+}
 
 __async__ void reset_boss(object channel, mapping|void cfg) {
 	if (!cfg) cfg = sections->boss | await(G->G->DB->load_config(channel->userid, "minigames"))->boss;
@@ -250,9 +355,9 @@ __async__ void update_crown(object channel, mapping game) {
 		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->crown = game;});
 	}
 	mapping changes = ([
-		"is_global_cooldown_enabled": bool(cfg->gracetime), "global_cooldown_seconds": cfg->gracetime,
-		"is_max_per_stream_enabled": bool(!cfg->gracetime), "max_per_stream": !cfg->gracetime,
-		"is_max_per_user_per_stream_enabled": bool(cfg->perpersonperstream), "max_per_user_per_stream": cfg->perpersonperstream,
+		"is_global_cooldown_enabled": boolify(cfg->gracetime), "global_cooldown_seconds": cfg->gracetime,
+		"is_max_per_stream_enabled": boolify(!cfg->gracetime), "max_per_stream": !cfg->gracetime,
+		"is_max_per_user_per_stream_enabled": boolify(cfg->perpersonperstream), "max_per_user_per_stream": cfg->perpersonperstream,
 	]);
 	await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + game->rewardid,
 		(["Authorization": channel->userid]),
