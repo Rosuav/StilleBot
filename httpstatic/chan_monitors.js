@@ -211,7 +211,7 @@ export const autorender = {
 
 export function render(data) { }
 
-function AUTO_RESET(attrs) {return SELECT({name: "autoreset", ...attrs}, [
+function AUTO_RESET(attrs) {return SELECT({name: "autoreset", "data-nocopy": 1, ...attrs}, [
 	OPTION({value: ""}, "None"),
 	OPTION({value: "stream"}, "End of stream"),
 	OPTION({value: "month"}, "Calendar month"),
@@ -222,7 +222,7 @@ set_content("#editcountdown form div", [
 	TEXTFORMATTING({
 		before: [
 			TR([TH("Name"), TD([
-				INPUT({name: "label"}),
+				INPUT({name: "label", "data-nocopy": 1}),
 				" For your own reference",
 			])]),
 			TR([TH("Variable"), TD([
@@ -269,7 +269,7 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 		BR(), LABEL(["Automatically reset? ", AUTO_RESET()]),
 	])]),
 	TR([TH("Name"), TD([
-		INPUT({name: "label"}),
+		INPUT({name: "label", "data-nocopy": 1}),
 		" For your own reference",
 	])]),
 	TR([TH("Variable"), TD([
@@ -448,7 +448,7 @@ set_content("#editpile form div", [
 		TR([TH("Name"), TD([
 			CODE({"data-content": "varname"}),
 			" ",
-			INPUT({name: "label"}),
+			INPUT({name: "label", "data-nocopy": 1}),
 		])]),
 		TR([TH(LABEL({for: "editpile_autoreset"}, "Auto-reset")), TD(AUTO_RESET({id: "editpile_autoreset"}))]),
 		TR([TH("Fade after"), TD([INPUT({name: "fadeouttime", type: "number", step: 0.25}), " minutes (0 to disable)"])]),
