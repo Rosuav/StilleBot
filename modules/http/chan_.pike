@@ -80,6 +80,7 @@ constant sidebar_menu = ({
 	({"*monitors", "Monitors"}),
 	({"messages", "Messages"}),
 	({"share", "Art sharing"}),
+	({"*minigames", "Minigames"}),
 	({"*integrations", "Integrations"}),
 	({"*snoozeads", "Ads and snoozes"}),
 	({"*errors", "Error log <span id=errcnt></span>"}),
