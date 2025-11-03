@@ -156,6 +156,7 @@ __async__ void update_boss(object channel, mapping game) {
 		await(reset_boss(channel, cfg));
 		[game->monitorid, mapping info] = G->G->websocket_types->chan_monitors->create_monitor(channel, ([
 			"type": "goalbar", "varname": "bossdmg",
+			"label": "Bit Boss",
 			"format": "hitpoints",
 			"lvlupcmd": "slayboss",
 			"bit": 1, "tip": 1,

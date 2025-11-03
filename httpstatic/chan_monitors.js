@@ -220,12 +220,18 @@ function AUTO_RESET(attrs) {return SELECT({name: "autoreset", ...attrs}, [
 set_content("#edittext form div", TEXTFORMATTING({use_preview: true}));
 set_content("#editcountdown form div", [
 	TEXTFORMATTING({
-		before: TR([TH("Variable"), TD([
-			//TODO: Allow multiple select boxes with name=varname and populate them all
-			//Then this can reuse the autorender code that powers goal bar varnames.
-			INPUT({name: "varname", size: 20, "data-nocopy": 1}),
-			BUTTON({type: "button", id: "setcountdown"}, "Change..."),
-		])]),
+		before: [
+			TR([TH("Name"), TD([
+				INPUT({name: "label"}),
+				" For your own reference",
+			])]),
+			TR([TH("Variable"), TD([
+				//TODO: Allow multiple select boxes with name=varname and populate them all
+				//Then this can reuse the autorender code that powers goal bar varnames.
+				INPUT({name: "varname", size: 20, "data-nocopy": 1}),
+				BUTTON({type: "button", id: "setcountdown"}, "Change..."),
+			])]),
+		],
 		use_preview: true,
 		texts: [
 			{label: "Active"},
@@ -261,6 +267,10 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 	TR([TH("Active"), TD([
 		LABEL([INPUT({name: "active", type: "checkbox", "data-nocopy": 1}), "Enable auto-advance and level up messages"]),
 		BR(), LABEL(["Automatically reset? ", AUTO_RESET()]),
+	])]),
+	TR([TH("Name"), TD([
+		INPUT({name: "label"}),
+		" For your own reference",
 	])]),
 	TR([TH("Variable"), TD([
 		SELECT({name: "varname", "data-nocopy": 1}, OPTION("loading...")),
@@ -435,7 +445,11 @@ set_content("#editpile form div", [
 		"can use Twitch emotes; note that BTTV, 7TV, FFZ, etc emotes will not work.",
 	]),
 	TABLE({border: 1}, [
-		TR([TH("Variable group"), TD(CODE({"data-content": "varname"}))]),
+		TR([TH("Name"), TD([
+			CODE({"data-content": "varname"}),
+			" ",
+			INPUT({name: "label"}),
+		])]),
 		TR([TH(LABEL({for: "editpile_autoreset"}, "Auto-reset")), TD(AUTO_RESET({id: "editpile_autoreset"}))]),
 		TR([TH("Fade after"), TD([INPUT({name: "fadeouttime", type: "number", step: 0.25}), " minutes (0 to disable)"])]),
 		TR([TH("Behaviour"), TD([

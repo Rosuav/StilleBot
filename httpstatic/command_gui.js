@@ -257,9 +257,9 @@ const builtin_validators = {
 				Object.entries(monitors).map(([id, m]) => {
 					let label = m.text;
 					switch (m.type) {
-						case "goalbar": label = "Goal bar - " + /:(.*)$/.exec(m.text)[1]; break;
-						case "countdown": label = "Countdown - " + /:(.*)$/.exec(m.text)[1]; break;
-						case "pile": label = "Pile of Pics - " + m.varname; break; //No easy distinguishing features here, just use the varname
+						case "goalbar": label = "Goal bar - " + (m.label || /:(.*)$/.exec(m.text)[1]); break;
+						case "countdown": label = "Countdown - " + (m.label || /:(.*)$/.exec(m.text)[1]); break;
+						case "pile": label = "Pile of Pics - " + (m.label || m.varname); break; //No good inherent distinguishing features here
 						default: break; //Simple text can be displayed as-is
 					}
 					return OPTION({".selected": id === val, value: id}, label);
