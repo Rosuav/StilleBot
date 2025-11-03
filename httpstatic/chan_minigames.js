@@ -39,6 +39,8 @@ export function render(data) {
 			BUTTON({".onclick": () => ws_sync.send({cmd: "rpsrebuild"})}, "Recreate commands"),
 			" If something gets messed up, the default commands can be recreated.",
 		]),
+		rps.monitorid && LI(["To see the bar, ", A({class: "monitorlink", href: "monitors?view=" + rps.monitorid}, "drag this to OBS")]),
+		rps.monitorid && LI(["Further configuration (eg colour) can be done ", A({href: "monitors"}, "by editing the bar itself"), "."]),
 		//TODO maybe: Channel point redemption for triggering a merge party
 	]));
 	const boss = {...sections.boss, ...(data.boss || { })};
