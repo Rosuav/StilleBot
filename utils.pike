@@ -445,31 +445,6 @@ __async__ void test() {
 	werror("Nothing to see here, move along.\n");
 }
 
-__async__ void augment() {
-	//TODO: Crop to a circle, then apply the same change in chan_monitors::http_request
-	string username = "rosuav";
-	string augmentation = "ghost";
-	mapping user = await(get_user_info(username, "login"));
-	object res = await(Protocols.HTTP.Promise.get_url(user->profile_image_url));
-	mapping avatar = Image.ANY._decode(res->get());
-	mapping aug = Image.ANY._decode(Stdio.read_file("httpstatic/" + augmentation + ".webp"));
-	//We need the augmentation to be on top, but the avatar is smaller. So we start with a blank canvas.
-	Image.Image image = Image.Image(aug->xsize, aug->ysize);
-	Image.Image alpha = Image.Image(aug->xsize, aug->ysize);
-	int xpos = (aug->xsize - avatar->xsize) / 2;
-	int ypos = (aug->ysize - avatar->ysize) / 2;
-	if (avatar->alpha) {
-		image->paste_mask(avatar->image, avatar->alpha, xpos, ypos);
-		alpha->paste_mask(avatar->alpha, avatar->alpha, xpos, ypos);
-	} else {
-		image->paste(avatar->image, xpos, ypos);
-		alpha->box(xpos, ypos, xpos + avatar->xsize, ypos + avatar->ysize, 255, 255, 255);
-	}
-	image->paste_mask(aug->image, aug->alpha);
-	alpha->paste_mask(aug->alpha, aug->alpha);
-	Stdio.write_file("augmented.png", Image.PNG.encode(image, (["alpha": alpha])));
-}
-
 protected void create(string name) {
 	::create(name);
 	G->G->utils = this;
