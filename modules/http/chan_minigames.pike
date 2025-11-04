@@ -116,6 +116,32 @@ constant rps_commands = ([
 		"scissors": "Ready to open a bag of candy, {username} takes up the scissors!",
 	]),
 ]);
+constant rps_extra_commands = ([
+	"mergeparty": #{
+		#access "mod"
+		chan_monitors("%monitorid%", "merge", "off", "", "") {
+			"Add yourselves to the competition with %commands%"
+			$rpsactive$ = "1"
+			$%vargroup%:avatar$ = "0"
+			setvar("*rpsparty", "clear", "") ""
+		}
+		{
+			#delay 60
+			"The fight is on!"
+			$rpsactive$ = "0"
+			chan_monitors("%monitorid%", "merge", "contest", "", "") {
+				"And the winner is..... {winner}!"
+				{
+					#delay 10
+					//And back to BRB screen mode where everyone can play as much as they like.
+					$rpsactive$ = "2"
+					$%vargroup%:avatar$ = "0"
+					setvar("*rpsparty", "clear", "") ""
+				}
+			}
+		}
+	#},
+]);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo); //Should there be non-privileged info shown?
@@ -164,9 +190,11 @@ object boolify(mixed val) {return val ? Val.true : Val.false;}
 __async__ void rpsrebuild(object channel) {
 	mapping game = await(G->G->DB->load_config(channel->userid, "minigames"))->rps;
 	mapping cfg = sections->rps | game;
-	array|zero orig = game->commands;
+	array|zero orig = game->commands + ({ });
+	//If any command has actually been deleted elsewhere, discard the fact that we have it
+	foreach (cfg->commands, string cmdname) if (!channel->commands[cmdname]) game->commands -= ({cmdname});
 	mapping commands = rps_commands[cfg->theme] || ([]);
-	array unwanted = cfg->commands - indices(commands);
+	array unwanted = cfg->commands - indices(commands) - indices(rps_extra_commands);
 	foreach (unwanted, string cmdname) {
 		G->G->cmdmgr->update_command(channel, "", cmdname, "");
 		game->commands -= ({cmdname});
@@ -192,6 +220,25 @@ __async__ void rpsrebuild(object channel) {
 }
 
 void wscmd_rpsrebuild(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {rpsrebuild(channel);}
+
+__async__ void wscmd_rpsaddcmd(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string cmdname = msg->command;
+	string mustard = rps_extra_commands[cmdname];
+	if (!mustard) return;
+	mapping game = await(G->G->DB->load_config(channel->userid, "minigames"))->rps;
+	mapping cfg = sections->rps | game;
+	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
+	mapping info = monitors[game->monitorid] || ([]);
+	mapping commands = rps_commands[cfg->theme] || ([]);
+	G->G->cmdmgr->update_command(channel, "", cmdname, replace(mustard, ([
+		"%monitorid%": game->monitorid,
+		"%vargroup%": info->varname || "pileA",
+		"%commands%": String.implode_nicely("!" + sort(indices(commands))[*], ", or"),
+	])), (["language": "mustard"]));
+	if (!has_value(game->commands || ({ }), cmdname)) game->commands += ({cmdname});
+	await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->rps = game;});
+	send_updates_all(channel, "");
+}
 
 __async__ void update_rps(object channel, mapping game) {
 	if (!game->enabled) {

@@ -24,7 +24,17 @@ export function render(data) {
 		LI([
 			"Commands available: ",
 			rps.commands && rps.commands.map(cmd => [" ", CODE("!" + cmd)]),
-			!rps.commands?.length && I("(none currently)"),
+			!rps.commands?.length && I("(none currently)"), BR(),
+			//What's a good UI for optional commands? If the command exists, there needs
+			//to be a way to delete it.
+			["mergeparty"].map(cmd => !rps.commands.includes(cmd) && BUTTON(
+				{".onclick": () => ws_sync.send({cmd: "rpsaddcmd", command: cmd})},
+				["Create ", CODE("!" + cmd)],
+			)),
+		]),
+		LI([
+			BUTTON({".onclick": () => ws_sync.send({cmd: "rpsrebuild"})}, "Recreate commands"),
+			" If something gets messed up, the default commands can be recreated.",
 		]),
 		LI([
 			"Avatar size ",
@@ -34,10 +44,6 @@ export function render(data) {
 				OPTION({value: "large"}, "Large"),
 			]),
 			" Initial size of all avatars; winners grow, losers disappear",
-		]),
-		LI([
-			BUTTON({".onclick": () => ws_sync.send({cmd: "rpsrebuild"})}, "Recreate commands"),
-			" If something gets messed up, the default commands can be recreated.",
 		]),
 		rps.monitorid && LI(["To see the bar, ", A({class: "monitorlink", href: "monitors?view=" + rps.monitorid}, "drag this to OBS")]),
 		rps.monitorid && LI(["Further configuration (eg colour) can be done ", A({href: "monitors"}, "by editing the monitor itself"), "."]),
