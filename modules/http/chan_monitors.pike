@@ -138,6 +138,9 @@ __async__ mapping|zero get_image_dimensions(string url) {
 	]);
 }
 
+//If present, is an image mapping for a cute crown adornment
+mapping crown;
+
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	mapping monitors = G->G->DB->load_cached_config(req->misc->channel->userid, "monitors");
 	if (req->variables->view) {
@@ -195,6 +198,15 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		alpha->paste_mask(avatar->alpha, avatar->alpha, xpos, ypos);
 		image->paste_mask(aug->image, aug->alpha);
 		alpha->paste_mask(aug->alpha, aug->alpha);
+		if (req->variables->crown) {
+			//TODO: Get our own freely usable crown asset; for now, using devicatCrown.
+			if (!crown) {
+				string raw = await(Protocols.HTTP.Promise.get_url("https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_fc20f0ac29724b50a866b2767ff98337/static/light/3.0"))->get();
+				crown = Image.ANY._decode(raw);
+			}
+			image->paste_mask(crown->image, crown->alpha, (aug->xsize - crown->xsize) / 2, 0);
+			alpha->paste_mask(crown->alpha, crown->alpha, (aug->xsize - crown->xsize) / 2, 0);
+		}
 		return (["type": "image/png", "data": Image.PNG.encode(image, (["alpha": alpha]))]);
 	}
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
@@ -775,7 +787,7 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 				break;
 			}
 			case "avatar": {
-				sscanf(args, "%d/%s", int userid, string|zero augment);
+				sscanf(args, "%d/%[^/]/%s", int userid, string|zero augment, string flags);
 				if (!AUGMENTATIONS[augment]) augment = 0;
 				if (!userid) userid = (int)args;
 				if (!userid) break;
@@ -785,6 +797,7 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 					if (augment) {
 						xtra->conflict_category = augment;
 						image = "monitors?augment=" + augment + "&userid=" + userid;
+						if (flags == "vip1") image += "&crown"; //If you're a VIP, add a crown. Optional and controlled by the command.
 						//HACK: There's no point augmenting the image just to get its dimensions.
 						bounding_box_cache[image] = ([
 							"url": image,
