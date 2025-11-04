@@ -81,3 +81,6 @@ features will be available from the [channel configuration pages](https://mustar
 
 To contact the author/maintainer/operator or ask further questions, reach out to
 Rosuav on Twitch, or [join the Discord](https://discord.gg/dbw4KYE).
+
+Art assets for the Rock-Paper-Scissors minigame were created by [DeviCat](https://twitch.tv/devicat)
+as part of a collaboration in Oct/Nov 2025. Thanks Devi!
