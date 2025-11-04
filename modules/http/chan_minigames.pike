@@ -229,11 +229,12 @@ __async__ void wscmd_rpsaddcmd(object channel, mapping(string:mixed) conn, mappi
 	mapping cfg = sections->rps | game;
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
 	mapping info = monitors[game->monitorid] || ([]);
-	mapping commands = rps_commands[cfg->theme] || ([]);
+	array commands = sort(indices(rps_commands[cfg->theme] || ([])));
+	string cmdnames = sizeof(commands) ? sprintf("!%s, !%s, or !%s", @commands) : "the appropriate commands";
 	G->G->cmdmgr->update_command(channel, "", cmdname, replace(mustard, ([
 		"%monitorid%": game->monitorid,
 		"%vargroup%": info->varname || "pileA",
-		"%commands%": String.implode_nicely("!" + sort(indices(commands))[*], ", or"),
+		"%commands%": cmdnames,
 	])), (["language": "mustard"]));
 	if (!has_value(game->commands || ({ }), cmdname)) game->commands += ({cmdname});
 	await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->rps = game;});
