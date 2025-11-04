@@ -782,10 +782,6 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 				mapping user = await(get_user_info(userid, "id"));
 				if (user) {
 					image = user->profile_image_url;
-					//TODO: If the augment is recognized, overlay the augmentation image over the
-					//profile image, and provide that to the front end.
-					//TODO: Have a simple in-memory cache for URLs like https://mustardmine.com/c/monitors?augment=X&userid=Y
-					//TODO: Check that the augmentation is, in fact, making the conflict category work.
 					if (augment) {
 						xtra->conflict_category = augment;
 						image = "monitors?augment=" + augment + "&userid=" + userid;
