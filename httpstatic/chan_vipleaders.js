@@ -1,6 +1,6 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DETAILS, DIV, FORM, H3, INPUT, LABEL, LI, OL, P, SPAN, SUMMARY, TABLE, TD, TH, TR} = choc; //autoimport
-import {simpleconfirm} from "$$static||utils.js$$";
+const {A, BR, BUTTON, DETAILS, DIV, FORM, H3, INPUT, LABEL, LI, OL, P, SPAN, STYLE, SUMMARY, TABLE, TD, TH, TR} = choc; //autoimport
+import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
 
 //TODO: Exclude anyone who's been banned, just in case
 
@@ -50,6 +50,9 @@ function cents_formatter(cents) {
 	return currency_formatter.format(cents / 100);
 }
 
+//If non-null, we're on the embedded view.
+const embed = new URLSearchParams(location.search).get("embed");
+
 const monthnames = ["???", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 export function render(data) {
 	if (data.all) data.all.forEach(s => id_to_info[s.giver.user_id] = s.giver);
@@ -62,6 +65,11 @@ export function render(data) {
 		let year = now.getUTCFullYear(), mon = now.getUTCMonth() + 1;
 		let which_month = 0;
 		badge_count = {}; badge_streak = {}; //Reset the counters
+		if (embed) return set_content("#display", [
+			data.embed_style && STYLE("#display {" + data.embed_style + "}"),
+			data.embed_heading && H3(data.embed_heading),
+			make_list(remap_to_array(data.monthly[embed + (year * 100 + mon)]), s => [s, " " + embed], "(no data)", data.badge_count || 10, 0),
+		]);
 		for (let i = 0; i < 7; ++i) {
 			const ym = year * 100 + mon;
 			const subs = remap_to_array(data.monthly["subs" + ym]);
@@ -143,14 +151,20 @@ export function render(data) {
 					"Want a summary of VIP leaders for social media? ",
 					BUTTON({type: "button", class: "opendlg", "data-dlg": "formatdlg"}, "Configure it here!"),
 				]),
+				DETAILS({id: "embedcfg"}, [SUMMARY("Embedded view"),
+					"Want a mini-view to embed in your overlay? Style it here:",
+					TEXTFORMATTING({textname: "embed_heading", textlabel: "Heading"}),
+					A({href: "vipleaders?embed=subs"}, "Drag me to OBS"), " (TODO: Allow you to pick which embed and maybe multiple)",
+				]),
 				P(BUTTON({type: "submit"}, "Save")),
 			]),
 		]));
 		DOM("#activate").disabled = !!data.active;
 		DOM("#deactivate").disabled = !data.active;
-		for (let el of DOM("#configform").elements)
-			if (el.name && data[el.name])
-				el[el.type === "checkbox" ? "checked" : "value"] = data[el.name];
+		for (let el of DOM("#configform").elements) {
+			const val = el.name && (data.embed_format[el.name] || data[el.name]);
+			if (val) el[el.type === "checkbox" ? "checked" : "value"] = val;
+		}
 		if (data.displayformat) DOM("#formattext").value = data.displayformat;
 	} else {
 		if (!DOM("#modcontrols").childElementCount) set_content("#modcontrols",

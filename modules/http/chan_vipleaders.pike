@@ -49,6 +49,22 @@ $$buttons$$
 }
 .addvip {color: blue;}
 .remvip {color: red;}
+$$styles$$
+#monthly td {vertical-align: top;}
+
+#modcontrols {margin-bottom: 1em;}
+#configform {
+	border: 1px solid black;
+	padding: 0.5em;
+	max-width: 700px;
+	margin: auto;
+}
+#embedcfg::details-content {
+	background-color: aliceblue;
+}
+</style>
+";
+constant styles = #"
 .is_mod {
 	opacity: 0.5;
 	background: #a0f0c0;
@@ -61,17 +77,8 @@ $$buttons$$
 .eligible .username {
 	font-weight: bold;
 }
-#monthly td {vertical-align: top;}
-
-#modcontrols {margin-bottom: 1em;}
-#configform {
-	border: 1px solid black;
-	padding: 0.5em;
-	max-width: 600px;
-	margin: auto;
-}
-</style>
 ";
+
 constant loggedin = #"
 [Force recalculation](: #recalc)
 ";
@@ -177,9 +184,18 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			buttons = "*You're not a recognized mod, but you're welcome to view the leaderboard.*";
 		}
 	}
+	if (req->variables->embed) return render_template("monitor.html",
+		(["vars": ([
+			"ws_type": ws_type,
+			"ws_group": "#" + req->misc->channel->userid, //In embed mode, always use the "" group, not the mod control group
+		]),
+		"styles": styles,
+		"title": "VIP leaders",
+	]));
 	return render(req, ([
 		"vars": (["ws_group": group]),
 		"buttons": buttons,
+		"styles": styles,
 	]) | req->misc->chaninfo);
 }
 
@@ -195,10 +211,16 @@ __async__ void websocket_cmd_configure(mapping(string:mixed) conn, mapping(strin
 	if (grp != "control") return 0;
 	mapping stats = await(G->G->DB->load_config(channel->userid, "subgiftstats"));
 	constant intopt = "active badge_count board_count private_leaderboard use_kofi use_streamlabs" / " ";
-	constant stropt = "displayformat" / " ";
+	constant stropt = "displayformat embed_heading" / " ";
 	int was_private = stats->private_leaderboard;
 	foreach (intopt, string opt) if (!undefinedp(msg[opt])) stats[opt] = (int)msg[opt];
 	foreach (stropt, string opt) if (!undefinedp(msg[opt])) stats[opt] = msg[opt];
+	mapping fmt = ([]);
+	foreach (TEXTFORMATTING_ATTRS, string attr) fmt[attr] = msg[attr];
+	if (textformatting_validate(fmt)) {
+		stats->embed_format = fmt;
+		stats->embed_style = textformatting_css(fmt);
+	}
 	await(G->G->DB->save_config(channel->userid, "subgiftstats", stats));
 	if (!was_private || !stats->private_leaderboard) send_updates_all(channel, "");
 	send_updates_all(channel, "control");
