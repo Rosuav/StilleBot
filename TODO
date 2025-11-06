@@ -290,3 +290,8 @@
     special can be copy/pasted from the trigger
   - Requires scope moderator:read:suspicious_users
 * Demo mode for RPS
+* Websocket pubsub for submodule information
+  - {"cmd": "subscribe", "ws_type": "chan_commands", "ws_group": "#49497888"}
+  - Can I just do that? Or should subscriptions be independent of type/group?
+  - Might remove the need for some secondary sockets. Might also allow socket groups to have
+    less duplicated information in them, though I can't think of any examples right now.
