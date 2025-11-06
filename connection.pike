@@ -1137,6 +1137,13 @@ class channel(mapping identity) {
 						if (sscanf(name, "msg_param_%s", string n) && n && n != "")
 							args["{" + n + "}"] = val;
 					trigger_special("!combofinished", person, args);
+					//Count it as a cheer of that many bits. This doesn't trigger !cheer, and it
+					//pretends that it all came from the single top contributor, since we don't
+					//get all of the people's names.
+					int bits = (int)params->msg_param_streak_size_bits;
+					if (bits) get_user_info(params->msg_param_contributor_1, "login")->then() {mapping p = __ARGS__[0];
+						event_notify("cheer", this, (["displayname": p->display_name]), bits, params, msg);
+					};
 					break;
 				}
 				default: werror("Unrecognized %s with msg_id %O on channel %s\n%O\n%O\n",
