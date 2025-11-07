@@ -1635,13 +1635,17 @@ __async__ void fetch_tts_credentials(int fast) {
 	tts_config->avail_voices = language_rates;
 }
 
+__async__ void fetch_free_media() {
+	werror("Fetching free media...\n");
+	mapping fl = G->G->freemedia_filelist = Standards.JSON.decode_utf8(await(get_url_data("https://rosuav.github.io/free-media/filelist.json")));
+	fl->_last_fetched = time();
+	fl->_lookup = mkmapping(fl->files->filename, fl->files);
+	werror("Free media fetched.\n");
+}
+
 __async__ void initialize_inherits() {
 	//Fetch the free media file list if needed, then resolve inherits (which needs free media URLs)
-	if (G->G->freemedia_filelist->?_last_fetched < time() - 3600) {
-		mapping fl = G->G->freemedia_filelist = Standards.JSON.decode_utf8(await(get_url_data("https://rosuav.github.io/free-media/filelist.json")));
-		fl->_last_fetched = time();
-		fl->_lookup = mkmapping(fl->files->filename, fl->files);
-	}
+	if (G->G->freemedia_filelist->?_last_fetched < time() - 3600) fetch_free_media();
 	mapping resolved = G_G_("alertbox_resolved");
 	//mapping resolved = G->G->alertbox_resolved = ([]); //Use this instead (once) if a change breaks inheritance
 	mapping allcfg = await(G->G->DB->load_all_configs("alertbox"));
