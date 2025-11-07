@@ -569,7 +569,7 @@ void check_hooks(array eventhooks)
 		Protocols.HTTP.Promise.Result res = await(Protocols.HTTP.Promise.get_url(url, args));
 		return res->get();
 	};
-	if (ex) error("Unable to fetch: %O\n", ex);
+	if (ex) error("Unable to fetch %O: %O\n", url, ex);
 }
 
 void poll()
