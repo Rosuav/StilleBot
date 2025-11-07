@@ -120,11 +120,11 @@ mapping hypetrain(string hook, object channel, mapping info) {
 	]);
 }
 
-@({"channel:read:hype_train", "channel.hype_train.begin", "1"}):
+@({"channel:read:hype_train", "channel.hype_train.begin", "2"}):
 mapping hypetrain_begin(object channel, mapping info) {return hypetrain("begin", channel, info);}
-@({"channel:read:hype_train", "channel.hype_train.progress", "1"}):
+@({"channel:read:hype_train", "channel.hype_train.progress", "2"}):
 mapping hypetrain_progress(object channel, mapping info) {return hypetrain("progress", channel, info);}
-@({"channel:read:hype_train", "channel.hype_train.end", "1"}):
+@({"channel:read:hype_train", "channel.hype_train.end", "2"}):
 mapping hypetrain_end(object channel, mapping info) {return hypetrain("end", channel, info);}
 
 @({"channel:read:goals", "channel.goal.progress", "1"}):
