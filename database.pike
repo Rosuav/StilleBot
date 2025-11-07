@@ -650,6 +650,13 @@ __async__ void preload_user_credentials() {
 void notify_credentials_changed(int pid, string cond, string extra, string host) {
 	load_config(extra, "credentials")->then() {[mapping data] = __ARGS__;
 		mapping cred = G->G->user_credentials;
+		if (!data->userid) {
+			//The row has been deleted. See if we have this userid; if so, purge it.
+			mapping c = m_delete(cred, (int)extra);
+			if (c) m_delete(cred, c->login);
+			//Note that we don't bother notifying of the credentials change here.
+			return;
+		}
 		cred[(int)extra] = cred[data->login] = data;
 		event_notify("credentials_changed", data);
 	};
@@ -661,6 +668,17 @@ Concurrent.Future save_user_credentials(mapping data) {
 	mapping cred = G->G->user_credentials;
 	cred[data->userid] = cred[data->login] = data;
 	return save_config(data->userid, "credentials", data);
+}
+
+__async__ void delete_user_credentials(int|string userid) {
+		//"create or replace function send_config_notification() returns trigger language plpgsql as $$begin perform pg_notify(concat('stillebot.config', ':', new.keyword), new.twitchid::text); return null; end$$;",
+		//"create or replace trigger config_changed after insert or update on stillebot.config for each row execute function send_config_notification();",
+	await(query_rw(({
+		"delete from stillebot.config where keyword = 'credentials' and twitchid = :id",
+		"select pg_notify('stillebot.config:credentials', :id::text)"
+	}), (["id": userid])));
+	mapping c = m_delete(G->G->user_credentials, (int)userid);
+	m_delete(G->G->user_credentials, c->login);
 }
 
 __async__ array(mapping) list_ephemeral_files(string|int channel, string|int uploader, string|void id, int|void include_blob) {

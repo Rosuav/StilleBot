@@ -245,19 +245,6 @@ __async__ void get_credentials() {
 	return sizeof(info) && (int)info[0]->id;
 }
 
-//This isn't currently spawned anywhere. Should it be? What if auth fails?
-__async__ void check_bcaster_tokens() {
-	foreach (G->G->user_credentials; string|int chan; mapping cred) {
-		if (stringp(chan)) continue; //Don't need to check both username and userid
-		mixed resp = await(twitch_api_request("https://id.twitch.tv/oauth2/validate",
-			(["Authorization": "Bearer " + cred->token])));
-		array scopes = sort(resp->scopes || ({ }));
-		if (cred->scopes * " " != scopes * " ") cred->scopes = scopes;
-		cred->validated = time();
-		G->G->DB->save_user_credentials(cred);
-	}
-}
-
 //Doesn't help, but it's certainly very interesting.
 //Attempt to probe the Helix pagination issues I've been seeing by paginating on two different
 //numbers and then combining the results. It's possible that there are two page sizes that would

@@ -440,6 +440,41 @@ __async__ void delayed() {
 	write("Delayed got %O\n", await(G->G->DB->query_ro("select 1234")));
 }
 
+//Should this be triggered automatically upon API failures? If so, move it back into poll.pike.
+__async__ void validate_user_credentials() {
+	string where = sizeof(G->G->args[Arg.REST]) ? " and twitchid = any(:ids)" : "";
+	//"pike stillebot --exec=validate_user_credentials --oldonly" to check those that are at least a year old.
+	//"pike stillebot --exec=validate_user_credentials 49497888" to just check one or more userids.
+	if (G->G->args->oldonly) where += " and (data->>'validated')::int < extract(epoch from now() - interval '1 year')::int";
+	array creds = await(G->G->DB->query_ro("select twitchid, data from stillebot.config where keyword = 'credentials' "
+		+ where + " order by twitchid", (["ids": G->G->args[Arg.REST]])));
+	foreach (creds; int i; mapping row) {
+		mapping cred = row->data;
+		werror("[%d/%d] Checking %d %s...\n", i + 1, sizeof(creds), row->twitchid, cred->login);
+		mixed resp = await(twitch_api_request("https://id.twitch.tv/oauth2/validate",
+			(["Authorization": "Bearer " + cred->token])));
+		//If the authentication has been completely revoked, we no longer have a valid token.
+		//This is signalled by status 401 "Unauthorized", which notably is NOT sent as an
+		//HTTP status code, and so we do not receive an exception.
+		if (resp->status == 401) {
+			werror("Credentials no longer valid, deleting.\n");
+			await(G->G->DB->delete_user_credentials(row->twitchid));
+			continue;
+		}
+		array scopes = sort(resp->scopes || ({ }));
+		if (cred->scopes * " " != scopes * " ") {
+			werror("Scopes have changed! Gained %O\nLost %O\n", scopes - cred->scopes, cred->scopes - scopes);
+			cred->scopes = scopes;
+			cred->validated = 0; //Force an update
+		}
+		if (cred->validated < time() - 604800) { //Save back to the database only if it was >1 week old, or of course if the scopes have changed.
+			if (cred->validated) werror("Credentials are >%d days old, saving\n", (time() - cred->validated) / 86400);
+			cred->validated = time();
+			await(G->G->DB->save_user_credentials(cred));
+		}
+	}
+}
+
 __async__ void test() {
 	//Recode this to whatever's needed, and use "pike stillebot --test" to run it.
 	werror("Nothing to see here, move along.\n");
