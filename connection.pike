@@ -1314,7 +1314,8 @@ void irc_closed(mapping options) {
 	if (channel) channel->channel_online(uptime);
 }
 
-@EventNotify("channel.channel_points_automatic_reward_redemption.add=1"):
+@EventNotify("channel.channel_points_automatic_reward_redemption.add=1",
+	({"channel:read:redemptions", "channel:manage:redemptions"})):
 void autoreward(object channel, mapping data) {
 	//Some automatic rewards (eg "unlock emote") cost channel points. Others (eg "gigantify")
 	//cost bits. The ones that cost bits count as cheers and advance goal bars.

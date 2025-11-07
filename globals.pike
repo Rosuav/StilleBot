@@ -231,6 +231,13 @@ class hook {
 		foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
 			if (ann) foreach (indices(ann), mixed anno) {
 				if (objectp(anno) && anno->is_hook_annotation) {
+					if (anno->scopes_required) {
+						//If we have an array of required scopes, at least one of them must be available
+						//or the hook will fail.
+						mapping cred = G->G->user_credentials[(int)channelid];
+						array avail = (cred->?scopes || ({ })) & anno->scopes_required;
+						if (!sizeof(avail)) continue;
+					}
 					if (has_value(anno->event, '=')) G->G->establish_hook_notification(channelid, anno->event);
 				}
 			}
@@ -240,7 +247,7 @@ class hook {
 
 //Usage: @EventNotify("channel.subscription.gift=1"): void subgift(mapping info) { }
 //Ties in with "inherit hook". (Or should it tie in with "inherit annotated" instead?)
-class EventNotify(string event) {@constant; constant is_hook_annotation = 1;}
+class EventNotify(string event, array|void scopes_required) {@constant; constant is_hook_annotation = 1;}
 
 //Old way of implementing hooks. Was buggy in a number of ways. Use "inherit hook" instead (see above).
 //Hook deregistration with register_hook("...event...", Program.defined(this_program)); is still permitted but useless.
