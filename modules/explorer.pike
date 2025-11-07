@@ -93,3 +93,17 @@ class menu_clicked
 		);
 	}
 }
+
+string my_describe_backtrace(mixed trace, void|int linewidth) {
+	if (objectp(trace) && trace->url) return sprintf("** HTTP response thrown! **\nURL: %O\nStatus: %O %O\nDiscovered at:\n%s\n",
+		trace->url, trace->status, trace->status_description,
+		G->G->orig_describe_backtrace(backtrace()));
+	return G->G->orig_describe_backtrace(trace, linewidth);
+}
+
+protected void create(string name) {
+	::create(name);
+	function db = all_constants()["describe_backtrace"];
+	if (has_value(Function.defined(db), "master.pike")) G->G->orig_describe_backtrace = db;
+	if (G->G->orig_describe_backtrace) all_constants()["describe_backtrace"] = my_describe_backtrace;
+}
