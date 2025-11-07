@@ -295,3 +295,4 @@
   - Can I just do that? Or should subscriptions be independent of type/group?
   - Might remove the need for some secondary sockets. Might also allow socket groups to have
     less duplicated information in them, though I can't think of any examples right now.
+* Can I implement Happy Eyeballs into poll.pike::get_url_data() ?
