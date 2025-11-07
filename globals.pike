@@ -1566,6 +1566,8 @@ mapping all_twitch_scopes = ([
 	"user:read:emotes": "List your emotes - enables emote picker", //WAHOOOOOOOOOOOOOOOOO!
 	//New as of 20240619:
 	"moderator:manage:warnings": "Warn users and require that they acknowledge the warning",
+	//New as of 20251107:
+	"moderator:read:suspicious_users": "React to messages from suspicious users",
 ]);
 
 class TwitchAuth

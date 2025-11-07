@@ -28,7 +28,12 @@ constant triggers = ({
 	special_trigger("!predictionlocked", "A channel prediction no longer accepts entries", "The broadcaster", "title, choices, choice_N_title, choice_N_users, choice_N_points, choice_N_top_M_user, choice_N_top_M_points_used", "Status"),
 	special_trigger("!predictionended", "A channel prediction just ended", "The broadcaster", "title, choices, choice_N_title, choice_N_users, choice_N_points, choice_N_top_M_user, choice_N_top_M_points_used, choice_N_top_M_points_won, winner_*, loser_*", "Status"),
 	special_trigger("!adbreak", "An ad just started on this channel", "The broadcaster", "length, is_automatic", "Status"),
+	//FIXME: These should have $$ be the sus user
+	special_trigger("!suspicioususer", "A user has been marked/unmarked suspicious", "The broadcaster", "userid, username, userlogin", "Status"),
+	special_trigger("!suspiciousmsg", "A suspicious user sent a chat message", "The broadcaster", "userid, username, userlogin", "Status"),
 });
+
+mapping(string:mapping(string:mixed)) specials_flags = ([]);
 
 @({"channel:read:polls|channel:manage:polls", "channel.poll.begin", "1"}):
 mapping pollbegin(object channel, mapping info) {
@@ -137,16 +142,40 @@ mapping goalprogress(object channel, mapping info) {
 	]);
 }
 
+@({"moderator:read:suspicious_users", "channel.suspicious_user.update", "1", (["modid": 1])}):
+mapping suspicioususer(object channel, mapping info) {
+	Stdio.append_file("evthook.log", sprintf("EVENT: Suspicious user [%O, %d]: %O\n", channel, time(), info));
+	return ([
+		"{sususerid}": info->user_id,
+		"{sususername}": info->user_name,
+		"{sususerlogin}": info->user_login,
+	]);
+}
+
+@({"moderator:read:suspicious_users", "channel.suspicious_user.message", "1", (["modid": 1])}):
+mapping suspiciousmsg(object channel, mapping info) {
+	Stdio.append_file("evthook.log", sprintf("EVENT: Suspicious message [%O, %d]: %O\n", channel, time(), info));
+	return ([
+		"{sususerid}": info->user_id,
+		"{sususername}": info->user_name,
+		"{sususerlogin}": info->user_login,
+		//"{types}": info->types * ", ", //Is this useful? Not sure.
+	]);
+}
+
 mapping eventsubs = ([]); //Map the special name (== function name) to the hook type/version for convenience
 
 //Ensure that we have all appropriate hooks for this channel
 void specials_check_hooks(object channel) {
-	multiset scopes = (multiset)(token_for_user_login(channel->config->login)[1] / " "); //TODO: Switch to user ID to ensure this remains synchronous
+	multiset scopes = (multiset)(G->G->user_credentials[channel->userid]->?scopes || ({ }));
 	foreach (G->G->SPECIALS_SCOPES; string special; array scopesets) {
 		foreach (scopesets, array scopeset) {
 			if (!has_value(scopes[scopeset[*]], 0)) { //If there isn't any case of a scope that we don't have... then we have them all!
-				if (channel->commands[?"!" + special])
-					G->G->establish_hook_notification(channel->userid, eventsubs[special]);
+				if (channel->commands[?"!" + special]) {
+					mapping cond = (["broadcaster_user_id": (string)channel->userid]);
+					if (specials_flags[special]->modid) cond->moderator_user_id = (string)channel->userid;
+					G->G->establish_hook_notification(channel->userid, eventsubs[special], cond);
+				}
 				break;
 			}
 		}
@@ -165,6 +194,7 @@ void specials_check_hooks_all_channels(int warn) {
 function make_eventhook_handler(string hookname) {
 	return lambda(object channel, mapping info) {
 		mapping params = channel && this[hookname](channel, info);
+		//TODO: Allow the hook to report a different $$ user and get_user_info if needed to populate the other fields
 		if (params) channel->trigger_special("!" + hookname, ([
 			"user": channel->login,
 			"displayname": channel->config->display_name,
@@ -183,6 +213,7 @@ protected void create(string name) {
 				string hook = anno[1] + "=" + anno[2];
 				eventsubs[key] = hook;
 				if (!G->G->eventhooks[hook]) G->G->eventhooks[hook] = ([]);
+				specials_flags[key] = sizeof(anno) > 3 ? anno[3] : ([]);
 				G->G->eventhooks[hook][name] = make_eventhook_handler(key);
 			}
 		}

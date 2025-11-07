@@ -20,6 +20,7 @@ constant SPECIAL_ORDER = ({
 	"!pollbegin", "!pollended",
 	"!predictionlocked", "!predictionended",
 	"!timeout",
+	"!suspicioususer", "!suspiciousmsg",
 	"!adbreak", "!adsoon",
 	"!giveaway_started", "!giveaway_ticket", "!giveaway_toomany", "!giveaway_closed", "!giveaway_winner", "!giveaway_ended",
 	"!kofi_dono", "!kofi_member", "!kofi_shop",
