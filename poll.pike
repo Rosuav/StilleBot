@@ -564,6 +564,14 @@ void check_hooks(array eventhooks)
 	}
 }
 
+@export: __async__ string get_url_data(string url, Protocols.HTTP.Promise.Arguments|void args) {
+	mixed ex = catch {
+		Protocols.HTTP.Promise.Result res = await(Protocols.HTTP.Promise.get_url(url, args));
+		return res->get();
+	};
+	if (ex) error("Unable to fetch: %O\n", ex);
+}
+
 void poll()
 {
 	G->G->poll_call_out = call_out(poll, 60); //Maybe make the poll interval customizable?

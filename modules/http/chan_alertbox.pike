@@ -1158,11 +1158,11 @@ constant cutewords = "puppy kitten crumpet tutu butterscotch flapjack pilliwiggi
 	"donut teacup cat purring flower sugar biscuit pillow banana berry " / " ";
 __async__ string filter_bad_words(string text, string mode) {
 	if (tts_config->badwordlist_fetchtime < time() - 86400) {
-		object res = await(Protocols.HTTP.Promise.get_url(
+		string badwords = await(get_url_data(
 			"https://raw.githubusercontent.com/coffee-and-fun/google-profanity-words/main/data/list.txt"
 		));
 		tts_config->badwordlist_fetchtime = time();
-		tts_config->badwordlist = (multiset)String.trim((res->get() / "\n")[*]);
+		tts_config->badwordlist = (multiset)String.trim((badwords / "\n")[*]);
 	}
 	array words = text / " ";
 	multiset bad = tts_config->badwordlist;
@@ -1584,11 +1584,11 @@ __async__ void fetch_tts_credentials(int fast) {
 	tts_config->access_token_fetchtime = time();
 	if (fast) return 0;
 	//To filter to just English results, add "?languageCode=en"
-	object res = await(Protocols.HTTP.Promise.get_url("https://texttospeech.googleapis.com/v1/voices",
+	mixed data = await(get_url_data("https://texttospeech.googleapis.com/v1/voices",
 		Protocols.HTTP.Promise.Arguments((["headers": ([
 			"Authorization": "Bearer " + tts_config->access_token,
 		])]))));
-	mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
+	catch {data = Standards.JSON.decode_utf8(data);};
 	if (!mappingp(data) || !data->voices) return 0;
 	//Rate 0 is standard, rate 1 is premium. Maybe add even higher rates in the future??
 	array(mapping) language_rates = allocate(RATE_MAX, ([]));
@@ -1638,8 +1638,7 @@ __async__ void fetch_tts_credentials(int fast) {
 __async__ void initialize_inherits() {
 	//Fetch the free media file list if needed, then resolve inherits (which needs free media URLs)
 	if (G->G->freemedia_filelist->?_last_fetched < time() - 3600) {
-		Protocols.HTTP.Promise.Result res = await(Protocols.HTTP.Promise.get_url("https://rosuav.github.io/free-media/filelist.json"));
-		mapping fl = G->G->freemedia_filelist = Standards.JSON.decode_utf8(res->get());
+		mapping fl = G->G->freemedia_filelist = Standards.JSON.decode_utf8(await(get_url_data("https://rosuav.github.io/free-media/filelist.json")));
 		fl->_last_fetched = time();
 		fl->_lookup = mkmapping(fl->files->filename, fl->files);
 	}
