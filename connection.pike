@@ -1682,13 +1682,13 @@ __async__ void setup_conduit(string|void url) {
 	conn->onclose = conduit_closed;
 }
 
-void establish_hook_notification(string|int channelid, string hook, mapping|void cond) {
+__async__ void establish_hook_notification(string|int channelid, string hook, mapping|void cond) {
 	//TODO: If we don't have a condid yet, queue the request
 	//HACK: If the channelid is a string, and cond is specified, they are allowed to be
 	//desynchronized. This can be useful but be cautious with it.
 	if (G->G->eventhooks[hook][?""][?(string)channelid]) return; //Already got the subscription.
 	sscanf(hook, "%s=%s", string type, string version);
-	twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
+	mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
 		"authtype": "app",
 		"json": ([
 			"type": type, "version": version,
@@ -1699,7 +1699,9 @@ void establish_hook_notification(string|int channelid, string hook, mapping|void
 			]),
 		]),
 		"return_errors": 1,
-	]));
+	])));
+	//Quick dump of failure responses. We shouldn't normally see them.
+	if (ret->status) werror("Hook not established for %O %O\n%O\n", channelid, hook, ret);
 }
 
 @hook_database_settings: void kick_when_inactive(mapping settings) {
