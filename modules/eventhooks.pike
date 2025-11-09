@@ -28,8 +28,14 @@ constant triggers = ({
 	special_trigger("!predictionlocked", "A channel prediction no longer accepts entries", "The broadcaster", "title, choices, choice_N_title, choice_N_users, choice_N_points, choice_N_top_M_user, choice_N_top_M_points_used", "Status"),
 	special_trigger("!predictionended", "A channel prediction just ended", "The broadcaster", "title, choices, choice_N_title, choice_N_users, choice_N_points, choice_N_top_M_user, choice_N_top_M_points_used, choice_N_top_M_points_won, winner_*, loser_*", "Status"),
 	special_trigger("!adbreak", "An ad just started on this channel", "The broadcaster", "length, is_automatic", "Status"),
-	special_trigger("!suspicioususer", "A user has been marked/unmarked suspicious", "The suspicious user", "status", "Status"),
-	special_trigger("!suspiciousmsg", "A suspicious user sent a chat message", "The suspicious user", "msgid", "Status"),
+	special_trigger("!suspicioususer", "A user has been marked/unmarked suspicious", "The suspicious user", ([
+		"{status}": "The newly-set status: restricted, active_monitoring, no_treatment",
+	]), "Status"),
+	special_trigger("!suspiciousmsg", "A suspicious user sent a chat message", "The suspicious user", ([
+		"%s": "Text of the message the user tried to send",
+		"{status}": "User suspicion status. If this is 'restricted', the message was not delivered.",
+		"{msgid}": "Message ID, can be used with /deletemsg",
+	]), "Status"),
 });
 
 //Fourth parameter in the decorator is a mapping of flags.
@@ -173,6 +179,7 @@ mapping suspiciousmsg(object channel, mapping info) {
 			"uid": info->user_id,
 		]),
 		"{msgid}": info->message->message_id,
+		"{status}": info->low_trust_status,
 		"%s": info->message->text,
 		"{@emoted}": emoted,
 		//"{types}": info->types * ", ", //Is this useful? Not sure.
