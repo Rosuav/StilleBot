@@ -35,6 +35,7 @@ constant triggers = ({
 		"%s": "Text of the message the user tried to send",
 		"{status}": "User suspicion status. If this is 'restricted', the message was not delivered.",
 		"{msgid}": "Message ID, can be used with /deletemsg",
+		"{@buyfollows}": "1 if the user appears to be trying to sell followers, 0 if not.",
 	]), "Status"),
 });
 
@@ -182,6 +183,7 @@ mapping suspiciousmsg(object channel, mapping info) {
 		"{status}": info->low_trust_status,
 		"%s": info->message->text,
 		"{@emoted}": emoted,
+		"{@buyfollows}": (string)is_selling_followers(info->message->text), //Same logic as autoban uses for regular messages
 		//"{types}": info->types * ", ", //Is this useful? Not sure.
 	]);
 }
