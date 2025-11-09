@@ -28,11 +28,12 @@ constant triggers = ({
 	special_trigger("!predictionlocked", "A channel prediction no longer accepts entries", "The broadcaster", "title, choices, choice_N_title, choice_N_users, choice_N_points, choice_N_top_M_user, choice_N_top_M_points_used", "Status"),
 	special_trigger("!predictionended", "A channel prediction just ended", "The broadcaster", "title, choices, choice_N_title, choice_N_users, choice_N_points, choice_N_top_M_user, choice_N_top_M_points_used, choice_N_top_M_points_won, winner_*, loser_*", "Status"),
 	special_trigger("!adbreak", "An ad just started on this channel", "The broadcaster", "length, is_automatic", "Status"),
-	//FIXME: These should have $$ be the sus user
-	special_trigger("!suspicioususer", "A user has been marked/unmarked suspicious", "The broadcaster", "userid, username, userlogin", "Status"),
-	special_trigger("!suspiciousmsg", "A suspicious user sent a chat message", "The broadcaster", "userid, username, userlogin", "Status"),
+	special_trigger("!suspicioususer", "A user has been marked/unmarked suspicious", "The suspicious user", "status", "Status"),
+	special_trigger("!suspiciousmsg", "A suspicious user sent a chat message", "The suspicious user", "msgid", "Status"),
 });
 
+//Fourth parameter in the decorator is a mapping of flags.
+//  - modid: Requires the moderator_user_id condition attribute
 mapping(string:mapping(string:mixed)) specials_flags = ([]);
 
 @({"channel:read:polls|channel:manage:polls", "channel.poll.begin", "1"}):
@@ -146,19 +147,34 @@ mapping goalprogress(object channel, mapping info) {
 mapping suspicioususer(object channel, mapping info) {
 	Stdio.append_file("evthook.log", sprintf("EVENT: Suspicious user [%O, %d]: %O\n", channel, time(), info));
 	return ([
-		"{sususerid}": info->user_id,
-		"{sususername}": info->user_name,
-		"{sususerlogin}": info->user_login,
+		"$$": ([
+			"user": info->user_login,
+			"displayname": info->user_name,
+			"uid": info->user_id,
+		]),
+		"{status}": info->low_trust_status,
 	]);
 }
 
 @({"moderator:read:suspicious_users", "channel.suspicious_user.message", "1", (["modid": 1])}):
 mapping suspiciousmsg(object channel, mapping info) {
 	Stdio.append_file("evthook.log", sprintf("EVENT: Suspicious message [%O, %d]: %O\n", channel, time(), info));
+	//Reassemble the emoted message from its fragments
+	string emoted = "";
+	foreach (info->message->fragments, mapping f) {
+		if (f->type == "text") emoted += f->text;
+		//TODO: Cheer emotes? Not sure, maybe just leave them like regular emotes.
+		else if (f->type == "emote") emoted += sprintf("\uFFFAe%s:%s\uFFFB", f->emote->id, f->text);
+	}
 	return ([
-		"{sususerid}": info->user_id,
-		"{sususername}": info->user_name,
-		"{sususerlogin}": info->user_login,
+		"$$": ([
+			"user": info->user_login,
+			"displayname": info->user_name,
+			"uid": info->user_id,
+		]),
+		"{msgid}": info->message->message_id,
+		"%s": info->message->text,
+		"{@emoted}": emoted,
 		//"{types}": info->types * ", ", //Is this useful? Not sure.
 	]);
 }
@@ -194,12 +210,23 @@ void specials_check_hooks_all_channels(int warn) {
 function make_eventhook_handler(string hookname) {
 	return lambda(object channel, mapping info) {
 		mapping params = channel && this[hookname](channel, info);
-		//TODO: Allow the hook to report a different $$ user and get_user_info if needed to populate the other fields
-		if (params) channel->trigger_special("!" + hookname, ([
+		mapping user = ([ //For most event hooks, $$ is the broadcaster.
 			"user": channel->login,
 			"displayname": channel->config->display_name,
 			"uid": channel->userid,
-		]), params);
+		]);
+		//The hook function may report a different $$ user. It is provided as a mapping
+		//of the same three as above, but if only user or uid is provided, the rest will
+		//be fetched.
+		if (mapping u = m_delete(params, "$$")) {
+			user = u;
+			if (!u->user || !u->displayname || !u->uid) {
+				mapping info = cached_user_info(u->uid ? (int)u->uid : u->user);
+				if (!info) ; //TODO: We're not able to await here, can we give partial information?
+				else user = (["uid": info->id, "displayname": info->display_name, "user": info->login]);
+			}
+		}
+		if (params) channel->trigger_special("!" + hookname, user, params);
 	};
 }
 
