@@ -283,7 +283,6 @@
     is fine so long as it's getting that multiple times a week, but eventually it won't be.
 * /serverstatus during hop from Gideon to Sikorsky might be losing the Gideon socket?? It's
   staying with the Gideon database reporting that it's read/write but it isn't actually RW.
-* Demo mode for RPS
 * Websocket pubsub for submodule information
   - {"cmd": "subscribe", "ws_type": "chan_commands", "ws_group": "#49497888"}
   - Can I just do that? Or should subscriptions be independent of type/group?

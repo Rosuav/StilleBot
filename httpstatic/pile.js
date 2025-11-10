@@ -17,6 +17,8 @@ Matter.Runner.run(Matter.Runner.create(), engine);
 renderer.options.wireframes = false;
 window.renderer = renderer; //For debugging, eg toggle wireframes mode
 window.wf = () => renderer.options.wireframes = !renderer.options.wireframes;
+//If true, will (once only) add a bunch of automatic RPS entries.
+let autorps = ws_group === "aIW6gTZ0GcACC17ENWMRYmc2QVKiSkKR80DN#0" ? 1 : 0;
 
 //Conflict category definitions. If two objects have an assigned category, and A_B is in this
 //list, then A wins. If B_A is in this list, then B wins. If neither, they bounce off each other.
@@ -376,6 +378,29 @@ export function render(data) {
 			wall_objects.right = Rectangle(width / 2 + floor_size, height - height * need_right / 200, wall_thickness, height * need_right / 100 + 10,
 				{isStatic: true, render: {fillStyle: wallcolor, lineWidth: 0}, ...default_attrs}));
 		if (+data.data.clawsize) create_claw(data.data);
+		if (autorps === 1) {
+			autorps = 2; //One autorps only, no more.
+			merge_mode = "off";
+			setTimeout(() => merge_mode = "normal", 3000);
+			const uids = [49497888, 279141671, 54212603, 469694955, 265796767, 122743188];
+			const augs = ["rock", "rock", "paper", "paper", "scissors", "scissors"];
+			//const augments = ["knife", "knife", "pumpkin", "pumpkin", "ghost", "ghost"];
+			const vips = [false, false, false, false, true, true];
+			while (uids.length && augs.length && vips.length) {
+				const uid = uids.splice(Math.floor(Math.random() * uids.length), 1)[0];
+				const aug = augs.splice(Math.floor(Math.random() * augs.length), 1)[0];
+				const vip = vips.splice(Math.floor(Math.random() * vips.length), 1)[0];
+				render({silentmode: 1, addthing: "avatar", addxtra: "avatar", xtra: {
+					conflict_category: aug,
+					image: {
+						url: "monitors?augment=" + aug + "&userid=" + uid + (vip ? "&crown" : ""),
+						xsize: 448, ysize: 448,
+					},
+					label: "RPS demo", //Not putting usernames here as nothing uses them anyway
+				}});
+			}
+			data.newcount = null;
+		}
 	}
 	if (data.addxtra) addxtra[data.addxtra] = data.xtra;
 	if (data.addthing) data.newcount = {[data.addthing]: (thingcategories[data.addthing]?.length||0) + 1};
@@ -439,7 +464,7 @@ export function render(data) {
 			//A new thing has been added! Make the pile visible.
 			unfade();
 		}
-		if (data.addthing) ws_sync.send({cmd: "added", thingtype, newcount});
+		if (data.addthing && !data.silentmode) ws_sync.send({cmd: "added", thingtype, newcount});
 	});
 	if (data.claw && CLAW.claw) {
 		clawqueue.push(data.claw);
@@ -496,7 +521,7 @@ export function render(data) {
 	}
 	if (data.merge) merge_mode = data.merge;
 }
-ws_sync.send({cmd: "querycounts"});
+if (!autorps) ws_sync.send({cmd: "querycounts"});
 
 //Demo mode? Emote dropping mode?
 if (0) setInterval(() => {
