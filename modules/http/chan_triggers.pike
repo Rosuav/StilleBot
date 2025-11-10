@@ -62,6 +62,8 @@ int can_manage_feature(object channel, string kwd) {return get_trig_id(channel, 
 void enable_feature(object channel, string kwd, int state) {
 	mapping info = ENABLEABLE_FEATURES[kwd]; if (!info) return;
 	G->G->update_command(channel, "!!trigger", get_trig_id(channel, kwd) || "", state ? info->response : "");
+	//HACK: When you enable buy-follows, also enable the special trigger.
+	if (kwd == "buy-follows") G->G->update_command(channel, "!!", "!suspiciousmsg", state ? info->response : "");
 }
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {

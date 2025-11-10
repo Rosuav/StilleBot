@@ -184,6 +184,7 @@ mapping suspiciousmsg(object channel, mapping info) {
 		"%s": info->message->text,
 		"{@emoted}": emoted,
 		"{@buyfollows}": (string)is_selling_followers(info->message->text), //Same logic as autoban uses for regular messages
+		"{@mod}": "0", //Undocumented. Suspicious users are never mods. Allow the same buy-follows trigger to process these by being explicit.
 		//"{types}": info->types * ", ", //Is this useful? Not sure.
 	]);
 }
