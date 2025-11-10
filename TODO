@@ -283,12 +283,6 @@
     is fine so long as it's getting that multiple times a week, but eventually it won't be.
 * /serverstatus during hop from Gideon to Sikorsky might be losing the Gideon socket?? It's
   staying with the Gideon database reporting that it's read/write but it isn't actually RW.
-* https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channelsuspicious_usermessage
-  - Maybe make a special trigger?
-  - When someone enables autoban, also enable it on suspicious messages
-  - Filter through the same checks and add the same attribute, so the suspicious messages
-    special can be copy/pasted from the trigger
-  - Requires scope moderator:read:suspicious_users
 * Demo mode for RPS
 * Websocket pubsub for submodule information
   - {"cmd": "subscribe", "ws_type": "chan_commands", "ws_group": "#49497888"}
