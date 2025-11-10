@@ -173,7 +173,7 @@ export const autorender = {
 		if (editables[nonce].type === "pile") {
 			//TODO: Get the width and height once they're configurable
 			set_content(el.querySelector(".preview"), IFRAME({src: "monitors?view=" + nonce, "width": 600, "height": 400}));
-			el.querySelector("[data-action=claw]").disabled = +editables[nonce].clawsize <= 0;
+			el.querySelector("[data-action=claw]").disabled = +(editables[nonce].clawsize || 0) <= 0;
 		}
 		else update_display(el.querySelector(".preview"), editables[nonce]);
 		el.querySelector(".preview-bg").style.backgroundColor = editables[nonce].previewbg;
