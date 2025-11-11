@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, DIV, H3, INPUT, LABEL, P, TABLE, TD, TH, TR, UL} = choc; //autoimport
+const {BUTTON, DIV, H3, INPUT, LABEL, LI, P, TABLE, TD, TH, TR, UL} = choc; //autoimport
 
 set_content("#settings", [
 	TABLE([
@@ -25,6 +25,14 @@ set_content("#settings", [
 /* Also: Have a !!hyperlink special trigger, which is given all the necessary information. Suggest adding /warn to that. */
 
 export function render(data) {
+	DOM("#allowall").checked = !data.blocked;
+	const permitted = data.permit || [];
+	document.querySelectorAll("[name=allowed]").forEach(el => el.checked = permitted.includes(el.value));
+	set_content("#warnings", [
+		LI([BUTTON({type: "button", class: "delete", title: "Delete"}, "🗑"), "Purge"]),
+		LI([BUTTON({type: "button", class: "delete", title: "Delete"}, "🗑"), "Timeout (60s)"]),
+		LI([BUTTON({type: "button", class: "delete", title: "Delete"}, "🗑"), "Ban"]),
+	]);
 }
 
 //The radio button

@@ -1,6 +1,9 @@
 inherit http_websocket;
 inherit builtin_command;
 
+//NOTE: This saves into channel->botconfig since it needs to be checked for every single
+//message that gets posted. It's like how commands/triggers/specials are all preloaded.
+
 constant markdown = #{# Hyperlink blocking for $$channel$$
 
 Posting of hyperlinks can be blocked in your Twitch Dashboard. If they are, none of these
@@ -9,6 +12,8 @@ Go to [your dashboard](https://dashboard.twitch.tv/moderation/settings) and "Sho
 Settings" if necessary, then scroll down to "Block Hyperlinks" and ensure that it is disabled.
 
 <div id=settings></div>
+
+$$save_or_login$$
 #};
 
 constant ENABLEABLE_FEATURES = ([
@@ -25,13 +30,37 @@ void enable_feature(object channel, string kwd, int state) {
 }
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
-	//TODO: Read-only view so people can see what the settings are
-	if (!req->misc->is_mod) return render_template(markdown, ([
-		"loadingmsg": "TODO",
-	]) | req->misc->chaninfo);
+
 	return render(req, ([
-		"vars": (["ws_group": ""]),
+		"vars": (["ws_group": req->misc->is_mod ? "control" : ""]),
+		req->misc->is_mod ? "save_or_login" : "ignoreme": "",
 	]) | req->misc->chaninfo);
+}
+
+bool need_mod(string grp) {return grp == "control";}
+__async__ mapping get_chan_state(object channel, string grp) {
+	if (grp == "control") return channel->botconfig->hyperlinks || ([]);
+	//TODO: Reduced info for non-mods
+	return ([]);
+}
+
+@hook_allmsgs: int message(object channel, mapping person, string msg) {
+	mapping cfg = channel->config->hyperlinks || ([]);
+}
+
+@"is_mod": void wscmd_allow(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping cfg = channel->botconfig->hyperlinks;
+	if (!cfg) cfg = channel->botconfig->hyperlinks = ([]);
+	if (msg->all) {
+		cfg->blocked = 0;
+		m_delete(cfg, "permit");
+	} else {
+		cfg->blocked = 1;
+		cfg->permit = msg->permit || ({ });
+	}
+	channel->botconfig_save();
+	send_updates_all(channel, "");
+	send_updates_all(channel, "control");
 }
 
 protected void create(string name) {::create(name);}
