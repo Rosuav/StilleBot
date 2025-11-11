@@ -381,7 +381,7 @@ export function render(data) {
 		if (autorps === 1) {
 			autorps = 2; //One autorps only, no more.
 			merge_mode = "off";
-			setTimeout(() => merge_mode = "normal", 3000);
+			setTimeout(() => merge_mode = "normal", 5000);
 			const uids = [49497888, 279141671, 54212603, 469694955, 265796767, 122743188];
 			const augs = ["rock", "rock", "paper", "paper", "scissors", "scissors"];
 			//const augments = ["knife", "knife", "pumpkin", "pumpkin", "ghost", "ghost"];
