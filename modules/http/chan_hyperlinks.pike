@@ -8,10 +8,7 @@ settings will take effect, and non-moderators will not be able to post any links
 Go to [your dashboard](https://dashboard.twitch.tv/moderation/settings) and "Show All Advanced
 Settings" if necessary, then scroll down to "Block Hyperlinks" and ensure that it is disabled.
 
-<table id=permitted></table>
-
-	
-$$save_or_login||$$
+<div id=settings></div>
 #};
 
 constant ENABLEABLE_FEATURES = ([
@@ -34,7 +31,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	]) | req->misc->chaninfo);
 	return render(req, ([
 		"vars": (["ws_group": ""]),
-		"save_or_login": "[Save all](:#saveall)",
 	]) | req->misc->chaninfo);
 }
 
