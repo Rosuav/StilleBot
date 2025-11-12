@@ -138,8 +138,8 @@ __async__ mapping|zero get_image_dimensions(string url) {
 	]);
 }
 
-//If present, is an image mapping for a cute crown adornment
-mapping crown;
+//If present, are image mappings for a cute crown and a bloody sword, augmentations.
+mapping crown, sword;
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	mapping monitors = G->G->DB->load_cached_config(req->misc->channel->userid, "monitors");
@@ -206,6 +206,15 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			}
 			image->paste_mask(crown->image, crown->alpha, (aug->xsize - crown->xsize) / 2, 0);
 			alpha->paste_mask(crown->alpha, crown->alpha, (aug->xsize - crown->xsize) / 2, 0);
+		}
+		if (req->variables->sword) {
+			//TODO as above - a sword asset would be nice. Using rosuavBlade because it's awesome.
+			if (!sword) {
+				string raw = await(Protocols.HTTP.Promise.get_url("https://static-cdn.jtvnw.net/emoticons/v2/300526834/default/light/3.0"))->get();
+				sword = Image.ANY._decode(raw);
+			}
+			image->paste_mask(sword->image, sword->alpha, (aug->xsize - sword->xsize) / 2, 0);
+			alpha->paste_mask(sword->alpha, sword->alpha, (aug->xsize - sword->xsize) / 2, 0);
 		}
 		return (["type": "image/png", "data": Image.PNG.encode(image, (["alpha": alpha]))]);
 	}
@@ -787,7 +796,8 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 				break;
 			}
 			case "avatar": {
-				sscanf(args, "%d/%[^/]/%s", int userid, string|zero augment, string flags);
+				sscanf(args, "%d/%[^/]/%s", int userid, string|zero augment, string|array flags);
+				flags /= "/";
 				if (!AUGMENTATIONS[augment]) augment = 0;
 				if (!userid) userid = (int)args;
 				if (!userid) break;
@@ -797,7 +807,8 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 					if (augment) {
 						xtra->conflict_category = augment;
 						image = "monitors?augment=" + augment + "&userid=" + userid;
-						if (flags == "vip1") image += "&crown"; //If you're a VIP, add a crown. Optional and controlled by the command.
+						if (has_value(flags, "vip1")) image += "&crown"; //If you're a VIP, add a crown. Optional and controlled by the command.
+						if (has_value(flags, "mod1")) image += "&sword"; //Similarly, if you're a mod, add a sword.
 						//HACK: There's no point augmenting the image just to get its dimensions.
 						bounding_box_cache[image] = ([
 							"url": image,

@@ -205,7 +205,7 @@ __async__ void rpsrebuild(object channel) {
 			test ("$rpsactive$") {
 				if ("$*rpsparty$" == "1") ""
 				else {
-					chan_monitors(%q, "add", "avatar", "{username}", "avatar:{uid}/%s") %q
+					chan_monitors(%q, "add", "avatar", "{username}", "avatar:{uid}/%s/vip{@vip}/mod{@mod}") %q
 					if ("$rpsactive$" == "2") ""
 					else $*rpsparty$ = "1"
 				}
