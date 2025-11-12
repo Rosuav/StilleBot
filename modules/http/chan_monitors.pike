@@ -139,6 +139,10 @@ __async__ mapping|zero get_image_dimensions(string url) {
 }
 
 //If present, are image mappings for a cute crown and a bloody sword, augmentations.
+//TODO: Have different adornments for different themes. The bloody sword can be retained for the
+//Halloween theme, and then maybe find a different asset for the cute variant.
+//Sword and crown are worthless here; I invite everyone to dance. Labourers, lawyers, church, and gown,
+//all make their little prance.
 mapping crown, sword;
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
