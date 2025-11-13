@@ -8,7 +8,20 @@ mapping json;
 @hook_allmsgs:
 int message(object channel, mapping person, string msg)
 {
-	if (channel->name != "#devicat" || person->user != "candicat") return 0;
+	if (channel->name != "#devicat") return 0;
+	if (person->user == "candicat") check_for_new_quote(person, msg);
+	//If someone tries "!quote keyword", search, and emit a quote command with the number.
+	if (sscanf(msg, "!findquote %s", string findme) && findme) {
+		findme = lower_case(String.trim(findme));
+		array options = ({ });
+		foreach (json->quotesnew; int idx; string quote) {
+			if (quote && has_value(lower_case(quote), findme)) options += ({idx});
+		}
+		if (sizeof(options)) channel->send(person, "!quote " + random(options));
+	}
+}
+
+void check_for_new_quote(mapping person, string msg) {
 	sscanf(msg, "#%d: %s", int idx, string quote);
 	int save = 0;
 	if (idx && quote) {
@@ -25,7 +38,6 @@ int message(object channel, mapping person, string msg)
 		if (json->emotes[name] != id) {json->emotes[name] = id; save = 1;}
 	}
 	if (save) Stdio.write_file(CACHE_FILE, Standards.JSON.encode(json, 7) + "\n");
-	return 0;
 }
 
 protected void create(string name)
