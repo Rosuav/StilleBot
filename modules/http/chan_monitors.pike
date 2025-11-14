@@ -138,9 +138,9 @@ __async__ mapping|zero get_image_dimensions(string url) {
 	]);
 }
 
-//If present, are image mappings for a cute crown and a bloody sword, augmentations.
-//TODO: Have different adornments for different themes. The bloody sword can be retained for the
-//Halloween theme, and then maybe find a different asset for the cute variant.
+//If present, are image mappings for a cute crown and sword (actually bop-hammer), augmentations.
+//TODO: Have different adornments for different themes. Use the Vorpal sword for the
+//Halloween theme, and then maybe find a different asset for the default variant.
 //Sword and crown are worthless here; I invite everyone to dance. Labourers, lawyers, church, and gown,
 //all make their little prance.
 mapping crown, sword;
@@ -212,9 +212,9 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			alpha->paste_mask(crown->alpha, crown->alpha, (aug->xsize - crown->xsize) / 2, 0);
 		}
 		if (req->variables->sword) {
-			//TODO as above - a sword asset would be nice. Using rosuavBlade because it's awesome.
+			//TODO as above - a sword asset would be nice. This one works for the cute style (it's a hammer but who's asking).
 			if (!sword) {
-				string raw = await(Protocols.HTTP.Promise.get_url("https://static-cdn.jtvnw.net/emoticons/v2/300526834/default/light/3.0"))->get();
+				string raw = await(Protocols.HTTP.Promise.get_url("https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_7034ea1bf3c14b5aaa3b5640ae0151f6/default/light/3.0"))->get();
 				sword = Image.ANY._decode(raw);
 			}
 			image->paste_mask(sword->image, sword->alpha, (aug->xsize - sword->xsize) / 2, 0);
