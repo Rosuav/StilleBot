@@ -801,7 +801,7 @@ __async__ mapping pile_add(object channel, mapping info, mapping person, array p
 			}
 			case "avatar": {
 				sscanf(args, "%d/%[^/]/%s", int userid, string|zero augment, string|array flags);
-				flags /= "/";
+				flags = (flags || "") / "/";
 				if (!AUGMENTATIONS[augment]) augment = 0;
 				if (!userid) userid = (int)args;
 				if (!userid) break;
