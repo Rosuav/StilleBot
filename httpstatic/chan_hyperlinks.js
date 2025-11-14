@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, DIV, H3, INPUT, LABEL, LI, P, TABLE, TD, TH, TR, UL} = choc; //autoimport
+const {BUTTON, DIV, H3, INPUT, LABEL, LI, OL, P, TABLE, TD, TH, TR} = choc; //autoimport
 
 set_content("#settings", [
 	TABLE([
@@ -14,7 +14,7 @@ set_content("#settings", [
 	]),
 	H3("Penalties"),
 	P("First offense gets the first warning. Subsequent offenses will progress through the list."),
-	UL({id: "warnings"}),
+	OL({id: "warnings"}),
 	DIV({class: "buttonbox"}, [
 		BUTTON("Delete message"),
 		BUTTON("Purge chat messages"),
