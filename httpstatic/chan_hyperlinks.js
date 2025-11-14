@@ -6,6 +6,7 @@ set_content("#settings", [
 		TR(TH({colSpan: 4}, "Who should be allowed to post links?")),
 		TR([
 			TD(LABEL([INPUT({type: "radio", id: "allowall"}), "Anyone (no filtering)"])),
+			TD(LABEL([INPUT({type: "checkbox", disabled: true, checked: true}), "Mods"])),
 			TD(LABEL([INPUT({type: "checkbox", name: "allowed", value: "vip"}), "VIPs"])),
 			TD(LABEL([INPUT({type: "checkbox", name: "allowed", value: "raider"}), "Raiders"])),
 			TD(LABEL([INPUT({type: "checkbox", name: "allowed", value: "permit"}), "!permit command"])),
