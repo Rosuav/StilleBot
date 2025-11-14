@@ -1,5 +1,7 @@
 inherit http_websocket;
 inherit builtin_command;
+inherit annotated;
+inherit hook;
 
 //NOTE: This saves into channel->botconfig since it needs to be checked for every single
 //message that gets posted. It's like how commands/triggers/specials are all preloaded.
@@ -15,6 +17,8 @@ Settings" if necessary, then scroll down to "Block Hyperlinks" and ensure that i
 
 $$save_or_login$$
 #};
+
+@retain: mapping(int:mapping(int:int)) hyperlink_bans = ([]);
 
 constant ENABLEABLE_FEATURES = ([
 	"block-links": ([
@@ -45,7 +49,20 @@ __async__ mapping get_chan_state(object channel, string grp) {
 }
 
 @hook_allmsgs: int message(object channel, mapping person, string msg) {
+	if (person->badges->?_mod) return 0; //Mods are always permitted, no matter what settings we have
 	mapping cfg = channel->config->hyperlinks || ([]);
+	if (!cfg->blocked) return 0; //All links are permitted, no filtering is being done
+	if (!has_value(msg, "KICKME")) return 0; //For testing, we actually block the word KICKME, instead of hyperlinks.
+	if (person->badges->?vip && has_value(cfg->permit, "vip")) return 0;
+	if (channel->raiders[person->uid] && has_value(cfg->permit, "raider")) return 0;
+	//TODO: !permit command
+	//If we got this far, the user needs to be punished.
+	mapping bans = hyperlink_bans[channel->userid];
+	if (!bans) bans = hyperlink_bans[channel->userid] = ([]);
+	//Humans will talk about "strike one" as the first, but since we're looking up in an array,
+	//the first offense is strike 0.
+	int strike = bans[person->uid]++;
+	werror("PUNISH %O strike %d\n", person->uid, strike);
 }
 
 @"is_mod": void wscmd_allow(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
