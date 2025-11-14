@@ -480,6 +480,7 @@ class channel(mapping identity) {
 					await(_send_with_catch(person, cfg->error_handler->message, vars, cfg->error_handler->cfg));
 				}
 				report_error("ERROR", String.trim(ex[0]), "");
+				//werror("Backtrace:\n%s\n", describe_backtrace(ex[1]));
 			}
 			else werror("**** Error in command handling, unexpected format ****\n%s\n", describe_backtrace(ex));
 		}
