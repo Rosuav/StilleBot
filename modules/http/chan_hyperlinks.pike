@@ -56,6 +56,23 @@ __async__ mapping get_chan_state(object channel, string grp) {
 	return ([]);
 }
 
+array maybe_link = ({
+	//Any word containing two dots, and at least some alphabetics, is likely to be a link.
+	//Example: www.example.com
+	//Non-example: 11.5.2025, 3.14.2
+	Regexp.SimpleRegexp("[^ ]\\.[^ ]+\\.[a-zA-Z]"),
+	//Two sections and then a slash, almost certainly a link.
+	//Example: instagram.com/something
+	Regexp.SimpleRegexp("[^ ]\\.[^ ]+/[^ ]"),
+});
+
+int(1bit) contains_link(string msg) {
+	//if (has_value(msg, "HTTPKICKME")) return 1; //For testing, we actually block the word HTTPKICKME, to ensure that other bots don't ban for it.
+	//If you have anything that looks like a protocol, even not at the start of a word, it's a link.
+	if (has_value(msg, "http://") || has_value(msg, "https://")) return 1;
+	foreach (maybe_link, object re) if (re->match(msg)) return 1;
+}
+
 @hook_allmsgs: int message(object channel, mapping person, string msg) {
 	mapping cfg = channel->config->hyperlinks || ([]);
 	if (!cfg->blocked) return 0; //All links are permitted, no filtering is being done
@@ -71,7 +88,7 @@ __async__ mapping get_chan_state(object channel, string grp) {
 		return 0;
 	}
 	if (!cfg->warnings || !sizeof(cfg->warnings)) return 0; //No actions to be taken against links
-	if (!has_value(msg, "KICKME")) return 0; //For testing, we actually block the word KICKME, instead of hyperlinks.
+	if (!contains_link(msg)) return 0; //No link? No problem.
 	if (person->badges->?vip && has_value(cfg->permit, "vip")) return 0;
 	if (channel->raiders[person->uid] && has_value(cfg->permit, "raider")) return 0;
 	//If we got this far, the user probably needs to be punished.
