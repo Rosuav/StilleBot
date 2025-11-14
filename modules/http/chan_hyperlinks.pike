@@ -65,9 +65,30 @@ __async__ mapping get_chan_state(object channel, string grp) {
 	int strike = bans[person->uid]++;
 	if (strike >= sizeof(cfg->warnings)) strike = sizeof(cfg->warnings) - 1;
 	mapping warn = cfg->warnings[strike];
-	werror("PUNISH %O strike %d: %s\n", person->uid, strike, warn->action);
 	if (warn->msg != "") channel->send(person, warn->msg);
+	int voiceid = 49497888; //FIXME
+	mapping params = (["user_id": person->uid]);
+	switch (warn->action) {
+		case "delete": twitch_api_request(sprintf(
+			"https://api.twitch.tv/helix/moderation/chat?broadcaster_id=%d&moderator_id=%d&message_id=%s",
+			channel->userid, voiceid, person->msgid),
+			(["Authorization": voiceid]),
+			(["method": "DELETE"]),
+		);
+		break;
+		case "timeout": params->duration = warn->duration; //Fall through
+		case "ban": twitch_api_request(sprintf(
+			"https://api.twitch.tv/helix/moderation/bans?broadcaster_id=%d&moderator_id=%d",
+			channel->userid, voiceid),
+			(["Authorization": voiceid]),
+			(["method": "POST", "json": (["data": params])]), //Not sure why it needs to be wrapped like this
+		);
+		break;
+		case "warn": default: break; //Just a warning (message), no timeout/ban.
+	}
 }
+
+@hook_channel_offline: int channel_offline(string channel, int uptime, int id) {m_delete(hyperlink_bans, id);}
 
 @"is_mod": void wscmd_allow(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = channel->botconfig->hyperlinks;
