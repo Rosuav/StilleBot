@@ -57,20 +57,30 @@ __async__ mapping get_chan_state(object channel, string grp) {
 }
 
 @hook_allmsgs: int message(object channel, mapping person, string msg) {
-	if (person->badges->?_mod) return 0; //Mods are always permitted, no matter what settings we have
 	mapping cfg = channel->config->hyperlinks || ([]);
 	if (!cfg->blocked) return 0; //All links are permitted, no filtering is being done
+	if (person->badges->?_mod) {
+		//Mods are always permitted, no matter what settings we have. Check for a !permit magic command,
+		//or maybe this should be an explicit builtin?? Note that there's no message in chat here.
+		if (has_value(cfg->permit, "permit") && sscanf(msg, "!permit %*[@]%s", string user) && user) get_user_id(user)->then() {
+			mapping bans = hyperlink_bans[channel->userid];
+			if (!bans) bans = hyperlink_bans[channel->userid] = ([]);
+			bans[__ARGS__[0]] = -1;
+			werror("%O\n", bans);
+		};
+		return 0;
+	}
 	if (!cfg->warnings || !sizeof(cfg->warnings)) return 0; //No actions to be taken against links
 	if (!has_value(msg, "KICKME")) return 0; //For testing, we actually block the word KICKME, instead of hyperlinks.
 	if (person->badges->?vip && has_value(cfg->permit, "vip")) return 0;
 	if (channel->raiders[person->uid] && has_value(cfg->permit, "raider")) return 0;
-	//TODO: !permit command
-	//If we got this far, the user needs to be punished.
+	//If we got this far, the user probably needs to be punished.
 	mapping bans = hyperlink_bans[channel->userid];
 	if (!bans) bans = hyperlink_bans[channel->userid] = ([]);
 	//Humans will talk about "strike one" as the first, but since we're looking up in an array,
 	//the first offense is strike 0.
 	int strike = bans[person->uid]++;
+	if (strike < 0) return 0; //Actually, no punishment; the user had a permit (aka "Get Out Of Jail Free Card")
 	if (strike >= sizeof(cfg->warnings)) strike = sizeof(cfg->warnings) - 1;
 	//TODO: If we don't have moderator:manage:banned_users on the broadcaster, demand that a voice
 	//be selected. Otherwise this will just fail.
