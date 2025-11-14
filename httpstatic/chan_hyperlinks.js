@@ -1,5 +1,5 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, DIV, H3, INPUT, LABEL, P, TABLE, TBODY, TD, TH, THEAD, TR} = choc; //autoimport
+const {A, BR, BUTTON, CODE, DIV, H3, INPUT, LABEL, OPTION, P, SELECT, TABLE, TBODY, TD, TH, THEAD, TR} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 set_content("#settings", [
@@ -26,6 +26,13 @@ set_content("#settings", [
 		BUTTON({class: "addwarning", "data-action": "timeout"}, "Timeout"),
 		BUTTON({class: "addwarning", "data-action": "ban"}, "Ban"),
 	]),
+	P([
+		"Moderatorial actions should be done by which moderator? ",
+		SELECT({id: "modvoice"}), BR(),
+		"If the mod you want is missing or disabled, go to ",
+		A({href: "voices"}, "Voices"),
+		" to authenticate it - requires the ", CODE("Ban/timeout/unban users"), " permission.",
+	]),
 ]);
 
 /* Also: Have a !!hyperlink special trigger, which is given all the necessary information. Suggest adding /warn to that. */
@@ -46,6 +53,9 @@ export function render(data) {
 		TD(INPUT({name: "msg", size: 60, value: warn.msg})),
 		TD(BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑")),
 	])));
+	set_content("#modvoice", data.voices.map(v =>
+		OPTION({value: v.id, disabled: !v.scopes.includes("moderator:manage:banned_users")}, v.desc))
+	).value = data.voice;
 }
 
 //The radio button
@@ -67,3 +77,5 @@ on("click", ".addwarning", e => ws_sync.send({cmd: "addwarning", action: e.match
 on("click", ".confirmdelete", simpleconfirm("Delete this warning level?", e => ws_sync.send({cmd: "delwarning", idx: e.match.closest_data("idx")})));
 
 on("change", "#warnings input", e => ws_sync.send({cmd: "editwarning", idx: e.match.closest_data("idx"), [e.match.name]: e.match.value}));
+
+on("change", "#modvoice", e => ws_sync.send({cmd: "configure", "voice": e.match.value}));

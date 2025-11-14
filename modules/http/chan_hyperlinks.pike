@@ -43,7 +43,15 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 
 bool need_mod(string grp) {return grp == "control";}
 __async__ mapping get_chan_state(object channel, string grp) {
-	if (grp == "control") return channel->botconfig->hyperlinks || ([]);
+	if (grp == "control") {
+		//TODO: Filter to just moderators (and the broadcaster). This could be done if we have permission
+		//from the broadcaster (moderation:read or channel:manage:moderators), or from the voice in question
+		//(user:read:moderated_channels), so we could guarantee to check this for Rosuav and MustardMine,
+		//but not always for arbitrary voices. Maybe just filter out MM if not a mod?
+		mapping voices = G->G->DB->load_cached_config(channel->userid, "voices");
+		array vox = values(voices); sort((array(int))indices(voices), vox);
+		return (channel->botconfig->hyperlinks || ([])) | (["voices": vox]);
+	}
 	//TODO: Reduced info for non-mods
 	return ([]);
 }
@@ -64,9 +72,11 @@ __async__ mapping get_chan_state(object channel, string grp) {
 	//the first offense is strike 0.
 	int strike = bans[person->uid]++;
 	if (strike >= sizeof(cfg->warnings)) strike = sizeof(cfg->warnings) - 1;
+	//TODO: If we don't have moderator:manage:banned_users on the broadcaster, demand that a voice
+	//be selected. Otherwise this will just fail.
+	int voiceid = cfg->voice || channel->userid;
 	mapping warn = cfg->warnings[strike];
-	if (warn->msg != "") channel->send(person, warn->msg);
-	int voiceid = 49497888; //FIXME
+	if (warn->msg != "") channel->send(person, (["message": warn->msg, "voice": (string)voiceid]));
 	mapping params = (["user_id": person->uid]);
 	switch (warn->action) {
 		case "delete": twitch_api_request(sprintf(
@@ -137,6 +147,15 @@ __async__ mapping get_chan_state(object channel, string grp) {
 	mapping warn = cfg->warnings[idx];
 	if (msg->msg) warn->msg = msg->msg;
 	if ((int)msg->duration && warn->action == "timeout") warn->duration = (int)msg->duration;
+	channel->botconfig_save();
+	send_updates_all(channel, "");
+	send_updates_all(channel, "control");
+}
+
+@"is_mod": void wscmd_configure(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping cfg = channel->botconfig->hyperlinks;
+	if (!cfg) cfg = channel->botconfig->hyperlinks = ([]);
+	if ((int)msg->voice) cfg->voice = (int)msg->voice;
 	channel->botconfig_save();
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");
