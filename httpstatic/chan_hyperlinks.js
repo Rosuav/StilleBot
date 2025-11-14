@@ -1,5 +1,6 @@
-import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, DIV, H3, INPUT, LABEL, LI, OL, P, TABLE, TD, TH, TR} = choc; //autoimport
+import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
+const {BUTTON, DIV, H3, INPUT, LABEL, P, TABLE, TBODY, TD, TH, THEAD, TR} = choc; //autoimport
+import {simpleconfirm} from "$$static||utils.js$$";
 
 set_content("#settings", [
 	TABLE([
@@ -14,12 +15,16 @@ set_content("#settings", [
 	]),
 	H3("Penalties"),
 	P("First offense gets the first warning. Subsequent offenses will progress through the list."),
-	OL({id: "warnings"}),
+	TABLE([
+		THEAD(TR([TH(), TH("Action"), TH("Message in chat"), TH()])),
+		TBODY({id: "warnings"}),
+	]),
 	DIV({class: "buttonbox"}, [
-		BUTTON("Delete message"),
-		BUTTON("Purge chat messages"),
-		BUTTON("Timeout"), //TODO: After this is clicked, allow specification of the duration
-		BUTTON("Ban"),
+		BUTTON({class: "addwarning", "data-action": "warn"}, "Warning"),
+		BUTTON({class: "addwarning", "data-action": "delete"}, "Delete message"),
+		BUTTON({class: "addwarning", "data-action": "purge"}, "Purge chat messages"),
+		BUTTON({class: "addwarning", "data-action": "timeout"}, "Timeout"),
+		BUTTON({class: "addwarning", "data-action": "ban"}, "Ban"),
 	]),
 ]);
 
@@ -29,11 +34,18 @@ export function render(data) {
 	DOM("#allowall").checked = !data.blocked;
 	const permitted = data.permit || [];
 	document.querySelectorAll("[name=allowed]").forEach(el => el.checked = permitted.includes(el.value));
-	set_content("#warnings", [
-		LI([BUTTON({type: "button", class: "delete", title: "Delete"}, "🗑"), "Purge"]),
-		LI([BUTTON({type: "button", class: "delete", title: "Delete"}, "🗑"), "Timeout (60s)"]),
-		LI([BUTTON({type: "button", class: "delete", title: "Delete"}, "🗑"), "Ban"]),
-	]);
+	set_content("#warnings", (data.warnings || []).map((warn, idx) => TR({"data-idx": idx}, [
+		TD(idx + 1),
+		TD(
+			warn.action === "ban" ? "Ban"
+			: warn.action === "timeout" ? (
+				warn.duration === 1 ? "Purge" : ["Timeout ", INPUT({name: "duration", type: "number", value: warn.duration}), " sec"]
+			) : warn.action === "delete" ? "Delete message"
+			: "Warning",
+		),
+		TD(INPUT({name: "msg", size: 60, value: warn.msg})),
+		TD(BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑")),
+	])));
 }
 
 //The radio button
@@ -49,3 +61,9 @@ on("click", "[name=allowed]", e => {
 	document.querySelectorAll("[name=allowed]").forEach(el => el.checked && msg.permit.push(el.value));
 	ws_sync.send(msg);
 });
+
+on("click", ".addwarning", e => ws_sync.send({cmd: "addwarning", action: e.match.dataset.action}));
+
+on("click", ".confirmdelete", simpleconfirm("Delete this warning level?", e => ws_sync.send({cmd: "delwarning", idx: e.match.closest_data("idx")})));
+
+on("change", "#warnings input", e => ws_sync.send({cmd: "editwarning", idx: e.match.closest_data("idx"), [e.match.name]: e.match.value}));

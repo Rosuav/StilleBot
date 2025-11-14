@@ -52,6 +52,7 @@ __async__ mapping get_chan_state(object channel, string grp) {
 	if (person->badges->?_mod) return 0; //Mods are always permitted, no matter what settings we have
 	mapping cfg = channel->config->hyperlinks || ([]);
 	if (!cfg->blocked) return 0; //All links are permitted, no filtering is being done
+	if (!cfg->warnings || !sizeof(cfg->warnings)) return 0; //No actions to be taken against links
 	if (!has_value(msg, "KICKME")) return 0; //For testing, we actually block the word KICKME, instead of hyperlinks.
 	if (person->badges->?vip && has_value(cfg->permit, "vip")) return 0;
 	if (channel->raiders[person->uid] && has_value(cfg->permit, "raider")) return 0;
@@ -62,7 +63,10 @@ __async__ mapping get_chan_state(object channel, string grp) {
 	//Humans will talk about "strike one" as the first, but since we're looking up in an array,
 	//the first offense is strike 0.
 	int strike = bans[person->uid]++;
-	werror("PUNISH %O strike %d\n", person->uid, strike);
+	if (strike >= sizeof(cfg->warnings)) strike = sizeof(cfg->warnings) - 1;
+	mapping warn = cfg->warnings[strike];
+	werror("PUNISH %O strike %d: %s\n", person->uid, strike, warn->action);
+	if (warn->msg != "") channel->send(person, warn->msg);
 }
 
 @"is_mod": void wscmd_allow(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -75,6 +79,43 @@ __async__ mapping get_chan_state(object channel, string grp) {
 		cfg->blocked = 1;
 		cfg->permit = msg->permit || ({ });
 	}
+	channel->botconfig_save();
+	send_updates_all(channel, "");
+	send_updates_all(channel, "control");
+}
+
+@"is_mod": void wscmd_addwarning(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping cfg = channel->botconfig->hyperlinks;
+	if (!cfg) cfg = channel->botconfig->hyperlinks = ([]);
+	if (msg->action == "purge") cfg->warnings += ({(["action": "timeout", "duration": 1, "msg": ""])}); //A purge is a short timeout, and is indistinguishable from same.
+	else if (msg->action == "timeout") cfg->warnings += ({(["action": "timeout", "duration": 60, "msg": ""])}); //The timeout can be configured afterwards, default to a minute.
+	else if ((<"warn", "delete", "timeout", "ban">)[msg->action]) cfg->warnings += ({(["action": msg->action, "msg": ""])});
+	channel->botconfig_save();
+	send_updates_all(channel, "");
+	send_updates_all(channel, "control");
+}
+
+@"is_mod": void wscmd_delwarning(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping cfg = channel->botconfig->hyperlinks;
+	if (!cfg) cfg = channel->botconfig->hyperlinks = ([]);
+	if (!cfg->warnings) return; //Nothing to delete
+	int idx = (int)msg->idx;
+	if (idx < 0 || idx >= sizeof(cfg->warnings)) return;
+	cfg->warnings = cfg->warnings[..idx-1] + cfg->warnings[idx+1..];
+	channel->botconfig_save();
+	send_updates_all(channel, "");
+	send_updates_all(channel, "control");
+}
+
+@"is_mod": void wscmd_editwarning(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping cfg = channel->botconfig->hyperlinks;
+	if (!cfg) cfg = channel->botconfig->hyperlinks = ([]);
+	if (!cfg->warnings) return; //Nothing to do
+	int idx = (int)msg->idx;
+	if (idx < 0 || idx >= sizeof(cfg->warnings)) return;
+	mapping warn = cfg->warnings[idx];
+	if (msg->msg) warn->msg = msg->msg;
+	if ((int)msg->duration && warn->action == "timeout") warn->duration = (int)msg->duration;
 	channel->botconfig_save();
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");
