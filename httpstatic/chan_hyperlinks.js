@@ -1,5 +1,5 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, CODE, DIV, H3, INPUT, LABEL, OPTION, P, SELECT, TABLE, TBODY, TD, TH, THEAD, TR} = choc; //autoimport
+const {A, BR, BUTTON, CODE, DIV, H3, INPUT, LABEL, OPTION, P, SELECT, SPAN, TABLE, TBODY, TD, TH, THEAD, TR} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 set_content("#settings", [
@@ -20,11 +20,7 @@ set_content("#settings", [
 		TBODY({id: "warnings"}),
 	]),
 	DIV({class: "buttonbox"}, [
-		BUTTON({class: "addwarning", "data-action": "warn"}, "Warning"),
-		BUTTON({class: "addwarning", "data-action": "delete"}, "Delete message"),
-		BUTTON({class: "addwarning", "data-action": "purge"}, "Purge chat messages"),
-		BUTTON({class: "addwarning", "data-action": "timeout"}, "Timeout"),
-		BUTTON({class: "addwarning", "data-action": "ban"}, "Ban"),
+		BUTTON({onclick: e => ws_sync.send({cmd: "addwarning"})}, "Add"),
 	]),
 	P([
 		"Moderatorial actions should be done by which moderator? ",
@@ -43,13 +39,16 @@ export function render(data) {
 	document.querySelectorAll("[name=allowed]").forEach(el => el.checked = permitted.includes(el.value));
 	set_content("#warnings", (data.warnings || []).map((warn, idx) => TR({"data-idx": idx}, [
 		TD(idx + 1),
-		TD(
-			warn.action === "ban" ? "Ban"
-			: warn.action === "timeout" ? (
-				warn.duration === 1 ? "Purge" : ["Timeout ", INPUT({name: "duration", type: "number", value: warn.duration}), " sec"]
-			) : warn.action === "delete" ? "Delete message"
-			: "Warning",
-		),
+		TD([
+			SELECT({name: "action", value: warn.action === "timeout" && warn.duration === 1 ? "purge" : warn.action || "warn"}, [
+				OPTION({value: "warn"}, "Warn"),
+				OPTION({value: "delete"}, "Delete msg"),
+				OPTION({value: "purge"}, "Purge"),
+				OPTION({value: "timeout"}, "Timeout"),
+				OPTION({value: "ban"}, "Ban"),
+			]),
+			SPAN({class: "timeout-duration"}, [" ", INPUT({name: "duration", type: "number", value: warn.duration || 60}), " sec"])
+		]),
 		TD(INPUT({name: "msg", size: 60, value: warn.msg})),
 		TD(BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑")),
 	])));
@@ -72,10 +71,8 @@ on("click", "[name=allowed]", e => {
 	ws_sync.send(msg);
 });
 
-on("click", ".addwarning", e => ws_sync.send({cmd: "addwarning", action: e.match.dataset.action}));
-
 on("click", ".confirmdelete", simpleconfirm("Delete this warning level?", e => ws_sync.send({cmd: "delwarning", idx: e.match.closest_data("idx")})));
 
-on("change", "#warnings input", e => ws_sync.send({cmd: "editwarning", idx: e.match.closest_data("idx"), [e.match.name]: e.match.value}));
+on("change", "#warnings input,#warnings select", e => ws_sync.send({cmd: "editwarning", idx: e.match.closest_data("idx"), [e.match.name]: e.match.value}));
 
 on("change", "#modvoice", e => ws_sync.send({cmd: "configure", "voice": e.match.value}));

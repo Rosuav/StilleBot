@@ -15,6 +15,10 @@ Settings" if necessary, then scroll down to "Block Hyperlinks" and ensure that i
 
 <div id=settings></div>
 
+<style>
+select:not(:has( [value="timeout"]:checked)) ~ .timeout-duration {display: none;}
+</style>
+
 $$save_or_login$$
 #};
 
@@ -67,7 +71,7 @@ constant common_tlds = (<
 >);
 
 int(1bit) contains_link(string msg) {
-	//if (has_value(msg, "HTTPKICKME")) return 1; //For testing, we actually block the word HTTPKICKME, to ensure that other bots don't ban for it.
+	if (has_value(msg, "HTTPKICKME")) return 1; //For testing, we actually block the word HTTPKICKME, to ensure that other bots don't ban for it.
 	//If you have anything that looks like a protocol, even not at the start of a word, it's a link.
 	if (has_value(msg, "http://") || has_value(msg, "https://")) return 1;
 	sscanf(msg, "%*s.%s", string tail);
@@ -153,9 +157,7 @@ int(1bit) contains_link(string msg) {
 @"is_mod": void wscmd_addwarning(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping cfg = channel->botconfig->hyperlinks;
 	if (!cfg) cfg = channel->botconfig->hyperlinks = ([]);
-	if (msg->action == "purge") cfg->warnings += ({(["action": "timeout", "duration": 1, "msg": ""])}); //A purge is a short timeout, and is indistinguishable from same.
-	else if (msg->action == "timeout") cfg->warnings += ({(["action": "timeout", "duration": 60, "msg": ""])}); //The timeout can be configured afterwards, default to a minute.
-	else if ((<"warn", "delete", "timeout", "ban">)[msg->action]) cfg->warnings += ({(["action": msg->action, "msg": ""])});
+	cfg->warnings += ({(["action": "warn", "msg": ""])});
 	channel->botconfig_save();
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");
@@ -182,6 +184,9 @@ int(1bit) contains_link(string msg) {
 	mapping warn = cfg->warnings[idx];
 	if (msg->msg) warn->msg = msg->msg;
 	if ((int)msg->duration && warn->action == "timeout") warn->duration = (int)msg->duration;
+	if (msg->action == "purge") {warn->action = "timeout"; warn->duration = 1;} //A purge is a short timeout, and is indistinguishable from same.
+	else if (msg->action == "timeout" && warn->action != "timeout") {warn->action = "timeout"; warn->duration = 60;} //The timeout can be configured afterwards, but default to a minute.
+	else if ((<"warn", "delete", "ban">)[msg->action]) warn->action = msg->action;
 	channel->botconfig_save();
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");
