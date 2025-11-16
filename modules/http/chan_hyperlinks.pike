@@ -56,21 +56,29 @@ __async__ mapping get_chan_state(object channel, string grp) {
 	return ([]);
 }
 
-array maybe_link = ({
-	//Any word containing two dots, and at least some alphabetics, is likely to be a link.
-	//Example: www.example.com
-	//Non-example: 11.5.2025, 3.14.2
-	Regexp.SimpleRegexp("[^ ]\\.[^ ]+\\.[a-zA-Z]"),
-	//Two sections and then a slash, almost certainly a link.
-	//Example: instagram.com/something
-	Regexp.SimpleRegexp("[^ ]\\.[^ ]+/[^ ]"),
-});
+//Common TLDs that might be being linked to in simple two-part form. Don't bother with any TLD that
+//only registers within its subdomains (eg "au", where you won't be posting "spam.au" but "spam.com.au")
+//as they will be caught by the two-dot check. Also, this only needs to catch links that don't have a
+//path after them, eg "twitch.tv/rosuav" will be caught by the "has a slash" check.
+constant common_tlds = (<
+	"com", "net", "org", //The classics
+	"name", "biz", "info", "edu", "gov", "mil", //Others that might come up, albeit less commonly
+	"xxx", //If someone posts a .xxx link, it almost certainly needs to be blocked.
+>);
 
 int(1bit) contains_link(string msg) {
 	//if (has_value(msg, "HTTPKICKME")) return 1; //For testing, we actually block the word HTTPKICKME, to ensure that other bots don't ban for it.
 	//If you have anything that looks like a protocol, even not at the start of a word, it's a link.
 	if (has_value(msg, "http://") || has_value(msg, "https://")) return 1;
-	foreach (maybe_link, object re) if (re->match(msg)) return 1;
+	sscanf(msg, "%*s.%s", string tail);
+	if (!tail || tail == "") return 0; //No dot, no link.
+	//NOTE: At present, we only check for ASCII alphabetics after the dot. Non-Latin scripts may well
+	//not get caught here. As of 20251117, these do not get autolinked by Twitch, so they won't be
+	//clickable; thus they are less relevant for blocking, as they're harder to accidentally go to.
+	//This may need to be reviewed in the future, but for now I will only block ASCII links.
+	if (sscanf(tail, "%*s.%[A-Za-z]", string alpha) && alpha && alpha != "") return 1; //eg www.example.com or kepl.com.au, but not 11.5.2025
+	if (common_tlds[tail]) return 1;
+	if (has_value(tail, "/")) return 1; //eg instagram.com/something
 }
 
 @hook_allmsgs: int message(object channel, mapping person, string msg) {
