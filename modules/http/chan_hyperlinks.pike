@@ -24,6 +24,11 @@ $$save_or_login$$
 
 @retain: mapping(int:mapping(int:int)) hyperlink_bans = ([]);
 
+constant hyperlink = special_trigger("!hyperlink", "A user posted a hyperlink (if filtering is active)", "The user", ([
+	"{offense}": "0 if given a permit, else number of times they've posted links this stream",
+	"{msg}": "The message that was posted",
+]), "Status");
+
 constant ENABLEABLE_FEATURES = ([
 	"block-links": ([
 		"description": "Block links except from VIPs and raiders (configurable)",
@@ -109,6 +114,7 @@ int(1bit) contains_link(string msg) {
 	//Humans will talk about "strike one" as the first, but since we're looking up in an array,
 	//the first offense is strike 0.
 	int strike = bans[person->uid]++;
+	channel->trigger_special("!hyperlink", person, (["{offense}": (string)(strike + 1), "{msg}": msg]));
 	if (strike < 0) return 0; //Actually, no punishment; the user had a permit (aka "Get Out Of Jail Free Card")
 	if (strike >= sizeof(cfg->warnings)) strike = sizeof(cfg->warnings) - 1;
 	//TODO: If we don't have moderator:manage:banned_users on the broadcaster, demand that a voice

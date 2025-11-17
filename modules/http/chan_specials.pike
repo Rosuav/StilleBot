@@ -19,7 +19,7 @@ constant SPECIAL_ORDER = ({
 	"!musictrack",
 	"!pollbegin", "!pollended",
 	"!predictionlocked", "!predictionended",
-	"!timeout",
+	"!timeout", "!hyperlink",
 	"!suspicioususer", "!suspiciousmsg",
 	"!adbreak", "!adsoon",
 	"!giveaway_started", "!giveaway_ticket", "!giveaway_toomany", "!giveaway_closed", "!giveaway_winner", "!giveaway_ended",
