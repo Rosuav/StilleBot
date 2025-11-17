@@ -29,9 +29,10 @@ set_content("#settings", [
 		A({href: "voices"}, "Voices"),
 		" to authenticate it - requires the ", CODE("Ban/timeout/unban users"), " permission.",
 	]),
+	P(["Want more flexibility? The ", CODE("!!hyperlink"), " ", A({href: "specials"}, "special trigger"), " can do whatever you need, eg", BR(),
+		"issuing warnings with the ", CODE("/warn"), " command to enforce that they be acknowledged."]),
+	//TODO: Have a button that opens up the command editor for !!hyperlink
 ]);
-
-/* Also: Have a !!hyperlink special trigger, which is given all the necessary information. Suggest adding /warn to that. */
 
 export function render(data) {
 	DOM("#allowall").checked = !data.blocked;
