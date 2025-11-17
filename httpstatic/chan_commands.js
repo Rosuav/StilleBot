@@ -38,3 +38,14 @@ function addcmd(mode) {
 }
 on("click", "#saveall", e => {e.preventDefault(); addcmd("saveall");});
 on("click", "#addcmd", addcmd);
+
+on("click", "#templates tbody tr", e => {
+	e.preventDefault();
+	document.getElementById("templates").close();
+	const [cmd, text] = e.match.children;
+	const cmdname = cmd.innerText.trim();
+	let template = complex_templates[cmdname] || text.innerText.trim();
+	if (typeof template !== "object" || Array.isArray(template)) template = {message: template};
+	const id = cmdname.startsWith("!") ? cmdname.slice(1) : ""; //Triggers don't get IDs until the server assigns them
+	open_advanced_view({...template, id, template: true});
+});

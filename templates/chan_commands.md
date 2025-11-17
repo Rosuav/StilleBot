@@ -62,4 +62,22 @@ th, td {width: 100%;}
 th:first-of-type, th:last-of-type, td:first-of-type, td:last-of-type {width: max-content;}
 td:nth-of-type(2n+1) {white-space: nowrap;}
 code {overflow-wrap: anywhere;}
+
+#templates {
+	min-height: 30em;
+}
+
+#templates tbody tr:nth-child(odd) {
+	background: #eef;
+	cursor: pointer;
+}
+
+#templates tbody tr:nth-child(even) {
+	background: #eff;
+	cursor: pointer;
+}
+
+#templates tbody tr:hover {
+	background: #ff0;
+}
 </style>

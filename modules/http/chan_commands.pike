@@ -77,7 +77,6 @@ mapping(string:mixed) command_editor_vars(object channel) {
 	string defvoice = channel->config->defvoice;
 	if (voices[defvoice]) voices |= (["0": (["name": "Bot's own voice"])]); //TODO: Give the bot's username?
 	return ([
-		"complex_templates": G->G->commands_complex_templates,
 		"builtins": G->G->commands_builtins,
 		"pointsrewards": G->G->pointsrewards[channel->userid] || ({ }),
 		"voices": voices,
@@ -89,9 +88,10 @@ mapping(string:mixed) command_editor_vars(object channel) {
 //Cache the set of available builtins. Needs to be called after any changes to any
 //builtin; currently, is call_out zero'd any time this file gets updated. Note that
 //this info can also be used by other things that call on the commands front end.
+mapping complex_templates;
 void find_builtins() {
 	array templates = ({ });
-	mapping complex_templates = COMPLEX_TEMPLATES | ([]);
+	complex_templates = COMPLEX_TEMPLATES | ([]);
 	multiset seen = (<>);
 	mapping(string:mapping(string:string)) builtins = ([]);
 	foreach (sort(indices(G->G->builtins)), string name) {
@@ -106,7 +106,6 @@ void find_builtins() {
 		if (builtins[name]->desc == "") builtins[name]->desc = handler->command_description;
 	}
 	G->G->commands_templates = templates;
-	G->G->commands_complex_templates = complex_templates;
 	G->G->commands_builtins = builtins;
 	G->G->command_editor_vars = command_editor_vars;
 }
@@ -173,7 +172,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 ]));
 		}
 		return render(req, ([
-			"vars": (["ws_group": ""]) | command_editor_vars(req->misc->channel),
+			"vars": (["ws_group": "", "complex_templates": complex_templates]) | command_editor_vars(req->misc->channel),
 			"templates": G->G->commands_templates * "\n",
 			"save_or_login": ("<p><a href=\"#examples\" class=opendlg data-dlg=templates>Example and template commands</a></p>"
 				"[Save all](:#saveall)"

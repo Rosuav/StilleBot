@@ -298,10 +298,8 @@
   - Might remove the need for some secondary sockets. Might also allow socket groups to have
     less duplicated information in them, though I can't think of any examples right now.
   - Remove the command_editor_vars() requirement.
-    - complex_templates should be a feature of chan_commands.js, not of commands in general.
-    - All the others (builtins, pointsrewards, voices, monitors, slash_commands) could be
-      changed dynamically. Ideally, push out these changes as needed, don't require a refresh.
     - Send these out in a message rather than embedding them in the page.
+    - Ideally, push out these changes as needed, don't require a refresh.
   - Prefix all command-specific socket messages with "cmdedit_" and have a single place that
     finds them all (and in the darkness, binds them) and dispatches them to chan_commands.
     - Maybe in the future, this will need to have some form of generic dispatch, such that a

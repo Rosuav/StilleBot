@@ -115,24 +115,6 @@ nav a {
 	background-color: #fdd;
 }
 
-#templates {
-	min-height: 30em;
-}
-
-#templates tbody tr:nth-child(odd) {
-	background: #eef;
-	cursor: pointer;
-}
-
-#templates tbody tr:nth-child(even) {
-	background: #eff;
-	cursor: pointer;
-}
-
-#templates tbody tr:hover {
-	background: #ff0;
-}
-
 table[data-dest=""] > tr.targetrow {
 	display: none;
 }
