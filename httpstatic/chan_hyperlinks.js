@@ -14,7 +14,7 @@ set_content("#settings", [
 		]),
 	]),
 	H3("Penalties"),
-	P("First offense gets the first warning. Subsequent offenses will progress through the list."),
+	P("First offense gets the first warning. Subsequent offenses will progress through the list. Take action and/or give a message."),
 	TABLE([
 		THEAD(TR([TH(), TH("Action"), TH("Message in chat"), TH()])),
 		TBODY({id: "warnings"}),
@@ -41,7 +41,7 @@ export function render(data) {
 		TD(idx + 1),
 		TD([
 			SELECT({name: "action", value: warn.action === "timeout" && warn.duration === 1 ? "purge" : warn.action || "warn"}, [
-				OPTION({value: "warn"}, "Warn"),
+				OPTION({value: "warn"}, "No action"),
 				OPTION({value: "delete"}, "Delete msg"),
 				OPTION({value: "purge"}, "Purge"),
 				OPTION({value: "timeout"}, "Timeout"),
