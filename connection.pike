@@ -445,6 +445,7 @@ class channel(mapping identity) {
 		}
 		//TODO: Don't use the shortforms internally anywhere
 		vars["{param}"] = vars["%s"]; vars["{username}"] = vars["$$"];
+		vars["{dollar}"] = "$"; vars["$opbr$"] = "{"; vars["clbr"] = "}"; //Quick hacks in case it's fiddly
 		//Scan for two types of substitution - variables and parameters
 		return substitutions->replace(text) {
 			sscanf(__ARGS__[0], "%[${]%[ ]%[^|$}]%[^$}]%[ ]%[$}]", string type, string prefix, string kwd, string filterdflt, string suffix, string tail);
