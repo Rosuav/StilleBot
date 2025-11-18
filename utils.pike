@@ -478,6 +478,9 @@ __async__ void validate_user_credentials() {
 __async__ void test() {
 	//Recode this to whatever's needed, and use "pike stillebot --test" to run it.
 	werror("Nothing to see here, move along.\n");
+	//If you need something from a specific module:
+	add_constant("hook_allmsgs", "ignore"); //Suppress annotations if needed.
+	object chan_hyperlinks = G->bootstrap("modules/http/chan_hyperlinks.pike");
 }
 
 protected void create(string name) {
