@@ -79,15 +79,17 @@ int(1bit) contains_link(string msg) {
 	if (has_value(msg, "HTTPKICKME")) return 1; //For testing, we actually block the word HTTPKICKME, to ensure that other bots don't ban for it.
 	//If you have anything that looks like a protocol, even not at the start of a word, it's a link.
 	if (has_value(msg, "http://") || has_value(msg, "https://")) return 1;
-	sscanf(msg, "%*s.%s", string tail);
-	if (!tail || tail == "") return 0; //No dot, no link.
-	//NOTE: At present, we only check for ASCII alphabetics after the dot. Non-Latin scripts may well
-	//not get caught here. As of 20251117, these do not get autolinked by Twitch, so they won't be
-	//clickable; thus they are less relevant for blocking, as they're harder to accidentally go to.
-	//This may need to be reviewed in the future, but for now I will only block ASCII links.
-	if (sscanf(tail, "%*s.%[A-Za-z]", string alpha) && alpha && alpha != "") return 1; //eg www.example.com or kepl.com.au, but not 11.5.2025
-	if (common_tlds[tail]) return 1;
-	if (has_value(tail, "/")) return 1; //eg instagram.com/something
+	foreach (msg / " ", string word) {
+		sscanf(word, "%*s.%s", string tail);
+		if (!tail || tail == "") continue; //No dot, no link.
+		//NOTE: At present, we only check for ASCII alphabetics after the dot. Non-Latin scripts may well
+		//not get caught here. As of 20251117, these do not get autolinked by Twitch, so they won't be
+		//clickable; thus they are less relevant for blocking, as they're harder to accidentally go to.
+		//This may need to be reviewed in the future, but for now I will only block ASCII links.
+		if (sscanf(tail, "%*s.%[A-Za-z]", string alpha) && alpha && alpha != "") return 1; //eg www.example.com or kepl.com.au, but not 11.5.2025
+		if (common_tlds[tail]) return 1;
+		if (has_value(tail, "/")) return 1; //eg instagram.com/something
+	}
 }
 
 @hook_allmsgs: int message(object channel, mapping person, string msg) {
