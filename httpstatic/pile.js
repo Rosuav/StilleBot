@@ -15,6 +15,7 @@ engine.velocityIterations *= 2;
 Matter.Render.run(renderer);
 Matter.Runner.run(Matter.Runner.create(), engine);
 renderer.options.wireframes = false;
+window.Matter = Matter;
 window.renderer = renderer; //For debugging, eg toggle wireframes mode
 window.wf = () => renderer.options.wireframes = !renderer.options.wireframes;
 //If true, will (once only) add a bunch of automatic RPS entries.
@@ -268,6 +269,12 @@ export function render(data) {
 				Matter.Events.on(engine, "collisionStart", e => bouncemode === "Merge" && e.pairs.forEach(pair => {
 					if (!id_to_category[pair.bodyA.id] || !id_to_category[pair.bodyB.id]) return;
 					if (merge_mode === "off") return; //The server can choose to (temporarily) disable all merging
+					//If either of the textures hasn't loaded, let the things bounce off each other.
+					//It'll be slightly odd in that an invisible object might cause a visible one to veer off, but
+					//at least it won't result in things getting eaten by invisible (newly-added) objects.
+					const texA = renderer.textures[pair.bodyA.render.sprite.texture];
+					const texB = renderer.textures[pair.bodyB.render.sprite.texture];
+					if (!texA || !texB || !texA.complete || !texB.complete) return;
 					//To support Rock-Paper-Scissors merge, we need:
 					//1) Conflict category for A and B
 					//2) Conflict resolution for the pair of categories
@@ -384,7 +391,7 @@ export function render(data) {
 			setTimeout(() => merge_mode = "normal", 5000);
 			const uids = [49497888, 279141671, 54212603, 469694955, 265796767, 122743188];
 			const augs = ["rock", "rock", "paper", "paper", "scissors", "scissors"];
-			//const augments = ["knife", "knife", "pumpkin", "pumpkin", "ghost", "ghost"];
+			//const augs = ["knife", "knife", "pumpkin", "pumpkin", "ghost", "ghost"];
 			const vips = [false, false, false, false, true, true];
 			while (uids.length && augs.length && vips.length) {
 				const uid = uids.splice(Math.floor(Math.random() * uids.length), 1)[0];
