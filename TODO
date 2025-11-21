@@ -310,3 +310,6 @@
       per https://xkcd.com/2730/ , this code will never be used for anything else; but I'd
       rather that than making assumptions that then hurt.
 * Can I implement Happy Eyeballs into poll.pike::get_url_data() ?
+* If negative damage is dealt to the stream boss, it can break. Should all negative damage
+  be ignored? Alternatively, should damage cap out at zero? Or should negative damage do the
+  same thing as self-damage, and potentially increase max hp?
