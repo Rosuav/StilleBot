@@ -690,9 +690,10 @@ __async__ array(mapping) list_ephemeral_files(string|int channel, string|int upl
 	));
 }
 
-__async__ array(mapping) list_channel_files(string|int channel, string|void id) {
+__async__ array(mapping) list_channel_files(string|int channel, string|void id, int|void include_blob) {
 	return await(query_ro(
-		"select id, metadata from stillebot.uploads where channel = :channel and expires is null"
+		"select id, metadata" + (include_blob ? ", data" : "") +
+		" from stillebot.uploads where channel = :channel and expires is null"
 		+ (id ? " and id = :id" : ""),
 		(["channel": channel, "id": id]),
 	));
