@@ -31,3 +31,8 @@ on("submit", "#renameform", e => {
 	ws_sync.send(msg);
 	DOM("#renamefiledlg").close();
 });
+
+on("click", "#download", e => ws_sync.send({cmd: "download"}));
+export function sockmsg_download(msg) {
+	choc.A({href: msg.url, download: "image.png"}).click();
+}

@@ -32,12 +32,19 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	return render(req, (["vars": (["ws_group": ""])]) | req->misc->chaninfo);
 }
 
+__async__ array(mapping) list_files(int channelid, int|void include_blob) {
+	array files = await(G->G->DB->list_channel_files(channelid, 0, include_blob));
+	files = filter(files) {return __ARGS__[0]->metadata->owner == "imgbuilder";};
+	//Sort by name...
+	array names = lower_case(files->metadata->name[*]); sort(names, files);
+	//... but group the large files before the small files.
+	array smalls = files->metadata->pixwidth[*] < 200; sort(smalls, files);
+	return files;
+}
+
 bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
-	array files = await(G->G->DB->list_channel_files(channel->userid));
-	files = filter(files) {return __ARGS__[0]->metadata->owner == "imgbuilder";};
-	array names = lower_case(files->metadata->name[*]); sort(names, files);
-	return (["files": files]);
+	return (["files": await(list_files(channel->userid))]);
 }
 
 @"is_mod": __async__ mapping|zero wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -76,6 +83,50 @@ __async__ void wscmd_renamefile(object channel, mapping(string:mixed) conn, mapp
 	if (!file || file->channel != channel->userid) return; //Not found in this channel.
 	file->metadata->name = msg->name;
 	G->G->DB->update_file(file->id, file->metadata);
+}
+
+__async__ mapping wscmd_download(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	array files = await(list_files(channel->userid, 1));
+	int maxwidth = 1200; //TODO: Make these configurable.
+	int xgap = 3, ygap = 3; //Pixels
+	//First, a quick pass to build up the rows. Each row has a height, which is the tallest image in it.
+	//A row is as many images as fit within the maxwidth.
+	//It may be worth putting a hard break at a change of image width, but for now, not doing that.
+	array rows = ({ });
+	int curwid = -1, height = 0, totheight = 0;
+	foreach (files, mapping file) {
+		file->image = Image.ANY._decode(file->data);
+		if (file->pixwidth > curwid) {
+			rows += ({({ })});
+			curwid = maxwidth + xgap;
+			totheight += height;
+			height = 0;
+		}
+		rows[-1] += ({file});
+		curwid -= file->pixwidth - xgap;
+		//Slightly weird but whatever - the row height can always be found in row[-1]->height
+		file->height = height = max(height, file->image->ysize);
+	}
+	//Okay. Now let's build up that image.
+	if (!sizeof(rows)) return (["cmd": "nodownload"]); //Not responded to by the front end but it'll show up in the console
+	totheight += rows[-1][-1]->height + ygap * (sizeof(rows) - 1);
+	Image.Image image = Image.Image(maxwidth, totheight);
+	Image.Image alpha = Image.Image(maxwidth, totheight);
+	int ypos = 0;
+	foreach (rows, array row) {
+		int xpos = 0;
+		foreach (row, mapping file) {
+			image->paste_mask(file->image->image, file->image->alpha, xpos, ypos);
+			alpha->paste_mask(file->image->alpha, file->image->alpha, xpos, ypos);
+			xpos += file->image->xsize + xgap;
+		}
+		ypos += row[-1]->height + ygap;
+	}
+	werror("%O\n", image);
+	string png = Image.PNG.encode(image, (["alpha": alpha]));
+	string url = "data:image/png;base64," + MIME.encode_base64(png, 1);
+	werror("URL is %d bytes\n", sizeof(url));
+	return (["cmd": "download", "url": url]);
 }
 
 protected void create(string name) {::create(name);}
