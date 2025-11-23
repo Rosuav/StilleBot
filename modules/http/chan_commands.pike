@@ -81,6 +81,14 @@ mapping(string:mixed) command_editor_vars(object channel) {
 		"pointsrewards": G->G->pointsrewards[channel->userid] || ({ }),
 		"voices": voices,
 		"monitors": G->G->DB->load_cached_config(channel->userid, "monitors"),
+	]);
+}
+
+mapping wscmd_cmdedit_get_collections(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//NOTE: This message can be sent on any socket, regardless of type, so long as the
+	//group correctly indicates the channel. Thus the subgroup cannot be relied on.
+	return ([
+		"cmd": "cmdedit_update_collections",
 		"slash_commands": G->G->slash_commands,
 	]);
 }

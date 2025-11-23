@@ -1535,7 +1535,12 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 			data->source || "(null)", data->line, data->col, data->msg || "(null)",
 		);
 	}
-	string type = has_prefix(data->cmd||"", "prefs_") ? "prefs" : conn->type;
+	if (!data->cmd) return; //Malformed message.
+	//Some messages are specially-prefixed to send them to a specific module. These may even
+	//be available before initialization, although that's not recommended. Note that cmdedit
+	//requests are likely to require the channel ID to have been recorded, which WILL demand
+	//that the init message be previously sent successfully.
+	string type = has_prefix(data->cmd, "prefs_") ? "prefs" : has_prefix(data->cmd, "cmdedit_") ? "chan_commands" : conn->type;
 	if (object handler = G->G->websocket_types[type]) handler->websocket_msg(conn, data);
 	else write("Message to unknown type %O: %O\n", type, data);
 }
