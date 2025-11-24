@@ -8,11 +8,12 @@ const flags = {
 	visibility: {"": "Visible", hidden: "Hidden", "*": "Should the command be listed in !help and the non-mod commands view?"},
 	delay: {"": "Immediate", "2": "2 seconds", "30": "30 seconds", "60": "1 minute", "120": "2 minutes", "300": "5 minutes",
 			"1800": "Half hour", "3600": "One hour", "7200": "Two hours", "*": "When should this be sent?"},
-	builtin: {"": "None", "*": "Call on extra information from a built-in function or action"},
 	dest: {"": "Chat", "/w": "Whisper", "/web": "Private message", "/set": "Set a variable",
 		"/chain": "Chain to another command", "/reply": "Reply or join a thread, eg to {msgid}",
 		"//": "Comment (won't be sent anywhere)", "*": "Where should the response be sent?"},
 };
+//TODO: Redo these next two lines any time we get an update of builtins
+flags.builtin = {"": "None", "*": "Call on extra information from a built-in function or action"};
 for (let name in builtins) flags.builtin[name] = builtins[name].name;
 const toplevelflags = ["access", "visibility"];
 const conditionalkeys = "expr1 expr2 casefold".split(" "); //Include every key used by every conditional type

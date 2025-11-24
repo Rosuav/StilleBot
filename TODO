@@ -316,3 +316,8 @@
 * If negative damage is dealt to the stream boss, it can break. Should all negative damage
   be ignored? Alternatively, should damage cap out at zero? Or should negative damage do the
   same thing as self-damage, and potentially increase max hp?
+* Prereq to fully-dynamic command collections: Builtins need to become a single node type in
+  the GUI. This will enable them to be more dynamic, and possibly simpler too.
+  - Currently the global name "builtins" is interrogated on startup. This is a non-flyer.
+  - The migration has been partly done, with builtins being dynamically sent, but the front
+    end does not make any use of the run-time send.

@@ -105,8 +105,15 @@ void find_builtins() {
 		if (builtins[name]->desc == "") builtins[name]->desc = handler->command_description;
 	}
 	commands_templates = templates * "\n";
-	G->G->commands_builtins = builtins;
 	G->G->command_editor_vars = command_editor_vars;
+	mapping prevcmds = G->G->commands_builtins;
+	G->G->commands_builtins = builtins;
+	object handler = G->G->websocket_types->cmdedit;
+	if (handler && prevcmds) {
+		//If the builtins collection has changed, push it out to all command editors.
+		string prev = Standards.JSON.encode(prevcmds, 12), cur = Standards.JSON.encode(builtins, 12);
+		if (cur != prev) handler->update_collection("builtins", builtins);
+	}
 }
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)

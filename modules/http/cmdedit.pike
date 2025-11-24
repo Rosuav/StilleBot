@@ -20,6 +20,7 @@ mapping get_chan_state(object channel, string group) {
 mapping wscmd_cmdedit_subscribe(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	return ([
 		"cmd": "cmdedit_update_collections",
+		"builtins": G->G->commands_builtins,
 		"slash_commands": G->G->slash_commands,
 	]);
 }
