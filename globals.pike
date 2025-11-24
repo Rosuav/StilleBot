@@ -1162,7 +1162,7 @@ mapping(string:mixed)|string render_template(string template, mapping replacemen
 			});
 			//If possible, shortcut the "fail, then get transferred" by providing
 			//the hostname of the active bot.
-			string|zero active = !is_active_bot() && G->G->dbsettings->?active_bot;
+			string|zero active = G->G->dbsettings->?active_bot;
 			if (active && active != "") vars += ({jsonvar(({"ws_host", active}))});
 		}
 		replacements->js_variables = "<script>" + vars * "\n" + "</script>";
