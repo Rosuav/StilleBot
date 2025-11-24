@@ -295,6 +295,9 @@
   - {"cmd": "subscribe", "type": "cmdedit", "group": "#49497888"}
     - Currently "cmdedit" is the only valid type for a subscribe message. This type does not
       correlate to the ws_type for the actual initialization.
+    - Currently, the subscription group has to correlate to the regular group for the
+      type of the subscription. So a chan_monitors sock that subscribes to cmdedit will
+      have a chan_monitors group in conn->group, but a chan_commands group in conn->subscription_group.
   - Might remove the need for some secondary sockets. Might also allow socket groups to have
     less duplicated information in them, though I can't think of any examples right now.
   - Remove the command_editor_vars() requirement.

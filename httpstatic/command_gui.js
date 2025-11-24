@@ -67,7 +67,7 @@ ws_sync.register_callback(function cmdedit_update_collections(msg) {
 	for (let key in msg) collections[key] = msg[key];
 	console.log("Updated collections:", collections);
 });
-ws_sync.send({cmd: "cmdedit_get_collections"});
+ws_sync.send({cmd: "subscribe", type: "cmdedit", group: ""}); //TODO: Do this in the actual place that needs it.
 
 //Perform one-time initialization of the display context. It's not strictly one-time though,
 //as this seems to get reset when the canvas is resized.

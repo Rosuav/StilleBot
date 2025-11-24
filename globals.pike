@@ -1433,7 +1433,9 @@ class http_websocket
 		}
 		else conn->is_mod = channel->user_badges[(int)conn->session->user->?id]->?_mod || is_localhost_mod(login, conn->remote_ip);
 		if (!conn->is_mod && need_mod(grp)) return "Not logged in";
-		conn->subgroup = grp;
+		//Note that this validation can be called for either initialization or subscription.
+		//The subgroup here applies to the main group, not to the subscription group.
+		if (msg->cmd == "init") conn->subgroup = grp;
 	}
 
 	mapping|Concurrent.Future get_state(string group, string|void id, string|void type) {

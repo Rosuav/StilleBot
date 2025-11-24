@@ -1528,6 +1528,34 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 		//NOTE: Ideally, this would be an atomic set-to-max. It currently isn't, but this is unlikely to cause issues.
 		if (socks > G->G->serverstatus_statistics->websocket_hwm) G->G->serverstatus_statistics->websocket_hwm = socks;
 	}
+	if (data->cmd == "subscribe") {
+		if (!conn->type) return; //Subscribing has to happen AFTER the base initialization.
+		//Not all socket types are valid for subscriptions.
+		object handler = G->G->websocket_types[data->type];
+		if (!handler || !handler->subscription_valid) return;
+		//Subscriptions currently require and assume that there is a channel (maybe demo).
+		//First get the channel for the main group.
+		object channel = handler->split_channel(conn->group)[0];
+		//If the subscription group has a hash sign, the channel ID after it must agree with
+		//the one for the main group. If it doesn't, implicitly connect to the same channel.
+		if (has_value(data->group, '#')) {
+			sscanf(data->group, "%s#%d", data->group, int chanid);
+			if (channel && chanid != channel->userid) return; //Mismatch.
+			if (!channel) channel = G->G->irc->id[(int)chanid];
+		}
+		if (!channel) return;
+		data->group += "#" + channel->userid;
+		//Validate the subscription the same way that the regular group is validated, but
+		//on failure, don't kick, just report the failed subscription.
+		if (string err = handler->websocket_validate(conn, data)) {
+			conn->sock->send_text(Standards.JSON.encode((["cmd": "subfailed", "error": err])));
+			return;
+		}
+		conn->subscription_type = data->type; conn->subscription_group = data->group;
+		handler->websocket_groups[data->group] += ({conn->sock});
+		//Quick hack: Ensure that the subscribe message itself is handled by the subscription type.
+		data->cmd = data->type + "_" + data->cmd;
+	}
 	if (data->cmd == "error") {
 		//TODO: Have a way to enable and disable this so it only shows up for self
 		werror("JS error from sock %s:%s:\n%s:%d:%d: %s\n",
@@ -1540,7 +1568,7 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 	//be available before initialization, although that's not recommended. Note that cmdedit
 	//requests are likely to require the channel ID to have been recorded, which WILL demand
 	//that the init message be previously sent successfully.
-	string type = has_prefix(data->cmd, "prefs_") ? "prefs" : has_prefix(data->cmd, "cmdedit_") ? "chan_commands" : conn->type;
+	string type = has_prefix(data->cmd, "prefs_") ? "prefs" : has_prefix(data->cmd, "cmdedit_") ? "cmdedit" : conn->type;
 	if (object handler = G->G->websocket_types[type]) handler->websocket_msg(conn, data);
 	else write("Message to unknown type %O: %O\n", type, data);
 }
@@ -1554,6 +1582,8 @@ void ws_close(int reason, mapping conn)
 	}
 	if (object handler = conn->prefs_uid && G->G->websocket_types->prefs) //Disconnect from preferences
 		handler->websocket_groups[conn->prefs_uid] -= ({conn->sock});
+	if (object handler = G->G->websocket_types[conn->subscription_type])
+		handler->websocket_groups[conn->subscription_group] -= ({conn->sock});
 	m_delete(conn, "sock"); //De-floop
 }
 

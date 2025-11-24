@@ -84,15 +84,6 @@ mapping(string:mixed) command_editor_vars(object channel) {
 	]);
 }
 
-mapping wscmd_cmdedit_get_collections(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	//NOTE: This message can be sent on any socket, regardless of type, so long as the
-	//group correctly indicates the channel. Thus the subgroup cannot be relied on.
-	return ([
-		"cmd": "cmdedit_update_collections",
-		"slash_commands": G->G->slash_commands,
-	]);
-}
-
 //Cache the set of available builtins. Needs to be called after any changes to any
 //builtin; currently, is call_out zero'd any time this file gets updated. Note that
 //this info can also be used by other things that call on the commands front end.
