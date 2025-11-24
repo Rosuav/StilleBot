@@ -847,15 +847,11 @@ tray_tabs.forEach((t, i) => {
 	(trays[t.name] = t.items).forEach((e, k) => {make_template(e); e.hotkey = _hotkeys[k];});
 });
 //Search for any type that can't be created from a template
-for (let t in types) if (!seen_types[t]) {
+//There are a number that you can't directly create, eg group, but that's fine. Others, it may be
+//worth checking for.
+if (0) for (let t in types) if (!seen_types[t]) {
 	if (t.startsWith("anchor_") || t.endsWith("flag")) continue;
-	if (t.startsWith("builtin_")) {
-		//For a quick look at all missing builtins, add them to the last tray:
-		//const el = {type: t, hotkey: _hotkeys[trays.Extras.length]};
-		//make_template(el);
-		//trays.Extras.push(el);
-	}
-	//else console.log("UNSEEN TYPE", t); //Audit to ensure that we have all the ones that matter
+	if (!t.startsWith("builtin_")) console.log("UNSEEN TYPE", t); //Audit to ensure that we have all the ones that matter
 }
 let current_tray = "Default";
 const trashcan = {type: "trashcan", message: [""]};
