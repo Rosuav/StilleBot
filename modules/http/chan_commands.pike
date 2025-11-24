@@ -87,7 +87,7 @@ mapping(string:mixed) command_editor_vars(object channel) {
 //Cache the set of available builtins. Needs to be called after any changes to any
 //builtin; currently, is call_out zero'd any time this file gets updated. Note that
 //this info can also be used by other things that call on the commands front end.
-mapping complex_templates;
+mapping complex_templates; string commands_templates;
 void find_builtins() {
 	array templates = ({ });
 	complex_templates = COMPLEX_TEMPLATES | ([]);
@@ -104,7 +104,7 @@ void find_builtins() {
 		builtins[name] = (["desc": handler->builtin_description, "name": handler->builtin_name, "param": handler->builtin_param]) | handler->vars_provided;
 		if (builtins[name]->desc == "") builtins[name]->desc = handler->command_description;
 	}
-	G->G->commands_templates = templates;
+	commands_templates = templates * "\n";
 	G->G->commands_builtins = builtins;
 	G->G->command_editor_vars = command_editor_vars;
 }
@@ -172,7 +172,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		}
 		return render(req, ([
 			"vars": (["ws_group": "", "complex_templates": complex_templates]) | command_editor_vars(req->misc->channel),
-			"templates": G->G->commands_templates * "\n",
+			"templates": commands_templates,
 			"save_or_login": ("<p><a href=\"#examples\" class=opendlg data-dlg=templates>Example and template commands</a></p>"
 				"[Save all](:#saveall)"
 			),
@@ -203,7 +203,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	return render(req, ([
 		"user text": user,
 		"commands": commands * "\n",
-		"templates": G->G->commands_templates * "\n",
+		"templates": commands_templates,
 	]) | req->misc->chaninfo);
 }
 
