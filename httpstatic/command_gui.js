@@ -333,7 +333,7 @@ const builtin_label_funcs = {
 };
 function builtin_types() {
 	const ret = { };
-	Object.entries(builtins).forEach(([name, blt]) => {
+	Object.entries(window.cmdedit_collections.builtins).forEach(([name, blt]) => {
 		const b = ret["builtin_" + name] = {
 			color: "#ee77ee", children: ["message"], label: builtin_label_funcs[name] || (el => blt.name),
 			params: [{attr: "builtin", values: name}],
@@ -365,7 +365,7 @@ function builtin_types() {
 	return ret;
 }
 
-const types = {
+const main_types = {
 	anchor_command: {
 		color: "#ffff00", fixed: true, children: ["message"],
 		label: el => {
@@ -618,7 +618,6 @@ const types = {
 			"active recently (eg 300 = five minutes). This user's variables will be available with the", BR(),
 			"name ", CODE("each*"), " for any variable."],
 	},
-	...builtin_types(),
 	conditional_string: {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => [
 			el.conditional === "string" ? (el.expr1 && el.expr2 ? "If " + el.expr1 + " == " + el.expr2 : el.expr1 ? "If " + el.expr1 + " is blank" : "String comparison")
@@ -692,6 +691,10 @@ const types = {
 		typedesc: ["When inserted into a Random selector, this one will have a greater chance",
 			BR(), "of being selected. (Non-weighted entries have a weight of 1.)"],
 	},
+};
+//Low-priority types. These could potentially also match something from main_types, so they are down here
+//so that they get checked last.
+const post_types = {
 	text: {
 		color: "#77eeee", width: 400, label: el => [emotify(el.message, el)],
 		params: [{attr: "message", label: "Text", values: text_message}],
@@ -712,6 +715,8 @@ const types = {
 		actionlbl: null,
 	},
 };
+let types = {...main_types, ...builtin_types(), ...post_types};
+window.cmdedit_collections.updates.push(() => types = {...main_types, ...builtin_types(), ...post_types});
 
 //Encapsulation breach: If there's a #cmdname, it's going to affect the command_anchor.
 on("change", "#cmdname", e => repaint());
@@ -1749,7 +1754,7 @@ function open_element_properties(el, type_override) {
 			//NOTE: This does NOT claim focus; the first "real" attribute
 			//should be the one to get focus.
 			return TR([TD(LABEL({htmlFor: "value-" + param.attr}, "Builtin type: ")), TD(SELECT({...id, value: values},
-				Object.entries(builtins)
+				Object.entries(window.cmdedit_collections.builtins)
 					.filter(([name, blt]) => !blt.name.includes("(deprecated)")) //NOTE: If one is currently in use, it will show up blank on the drop-down
 					.sort((a,b) => a[1].name.localeCompare(b[1].name))
 					.map(([name, blt]) => OPTION({value: name}, blt.name))
