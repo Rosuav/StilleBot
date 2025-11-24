@@ -23,3 +23,12 @@ mapping wscmd_cmdedit_subscribe(object channel, mapping(string:mixed) conn, mapp
 		"slash_commands": G->G->slash_commands,
 	]);
 }
+
+void update_collection(string coll, array|mapping data) {
+	//Broadcast a message across all groups, giving the new collection
+	mapping msg = (["cmd": "cmdedit_update_collections", coll: data]);
+	string text = Standards.JSON.encode(msg, 4);
+	foreach (websocket_groups;; array socks)
+		foreach (socks, object sock)
+			if (sock && sock->state == 1) sock->send_text(text);
+}

@@ -379,5 +379,12 @@ protected void create(string name) {
 	G->G->voice_additional_scopes = voice_scopes;
 	G->G->voice_scope_commands = scope_commands;
 	G->G->voice_command_scopes = need_scope;
+	mapping prevcmds = G->G->slash_commands;
 	G->G->slash_commands = slashcommands;
+	object handler = G->G->websocket_types->cmdedit;
+	if (handler && prevcmds) {
+		//If the slash-command collection has changed, push it out to all command editors.
+		string prev = Standards.JSON.encode(prevcmds, 12), cur = Standards.JSON.encode(slashcommands, 12);
+		if (cur != prev) handler->update_collection("slash_commands", slashcommands);
+	}
 }
