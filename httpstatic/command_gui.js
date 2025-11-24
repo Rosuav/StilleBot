@@ -59,16 +59,6 @@ document.body.appendChild(DIALOG({id: "emotepicker"}, SECTION([
 ])));
 fix_dialogs();
 
-const collections = {
-	slash_commands: { }, //All magic commands that start with a slash, eg "/timeout", "/announceblue"
-};
-
-ws_sync.register_callback(function cmdedit_update_collections(msg) {
-	for (let key in msg) collections[key] = msg[key];
-	console.log("Updated collections:", collections);
-});
-ws_sync.send({cmd: "subscribe", type: "cmdedit", group: ""}); //TODO: Do this in the actual place that needs it.
-
 //Perform one-time initialization of the display context. It's not strictly one-time though,
 //as this seems to get reset when the canvas is resized.
 function initctx(ctx) {
@@ -1941,11 +1931,11 @@ function slashcommands(e) {
 		//We're on a line that starts with a slash. Does it have a word after it?
 		const cmd = /\/([a-z]*)/.exec(line)[1];
 		//Is there a command with this exact name? Show its usage info.
-		if (collections.slash_commands[cmd]) {
-			desc = collections.slash_commands[cmd].replace(" ->", " -> /" + cmd);
+		if (window.cmdedit_collections.slash_commands[cmd]) {
+			desc = window.cmdedit_collections.slash_commands[cmd].replace(" ->", " -> /" + cmd);
 		} else {
 			//Are there any commands that start with this? (Including "/" on its own to list all.)
-			const cmds = Object.entries(collections.slash_commands).filter(e => e[0].startsWith(cmd));
+			const cmds = Object.entries(window.cmdedit_collections.slash_commands).filter(e => e[0].startsWith(cmd));
 			if (!cmds.length) desc = "No such command /" + cmd;
 			else if (cmds.length === 1) desc = "/" + cmds[0][0] + ": " + cmds[0][1].replace(" ->", " -> /" + cmds[0][0]);
 			else desc = "Commands: " + cmds.map(e => "/" + e[0]).join(", ")
@@ -2017,7 +2007,7 @@ function find_tab_completion(mle) {
 	const linestart = content.lastIndexOf("\n", cursor - 1);
 	const line = content.slice(linestart === -1 ? 0 : linestart + 1, cursor); //just what's behind the cursor, not anything after it
 	if (line[0] === "/" && !line.includes(' ')) {
-		return Object.keys(collections.slash_commands).filter(c => c.startsWith(line.slice(1)))
+		return Object.keys(window.cmdedit_collections.slash_commands).filter(c => c.startsWith(line.slice(1)))
 			.map(c => c.slice(line.length - 1) + " ");
 	}
 	const m = /\S+$/.exec(line); const word = m && m[0];

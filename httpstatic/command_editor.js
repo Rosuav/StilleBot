@@ -52,8 +52,22 @@ document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 		]),
 	]),
 ])));
+
+//Ideally, files like command_gui.js should be able to reference this from the parent, or
+//import it from ./command_editor, but that doesn't work too well. So we stash it onto window.
+window.cmdedit_collections = {
+	slash_commands: { }, //All magic commands that start with a slash, eg "/timeout", "/announceblue"
+};
+
+ws_sync.register_callback(function cmdedit_update_collections(msg) {
+	for (let key in msg) window.cmdedit_collections[key] = msg[key];
+	console.log("Updated collections:", window.cmdedit_collections);
+});
+ws_sync.send({cmd: "subscribe", type: "cmdedit", group: ""}); //TODO: Do this in the actual place that needs it.
+
 //Delay the import of command_gui until the above code has executed, because JS is stupid and overly-eagerly
 //imports all modules. Thanks, JS. You're amazing.
+//CJA 20251124: Can this be simplified, now that collections are dynamically loaded? If not, what more would it take?
 let gui_load_message, gui_save_message;
 async function getgui() {
 	({gui_load_message, gui_save_message} = await import("$$static||command_gui.js$$"));
