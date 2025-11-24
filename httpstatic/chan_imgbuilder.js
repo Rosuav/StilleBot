@@ -1,6 +1,6 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {BUTTON, FIGCAPTION, FIGURE, IMG} = lindt; //autoimport
-import {upload_to_library} from "$$static||utils.js$$";
+import {upload_to_library, simpleconfirm} from "$$static||utils.js$$";
 
 export function render(data) {
 	if (data.files) replace_content("#files", data.files.map(f => FIGURE({"data-fileid": f.id, "data-filename": f.metadata.name}, [
@@ -31,6 +31,8 @@ on("submit", "#renameform", e => {
 	ws_sync.send(msg);
 	DOM("#renamefiledlg").close();
 });
+
+on("click", ".confirmdelete", simpleconfirm("Delete this file?", e => ws_sync.send({cmd: "deletefile", id: e.match.closest_data("fileid")})));
 
 on("click", "#download", e => ws_sync.send({cmd: "download"}));
 export function sockmsg_download(msg) {

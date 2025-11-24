@@ -85,6 +85,11 @@ __async__ void wscmd_renamefile(object channel, mapping(string:mixed) conn, mapp
 	G->G->DB->update_file(file->id, file->metadata);
 }
 
+__async__ void wscmd_deletefile(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!stringp(msg->id)) return;
+	G->G->DB->delete_file(channel->userid, msg->id);
+}
+
 __async__ mapping wscmd_download(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array files = await(list_files(channel->userid, 1));
 	int maxwidth = 1200; //TODO: Make these configurable.
