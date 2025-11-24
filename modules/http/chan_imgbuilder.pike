@@ -100,6 +100,7 @@ __async__ mapping wscmd_download(object channel, mapping(string:mixed) conn, map
 	array rows = ({ });
 	int curwid = -1, height = 0, totheight = 0;
 	foreach (files, mapping file) {
+		if (!file->data || file->data == "") continue; //Ignore any files that failed to upload
 		file->image = Image.ANY._decode(file->data);
 		if (file->pixwidth > curwid) {
 			rows += ({({ })});
