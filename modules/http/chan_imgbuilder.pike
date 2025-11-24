@@ -102,14 +102,14 @@ __async__ mapping wscmd_download(object channel, mapping(string:mixed) conn, map
 	foreach (files, mapping file) {
 		if (!file->data || file->data == "") continue; //Ignore any files that failed to upload
 		file->image = Image.ANY._decode(file->data);
-		if (file->pixwidth > curwid) {
+		if (file->metadata->pixwidth > curwid) {
 			rows += ({({ })});
 			curwid = maxwidth + xgap;
 			totheight += height;
 			height = 0;
 		}
 		rows[-1] += ({file});
-		curwid -= file->pixwidth - xgap;
+		curwid -= file->metadata->pixwidth - xgap;
 		//Slightly weird but whatever - the row height can always be found in row[-1]->height
 		file->height = height = max(height, file->image->ysize);
 	}
