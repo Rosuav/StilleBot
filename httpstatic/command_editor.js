@@ -58,6 +58,7 @@ document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 window.cmdedit_collections = {
 	updates: [], //Add functions here to get called after the collections are updated
 	slash_commands: { }, //All magic commands that start with a slash, eg "/timeout", "/announceblue"
+	builtins: { }, //All available builtins - functionality from the bot that commands can call on
 };
 
 ws_sync.register_callback(function cmdedit_update_collections(msg) {
