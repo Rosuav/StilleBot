@@ -3,6 +3,7 @@ const {A, BR, BUTTON, CODE, DIV, H3, INPUT, LABEL, OPTION, P, SELECT, SPAN, TABL
 import {simpleconfirm} from "$$static||utils.js$$";
 import {commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
+//TODO: When we subscribe to a special, have the back end also send us the framework for it
 cmd_configure({
 	get_command_basis: command => {
 		const basis = {type: "anchor_special"};
@@ -17,6 +18,7 @@ cmd_configure({
 		return basis;
 	},
 });
+//TODO: Just subscribe to "!!hyperlink" and not to all specials
 ws_sync.send({cmd: "subscribe", type: "cmdedit", group: "!!"});
 
 set_content("#settings", [
