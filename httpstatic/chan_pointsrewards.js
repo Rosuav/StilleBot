@@ -139,5 +139,4 @@ cmd_configure({
 		return {type: "anchor_command"};
 	},
 });
-//TODO: Subscribe *instead of* having the cmdedit secondary socket
 ws_sync.send({cmd: "subscribe", type: "cmdedit", group: ""});
