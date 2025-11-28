@@ -317,6 +317,9 @@ const stubtypes = {
 		typedesc: "Builtin",
 	},
 }
+function stub_type(typename) {
+	if (typename.startsWith("builtin_")) return stubtypes.builtin;
+}
 
 const builtin_label_funcs = {
 	chan_pointsrewards: el => {
@@ -746,10 +749,6 @@ function type_children(type) {
 	throw new Error("Unrecognized type " + type);
 }
 
-function stub_type(typename) {
-	if (typename.startsWith("builtin_")) return;
-}
-
 const path_cache = { };
 function element_path(element) {
 	if (element === "") return {totheight: 30}; //Simplify height calculation
@@ -983,7 +982,7 @@ function draw_at(ctx, el, parent, reposition) {
 	if (reposition) {el.x = parent.x + reposition.x; el.y = parent.y + reposition.y;}
 	const path = element_path(el);
 	max_descent = Math.max(max_descent, (el.y|0) + path.totheight);
-	const type = types[el.type];
+	const type = types[el.type] || stub_type(el.type);
 	ctx.save();
 	ctx.translate(el.x|0, el.y|0);
 	ctx.fillStyle = el.color || type.color;
