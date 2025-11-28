@@ -300,15 +300,8 @@
       have a chan_monitors group in conn->group, but a chan_commands group in conn->subscription_group.
   - Might remove the need for some secondary sockets. Might also allow socket groups to have
     less duplicated information in them, though I can't think of any examples right now.
-  - Prefix all command-specific socket messages with "cmdedit_" and have a single place that
-    finds them all (and in the darkness, binds them) and dispatches them to chan_commands.
-    - Maybe in the future, this will need to have some form of generic dispatch, such that a
-      module can choose to provide a subscription type (here, "cmdedit") which would also be
-      its prefix on all messages. The responses can all be prefixed the same way, thus making
-      it easy for command_editor.js to register_callback safely.
-    - The prefix MUST match the type used in the subscribe message. This probably means that,
-      per https://xkcd.com/2730/ , this code will never be used for anything else; but I'd
-      rather that than making assumptions that then hurt.
+    - Notably, the main group for a socket is used for the tabular view in commands/triggers/etc,
+      but the subscription will provide the same information for the command editor.
 * Can I implement Happy Eyeballs into poll.pike::get_url_data() ?
 * If negative damage is dealt to the stream boss, it can break. Should all negative damage
   be ignored? Alternatively, should damage cap out at zero? Or should negative damage do the
