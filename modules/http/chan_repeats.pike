@@ -34,7 +34,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (!req->misc->is_mod) return redirect("commands");
 	return render(req, ([
-		"vars": (["ws_type": "chan_commands", "ws_group": "", "ws_code": "chan_repeats"])
-			| G->G->command_editor_vars(req->misc->channel),
+		"vars": (["ws_type": "chan_commands", "ws_group": "", "ws_code": "chan_repeats"]),
 	]) | req->misc->chaninfo);
 }

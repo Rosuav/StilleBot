@@ -144,7 +144,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"vars": ([
 			"commands": commands,
 			"ws_type": "chan_commands", "ws_group": "!!" + req->misc->channel->name, "ws_code": "chan_specials",
-		]) | G->G->command_editor_vars(req->misc->channel),
+		]),
 		"loadingmsg": "Loading...",
 		"save_or_login": "[Save all](:#saveall)",
 	]) | req->misc->chaninfo);

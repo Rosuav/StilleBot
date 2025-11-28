@@ -207,12 +207,11 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (string scopes = !req->misc->session->fake && ensure_bcaster_token(req, "channel:manage:redemptions"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
-	mapping vars = (["ws_group": ""]) | G->G->command_editor_vars(req->misc->channel); //Load the vars prior to populating the cache
 	//Force an update, in case we have stale data. Note that the command editor will only use
 	//what's sent in the initial response, but at least this way, if there's an issue, hitting
 	//Refresh will fix it (otherwise there's no way for the client to force a refetch).
 	G->G->populate_rewards_cache(req->misc->channel->userid);
-	return render(req, (["vars": vars]) | req->misc->chaninfo);
+	return render(req, (["vars": (["ws_group": ""])]) | req->misc->chaninfo);
 }
 
 @hook_reward_changed: void notify_rewards(object channel, string|void rewardid) {

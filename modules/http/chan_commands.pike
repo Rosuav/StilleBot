@@ -70,17 +70,6 @@ void enable_feature(object channel, string kwd, int state) {
 	G->G->cmdmgr->update_command(channel, "", kwd, state ? info->response || COMPLEX_TEMPLATES[kwd] : "");
 }
 
-//Gather all the variables that the JS command editor needs. Some may depend on the channel.
-//TODO: Accept just the channelid, not the whole channel object
-mapping(string:mixed) command_editor_vars(object channel) {
-	mapping voices = G->G->DB->load_cached_config(channel->userid, "voices");
-	string defvoice = channel->config->defvoice;
-	if (voices[defvoice]) voices |= (["0": (["name": "Bot's own voice"])]); //TODO: Give the bot's username?
-	return ([
-		//WOOT! No longer needed!
-	]);
-}
-
 //Cache the set of available builtins. Needs to be called after any changes to any
 //builtin; currently, is call_out zero'd any time this file gets updated. Note that
 //this info can also be used by other things that call on the commands front end.
@@ -102,7 +91,6 @@ void find_builtins() {
 		if (builtins[name]->desc == "") builtins[name]->desc = handler->command_description;
 	}
 	commands_templates = templates * "\n";
-	G->G->command_editor_vars = command_editor_vars;
 	mapping prevcmds = G->G->commands_builtins;
 	G->G->commands_builtins = builtins;
 	object handler = G->G->websocket_types->cmdedit;
@@ -175,7 +163,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 ]));
 		}
 		return render(req, ([
-			"vars": (["ws_group": "", "complex_templates": complex_templates]) | command_editor_vars(req->misc->channel),
+			"vars": (["ws_group": "", "complex_templates": complex_templates]),
 			"templates": commands_templates,
 			"save_or_login": ("<p><a href=\"#examples\" class=opendlg data-dlg=templates>Example and template commands</a></p>"
 				"[Save all](:#saveall)"
