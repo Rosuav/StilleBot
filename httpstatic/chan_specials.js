@@ -105,3 +105,4 @@ cmd_configure({
 		return basis;
 	},
 });
+ws_sync.send({cmd: "subscribe", type: "cmdedit", group: "!!"});

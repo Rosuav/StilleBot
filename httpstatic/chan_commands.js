@@ -10,6 +10,7 @@ cmd_configure({
 		return {type: "anchor_command"};
 	},
 });
+ws_sync.send({cmd: "subscribe", type: "cmdedit", group: ""});
 
 function check_save() {DOM("#save_advanced").disabled = DOM("#cmdname").value.replace("!", "").trim() === "";}
 on("input", "#cmdname", check_save);

@@ -11,6 +11,7 @@ cmd_configure({
 	},
 	location_format: (cmd_id, tab) => null, //Disable insertion of command IDs into the location hash
 });
+ws_sync.send({cmd: "subscribe", type: "cmdedit", group: ""});
 
 function check_save() {DOM("#save_advanced").disabled = DOM("#cmdname").value.replace("!", "").trim() === "";}
 on("input", "#cmdname", check_save);

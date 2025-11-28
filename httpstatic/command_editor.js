@@ -73,7 +73,6 @@ ws_sync.register_callback(function cmdedit_update_collections(msg) {
 	console.log("Updated collections:", window.cmdedit_collections);
 	updatehooks.forEach(f => f());
 });
-ws_sync.send({cmd: "subscribe", type: "cmdedit", group: ""}); //TODO: Do this in the actual place that needs it.
 
 //Delay the import of command_gui until the above code has executed, because JS is stupid and overly-eagerly
 //imports all modules. Thanks, JS. You're amazing.

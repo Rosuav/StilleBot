@@ -13,6 +13,7 @@ cmd_configure({
 		return {type: "anchor_command"};
 	},
 });
+ws_sync.send({cmd: "subscribe", type: "cmdedit", group: ""});
 
 const cmdnames = { };
 

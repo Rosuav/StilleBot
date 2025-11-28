@@ -13,6 +13,7 @@ cmd_configure({
 		return {type: "anchor_command"};
 	},
 });
+ws_sync.send({cmd: "subscribe", type: "cmdedit", group: ""});
 
 //Search a command recursively for a monitor action
 function search_command(node, id, action) {
