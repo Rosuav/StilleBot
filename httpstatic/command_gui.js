@@ -310,6 +310,14 @@ function format_time_delay(sec) {
 	return sec + "-second";
 }
 
+//If you don't have the full type, the stub type might provide partial information.
+const stubtypes = {
+	builtin: {
+		color: "#ee77ee", children: ["message"], label: el => "Builtin",
+		typedesc: "Builtin",
+	},
+}
+
 const builtin_label_funcs = {
 	chan_pointsrewards: el => {
 		if (!el.builtin_param || typeof el.builtin_param === "string") return "Points rewards"; //TODO: Reformat into new style?
@@ -327,8 +335,8 @@ const builtin_label_funcs = {
 function builtin_types() {
 	const ret = { };
 	Object.entries(window.cmdedit_collections.builtins).forEach(([name, blt]) => {
-		const b = ret["builtin_" + name] = {
-			color: "#ee77ee", children: ["message"], label: builtin_label_funcs[name] || (el => blt.name),
+		const b = ret["builtin_" + name] = {...stubtypes.builtin,
+			label: builtin_label_funcs[name] || (el => blt.name),
 			params: [{attr: "builtin", values: name}],
 			typedesc: blt.desc, provides: { },
 		};
@@ -731,18 +739,30 @@ window.cmdedit_collections.register(() => {
 //Encapsulation breach: If there's a #cmdname, it's going to affect the command_anchor.
 on("change", "#cmdname", e => repaint());
 
+function type_children(type) {
+	if (types[type]) return types[type].children || [];
+	//If builtins haven't been loaded, or if it's a broken (eg renamed) builtin, it still has the same children.
+	if (type.startsWith("builtin_")) return ["message"];
+	throw new Error("Unrecognized type " + type);
+}
+
+function stub_type(typename) {
+	if (typename.startsWith("builtin_")) return;
+}
+
 const path_cache = { };
 function element_path(element) {
 	if (element === "") return {totheight: 30}; //Simplify height calculation
 	//Calculate a cache key for the element. This should be affected by anything that affects
 	//the path/clickable area, but not things that merely affect display (colour, text, etc).
 	let cache_key = element.type;
-	for (let attr of types[element.type].children || []) {
+	const type = types[element.type] || stub_type(element.type);
+	if (!type) return {totheight: 30}; //No info available, maybe something isn't loaded?
+	for (let attr of type.children || []) {
 		const childset = element[attr] || [""];
 		cache_key += "[" + childset.map(c => element_path(c).totheight).join() + "]";
 	}
 	if (path_cache[cache_key]) return path_cache[cache_key];
-	const type = types[element.type];
 	const path = new Path2D;
 	const width = type.width || 200;
 	path.moveTo(0, 0);
@@ -851,7 +871,7 @@ function make_template(el, par) {
 	el.template = true;
 	if (par) el.parent = par;
 	seen_types[el.type] = 1;
-	for (let attr of types[el.type].children || []) {
+	for (let attr of type_children(el.type)) {
 		if (!el[attr]) el[attr] = [""];
 		else ensure_blank(el[attr]).forEach((e, i) => make_template(e, [el, attr, i]));
 	}
@@ -1244,7 +1264,7 @@ function remove_child(childset, idx) {
 function element_contains(el, x, y) {
 	if (el === "") return null; //Empty slots contain nothing.
 	if (ctx.isPointInPath(element_path(el).path, x - el.x, y - el.y)) return el;
-	for (let attr of types[el.type].children || [])
+	for (let attr of type_children(el.type))
 		for (let child of el[attr] || []) {
 			let c = element_contains(child, x, y);
 			if (c) return c;
@@ -1278,7 +1298,7 @@ function clone_template(t, par) {
 	if (par && el.parent) el.parent[0] = par;
 	else delete el.parent;
 	delete el.hotkey;
-	for (let attr of types[el.type].children || [])
+	for (let attr of type_children(el.type))
 		el[attr] = el[attr].map(e => clone_template(e, el));
 	return el;
 }
