@@ -1,6 +1,6 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {BR, BUTTON, IMG, INPUT, LABEL, LI, OPTION, TBODY, TD, TEXTAREA, TR, UL} = choc; //autoimport
-import {commands, register_command, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
+import {commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 import {simpleconfirm} from "$$static||utils.js$$";
 
 export const render_parent = DOM("#rewards tbody");
@@ -141,9 +141,3 @@ cmd_configure({
 });
 //TODO: Subscribe *instead of* having the cmdedit secondary socket
 ws_sync.send({cmd: "subscribe", type: "cmdedit", group: ""});
-
-ws_sync.connect(ws_group, {
-	ws_type: "chan_commands", ws_sendid: "cmdedit",
-	render_parent: UL(), //Don't actually need them rendered anywhere (and register_command returns null anyway)
-	render_item: register_command, render: data => { },
-});

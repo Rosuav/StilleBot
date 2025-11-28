@@ -13,14 +13,34 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!(<"", "!!", "!!trigger">)[command]) return "UNIMPL"; //TODO: Unify this with chan_commands' validation, or just migrate it here. Also handle single-command subscription.
 }
 
+mapping _get_command(object channel, string cmd) {
+	echoable_message response = channel->commands[cmd];
+	if (!response) return 0;
+	if (mappingp(response)) return response | (["id": cmd]);
+	return (["message": response, "id": cmd]);
+}
 mapping get_chan_state(object channel, string group) {
-	return (["unimp": "cmdedit socket data"]);
+	if (group == "!!trigger") {
+		//For the front end, we pretend that there are multiple triggers with distinct IDs.
+		//But here on the back end, they're a single array inside one command.
+		echoable_message response = channel->commands["!trigger"];
+		return (["commands": arrayp(response) ? response : ({ })]);
+	}
+	if (group != "" && group != "!!") return 0; //Single-command usage not yet implemented
+	array commands = ({ });
+	foreach (channel->commands; string cmd; echoable_message response) {
+		if (group == "!!" && has_prefix(cmd, "!") && !has_prefix(cmd, "!!trigger")) commands += ({_get_command(channel, cmd)});
+		else if (group == "" && !has_prefix(cmd, "!")) commands += ({_get_command(channel, cmd)});
+	}
+	sort(commands->id, commands);
+	return (["commands": commands]);
 }
 
 mapping wscmd_cmdedit_subscribe(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping voices = G->G->DB->load_cached_config(channel->userid, "voices");
 	string defvoice = channel->config->defvoice;
 	if (voices[defvoice]) voices |= (["0": (["name": "Bot's own voice"])]); //TODO: Give the bot's username?
+	send_msg(conn, get_state(conn->subscription_group) | (["cmd": "cmdedit_publish_commands"])); //NOTE: Will break if get_chan_state is asynchronous
 	return ([
 		"cmd": "cmdedit_update_collections",
 		"pointsrewards": G->G->pointsrewards[channel->userid] || ({ }),
