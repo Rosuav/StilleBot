@@ -91,7 +91,7 @@ ws_sync.prefs_notify("cmd_defaulttab", tab => {
 });
 
 export const commands = { }; //Deprecated. Need to try to not have this exported mapping.
-const config = {get_command_basis: cmd => ({ })};
+const config = {get_command_basis: cmd => ({ }), command_prefix: ""};
 export function cmd_configure(cfg) {Object.assign(config, cfg);}
 
 let cmd_editing = null, mode = "", cmd_id = "", cmd_basis = { }, mustard_editor = null;
@@ -252,13 +252,12 @@ export function scan_message(msg, msgstatus, parent, key) {
 	return scan_message(msg.message, msgstatus, msg, "message");
 }
 ws_sync.register_callback(function cmdedit_publish_commands(msg) {
-	for (let cmd of msg.commands) {
-		commands[cmd.id] = cmd;
-		if (pending_command && pending_command[0].replace("!", "") === cmd.id.split("#")[0].replace("!", "")) {
-			//Let everything else finish loading before opening advanced view
-			setTimeout(open_advanced_view, 0.025, cmd, pending_command[1]);
-			pending_command = null;
-		}
+	for (let cmd of msg.commands) commands[cmd.id] = cmd;
+	if (pending_command) {
+		const id = config.command_prefix + pending_command[0];
+		//Let everything else finish loading before opening advanced view
+		setTimeout(open_advanced_view, 0.025, commands[id] || {id, message: ""}, pending_command[1]);
+		pending_command = null;
 	}
 });
 

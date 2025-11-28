@@ -91,6 +91,7 @@ DOM("#advanced_view").addEventListener("close", () => {
 });
 
 cmd_configure({
+	command_prefix: "!",
 	get_command_basis: command => {
 		const cmd = command_lookup[command.id], basis = {type: "anchor_special"};
 		//Select the appropriate tab for this command
