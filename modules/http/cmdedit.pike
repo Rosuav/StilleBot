@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit hook;
 constant subscription_valid = 1; //A bit hacky. Mark this as a type that can be subscribed to.
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
@@ -61,7 +62,18 @@ void update_collection(string coll, array|mapping data) {
 }
 
 void update_channel_collection(object channel, string coll, array|mapping data) {
-	//TODO: Whenever any of the per-channel subscribed features changes (eg new
-	//voice authenticated), push out a change. This should be similar to
-	//update_collection above, but send only to sockets for the given channel.
+	//Similar to above, broadcast a message across all groups for one channel.
+	mapping msg = (["cmd": "cmdedit_update_collections", coll: data]);
+	string text = Standards.JSON.encode(msg, 4);
+	string suffix = "#" + channel->userid;
+	foreach (websocket_groups; string group; array socks)
+		if (has_suffix(group, suffix))
+			foreach (socks, object sock)
+				if (sock && sock->state == 1) sock->send_text(text);
 }
+
+@hook_reward_changed: void notify_rewards(object channel, string|void rewardid) {
+	update_channel_collection(channel, "pointsrewards", G->G->pointsrewards[channel->userid] || ({ }));
+}
+
+protected void create(string name) {::create(name);}
