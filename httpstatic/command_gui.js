@@ -31,6 +31,7 @@ const ctx = canvas.getContext('2d');
 const FAV_BUTTON_TEXT = ["Fav ☆", "Fav ★"];
 let voices_available = {"": "Channel default"}; //Note that this will show up after the numeric entries, even though it's entered first
 Object.keys(voices).forEach(id => voices_available[id] = voices[id].name);
+const rewards = {"": ""}, reward_ids = [""]; //Mutated when collections get updated
 let alertcfg = {stdalerts: [], personals: [], loading: true};
 fetch("alertbox?summary", {credentials: "include"}).then(r => r.json()).then(c => alertcfg = c);
 const emotes_available = { };
@@ -88,13 +89,6 @@ function automation_to_string(val) {
 	else if (m1 >= m2) return ""+m1; //min-min is the same as just min
 	else return m1 + "-" + m2; //min-max
 }
-
-//If we have pointsrewards, remap it into something more useful.
-//Note that the rewards mapping is allowed to have loose entries in it, as long as reward_ids is
-//accurate and contains no junk.
-const rewards = {"": ""}, reward_ids = [""];
-try {pointsrewards.forEach(r => {rewards[r.id] = r.title; reward_ids.push(r.id);});} catch (e) { }
-if (reward_ids.length === 1) reward_ids.length = 0; //If there are no rewards whatsoever, show the dropdown differently
 
 const default_handlers = {
 	//Validation sees the original value and determines whether it's possible for it to be correct.
@@ -715,8 +709,19 @@ const post_types = {
 		actionlbl: null,
 	},
 };
-let types = {...main_types, ...builtin_types(), ...post_types};
-window.cmdedit_collections.updates.push(() => types = {...main_types, ...builtin_types(), ...post_types});
+let types;
+window.cmdedit_collections.register(() => {
+	types = {...main_types, ...builtin_types(), ...post_types};
+	//If we have pointsrewards, remap it into something more useful.
+	//Note that the rewards mapping is allowed to have loose entries in it, as long as reward_ids is
+	//accurate and contains no junk.
+	//Reset by mutating, NOT by reassigning, as there will likely be other references to these.
+	for (let r in rewards) delete rewards[r];
+	reward_ids.length = 0;
+	rewards[""] = ""; reward_ids.push(""); //There should generally be a blank entry for "none".
+	window.cmdedit_collections.pointsrewards.forEach(r => {rewards[r.id] = r.title; reward_ids.push(r.id);});
+	if (reward_ids.length === 1) reward_ids.length = 0; //However, if there are no rewards whatsoever, show the dropdown differently
+});
 
 //Encapsulation breach: If there's a #cmdname, it's going to affect the command_anchor.
 on("change", "#cmdname", e => repaint());

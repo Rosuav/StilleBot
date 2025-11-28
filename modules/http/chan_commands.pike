@@ -77,7 +77,6 @@ mapping(string:mixed) command_editor_vars(object channel) {
 	string defvoice = channel->config->defvoice;
 	if (voices[defvoice]) voices |= (["0": (["name": "Bot's own voice"])]); //TODO: Give the bot's username?
 	return ([
-		"pointsrewards": G->G->pointsrewards[channel->userid] || ({ }),
 		"voices": voices,
 		"monitors": G->G->DB->load_cached_config(channel->userid, "monitors"),
 	]);

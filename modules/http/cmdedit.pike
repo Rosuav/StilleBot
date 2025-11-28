@@ -18,8 +18,14 @@ mapping get_chan_state(object channel, string group) {
 }
 
 mapping wscmd_cmdedit_subscribe(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping voices = G->G->DB->load_cached_config(channel->userid, "voices");
+	string defvoice = channel->config->defvoice;
+	if (voices[defvoice]) voices |= (["0": (["name": "Bot's own voice"])]); //TODO: Give the bot's username?
 	return ([
 		"cmd": "cmdedit_update_collections",
+		"pointsrewards": G->G->pointsrewards[channel->userid] || ({ }),
+		"voices": voices,
+		"monitors": G->G->DB->load_cached_config(channel->userid, "monitors"),
 		"builtins": G->G->commands_builtins,
 		"slash_commands": G->G->slash_commands,
 	]);
@@ -32,4 +38,10 @@ void update_collection(string coll, array|mapping data) {
 	foreach (websocket_groups;; array socks)
 		foreach (socks, object sock)
 			if (sock && sock->state == 1) sock->send_text(text);
+}
+
+void update_channel_collection(object channel, string coll, array|mapping data) {
+	//TODO: Whenever any of the per-channel subscribed features changes (eg new
+	//voice authenticated), push out a change. This should be similar to
+	//update_collection above, but send only to sockets for the given channel.
 }

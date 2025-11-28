@@ -33,10 +33,10 @@ export function render_empty() {
 }
 export function render(data) {
 	const sel = DOM("#copyfrom"), val = sel.value;
-	if (data.items) {
-		set_content(sel, [sel.firstElementChild, data.items.map(rew => OPTION({value: rew.id}, rew.title))]).value = val;
-		pointsrewards = data.items; //Ensure that the command anchor can also find the available rewards
-	}
+	if (data.items) set_content(sel, [
+		sel.firstElementChild,
+		data.items.map(rew => OPTION({value: rew.id}, rew.title)),
+	]).value = val;
 }
 
 on("click", ".addcmd", e => {

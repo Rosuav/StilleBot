@@ -12,11 +12,10 @@ const flags = {
 		"/chain": "Chain to another command", "/reply": "Reply or join a thread, eg to {msgid}",
 		"//": "Comment (won't be sent anywhere)", "*": "Where should the response be sent?"},
 };
-function update_builtins() {
+window.cmdedit_collections.register(() => {
 	flags.builtin = {"": "None", "*": "Call on extra information from a built-in function or action"};
 	for (let name in window.cmdedit_collections.builtins) flags.builtin[name] = window.cmdedit_collections.builtins[name].name;
-}
-window.cmdedit_collections.updates.push(update_builtins);
+});
 const toplevelflags = ["access", "visibility"];
 const conditionalkeys = "expr1 expr2 casefold".split(" "); //Include every key used by every conditional type
 //NOTE: Must correspond to the list of params in command_gui types.anchor_command.params

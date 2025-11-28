@@ -55,16 +55,23 @@ document.body.appendChild(DIALOG({id: "advanced_view"}, SECTION([
 
 //Ideally, files like command_gui.js should be able to reference this from the parent, or
 //import it from ./command_editor, but that doesn't work too well. So we stash it onto window.
+const updatehooks = [];
 window.cmdedit_collections = {
-	updates: [], //Add functions here to get called after the collections are updated
+	register(f) { //Call this to get notified when the collections are updated
+		updatehooks.push(f);
+		f(); //TODO: Only call f if we've received our first collections signal?
+	},
 	slash_commands: { }, //All magic commands that start with a slash, eg "/timeout", "/announceblue"
 	builtins: { }, //All available builtins - functionality from the bot that commands can call on
+	monitors: { }, //[channel] Map a monitor ID to its details
+	pointsrewards: [], //[channel] List of all channel point rewards available
+	voices: {0: "Bot's own voice"}, //[channel] Map a voice ID (Twitch user ID) to the description etc, for all authenticated voices
 };
 
 ws_sync.register_callback(function cmdedit_update_collections(msg) {
 	for (let key in msg) window.cmdedit_collections[key] = msg[key];
 	console.log("Updated collections:", window.cmdedit_collections);
-	window.cmdedit_collections.updates.forEach(f => f());
+	updatehooks.forEach(f => f());
 });
 ws_sync.send({cmd: "subscribe", type: "cmdedit", group: ""}); //TODO: Do this in the actual place that needs it.
 
