@@ -316,3 +316,4 @@
 * If negative damage is dealt to the stream boss, it can break. Should all negative damage
   be ignored? Alternatively, should damage cap out at zero? Or should negative damage do the
   same thing as self-damage, and potentially increase max hp?
+* "Drag me to OBS" might not be working in current versions of OBS - look into it.
