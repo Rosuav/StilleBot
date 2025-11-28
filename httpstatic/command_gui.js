@@ -29,8 +29,7 @@ const SNAP_RANGE = 100; //Distance-squared to permit snapping (eg 25 = 5px radiu
 const canvas = DOM("#command_gui");
 const ctx = canvas.getContext('2d');
 const FAV_BUTTON_TEXT = ["Fav ☆", "Fav ★"];
-let voices_available = {"": "Channel default"}; //Note that this will show up after the numeric entries, even though it's entered first
-Object.keys(voices).forEach(id => voices_available[id] = voices[id].name);
+const voices_available = {"": "Channel default"}, voiceids = [""]; //Note that this will show up after the numeric entries, even though it's entered first
 const rewards = {"": ""}, reward_ids = [""]; //Mutated when collections get updated
 let alertcfg = {stdalerts: [], personals: [], loading: true};
 fetch("alertbox?summary", {credentials: "include"}).then(r => r.json()).then(c => alertcfg = c);
@@ -244,11 +243,11 @@ const builtin_validators = {
 	},
 	monitor_id: {...default_handlers,
 		make_control(id, val, el) {
-			if (!monitors[val]) val = Object.keys(monitors)[0]; //Select the first if nothing else selected
+			if (!window.cmdedit_collections.monitors[val]) val = Object.keys(window.cmdedit_collections.monitors)[0]; //Select the first if nothing else selected
 			setTimeout(check_monitor_params, 0, val);
 			return SELECT({...id, class: "monitor-selection"}, [
 				//TODO: Sort these in some useful way (or at least consistent)
-				Object.entries(monitors).map(([id, m]) => {
+				Object.entries(window.cmdedit_collections.monitors).map(([id, m]) => {
 					let label = m.text;
 					switch (m.type) {
 						case "goalbar": label = "Goal bar - " + (m.label || /:(.*)$/.exec(m.text)[1]); break;
@@ -263,7 +262,7 @@ const builtin_validators = {
 		//NOTE: Will permit anything while loading, but that should only happen if we get a hash link
 		//directly to open a command, or if the internet connection is very slow. Either way, the
 		//drop-down should be correctly populated by the time someone actually clicks on something.
-		validate: val => monitors[val],
+		validate: val => window.cmdedit_collections.monitors[val],
 	},
 	reward_id: {...default_handlers,
 		make_control: (id, val, el) => SELECT(id, [
@@ -279,7 +278,7 @@ const builtin_validators = {
 	}
 };
 function check_monitor_params(id) {
-	const mon = monitors[id];
+	const mon = window.cmdedit_collections.monitors[id];
 	if (!mon) return; //Can only happen if it's really slow or you're fast clicking on it
 	let labels = [null, null, null, null];
 	//TODO: With the "Action" options, replace the input with a select, offering the exact valid actions and no others
@@ -514,7 +513,7 @@ const main_types = {
 	},
 	voice: {
 		color: "#bbbb33", children: ["message"], label: el => "Voice: " + (voices_available[el.voice] || el.voice),
-		params: [{attr: "voice", label: "Voice", values: Object.keys(voices_available), selections: voices_available}],
+		params: [{attr: "voice", label: "Voice", values: voiceids, selections: voices_available}],
 		typedesc: ["Select a different ", A({href: "voices"}, "voice"), " for messages - only available if alternate voices are authorized"],
 	},
 	whisper_back: {
@@ -709,7 +708,7 @@ const post_types = {
 		actionlbl: null,
 	},
 };
-let types;
+let types = {...main_types, ...post_types};
 window.cmdedit_collections.register(() => {
 	types = {...main_types, ...builtin_types(), ...post_types};
 	//If we have pointsrewards, remap it into something more useful.
@@ -721,6 +720,12 @@ window.cmdedit_collections.register(() => {
 	rewards[""] = ""; reward_ids.push(""); //There should generally be a blank entry for "none".
 	window.cmdedit_collections.pointsrewards.forEach(r => {rewards[r.id] = r.title; reward_ids.push(r.id);});
 	if (reward_ids.length === 1) reward_ids.length = 0; //However, if there are no rewards whatsoever, show the dropdown differently
+	for (let v in voices_available) if (v) delete voices_available[v];
+	voiceids.length = 1; //Just keep the blank entry.
+	Object.keys(window.cmdedit_collections.voices).forEach(id => {
+		voices_available[id] = window.cmdedit_collections.voices[id].name;
+		voiceids.push(id);
+	});
 });
 
 //Encapsulation breach: If there's a #cmdname, it's going to affect the command_anchor.
@@ -1293,7 +1298,7 @@ If this were to be continued with, it would need:
 
 */
 const ALLOW_DRAG = false;
-//const ALLOW_DRAG = !!voices_available[265796767]; //Hack: Use this feature on my account, for testing
+//const ALLOW_DRAG = !!voices_available[265796767]; //Hack: Use this feature on my account, for testing. Might be broken as of 20251128 (voices_available is now dynamic).
 
 let clicking_on = null; //If non-null, will have rectangle in clicking_on.actionlink
 if (!ALLOW_DRAG) canvas.addEventListener("pointerdown", e => {

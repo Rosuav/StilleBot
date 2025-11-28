@@ -265,11 +265,11 @@ function render_command(cmd, toplevel) {
 	}
 	opts.push(TR({className: "destcfgrow"}, [TD(INPUT({"data-flag": "destcfg", value: cmd.action || cmd.destcfg || ""})), TD("Extra config. Use 'add' to add to a variable. See docs?")]));
 	opts.push(TR({className: "targetrow"}, [TD(INPUT({"data-flag": "target", value: cmd.target || ""})), TD("Who/what should it send to? User or variable name.")]));
-	const voiceids = Object.keys(voices);
+	const voiceids = Object.keys(window.cmdedit_collections.voices);
 	if (voiceids.length > 0 || cmd.voice) {
-		const v = voiceids.map(id => OPTION({value: id, ".selected": cmd.voice+"" === id ? "1" : undefined}, voices[id].desc));
+		const v = voiceids.map(id => OPTION({value: id, ".selected": cmd.voice+"" === id ? "1" : undefined}, window.cmdedit_collections.voices[id].desc));
 		v.unshift(OPTION({value: "", ".selected": cmd.voice ? "1" : undefined}, "Default voice"));
-		if (cmd.voice && !voices[cmd.voice]) {
+		if (cmd.voice && !window.cmdedit_collections.voices[cmd.voice]) {
 			v.push(OPTION({value: "", ".selected": "1", style: "color: red"}, "Deauthenticated"));
 		}
 		opts.push(TR({"data-flag": "voice"}, [
