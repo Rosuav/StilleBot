@@ -2,6 +2,8 @@ import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.
 const {A, TR, TD, UL, LI, B, INPUT, BUTTON} = choc;
 import {simpleconfirm} from "$$static||utils.js$$";
 
+//TODO maybe: Directly incorporate the command editor for command/special/trigger so they can
+//be viewed and/or edited right here.
 function describe_usage(u) {
 	switch (u.type) {
 		case "command": return A({href: "commands"}, [B(u.name), " " + u.action]);
