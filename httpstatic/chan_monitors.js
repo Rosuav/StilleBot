@@ -2,7 +2,7 @@ import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.
 const {A, B, BR, BUTTON, CAPTION, CODE, DIV, FIELDSET, FIGCAPTION, FIGURE, IFRAME, IMG, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
 import {update_display, formatters} from "$$static||monitor.js$$";
 import {simpleconfirm, TEXTFORMATTING, upload_to_library} from "$$static||utils.js$$";
-import {commands, register_command, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
+import {commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
 //TODO: Make cmd_configure know about some standard types of configuration
 //Even better, have the command basis figured out from something inherent in the command
