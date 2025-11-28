@@ -1,4 +1,4 @@
-import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
+import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {BR, BUTTON, IMG, INPUT, LABEL, LI, OPTION, TBODY, TD, TEXTAREA, TR, UL} = choc; //autoimport
 import {commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 import {simpleconfirm} from "$$static||utils.js$$";

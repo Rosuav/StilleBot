@@ -1,6 +1,23 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, BR, BUTTON, CODE, DIV, H3, INPUT, LABEL, OPTION, P, SELECT, SPAN, TABLE, TBODY, TD, TH, THEAD, TR} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
+import {commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
+
+cmd_configure({
+	get_command_basis: command => {
+		const basis = {type: "anchor_special"};
+		set_content("#advanced_view h3", ["Edit special response ", CODE("!" + command.id.split("#")[0])]);
+		const params = {"{username}": "Person who linked", "{uid}": "ID of that person"};
+		basis._provides = {
+			"{msg}": "The message that was posted",
+			"{offense}": "0 if given a permit, else number of times they've posted links this stream"
+		};
+		basis._desc = "Happens when a hyperlink is posted";
+		basis._shortdesc = "A hyperlink is posted";
+		return basis;
+	},
+});
+ws_sync.send({cmd: "subscribe", type: "cmdedit", group: "!!"});
 
 set_content("#settings", [
 	TABLE([
@@ -29,7 +46,7 @@ set_content("#settings", [
 		A({href: "voices"}, "Voices"),
 		" to authenticate it - requires the ", CODE("Ban/timeout/unban users"), " permission.",
 	]),
-	P(["Want more flexibility? The ", CODE("!!hyperlink"), " ", A({href: "specials"}, "special trigger"), " can do whatever you need, eg", BR(),
+	P(["Want more flexibility? The ", BUTTON({"data-id": "!hyperlink", class: "advview"}, CODE("!!hyperlink")), " ", A({href: "specials"}, "special trigger"), " can do whatever you need, eg", BR(),
 		"issuing warnings with the ", CODE("/warn"), " command to enforce that they be acknowledged."]),
 	//TODO: Have a button that opens up the command editor for !!hyperlink
 ]);

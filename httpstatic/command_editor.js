@@ -292,8 +292,12 @@ export function render_command(msg, prev, prefix) {
 }
 
 on("click", "button.advview", e => {
-	const tr = e.match.closest("[data-id]");
-	open_advanced_view(commands[tr.dataset.editid || tr.dataset.id]);
+	//Find the thing that identifies the command. It might report an edit ID, otherwise use the ID.
+	//Note that this isn't the same as e.match.closest_data("editid") || e.match.closest_data("id")
+	//if there is a narrower element with an ID but not an edit ID.
+	const el = e.match.closest("[data-id]");
+	const id = el.dataset.editid || el.dataset.id;
+	open_advanced_view(commands[id] || {id, message: ""});
 });
 on("input", "tr[data-id] input", e => e.match.closest("tr").classList.add("dirty"));
 on("click", "#saveall", e => {
