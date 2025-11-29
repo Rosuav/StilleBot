@@ -20,6 +20,7 @@ mapping _get_command(object channel, string cmd) {
 	if (mappingp(response)) return response | (["id": cmd]);
 	return (["message": response, "id": cmd]);
 }
+//TODO: Support single-element updates?
 mapping get_chan_state(object channel, string group) {
 	if (group == "!!trigger") {
 		//For the front end, we pretend that there are multiple triggers with distinct IDs.
@@ -70,6 +71,20 @@ void update_channel_collection(object channel, string coll, array|mapping data) 
 		if (has_suffix(group, suffix))
 			foreach (socks, object sock)
 				if (sock && sock->state == 1) sock->send_text(text);
+}
+
+void update_command(object channel, string command) {
+	//Push out updates relevant to a particular command.
+	//TODO: Rework this to an update_commands that will batch updates where applicable
+	//HACK HACK HACK: For now, any time there's an update, it updates everything for that channel
+	string suffix = "#" + channel->userid;
+	foreach (websocket_groups; string group; array socks)
+		if (has_suffix(group, suffix)) {
+			mapping msg = get_state(group) | (["cmd": "cmdedit_publish_commands"]);
+			string text = Standards.JSON.encode(msg, 4);
+			foreach (socks, object sock)
+				if (sock && sock->state == 1) sock->send_text(text);
+		}
 }
 
 @hook_reward_changed: void notify_rewards(object channel, string|void rewardid) {

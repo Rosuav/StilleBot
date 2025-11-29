@@ -544,6 +544,7 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 	if (object handler = G->G->websocket_types->chan_commands) {
 		//If the command name starts with "!", it's a special, to be
 		//sent out to "!!#channel" and not to "#channel".
+		object cmdedit = G->G->websocket_types->cmdedit;
 		foreach (updates; cmd;) {
 			//TODO maybe: If a command has been renamed, notify clients to rename, rather than
 			//deleting the old and creating the new.
@@ -551,6 +552,7 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 			if (cmd == "!trigger") handler->send_updates_all(channel, "!" + cmd);
 			else handler->update_one(channel, pfx + pfx, cmd);
 			handler->send_updates_all(channel, cmd);
+			if (cmdedit) cmdedit->update_command(channel, cmd);
 		}
 	}
 	if (object handler = G->G->websocket_types->chan_pointsrewards) {
