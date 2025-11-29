@@ -37,19 +37,19 @@ mapping get_chan_state(object channel, string group) {
 	return (["commands": commands]);
 }
 
-mapping wscmd_cmdedit_subscribe(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+void wscmd_cmdedit_subscribe(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping voices = G->G->DB->load_cached_config(channel->userid, "voices");
 	string defvoice = channel->config->defvoice;
 	if (voices[defvoice]) voices |= (["0": (["name": "Bot's own voice"])]); //TODO: Give the bot's username?
-	send_msg(conn, get_state(conn->subscription_group) | (["cmd": "cmdedit_publish_commands"])); //NOTE: Will break if get_chan_state is asynchronous
-	return ([
+	send_msg(conn, ([
 		"cmd": "cmdedit_update_collections",
 		"pointsrewards": G->G->pointsrewards[channel->userid] || ({ }),
 		"voices": voices,
 		"monitors": G->G->DB->load_cached_config(channel->userid, "monitors"),
 		"builtins": G->G->commands_builtins,
 		"slash_commands": G->G->slash_commands,
-	]);
+	]));
+	send_msg(conn, get_state(conn->subscription_group) | (["cmd": "cmdedit_publish_commands"])); //NOTE: Will break if get_chan_state is asynchronous
 }
 
 void update_collection(string coll, array|mapping data) {
