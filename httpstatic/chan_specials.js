@@ -52,10 +52,10 @@ export function render(data) {
 						"Parameters: ",
 						UL(describe_all_params(command_lookup[cmd.id] = cmd)),
 					]),
-					cmd.scopes_required === "bcaster" ? [
+					scopes_required[cmd.id] === "bcaster" ? [
 						B("NOTE:"),
 						" Requires broadcaster authentication. This trigger will not currently be functional.",
-					] : cmd.scopes_required && [
+					] : scopes_required[cmd.id] && [
 						B("NOTE:"),
 						"Requires authentication. ",
 						BUTTON({class: "twitchlogin", "data-scopes": cmd.scopes_required}, "Authenticate"),

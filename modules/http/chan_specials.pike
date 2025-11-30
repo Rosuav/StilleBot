@@ -110,6 +110,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	array commands = ({ }), order = ({ });
 	mapping SPECIAL_PARAMS = mkmapping(@Array.transpose(G->G->cmdmgr->SPECIAL_PARAMS));
 	mapping special_uses = ([]);
+	mapping special_scopes_required = ([]);
 	foreach (values(G->G->special_triggers), object spec) {
 		array scopesets = G->G->SPECIALS_SCOPES[spec->name - "!"];
 		string|zero scopes_required = 0;
@@ -131,11 +132,11 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"id": spec->name,
 			"desc": spec->desc, "originator": spec->originator,
 			"params": params, "tab": spec->tab,
-			//Null if none needed or we already have them. "bcaster" if scopes needed and we're not the broadcaster.
-			//Otherwise, is the scopes required to activate this special.
-			"scopes_required": scopes_required,
 		])});
 		order += ({SPECIAL_PRECEDENCE[spec->name] || spec->sort_order});
+		//Absent if none needed or we already have them. "bcaster" if scopes needed and we're not the broadcaster.
+		//Otherwise, is the scopes required to activate this special.
+		if (scopes_required) special_scopes_required[spec->name] = scopes_required;
 	}
 	//werror("Special uses: %O\n", special_uses);
 	foreach (G->G->cmdmgr->SPECIAL_PARAMS, [string name, string desc])
@@ -144,6 +145,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	return render_template("chan_specials.md", ([
 		"vars": ([
 			"commands": commands,
+			"scopes_required": special_scopes_required,
 			"ws_type": "chan_commands", "ws_group": "!!" + req->misc->channel->name, "ws_code": "chan_specials",
 		]),
 		"loadingmsg": "Loading...",
