@@ -11,7 +11,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (string err = ::websocket_validate(conn, msg)) return err;
 	if (msg->cmd == "init") return "Subscription only";
 	sscanf(msg->group, "%s#%s", string command, string chan);
-	if (!(<"", "!!", "!!trigger">)[command]) return "UNIMPL"; //TODO: Unify this with chan_commands' validation, or just migrate it here. Also handle single-command subscription.
+	if (command != "" && !has_prefix(command, "!")) return "Bad group name"; //TODO: Consider allowing "hello" to be an alias for "!hello"
 }
 
 mapping _get_command(object channel, string cmd) {
@@ -28,7 +28,15 @@ mapping get_chan_state(object channel, string group) {
 		echoable_message response = channel->commands["!trigger"];
 		return (["commands": arrayp(response) ? response : ({ })]);
 	}
-	if (group != "" && group != "!!") return 0; //Single-command usage not yet implemented
+	if (group != "" && group != "!!") {
+		//Single command lookup. If it's (eg) "!hello", look up the command named
+		//"hello" and return it, or give blank. If it's a special eg "!!sub", look
+		//up "!sub" and, again, return it or blank. TODO: Consider supporting eg
+		//"hello" meaning the same as "!hello"?
+		if (group[0] != '!') return (["error": "Bad group"]);
+		//Always returns an array, even if of just one element
+		return (["commands": ({_get_command(channel, group[1..]) || (["message": "", "id": group[1..]])})]);
+	}
 	array commands = ({ });
 	foreach (channel->commands; string cmd; echoable_message response) {
 		if (group == "!!" && has_prefix(cmd, "!") && !has_prefix(cmd, "!!trigger")) commands += ({_get_command(channel, cmd)});

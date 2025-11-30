@@ -18,8 +18,7 @@ cmd_configure({
 		return basis;
 	},
 });
-//TODO: Just subscribe to "!!hyperlink" and not to all specials
-ws_sync.send({cmd: "subscribe", type: "cmdedit", group: "!!"});
+ws_sync.send({cmd: "subscribe", type: "cmdedit", group: "!!hyperlink"});
 
 set_content("#settings", [
 	TABLE([
