@@ -1,7 +1,7 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, BR, BUTTON, CODE, DIV, H3, INPUT, LABEL, OPTION, P, SELECT, SPAN, TABLE, TBODY, TD, TH, THEAD, TR} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
-import {commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
+import {cmd_configure} from "$$static||command_editor.js$$";
 
 //TODO: When we subscribe to a special, have the back end also send us the framework for it
 cmd_configure({

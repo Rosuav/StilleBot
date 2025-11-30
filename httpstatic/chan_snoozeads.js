@@ -1,5 +1,21 @@
-import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
+import {choc, lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {DIV, LI, SPAN, TIME, UL} = lindt; //autoimport
+import {cmd_configure} from "$$static||command_editor.js$$";
+
+cmd_configure({
+	get_command_basis: command => {
+		const basis = {type: "anchor_special"};
+		set_content("#advanced_view h3", ["Edit special response ", choc.CODE("!" + command.id.split("#")[0])]);
+		const params = {"{username}": "The broadcaster", "{uid}": "ID of that person"};
+		basis._provides = {
+			"{advance_warning}": "advance_warning", //FIXME
+		};
+		basis._desc = "An ad is scheduled to start soon";
+		basis._shortdesc = "An ad starts soon";
+		return basis;
+	},
+});
+ws_sync.send({cmd: "subscribe", type: "cmdedit", group: "!!adsoon"});
 
 const colors = {
 	//Needles

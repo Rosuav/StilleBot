@@ -9,7 +9,7 @@ Loading...
 
 $$controls||$$
 
-Ad-vance warning: <input type=number id=advance_warning> seconds. Enables the [!!adsoon](specials#adsoon/) special trigger.
+Ad-vance warning: <input type=number id=advance_warning> seconds. Enables the [!!adsoon](:.advview data-id=!adsoon) [special trigger](specials).
 
 <style>
 #buttons button, #buttons select {font-size: 200%;}
