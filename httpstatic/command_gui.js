@@ -1895,11 +1895,11 @@ on("click", ".emotepicker", e => {
 	//it's valid, if it isn't, the back end will just reject this.
 	const voice = find_active_voice(propedit);
 	update_emote_picker(voice);
-	if (!emotes_available[voice]) ws_sync.send({cmd: "list_emotes", voice});
+	if (!emotes_available[voice]) ws_sync.send({cmd: "cmdedit_list_emotes", voice});
 	DOM("#emotepicker").dataset.voice = voice; //Not cleared when the dialog is closed, though this might save some processing
 	DOM("#emotepicker").showModal();
 });
-ws_sync.register_callback(function chan_commands_emotes_available(msg) {
+ws_sync.register_callback(function cmdedit_emotes_available(msg) {
 	//Build a quick lookup table and cache it.
 	const lookup = { };
 	if (msg.emotes.emotes) Object.values(msg.emotes.emotes).forEach(grp => grp.forEach(em =>
@@ -1927,7 +1927,7 @@ on("click", ".emoteset img", e => {
 function emotify(text, el) {
 	const voice = find_active_voice(el);
 	if (!emotes_available[voice]) {
-		if (typeof emotes_available[voice] === "undefined") ws_sync.send({cmd: "list_emotes", voice});
+		if (typeof emotes_available[voice] === "undefined") ws_sync.send({cmd: "cmdedit_list_emotes", voice});
 		emotes_available[voice] = 0; //Flag that we don't have them, but shouldn't reload
 		return text;
 	}

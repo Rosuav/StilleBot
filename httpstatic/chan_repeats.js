@@ -75,7 +75,7 @@ on("click", "#savechanges", e => {
 		if (inp) {
 			const msg = inp.value;
 			if (!msg) {
-				ws_sync.send({cmd: "delete", cmdname: tr.dataset.id}, "cmdedit");
+				ws_sync.send({cmd: "cmdedit_delete", cmdname: tr.dataset.id});
 				return;
 			}
 			if (typeof response === "string") response = msg;
@@ -87,12 +87,12 @@ on("click", "#savechanges", e => {
 			//remove the command. TODO: Prompt the user first?
 			//Ensure that this always gets other invocations added to it.
 			if (response.access === "none" && !response.redemption) {
-				ws_sync.send({cmd: "delete", cmdname: tr.dataset.id}, "cmdedit");
+				ws_sync.send({cmd: "cmdedit_delete", cmdname: tr.dataset.id});
 				return;
 			}
 		}
 		response.automate = automate; //Push to the back end as a string; it comes back as an array.
-		ws_sync.send({cmd: "update", cmdname: tr.dataset.id, response}, "cmdedit");
+		ws_sync.send({cmd: "cmdedit_update", cmdname: tr.dataset.id, response});
 		//Note that the dirty flag is not reset. A successful update will trigger
 		//a broadcast message which, when it reaches us, will rerender the command
 		//completely, thus effectively resetting dirty.

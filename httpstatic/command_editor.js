@@ -112,7 +112,7 @@ function get_message_details() {
 }
 function change_tab(tab) {
 	let response = get_message_details();
-	if (response) ws_sync.send({cmd: "validate", cmdname: "changetab_" + tab, response, language: mode === "mustard" ? "mustard" : ""}, "cmdedit");
+	if (response) ws_sync.send({cmd: "cmdedit_validate", cmdname: "changetab_" + tab, response, language: mode === "mustard" ? "mustard" : ""});
 	else select_tab(tab, cmd_editing);
 }
 
@@ -169,7 +169,7 @@ export function open_advanced_view(cmd, tab) {
 	DOM('[name="editor"][value="' + tab + '"]').checked = true;
 	//Since we don't get MustardScript for any commands initially, loading into this mode
 	//requires asking the server to enscriptify the command for us.
-	if (tab === "mustard") ws_sync.send({cmd: "validate", cmdname: "changetab_" + tab, response: cmd}, "cmdedit");
+	if (tab === "mustard") ws_sync.send({cmd: "cmdedit_validate", cmdname: "changetab_" + tab, response: cmd});
 	else select_tab(tab, cmd);
 	DOM("#advanced_view").style.cssText = "";
 	DOM("#advanced_view").showModal();
@@ -183,21 +183,21 @@ on("click", "#save_advanced", async e => {
 	const info = get_message_details();
 	document.getElementById("advanced_view").close();
 	const el = DOM("#cmdname");
-	ws_sync.send({cmd: "update", cmdname: el ? el.value : cmd_id, original: cmd_id, response: info, language: mode === "mustard" ? "mustard" : ""}, "cmdedit");
+	ws_sync.send({cmd: "cmdedit_update", cmdname: el ? el.value : cmd_id, original: cmd_id, response: info, language: mode === "mustard" ? "mustard" : ""});
 });
 
 on("click", "#delete_advanced", simpleconfirm("Delete this command?", e => {
 	const info = get_message_details();
-	ws_sync.send({cmd: "delete", cmdname: cmd_id}, "cmdedit");
+	ws_sync.send({cmd: "cmdedit_delete", cmdname: cmd_id});
 	DOM("#advanced_view").close();
 	if (info.redemption) simpleconfirm("Also delete the corresponding channel point reward?",
-		e => ws_sync.send({cmd: "deletereward", redemption: info.redemption}, "cmdedit")
+		e => ws_sync.send({cmd: "cmdedit_deletereward", redemption: info.redemption})
 	)(e);
 }));
 
 //TODO: Have a preferences control to disable confirmation
 on("click", "#invoke_command", simpleconfirm("Run this command now?", e => {
-	ws_sync.send({cmd: "execute", cmdname: cmd_id, response: get_message_details(), language: mode === "mustard" ? "mustard" : ""}, "cmdedit");
+	ws_sync.send({cmd: "cmdedit_execute", cmdname: cmd_id, response: get_message_details(), language: mode === "mustard" ? "mustard" : ""});
 }));
 
 on("click", ".raw_view", e => {
@@ -211,10 +211,10 @@ on("click", ".raw_view", e => {
 	set_content("#raw_error", "");
 	DOM("#raw_text").value = JSON.stringify(response, null, e.match.classList.contains("pretty") ? 4 : 0);
 });
-ws_sync.register_callback(function chan_commands_validated(data) {
+ws_sync.register_callback(function cmdedit_validated(data) {
 	if (data.cmdname.startsWith("changetab_")) select_tab(data.cmdname.replace("changetab_", ""), data.response);
 });
-ws_sync.register_callback(function chan_commands_changetab_failed(data) {
+ws_sync.register_callback(function cmdedit_changetab_failed(data) {
 	//TODO: Report the error (which needs to be sent by the server)
 	DOM('[name="editor"][value="' + mode + '"]').checked = true;
 });
@@ -304,7 +304,7 @@ on("click", "#saveall", e => {
 	document.querySelectorAll("tr.dirty[data-id]").forEach(tr => {
 		const msg = tr.querySelector("input").value;
 		if (!msg.length) {
-			ws_sync.send({cmd: "delete", cmdname: tr.dataset.id}, "cmdedit");
+			ws_sync.send({cmd: "cmdedit_delete", cmdname: tr.dataset.id});
 			return;
 		}
 		//Take a copy of the original command (we're going to JSON-encode it anyway, so this should
@@ -312,7 +312,7 @@ on("click", "#saveall", e => {
 		let response = JSON.parse(JSON.stringify(commands[tr.dataset.id]));
 		if (typeof response === "string") response = msg;
 		else scan_message(response, {replacetext: msg});
-		ws_sync.send({cmd: "update", cmdname: tr.dataset.id, response}, "cmdedit");
+		ws_sync.send({cmd: "cmdedit_update", cmdname: tr.dataset.id, response});
 		//Note that the dirty flag is not reset. A successful update will trigger
 		//a broadcast message which, when it reaches us, will rerender the command
 		//completely, thus effectively resetting dirty.

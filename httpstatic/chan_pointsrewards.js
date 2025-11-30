@@ -128,7 +128,7 @@ on("submit", "#editrewarddlg form", e => {
 });
 
 on("click", "#deletereward", simpleconfirm("Are you sure you want to delete this reward? Cannot be undone!", e => {
-	ws_sync.send({cmd: "delete_reward", reward_id: editing_reward});
+	ws_sync.send({cmd: "cmdedit_delete_reward", reward_id: editing_reward});
 	DOM("#editrewarddlg").close();
 }));
 
