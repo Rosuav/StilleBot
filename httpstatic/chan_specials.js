@@ -91,6 +91,7 @@ DOM("#advanced_view").addEventListener("close", () => {
 });
 
 cmd_configure({
+	subscribe: "!!",
 	command_prefix: "!",
 	get_command_basis: command => {
 		const cmd = command_lookup[command.id], basis = {type: "anchor_special"};
@@ -106,4 +107,3 @@ cmd_configure({
 		return basis;
 	},
 });
-ws_sync.send({cmd: "subscribe", type: "cmdedit", group: "!!"});

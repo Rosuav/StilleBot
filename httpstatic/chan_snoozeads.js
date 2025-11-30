@@ -3,6 +3,7 @@ const {DIV, LI, SPAN, TIME, UL} = lindt; //autoimport
 import {cmd_configure} from "$$static||command_editor.js$$";
 
 cmd_configure({
+	subscribe: "!!adsoon",
 	get_command_basis: command => {
 		const basis = {type: "anchor_special"};
 		set_content("#advanced_view h3", ["Edit special response ", choc.CODE("!" + command.id.split("#")[0])]);
@@ -15,7 +16,6 @@ cmd_configure({
 		return basis;
 	},
 });
-ws_sync.send({cmd: "subscribe", type: "cmdedit", group: "!!adsoon"});
 
 const colors = {
 	//Needles

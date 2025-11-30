@@ -3,6 +3,7 @@ const {BR, BUTTON, CODE, EM, INPUT, OPTION, TD, TR} = choc; //autoimport
 import {scan_message, commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
 cmd_configure({
+	subscribe: "",
 	get_command_basis: cmd => {
 		if (cmd.cmdname[0] === "!") ; //TODO: Show specials differently
 		set_content("#advanced_view h3", [
@@ -13,7 +14,6 @@ cmd_configure({
 		return {type: "anchor_command"};
 	},
 });
-ws_sync.send({cmd: "subscribe", type: "cmdedit", group: ""});
 
 const cmdnames = { };
 

@@ -3,6 +3,7 @@ const {BUTTON, INPUT, TR, TD} = choc;
 import {render_command, commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
 cmd_configure({
+	subscribe: "",
 	get_command_basis: cmd => {
 		const cmdname = "!" + cmd.id.split("#")[0];
 		set_content("#advanced_view h3", ["Edit command ", INPUT({autocomplete: "off", id: "cmdname", value: cmdname})]);
@@ -10,7 +11,6 @@ cmd_configure({
 		return {type: "anchor_command"};
 	},
 });
-ws_sync.send({cmd: "subscribe", type: "cmdedit", group: ""});
 
 function check_save() {DOM("#save_advanced").disabled = DOM("#cmdname").value.replace("!", "").trim() === "";}
 on("input", "#cmdname", check_save);

@@ -5,6 +5,7 @@ import {cmd_configure} from "$$static||command_editor.js$$";
 
 //TODO: When we subscribe to a special, have the back end also send us the framework for it
 cmd_configure({
+	subscribe: "!!hyperlink",
 	get_command_basis: command => {
 		const basis = {type: "anchor_special"};
 		set_content("#advanced_view h3", ["Edit special response ", CODE("!" + command.id.split("#")[0])]);
@@ -18,7 +19,6 @@ cmd_configure({
 		return basis;
 	},
 });
-ws_sync.send({cmd: "subscribe", type: "cmdedit", group: "!!hyperlink"});
 
 set_content("#settings", [
 	TABLE([
