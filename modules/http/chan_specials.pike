@@ -104,7 +104,8 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"loadingmsg": "Restricted to moderators only",
 		]) | req->misc->chaninfo);
 	}
-	multiset scopes = (multiset)(token_for_user_login(req->misc->channel->name[1..])[1] / " ");
+	mapping cred = G->G->user_credentials[req->misc->channel->userid];
+	multiset scopes = cred ? (multiset)cred->scopes : (<>);
 	int is_bcaster = req->misc->channel->userid == (int)req->misc->session->user->id;
 	array commands = ({ }), order = ({ });
 	mapping SPECIAL_PARAMS = mkmapping(@Array.transpose(G->G->cmdmgr->SPECIAL_PARAMS));
