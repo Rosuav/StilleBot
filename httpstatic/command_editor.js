@@ -107,7 +107,7 @@ const config = {
 				_shortdesc: spec.desc, //Needs to be even shorter though
 			};
 		}
-		set_content("#advanced_view h3", ["Edit command ", INPUT({autocomplete: "off", id: "cmdname", value: cmdname})]);
+		set_content("#advanced_view h3", ["Edit command ", INPUT({autocomplete: "off", id: "cmdname", value: "!" + cmd.id.split("#")[0]})]);
 		return {type: "anchor_command"};
 	},
 };
