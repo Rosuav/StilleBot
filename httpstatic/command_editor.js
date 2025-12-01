@@ -66,6 +66,7 @@ window.cmdedit_collections = {
 	monitors: { }, //[channel] Map a monitor ID to its details
 	pointsrewards: [], //[channel] List of all channel point rewards available
 	voices: {0: "Bot's own voice"}, //[channel] Map a voice ID (Twitch user ID) to the description etc, for all authenticated voices
+	specials: { }, //Specifications for specials. Has an entry for each relevant special, giving its description, params, etc.
 };
 
 ws_sync.register_callback(function cmdedit_update_collections(msg) {

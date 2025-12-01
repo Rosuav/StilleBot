@@ -2,8 +2,6 @@ import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.
 const {A, B, BUTTON, CODE, DETAILS, DIV, INPUT, LABEL, LI, STYLE, SUMMARY, TD, TR, UL} = choc; //autoimport
 import {render_command, cmd_configure} from "$$static||command_editor.js$$";
 
-let command_lookup = { };
-
 const describe_param = (p, desc) => LI([CODE(p), " - " + desc]);
 function describe_all_params(cmd) {
 	return [describe_param("$$", cmd.originator), describe_param("{uid}", "ID of that person")].concat(
@@ -50,7 +48,7 @@ export function render(data) {
 					DETAILS([
 						SUMMARY("Happens when: " + cmd.desc),
 						"Parameters: ",
-						UL(describe_all_params(command_lookup[cmd.id] = cmd)),
+						UL(describe_all_params(cmd)),
 					]),
 					scopes_required[cmd.id] === "bcaster" ? [
 						B("NOTE:"),
@@ -94,7 +92,7 @@ cmd_configure({
 	subscribe: "!!",
 	command_prefix: "!",
 	get_command_basis: command => {
-		const cmd = command_lookup[command.id], basis = {type: "anchor_special"};
+		const cmd = window.cmdedit_collections.specials[command.id], basis = {type: "anchor_special"};
 		//Select the appropriate tab for this command
 		const tab = cmd.tab.replace(" ", "-");
 		DOM("#commands").dataset.rb = "tab-" + tab;

@@ -1,6 +1,6 @@
 import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {BUTTON, INPUT, TR, TD} = choc;
-import {render_command, commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
+import {render_command, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
 cmd_configure({
 	subscribe: "",
