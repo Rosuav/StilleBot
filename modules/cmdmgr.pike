@@ -77,10 +77,10 @@ void fix_specials() {
 			mapping params = ([]);
 			foreach (spec->params / ", ", string p) {
 				params["{" + p + "}"] = SPECIAL_PARAMS[p] || p;
-				special_uses[p] += ({spec->name});
+				special_uses[p] += ({spec->id});
 			}
 			spec->params = params;
-			//werror("Special %O params s/be %O\n", spec->name, params); //Migration aid
+			//werror("Special %O params s/be %O\n", spec->id, params); //Migration aid
 		}
 	}
 	if (0) {

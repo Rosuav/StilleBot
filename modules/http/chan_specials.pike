@@ -1,11 +1,9 @@
 inherit http_endpoint;
 inherit enableable_module;
 
-//Anything not listed here will be at the end, ordered mostly-consistently.
-//Newly devised specials, if not added to this list, will get a position that may
-//change after the next bot restart (or hop), but will eventually settle to a
-//location based on code build order. Ideally, this list should be correctly
-//maintained, so that the displayed order will always be consistent.
+//Anything not listed here will be at the start, ordered inconsistently.
+//Newly devised specials will get a position that should make it
+//obvious that they need to be added here.
 constant SPECIAL_ORDER = ({
 	"!follower",
 	"!sub", "!resub", "!subgift", "!subbomb",
@@ -110,22 +108,18 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	array commands = ({ }), order = ({ });
 	mapping special_scopes_required = ([]);
 	foreach (values(G->G->special_triggers), object spec) {
-		array scopesets = G->G->SPECIALS_SCOPES[spec->name - "!"];
+		array scopesets = G->G->SPECIALS_SCOPES[spec->id - "!"];
 		string|zero scopes_required = 0;
 		if (scopesets) {
 			scopes_required = is_bcaster ? scopesets[0] * " " : "bcaster";
 			foreach (scopesets, array scopeset)
 				if (!has_value(scopes[scopeset[*]], 0)) scopes_required = 0;
 		}
-		commands += ({([
-			"id": spec->name,
-			"desc": spec->desc, "originator": spec->originator,
-			"params": spec->params, "tab": spec->tab,
-		])});
-		order += ({SPECIAL_PRECEDENCE[spec->name] || spec->sort_order});
+		commands += ({(mapping)spec});
+		order += ({SPECIAL_PRECEDENCE[spec->id]});
 		//Absent if none needed or we already have them. "bcaster" if scopes needed and we're not the broadcaster.
 		//Otherwise, is the scopes required to activate this special.
-		if (scopes_required) special_scopes_required[spec->name] = scopes_required;
+		if (scopes_required) special_scopes_required[spec->id] = scopes_required;
 	}
 	sort(order, commands);
 	return render_template("chan_specials.md", ([
