@@ -2,7 +2,10 @@ import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.
 const {CODE, TD, TR} = choc; //autoimport
 import {render_command, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
-ws_sync.send({cmd: "subscribe", type: "cmdedit", group: "!!trigger"});
+cmd_configure({
+	subscribe: "!!trigger",
+	get_command_basis: cmd => ({ }),
+});
 
 export const render_parent = DOM("#triggers tbody");
 export function render_item(el, prev) {
