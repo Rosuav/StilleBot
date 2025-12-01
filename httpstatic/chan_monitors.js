@@ -10,11 +10,6 @@ import {commands, cmd_configure, open_advanced_view} from "$$static||command_edi
 //command directly, and can thus create a command as well.
 cmd_configure({
 	subscribe: "",
-	get_command_basis: cmd => {
-		const cmdname = "!" + cmd.id.split("#")[0];
-		set_content("#advanced_view h3", ["Command name ", INPUT({autocomplete: "off", id: "cmdname", value: cmdname})]);
-		return {type: "anchor_command"};
-	},
 });
 
 //Search a command recursively for a monitor action

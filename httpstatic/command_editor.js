@@ -1,5 +1,5 @@
 //Command advanced editor framework, and Script and Raw mode editors
-import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
+import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, ABBR, B, BR, BUTTON, CANVAS, CODE, DIALOG, DIV, EM, FORM, H3, HEADER, INPUT, LABEL, LI, P, SECTION, SPAN, TD, TEXTAREA, TR, U, UL} = choc; //autoimport
 import "https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.min.js"; //Editor for MustardScript
 window.ace.config.set("basePath", "https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/");
@@ -92,7 +92,25 @@ ws_sync.prefs_notify("cmd_defaulttab", tab => {
 });
 
 export const commands = { }; //Deprecated. Need to try to not have this exported mapping.
-const config = {get_command_basis: cmd => ({ }), command_prefix: ""};
+const config = {
+	load_command: cmd => { },
+	command_prefix: "",
+	//Default basis generation handles specials (if in the registered collections) and commands. Can be overridden.
+	get_command_basis: cmd => {
+		const spec = window.cmdedit_collections.specials[cmd.id];
+		if (spec) {
+			set_content("#advanced_view h3", ["Edit special response ", CODE("!" + cmd.id.split("#")[0])]);
+			return {
+				type: "anchor_special",
+				_provides: {"{username}": spec.originator, "{uid}": "ID of that person", ...spec.params},
+				_desc: "Happens when: " + spec.desc,
+				_shortdesc: spec.desc, //Needs to be even shorter though
+			};
+		}
+		set_content("#advanced_view h3", ["Edit command ", INPUT({autocomplete: "off", id: "cmdname", value: cmdname})]);
+		return {type: "anchor_command"};
+	},
+};
 export function cmd_configure(cfg) {
 	Object.assign(config, cfg);
 	if (config.subscribe) ws_sync.send({cmd: "subscribe", type: "cmdedit", group: config.subscribe});
@@ -169,6 +187,7 @@ on("click", "#makedefault", e => ws_sync.send({cmd: "prefs_update", cmd_defaultt
 
 export function open_advanced_view(cmd, tab) {
 	mode = ""; cmd_id = cmd.id; cmd_basis = config.get_command_basis(cmd);
+	config.load_command(cmd);
 	if (!tablist.some(t => t.toLowerCase() === tab)) tab = defaulttab;
 	DOM('[name="editor"][value="' + tab + '"]').checked = true;
 	//Since we don't get MustardScript for any commands initially, loading into this mode

@@ -71,7 +71,7 @@ export function render(data) {
 		}));
 		let tab = tabs[0];
 		//NOTE: If the hash is requesting that the editor be opened, we won't select a tab here.
-		//Instead, get_command_basis() below will do the tab selection.
+		//Instead, load_command() below will do the tab selection.
 		if (location.hash && tabs.includes(location.hash.slice(1))) tab = location.hash.slice(1);
 		DOM("#commands").dataset.rb = "tab-" + tab;
 		DOM("#tab-" + tab).checked = true;
@@ -91,17 +91,11 @@ DOM("#advanced_view").addEventListener("close", () => {
 cmd_configure({
 	subscribe: "!!",
 	command_prefix: "!",
-	get_command_basis: command => {
-		const cmd = window.cmdedit_collections.specials[command.id], basis = {type: "anchor_special"};
+	load_command: command => {
 		//Select the appropriate tab for this command
+		const cmd = window.cmdedit_collections.specials[command.id];
 		const tab = cmd.tab.replace(" ", "-");
 		DOM("#commands").dataset.rb = "tab-" + tab;
 		DOM("#tab-" + tab).checked = true;
-		set_content("#advanced_view h3", ["Edit special response ", CODE("!" + command.id.split("#")[0])]);
-		const params = {"{username}": cmd.originator, "{uid}": "ID of that person", ...cmd.params};
-		basis._provides = params;
-		basis._desc = "Happens when: " + cmd.desc;
-		basis._shortdesc = cmd.desc; //Needs to be even shorter though
-		return basis;
 	},
 });

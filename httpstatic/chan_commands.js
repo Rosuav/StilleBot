@@ -1,15 +1,10 @@
-import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
+import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {BUTTON, INPUT, TR, TD} = choc;
 import {render_command, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
 cmd_configure({
 	subscribe: "",
-	get_command_basis: cmd => {
-		const cmdname = "!" + cmd.id.split("#")[0];
-		set_content("#advanced_view h3", ["Edit command ", INPUT({autocomplete: "off", id: "cmdname", value: cmdname})]);
-		check_save();
-		return {type: "anchor_command"};
-	},
+	load_command: cmd => check_save(),
 });
 
 function check_save() {DOM("#save_advanced").disabled = DOM("#cmdname").value.replace("!", "").trim() === "";}

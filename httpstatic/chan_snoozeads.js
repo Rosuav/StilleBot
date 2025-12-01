@@ -4,17 +4,6 @@ import {cmd_configure} from "$$static||command_editor.js$$";
 
 cmd_configure({
 	subscribe: "!!adsoon",
-	get_command_basis: command => {
-		const basis = {type: "anchor_special"};
-		set_content("#advanced_view h3", ["Edit special response ", choc.CODE("!" + command.id.split("#")[0])]);
-		const params = {"{username}": "The broadcaster", "{uid}": "ID of that person"};
-		basis._provides = {
-			"{advance_warning}": "advance_warning", //FIXME
-		};
-		basis._desc = "An ad is scheduled to start soon";
-		basis._shortdesc = "An ad starts soon";
-		return basis;
-	},
 });
 
 const colors = {

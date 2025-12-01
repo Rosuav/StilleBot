@@ -3,12 +3,7 @@ const {BR, BUTTON, CODE, EM, INPUT, TD, TR} = choc; //autoimport
 import {scan_message, commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
 cmd_configure({
-	get_command_basis: cmd => {
-		const cmdname = "!" + cmd.id.split("#")[0];
-		set_content("#advanced_view h3", ["Edit command ", INPUT({autocomplete: "off", id: "cmdname", value: cmdname})]);
-		check_save();
-		return {type: "anchor_command"};
-	},
+	load_command: cmd => check_save(),
 	location_format: (cmd_id, tab) => null, //Disable insertion of command IDs into the location hash
 });
 ws_sync.send({cmd: "subscribe", type: "cmdedit", group: ""});

@@ -6,18 +6,6 @@ import {cmd_configure} from "$$static||command_editor.js$$";
 //TODO: When we subscribe to a special, have the back end also send us the framework for it
 cmd_configure({
 	subscribe: "!!hyperlink",
-	get_command_basis: command => {
-		const basis = {type: "anchor_special"};
-		set_content("#advanced_view h3", ["Edit special response ", CODE("!" + command.id.split("#")[0])]);
-		const params = {"{username}": "Person who linked", "{uid}": "ID of that person"};
-		basis._provides = {
-			"{msg}": "The message that was posted",
-			"{offense}": "0 if given a permit, else number of times they've posted links this stream"
-		};
-		basis._desc = "Happens when a hyperlink is posted";
-		basis._shortdesc = "A hyperlink is posted";
-		return basis;
-	},
 });
 
 set_content("#settings", [

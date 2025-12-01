@@ -4,7 +4,7 @@ import {render_command, cmd_configure, open_advanced_view} from "$$static||comma
 
 cmd_configure({
 	subscribe: "!!trigger",
-	get_command_basis: cmd => ({ }),
+	get_command_basis: cmd => ({ }), //Not sure why triggers use a null basis rather than an explicit anchor but whatever
 });
 
 export const render_parent = DOM("#triggers tbody");

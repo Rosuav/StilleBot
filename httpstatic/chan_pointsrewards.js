@@ -134,9 +134,4 @@ on("click", "#deletereward", simpleconfirm("Are you sure you want to delete this
 
 cmd_configure({
 	subscribe: "",
-	get_command_basis: cmd => {
-		const cmdname = "!" + cmd.id.split("#")[0];
-		set_content("#advanced_view h3", ["Command name ", INPUT({autocomplete: "off", id: "cmdname", value: cmdname})]);
-		return {type: "anchor_command"};
-	},
 });

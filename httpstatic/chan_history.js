@@ -4,14 +4,13 @@ import {scan_message, commands, cmd_configure, open_advanced_view} from "$$stati
 
 cmd_configure({
 	subscribe: "",
-	get_command_basis: cmd => {
+	load_command: cmd => {
 		if (cmd.cmdname[0] === "!") ; //TODO: Show specials differently
 		set_content("#advanced_view h3", [
 			"Command: ", INPUT({readonly: "true", autocomplete: "off", id: "cmdname", value: "!" + cmd.cmdname}),
 		]);
 		set_content("#save_advanced", "Revert to");
 		DOM("#delete_advanced").hidden = true;
-		return {type: "anchor_command"};
 	},
 });
 
