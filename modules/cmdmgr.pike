@@ -5,7 +5,7 @@ inherit annotated;
 inherit builtin_command;
 @retain: mapping autocommands = ([]);
 
-constant SPECIAL_PARAMS = ({
+constant _SPECIAL_PARAMS = ({
 	({"tier", "Subscription tier - 1, 2, or 3 (Prime subs show as tier 1)"}),
 	({"months", "Cumulative months of subscription/viewership"}), //TODO: Check interaction with multimonth
 	({"streak", "Consecutive months of subscription. If a sub is restarted after a delay, {months} continues, but {streak} resets."}),
@@ -65,6 +65,33 @@ constant SPECIAL_PARAMS = ({
 	({"is_test", "1 if the order was done as a test (from the shop owner), 0 otherwise"}),
 	({"reward", "Channel points reward granted"}),
 });
+constant SPECIAL_PARAMS = mkmapping(@Array.transpose(_SPECIAL_PARAMS));
+
+//Fix special trigger infoblocks that have string params
+//Note that this can't be done in the specials' constructors as it depends on the above SPECIAL_PARAMS array.
+//Eventually should not be needed.
+void fix_specials() {
+	mapping special_uses = ([]);
+	foreach (values(G->G->special_triggers), object spec) {
+		if (stringp(spec->params) && spec->params != "") {
+			mapping params = ([]);
+			foreach (spec->params / ", ", string p) {
+				params["{" + p + "}"] = SPECIAL_PARAMS[p] || p;
+				special_uses[p] += ({spec->name});
+			}
+			spec->params = params;
+			//werror("Special %O params s/be %O\n", spec->name, params); //Migration aid
+		}
+	}
+	if (0) {
+		//NOTE: Due to the saving-back of the params mapping, these debug outputs may not be
+		//useful unless a full-update is done. After a modules-only update, all specials
+		//defined in core files (eg connection, poll) will be deemed to have unused params.
+		werror("Special uses: %O\n", special_uses);
+		foreach (_SPECIAL_PARAMS, [string name, string desc])
+			if (!special_uses[name]) werror("UNUSED SPECIAL PARAM: %s -> %s\n", name, desc);
+	}
+}
 
 //Convert a number of minutes into a somewhat randomized number of seconds
 //Assumes a span of +/- 1 minute if not explicitly given
@@ -760,4 +787,5 @@ protected void create(string name) {
 	add_constant("make_echocommand", lambda() {error("make_echocommand is no longer supported.\n");});
 	register_bouncer(autospam);
 	//recalculate_perms_prefs(); //TODO: Do this when needed, slowly if necessary?
+	call_out(fix_specials, 0);
 }
