@@ -50,6 +50,11 @@ void wscmd_cmdedit_subscribe(object channel, mapping(string:mixed) conn, mapping
 	mapping voices = G->G->DB->load_cached_config(channel->userid, "voices");
 	string defvoice = channel->config->defvoice;
 	if (voices[defvoice]) voices |= (["0": (["name": "Bot's own voice"])]); //TODO: Give the bot's username?
+	mapping specials = ([]); //Always provided, even if empty.
+	if (sscanf(conn->subscription_group, "!!%[^!#]", string sp)) {
+		if (sp == "") specials = (mapping(string:mapping))G->G->special_triggers;
+		else if (mapping spec = G->G->special_triggers["!" + sp]) specials["!" + sp] = (mapping)spec;
+	}
 	send_msg(conn, ([
 		"cmd": "cmdedit_update_collections",
 		"pointsrewards": G->G->pointsrewards[channel->userid] || ({ }),
@@ -57,6 +62,7 @@ void wscmd_cmdedit_subscribe(object channel, mapping(string:mixed) conn, mapping
 		"monitors": G->G->DB->load_cached_config(channel->userid, "monitors"),
 		"builtins": G->G->commands_builtins,
 		"slash_commands": G->G->slash_commands,
+		"specials": specials,
 	]));
 	send_msg(conn, get_state(conn->subscription_group) | (["cmd": "cmdedit_publish_commands"])); //NOTE: Will break if get_chan_state is asynchronous
 }
