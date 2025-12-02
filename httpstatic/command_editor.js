@@ -113,7 +113,7 @@ const config = {
 };
 export function cmd_configure(cfg) {
 	Object.assign(config, cfg);
-	if (config.subscribe) ws_sync.send({cmd: "subscribe", type: "cmdedit", group: config.subscribe});
+	if (typeof config.subscribe === "string") ws_sync.send({cmd: "subscribe", type: "cmdedit", group: config.subscribe});
 }
 
 let cmd_editing = null, mode = "", cmd_id = "", cmd_basis = { }, mustard_editor = null;
