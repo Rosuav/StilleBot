@@ -22,7 +22,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	string result = sprintf("## Total clips: %d\n", sizeof(clips));
 	clips = filter(clips) {return __ARGS__[0]->created_at >= startdate;};
 	result += sprintf("## Recent clips: %d\n", sizeof(clips));
-	sort(clips->view_count, clips);
+	sort(-clips->view_count[*], clips);
 	int limit = (int)req->variables->limit || 5;
 	if (limit > sizeof(clips)) limit = sizeof(clips);
 	for (int i = 0; i < limit; ++i) {
