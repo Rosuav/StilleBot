@@ -285,3 +285,4 @@
   staying with the Gideon database reporting that it's read/write but it isn't actually RW.
 * Can I implement Happy Eyeballs into poll.pike::get_url_data() ?
 * "Drag me to OBS" might not be working in current versions of OBS - look into it.
+  - Or maybe it's that browser sources are broken???
