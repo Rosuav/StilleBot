@@ -229,7 +229,8 @@
   - Select All
   - See All Fields
 * Possible bug: If ws_type is set on a module, it is still storing itself into
-  websockets_types[] and websockets_groups[] by name. Check for consequences.
+  websockets_types[] and websockets_groups[] by name. Check for consequences. Currently
+  no modules actually do this, but it is documented as legal.
 * Switch bit boss to use grouped variables $boss:avatar$ etc
   - Don't change existing ones, just change the template for new ones
   - Is it worth changing it around fundamentally, or just (for now at least) changing the
