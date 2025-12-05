@@ -1568,9 +1568,14 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 	//be available before initialization, although that's not recommended. Note that cmdedit
 	//requests are likely to require the channel ID to have been recorded, which WILL demand
 	//that the init message be previously sent successfully.
-	string type = has_prefix(data->cmd, "prefs_") ? "prefs" : has_prefix(data->cmd, "cmdedit_") ? "cmdedit" : conn->type;
-	if (object handler = G->G->websocket_types[type]) handler->websocket_msg(conn, data);
-	else write("Message to unknown type %O: %O\n", type, data);
+	//TODO maybe: Have a separate mapping of secondary websocket types, currently just the
+	//same websocket_types mapping but filtered to those that are subscription_valid
+	if (object handler = sscanf(data->cmd, "%s_", string prefix) && G->G->websocket_types[prefix]) {
+		if (handler->subscription_valid) {handler->websocket_msg(conn, data); return;}
+		//Otherwise fall through and let the type handle it.
+	}
+	if (object handler = G->G->websocket_types[conn->type]) handler->websocket_msg(conn, data);
+	else write("Message to unknown type %O: %O\n", conn->type, data);
 }
 
 void ws_close(int reason, mapping conn)
