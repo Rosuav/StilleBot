@@ -657,15 +657,18 @@ void advance_goalbar(object channel, mapping|string info, mapping person, int ad
 	//negate the advancement. Massive breach of encapsulation.
 	string from_name = person->from_name || person->user || "Anonymous";
 	if (string recip = info->boss_giftrecipient && extra->msg_param_recipient_display_name) from_name = recip;
-	if (info->boss_selfheal && lower_case(from_name) == lower_case(channel->expand_variables("$bossname$"))) {
+	if (info->boss_selfheal && lower_case(from_name) == lower_case(channel->expand_variables("$bossname$")) && advance > 0) 
+		//Self-healing is the same as dealing a negative amount of damage.
+		advance = -advance;
+	if (advance < 0) {
+		//Note that there are other ways to deal negative damage too - the simplest being a negative fake cheer by the broadcaster
 		int dmg = (int)channel->expand_variables("$bossdmg$");
-		if (advance > dmg) {
+		if (-advance > dmg) {
 			//Overheal: Healing can increase max HP
 			//We delay this a bit to ensure that the monitor looks right-ish; otherwise, it's liable to lose one of the updates.
-			if (info->boss_selfheal == 2) call_out(channel->set_variable, 0.25, "bossmaxhp", advance - dmg, "add");
-			advance = dmg; //No healing past your max HP. Increasing max HP leaves you at zero net damage.
+			if (info->boss_selfheal == 2) call_out(channel->set_variable, 0.25, "bossmaxhp", -advance - dmg, "add");
+			advance = -dmg; //No healing past your max HP. Increasing max HP leaves you at zero net damage.
 		}
-		advance = -advance; //Heal rather than hurt.
 	}
 	int total = (int)channel->set_variable(varname, advance, "add"); //Abuse the fact that it'll take an int just fine for add :)
 	if (advance > 0 && lvlup) {
