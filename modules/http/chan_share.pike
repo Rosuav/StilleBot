@@ -130,6 +130,46 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	]);
 }
 
+__async__ string permission_check(object channel, int is_mod, mapping user) {
+	mapping settings = await(G->G->DB->load_config(channel->userid, "artshare"));
+	string scopes = token_for_user_id(channel->userid)[1];
+	if (has_value(scopes / " ", "moderation:read")) { //TODO: How would we get this permission if we don't have it? Some sort of "Forbid banned users" action for the broadcaster?
+		if (has_value(await(get_banned_list(channel->userid))->user_id, user->id)) {
+			//Should we show differently if there's an expiration on the timeout?
+			return "You're currently unable to talk in that channel, so you can't share either - sorry!";
+		}
+	}
+	mapping who = settings->who || ([]);
+	if (who->all) return 0; //Go for it!
+	//Ideally, replace this error with something more helpful, based on who DOES have permission.
+	//The order of these checks is important, as the last one wins on error messages.
+	string error = "You don't have permission to share files here, sorry!";
+	if (who->raider) {
+		if (channel->raiders[(int)user->id]) return 0; //Raided any time this stream, all good.
+		//No error message change here.
+	}
+	//if (who->permit) //TODO: If you've been given temp permission, return 0, else set error to "ask for a !permit before sharing"
+	if (who->mod) {
+		if (is_mod) return 0;
+		error = "Moderators are allowed to share artwork. If you're a mod, please say something in chat so I can see your mod sword.";
+	}
+	if (who->vip) {
+		if (!channel->user_badges[(int)user->id]->?vip) return 0;
+		error = (who->mod ? "Mods and" : "Only") + " VIPs are allowed to share artwork. If you are such, please say something in chat so I can see your badge.";
+	}
+	return error;
+}
+
+__async__ string|mapping file_upload_prepare(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!intp(msg->size) || msg->size < 0) return "Need a size"; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
+	if (string err = await(permission_check(channel, conn->is_mod, conn->session->user))) return err;
+	if (msg->size > G->G->DB->MAX_PER_FILE * 1048576)
+		return "File too large (limit " + G->G->DB->MAX_PER_FILE + " MB)";
+	if (sizeof(await(G->G->DB->list_ephemeral_files(channel->userid, conn->session->user->id))) >= G->G->DB->MAX_EPHEMERAL_FILES)
+		return "Limit of " + G->G->DB->MAX_EPHEMERAL_FILES + " files reached. Delete other files to make room.";
+	return (["name": msg->name, "size": msg->size, "_ephemeral": 1]);
+}
+
 __async__ void delete_file(object channel, string userid, string fileid) {
 	array files = await(G->G->DB->purge_ephemeral_files(channel->userid, userid, fileid));
 	if (sizeof(files)) {

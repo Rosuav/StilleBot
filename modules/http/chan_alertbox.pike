@@ -761,12 +761,9 @@ __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:m
 	send_updates_all(conn->group, (["delpersonal": msg->id]));
 }
 
-@"is_mod": __async__ mapping|zero wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	msg->owner = "alertbox";
-	mapping file = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, msg, 0));
-	if (file->error) return (["cmd": "uploaderror", "name": msg->name, "error": file->error]);
+__async__ string|mapping file_upload_prepare(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {return msg;}
+void file_upload_started(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg, mapping(string:mixed) file) {
 	update_one(conn->group, file->id); //Note that the display connection doesn't need to be updated
-	return (["cmd": "upload", "name": msg->name, "id": file->id]);
 }
 
 @hook_uploaded_file_edited: __async__ void file_uploaded(mapping file) {

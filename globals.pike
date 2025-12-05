@@ -1393,6 +1393,14 @@ class http_websocket
 	mapping|Concurrent.Future get_chan_state(object channel, string grp, string|void id, string|void type) { }
 	//__async__ mapping get_chan_state(object channel, string grp, string|void id, string|void type) { } //Alternate (equivalent) signature
 
+	//Can this module accept uploaded files?
+	//Implement this, returning a string if the upload should be denied, or a mapping of metadata if it should be accepted.
+	__async__ string|mapping file_upload_prepare(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {return "No uploads";}
+	//On successful file upload preparation, this will be called. May be asynchronous if desired; will not block.
+	void file_upload_started(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg, mapping(string:mixed) file) { }
+	//To get notified of the file fully being uploaded:
+	//@hook_uploaded_file_edited: __async__ void file_uploaded(mapping file) { }
+
 	protected void create(string name) {
 		annotation_lookup = mkmapping(indices(this), annotations(this)); //This could go somewhere else, it's likely to be useful for more than just this class
 		::create(name);

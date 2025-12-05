@@ -47,12 +47,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	return (["files": await(list_files(channel->userid))]);
 }
 
-@"is_mod": __async__ mapping|zero wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	msg->owner = "imgbuilder";
-	mapping file = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, msg, 0));
-	if (file->error) return (["cmd": "uploaderror", "name": msg->name, "error": file->error]);
-	return (["cmd": "upload", "name": msg->name, "id": file->id]);
-}
+__async__ string|mapping file_upload_prepare(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {return msg;}
 
 @hook_uploaded_file_edited: __async__ void file_uploaded(mapping file) {
 	if (!file->metadata) {
