@@ -283,25 +283,6 @@
     is fine so long as it's getting that multiple times a week, but eventually it won't be.
 * /serverstatus during hop from Gideon to Sikorsky might be losing the Gideon socket?? It's
   staying with the Gideon database reporting that it's read/write but it isn't actually RW.
-* Make command editing something that can be called on from any websocket.
-  - Subscribe to commands for a specific command, or a set of commands:
-    - "" - all regular commands (not triggers/specials)
-    - "!!" - all specials
-    - "!!trigger" - all triggers
-    - "!!adsoon" - just the one (special trigger in this case)
-    - This is the same as the ws_group's subgroup. If it has a channel ID appended, eg
-      "!!adsoon#49497888", the channel ID must agree with any channel ID already noted;
-      however if the group does not have a channel, the channel ID must be specified.
-  - {"cmd": "subscribe", "type": "cmdedit", "group": "#49497888"}
-    - Currently "cmdedit" is the only valid type for a subscribe message. This type does not
-      correlate to the ws_type for the actual initialization.
-    - Currently, the subscription group has to correlate to the regular group for the
-      type of the subscription. So a chan_monitors sock that subscribes to cmdedit will
-      have a chan_monitors group in conn->group, but a chan_commands group in conn->subscription_group.
-  - Might remove the need for some secondary sockets. Might also allow socket groups to have
-    less duplicated information in them, though I can't think of any examples right now.
-    - Notably, the main group for a socket is used for the tabular view in commands/triggers/etc,
-      but the subscription will provide the same information for the command editor.
 * Can I implement Happy Eyeballs into poll.pike::get_url_data() ?
 * If negative damage is dealt to the stream boss, it can break. Should all negative damage
   be ignored? Alternatively, should damage cap out at zero? Or should negative damage do the
