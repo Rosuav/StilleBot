@@ -77,7 +77,6 @@ figcaption {
 ";
 
 constant DEFAULT_MSG_FORMAT = "New art share from {username}: {URL}";
-constant MAX_FILES = 4; //May end up moving into database.pike where the other file upload limits are.
 constant user_types = ({
 	//Keyword, label, description
 	({"mod", "Mods", "The broadcaster and channel moderators"}),
@@ -90,41 +89,12 @@ constant user_types = ({
 @retain: mapping artshare_messageid = ([]);
 @retain: mapping artshare_file_messageid = ([]); //Map a UUID for a file to the corresponding message ID
 
-__async__ string permission_check(object channel, int is_mod, mapping user) {
-	mapping settings = await(G->G->DB->load_config(channel->userid, "artshare"));
-	string scopes = token_for_user_id(channel->userid)[1];
-	if (has_value(scopes / " ", "moderation:read")) { //TODO: How would we get this permission if we don't have it? Some sort of "Forbid banned users" action for the broadcaster?
-		if (has_value(await(get_banned_list(channel->userid))->user_id, user->id)) {
-			//Should we show differently if there's an expiration on the timeout?
-			return "You're currently unable to talk in that channel, so you can't share either - sorry!";
-		}
-	}
-	mapping who = settings->who || ([]);
-	if (who->all) return 0; //Go for it!
-	//Ideally, replace this error with something more helpful, based on who DOES have permission.
-	//The order of these checks is important, as the last one wins on error messages.
-	string error = "You don't have permission to share files here, sorry!";
-	if (who->raider) {
-		if (channel->raiders[(int)user->id]) return 0; //Raided any time this stream, all good.
-		//No error message change here.
-	}
-	//if (who->permit) //TODO: If you've been given temp permission, return 0, else set error to "ask for a !permit before sharing"
-	if (who->mod) {
-		if (is_mod) return 0;
-		error = "Moderators are allowed to share artwork. If you're a mod, please say something in chat so I can see your mod sword.";
-	}
-	if (who->vip) {
-		if (!channel->user_badges[(int)user->id]->?vip) return 0;
-		error = (who->mod ? "Mods and" : "Only") + " VIPs are allowed to share artwork. If you are such, please say something in chat so I can see your badge.";
-	}
-	return error;
-}
-
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (mapping resp = ensure_login(req)) return resp;
 	return render(req, ([
 		"vars": (["ws_group": (string)req->misc->session->user->id,
-			"maxfilesize": G->G->DB->MAX_PER_FILE, "maxfiles": MAX_FILES,
+			//Not currently shown anywhere; if you exceed the limit, you'll be told.
+			//"maxfilesize": G->G->DB->MAX_PER_FILE, "maxfiles": G->G->DB->MAX_EPHEMERAL_FILES,
 			"user_types": user_types, "is_mod": req->misc->is_mod,
 		]),
 	]) | req->misc->chaninfo);
@@ -158,29 +128,6 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		"msgformat": settings->msgformat,
 		"defaultmsg": DEFAULT_MSG_FORMAT,
 	]);
-}
-
-__async__ void wscmd_upload(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!intp(msg->size) || msg->size < 0) return 0; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
-	string error;
-	if (string err = await(permission_check(channel, conn->is_mod, conn->session->user)))
-		error = err;
-	else if (msg->size > G->G->DB->MAX_PER_FILE * 1048576)
-		error = "File too large (limit " + G->G->DB->MAX_PER_FILE + " MB)";
-	else if (sizeof(await(G->G->DB->list_ephemeral_files(channel->userid, conn->session->user->id))) >= MAX_FILES)
-		error = "Limit of " + MAX_FILES + " files reached. Delete other files to make room.";
-	if (error) {
-		conn->sock->send_text(Standards.JSON.encode((["cmd": "uploaderror", "name": msg->name, "error": error]), 4));
-		return;
-	}
-	string id = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, ([
-		"name": msg->name,
-		"size": msg->size,
-	]), 1))->id;
-	conn->sock->send_text(Standards.JSON.encode((["cmd": "upload", "id": id, "name": msg->name]), 4));
-	//We kinda ought to push out an update with the half-uploaded file, but it's tidier to
-	//leave it absent until the upload is complete.
-	//update_one(conn->group, id);
 }
 
 __async__ void delete_file(object channel, string userid, string fileid) {

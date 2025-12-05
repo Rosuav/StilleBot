@@ -291,7 +291,7 @@ export function upload_to_library(cfg) {
 	]));
 
 	const uploadme = { };
-	ws_sync.register_callback(async function upload(msg) {
+	ws_sync.register_callback(async function upload(msg) { //DEPRECATED: Remove when server code migrated to all use upload_approved
 		const file = uploadme[msg.name];
 		if (!file) return;
 		delete uploadme[msg.name];
@@ -304,14 +304,32 @@ export function upload_to_library(cfg) {
 		if (cfg.uploaded) cfg.uploaded(resp);
 	});
 
-	ws_sync.register_callback(function uploaderror(msg) {
+	ws_sync.register_callback(async function upload_approved(msg) {
+		const file = uploadme[msg.name];
+		if (!file) return;
+		delete uploadme[msg.name];
+		const resp = await (await fetch("/upload/" + msg.id, { //The server guarantees that the ID is URL-safe
+			method: "POST",
+			body: file,
+			credentials: "same-origin",
+		})).json();
+		set_content("#uploaderror", resp.error).classList.toggle("hidden", !resp.error);
+		if (cfg.uploaded) cfg.uploaded(resp);
+	});
+
+	ws_sync.register_callback(function uploaderror(msg) { //DEPRECATED: Remove when server code migrated to all use upload_error
+		set_content("#uploaderror", msg.error || "Unknown upload error, see server log").classList.remove("hidden");
+	});
+
+	ws_sync.register_callback(function upload_error(msg) {
 		set_content("#uploaderror", msg.error || "Unknown upload error, see server log").classList.remove("hidden");
 	});
 
 	on("change", ".fileuploader", e => {
 		if (cfg.start_upload) cfg.start_upload(); //Does this need params?
 		for (let f of e.match.files) {
-			ws_sync.send({cmd: "upload", name: f.name, size: f.size, mimetype: f.type});
+			ws_sync.send({cmd: "upload", name: f.name, size: f.size, mimetype: f.type}); //DEPRECATED
+			ws_sync.send({cmd: "upload_file", name: f.name, size: f.size, mimetype: f.type});
 			uploadme[f.name] = f;
 		}
 		e.match.value = "";
@@ -322,7 +340,8 @@ export function upload_to_library(cfg) {
 		if (cfg.start_upload) cfg.start_upload(); //Does this need params?
 		for (let f of e.dataTransfer.items) {
 			f = f.getAsFile();
-			ws_sync.send({cmd: "upload", name: f.name, size: f.size, mimetype: f.type});
+			ws_sync.send({cmd: "upload", name: f.name, size: f.size, mimetype: f.type}); //DEPRECATED
+			ws_sync.send({cmd: "upload_file", name: f.name, size: f.size, mimetype: f.type});
 			uploadme[f.name] = f;
 		}
 	});

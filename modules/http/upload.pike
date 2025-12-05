@@ -2,7 +2,8 @@
 //NOTE: This *must* be able to function on a non-active bot. Uploads can be sent
 //to any instance, and will not be redirected to main. This can result in logs
 //on either Gideon or Sikorsky in the event of an upload failure.
-inherit http_endpoint;
+inherit http_websocket;
+constant subscription_valid = 1;
 
 //Map the FFProbe results to their MIME types.
 //If not listed, the file is unrecognized and will be rejected.
@@ -114,6 +115,65 @@ Upload time: %s
 		"type": file->metadata->mimetype,
 		"extra_heads": (["ETag": "\"" + file->metadata->etag + "\""]),
 	]);
+}
+
+string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//This socket never needs to be connected to, nor subscribed to; it exists so that
+	//you can send secondary commands to any socket and have them appear here.
+	return "Subcommands only";
+}
+
+__async__ string share_permission_check(object channel, int is_mod, mapping user) {
+	mapping settings = await(G->G->DB->load_config(channel->userid, "artshare"));
+	string scopes = token_for_user_id(channel->userid)[1];
+	if (has_value(scopes / " ", "moderation:read")) { //TODO: How would we get this permission if we don't have it? Some sort of "Forbid banned users" action for the broadcaster?
+		if (has_value(await(get_banned_list(channel->userid))->user_id, user->id)) {
+			//Should we show differently if there's an expiration on the timeout?
+			return "You're currently unable to talk in that channel, so you can't share either - sorry!";
+		}
+	}
+	mapping who = settings->who || ([]);
+	if (who->all) return 0; //Go for it!
+	//Ideally, replace this error with something more helpful, based on who DOES have permission.
+	//The order of these checks is important, as the last one wins on error messages.
+	string error = "You don't have permission to share files here, sorry!";
+	if (who->raider) {
+		if (channel->raiders[(int)user->id]) return 0; //Raided any time this stream, all good.
+		//No error message change here.
+	}
+	//if (who->permit) //TODO: If you've been given temp permission, return 0, else set error to "ask for a !permit before sharing"
+	if (who->mod) {
+		if (is_mod) return 0;
+		error = "Moderators are allowed to share artwork. If you're a mod, please say something in chat so I can see your mod sword.";
+	}
+	if (who->vip) {
+		if (!channel->user_badges[(int)user->id]->?vip) return 0;
+		error = (who->mod ? "Mods and" : "Only") + " VIPs are allowed to share artwork. If you are such, please say something in chat so I can see your badge.";
+	}
+	return error;
+}
+
+__async__ mapping|zero wscmd_upload_file(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(conn->type, "chan_%s", string owner);
+	if (!owner) return (["cmd": "upload_error", "error": "Uploading without a channel"]); //Shouldn't happen unless user is fiddling around
+	if (owner == "share") {
+		//Ephemeral file. The rules are different; notably, non-mods may upload.
+		if (!intp(msg->size) || msg->size < 0) return 0; //Protocol error, not permitted. (Zero-length files are fine, although probably useless.)
+		string error;
+		if (string err = await(share_permission_check(channel, conn->is_mod, conn->session->user)))
+			error = err;
+		else if (msg->size > G->G->DB->MAX_PER_FILE * 1048576)
+			error = "File too large (limit " + G->G->DB->MAX_PER_FILE + " MB)";
+		else if (sizeof(await(G->G->DB->list_ephemeral_files(channel->userid, conn->session->user->id))) >= G->G->DB->MAX_EPHEMERAL_FILES)
+			error = "Limit of " + G->G->DB->MAX_EPHEMERAL_FILES + " files reached. Delete other files to make room.";
+		if (error) return (["cmd": "upload_error", "name": msg->name, "error": error]);
+		string id = await(G->G->DB->prepare_file(channel->userid, conn->session->user->id, ([
+			"name": msg->name,
+			"size": msg->size,
+		]), 1))->id;
+		return (["cmd": "upload", "id": id, "name": msg->name]);
+	}
+	werror("UPLOAD FILE %O %O %O\n", owner, conn->group, msg);
 }
 
 //TODO: Have a thing on code reload or somewhere that cleans out upload_redirect,

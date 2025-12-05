@@ -709,6 +709,7 @@ __async__ mapping|zero get_file(string id, int|void include_blob) {
 }
 
 constant MAX_PER_FILE = 16, MAX_TOTAL_STORAGE = 128; //MB
+constant MAX_EPHEMERAL_FILES = 4; //Per user per channel
 //Returns (["id": "some_urlsafe_string"]) on success, or (["error": "Human readable message"]) on failure.
 //May in the future provide additional info eg remaining upload capacity
 __async__ mapping prepare_file(string|int channel, string|int uploader, mapping metadata, int(1bit) ephemeral) {
