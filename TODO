@@ -286,3 +286,4 @@
     probably a big enough problem to fix that way rather than with Happy Eyeballs.
 * "Drag me to OBS" might not be working in current versions of OBS - look into it.
   - Or maybe it's that browser sources are broken???
+* Raid finder category image broken if has question mark eg "RV There Yet?"
