@@ -27,6 +27,7 @@ function is_hidden(msg) {
 export const render_parent = DOM("#commandview tbody");
 export function render_item(msg) {
 	cmdnames[msg.cmdname] = 1;
+	commands[msg.id] = msg; //Register the versioned command with the deprecated mapping
 	msg.searchme = JSON.stringify(msg.message).toLowerCase(); //TODO maybe: Represent this in some more human-readable way
 	const response = [];
 	const msgstatus = { };
