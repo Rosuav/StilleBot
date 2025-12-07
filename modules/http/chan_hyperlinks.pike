@@ -86,7 +86,7 @@ int(1bit) contains_link(string msg) {
 		//not get caught here. As of 20251117, these do not get autolinked by Twitch, so they won't be
 		//clickable; thus they are less relevant for blocking, as they're harder to accidentally go to.
 		//This may need to be reviewed in the future, but for now I will only block ASCII links.
-		if (sscanf(tail, "%*s.%[A-Za-z]", string alpha) && alpha && alpha != "") return 1; //eg www.example.com or kepl.com.au, but not 11.5.2025
+		if (sscanf(tail, "%s.%[A-Za-z]", string alpha1, string alpha2) && alpha1 && alpha2 && alpha1 != "" && alpha2 != "") return 1; //eg www.example.com or kepl.com.au, but not 11.5.2025
 		if (common_tlds[tail]) return 1;
 		if (has_value(tail, "/")) return 1; //eg instagram.com/something
 	}
