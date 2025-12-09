@@ -71,7 +71,6 @@ window.cmdedit_collections = {
 
 ws_sync.register_callback(function cmdedit_update_collections(msg) {
 	for (let key in msg) window.cmdedit_collections[key] = msg[key];
-	console.log("Updated collections:", window.cmdedit_collections);
 	updatehooks.forEach(f => f());
 });
 
