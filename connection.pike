@@ -1337,7 +1337,7 @@ void session_cleanup() {
 
 __async__ void http_handler(Protocols.HTTP.Server.Request req) {
 	#ifdef STILLEBOT_HTTP_TIMINGS
-	werror("STILLEBOT_HTTP_TIMINGS [fd %d] Start %O\n", req->my_fd->query_fd(), req->misc->timings->?peek());
+	//werror("STILLEBOT_HTTP_TIMINGS [fd %d] Start\n", req->my_fd->query_fd());
 	req->misc->timings = System.Timer();
 	#endif
 	G->G->serverstatus_statistics->http_request_count++;
