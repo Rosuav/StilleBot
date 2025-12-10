@@ -8,7 +8,7 @@
 let default_handler = null;
 let send_socket, send_sockets = { }; //If populated, send() is functional.
 const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
-let pending_message = null; //Allow at most one message to be queued on startup (will be sent after initialization)
+let pending_message = []; //Allow messages to be queued on startup (will be sent after initialization)
 let prefs = { }; //Updated from the server as needed
 const prefs_hooks = [];
 let reconnect_delay = 250;
@@ -60,7 +60,7 @@ export function connect(group, handler)
 		if (handler.socket_connected) handler.socket_connected(socket);
 		else if (handler.ws_sendid) send_sockets[handler.ws_sendid] = socket;
 		else send_socket = socket; //Don't activate send() until we're initialized
-		if (pending_message) {socket.send(JSON.stringify(pending_message)); pending_message = null;}
+		while (pending_message.length) socket.send(JSON.stringify(pending_message.shift()));
 		window.__socket__ = socket; window.__handler__ = handler;
 	};
 	socket.onclose = (e) => {
@@ -178,7 +178,7 @@ export function send(msg, sendid) {
 	if (!quiet) console.log("Sending to " + (sendid ? sendid + " socket" : "server") + ":", msg);
 	const sock = send_sockets[sendid] || send_socket;
 	if (sock) sock.send(JSON.stringify(msg));
-	else pending_message = msg; //NOTE: Pending-send always goes onto the first socket to get connected. Would be nice to separate by sendid.
+	else pending_message.push(msg); //NOTE: Pending-sends always goes onto the first socket to get connected. Would be nice to separate by sendid.
 }
 //Usage: prefs_notify("favs", favs => {...})
 //Or: prefs_notify(prefs => {...})
