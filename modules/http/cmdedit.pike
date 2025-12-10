@@ -46,7 +46,7 @@ mapping get_chan_state(object channel, string group) {
 	return (["commands": commands]);
 }
 
-void wscmd_cmdedit_subscribe(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"demo_ok": void wscmd_cmdedit_subscribe(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping voices = G->G->DB->load_cached_config(channel->userid, "voices");
 	string defvoice = channel->config->defvoice;
 	if (voices[defvoice]) voices |= (["0": (["name": "Bot's own voice"])]); //TODO: Give the bot's username?
