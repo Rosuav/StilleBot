@@ -1388,10 +1388,11 @@ __async__ void http_handler(Protocols.HTTP.Server.Request req) {
 	if (stringp(resp)) resp = (["data": resp, "type": "text/plain; charset=\"UTF-8\""]);
 	//All requests should get to this point with a response.
 
+	if (!resp->extra_heads) resp->extra_heads = ([]);
 	//As of 20190122, the Pike HTTP server doesn't seem to handle keep-alive.
 	//The simplest fix is to just add "Connection: close" to all responses.
-	if (!resp->extra_heads) resp->extra_heads = ([]);
-	resp->extra_heads->Connection = "close";
+	//CJA 20251211: Seems this isn't an issue any more? Trying keep-alive again.
+	//resp->extra_heads->Connection = "close";
 	resp->extra_heads["Access-Control-Allow-Origin"] = "*";
 	resp->extra_heads["Access-Control-Allow-Private-Network"] = "true";
 	mapping sess = req->misc->session;
@@ -1423,7 +1424,7 @@ __async__ void http_handler(Protocols.HTTP.Server.Request req) {
 	//without triggering garbage collection. This MAY be related to HTTP requests, but
 	//even if it's not, this is a place that gets hit fairly often, so we'll do the
 	//collection here.
-	gc();
+	//gc(); //CJA 20251211: Trying not having this now that we can use keep-alive
 	#ifdef STILLEBOT_HTTP_TIMINGS
 	werror("STILLEBOT_HTTP_TIMINGS [fd %d] GC complete %O\n", req->my_fd->query_fd(), req->misc->timings->get());
 	#endif
