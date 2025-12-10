@@ -1335,7 +1335,7 @@ void session_cleanup() {
 	G->G->DB->query_rw("delete from stillebot.http_sessions where active < now () - '7 days'::interval");
 }
 
-__async__ void http_request(Protocols.HTTP.Server.Request req) {
+__async__ void http_handler(Protocols.HTTP.Server.Request req) {
 	G->G->serverstatus_statistics->http_request_count++;
 	req->misc->session = await(G->G->DB->load_session(req->cookies->session));
 	if (string dest = req->request_type == "GET" && req->misc->session->autoxfr) {
@@ -1417,8 +1417,6 @@ __async__ void http_request(Protocols.HTTP.Server.Request req) {
 	//collection here.
 	gc();
 }
-
-void http_handler(Protocols.HTTP.Server.Request req) {spawn_task(http_request(req));}
 
 void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 {
