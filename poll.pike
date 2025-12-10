@@ -497,8 +497,10 @@ void raidout(object _, mapping info) {
 		(int)info->to_broadcaster_user_id, info->to_broadcaster_user_name, 0, (int)info->viewers);
 }
 
-void check_hooks(array eventhooks)
-{
+__async__ void check_hooks() {
+	Concurrent.Promise completion;
+	if (!G->G->eventhooks_ready) G->G->eventhooks_ready = completion = Concurrent.Promise();
+	array eventhooks = await(get_helix_paginated("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([]), (["authtype": "app"])));
 	multiset(string) have_conduitbroken = (<>);
 	foreach (eventhooks, mapping hook) {
 		if (hook->transport->method == "conduit") {
@@ -508,6 +510,7 @@ void check_hooks(array eventhooks)
 				twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions?id=" + hook->id,
 					([]), (["method": "DELETE", "authtype": "app", "return_status": 1]));
 			} else {
+				//TODO: Get rid of hooks for channels that don't exist or aren't tracked any more
 				foreach (({"", "from_", "to_"}), string pfx)
 					if (hook->condition[pfx + "broadcaster_user_id"])
 						G_G_("eventhooks", type, "")[pfx + hook->condition[pfx + "broadcaster_user_id"]] = 1;
@@ -562,6 +565,7 @@ void check_hooks(array eventhooks)
 			]),
 		]));
 	}
+	if (completion) completion->success(1);
 }
 
 @export: __async__ string get_url_data(string url, Protocols.HTTP.Promise.Arguments|void args) {
@@ -612,9 +616,7 @@ protected void create(string|void name)
 	poll();
 	//TODO: Check this periodically. No need to hammer this every 60 seconds, but more than just on code reload would be good.
 	string addr = G->G->instance_config->http_address;
-	if (addr && addr != "")
-		get_helix_paginated("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([]), (["authtype": "app"]))
-			->on_success(check_hooks);
+	if (addr && addr != "") check_hooks();
 	#endif
 	::create(name);
 }

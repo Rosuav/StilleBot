@@ -1738,6 +1738,7 @@ __async__ void establish_hook_notification(string|int channelid, string hook, ma
 	//TODO: If we don't have a condid yet, queue the request
 	//HACK: If the channelid is a string, and cond is specified, they are allowed to be
 	//desynchronized. This can be useful but be cautious with it.
+	await(G->G->eventhooks_ready);
 	if (G->G->eventhooks[hook][?""][?(string)channelid]) return; //Already got the subscription.
 	sscanf(hook, "%s=%s", string type, string version);
 	mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
