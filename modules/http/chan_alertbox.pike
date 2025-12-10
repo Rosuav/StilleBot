@@ -543,6 +543,7 @@ mapping resolve_inherits(mapping alerts, string id, mapping|zero alert, string|z
 }
 
 void resolve_all_inherits(mapping cfg, string userid) {
+	if (!G->G->freemedia_filelist) {werror("Delaying resolve_all_inherits...\n"); call_out(resolve_all_inherits, 1, cfg, userid); return;}
 	float vol = cfg->muted ? 0.0 : (cfg->mastervolume || 1.0);
 	mapping alerts = incorporate_stock_alerts(cfg->alertconfigs || ([]));
 	mapping ret = ([]);
