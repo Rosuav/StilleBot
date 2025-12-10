@@ -1336,6 +1336,10 @@ void session_cleanup() {
 }
 
 __async__ void http_handler(Protocols.HTTP.Server.Request req) {
+	#ifdef STILLEBOT_HTTP_TIMINGS
+	werror("STILLEBOT_HTTP_TIMINGS [fd %d] Start %O\n", req->my_fd->query_fd(), req->misc->timings->?peek());
+	req->misc->timings = System.Timer();
+	#endif
 	G->G->serverstatus_statistics->http_request_count++;
 	req->misc->session = await(G->G->DB->load_session(req->cookies->session));
 	if (string dest = req->request_type == "GET" && req->misc->session->autoxfr) {
@@ -1409,6 +1413,9 @@ __async__ void http_handler(Protocols.HTTP.Server.Request req) {
 	//removed from the canonical URL? With JS files, they may potentially include chained lookups
 	//with corresponding chained cachebusters, so does this affect canonicalization?
 	resp->extra_heads->Link = sprintf("<%s%s>; rel=\"canonical\"", G->G->instance_config->http_address, req->full_query);
+	#ifdef STILLEBOT_HTTP_TIMINGS
+	werror("STILLEBOT_HTTP_TIMINGS [fd %d] Done %O\n", req->my_fd->query_fd(), req->misc->timings->get());
+	#endif
 	req->response_and_finish(resp);
 	// *********** Current issue under investigation ************ //
 	//For some reason, open files are accumulating, sometimes reaching critical levels,
@@ -1416,6 +1423,9 @@ __async__ void http_handler(Protocols.HTTP.Server.Request req) {
 	//even if it's not, this is a place that gets hit fairly often, so we'll do the
 	//collection here.
 	gc();
+	#ifdef STILLEBOT_HTTP_TIMINGS
+	werror("STILLEBOT_HTTP_TIMINGS [fd %d] GC complete %O\n", req->my_fd->query_fd(), req->misc->timings->get());
+	#endif
 }
 
 void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
@@ -1459,6 +1469,7 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 	if (data->cmd == "init")
 	{
 		object handler = G->G->websocket_types[data->type];
+		#ifndef STILLEBOT_HTTP_TIMINGS
 		if (string other = !handler->?valid_on_inactive_bot && !is_active && get_active_bot()) {
 			//If we are definitely not active and there's someone who is,
 			//send the request over there instead. Browsers don't all follow
@@ -1482,6 +1493,7 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 			conn->sock->close();
 			return;
 		}
+		#endif
 		//Initialization is done with a type and a group.
 		//The type has to match a module ("inherit websocket_handler")
 		//The group has to be a string or integer.
@@ -1902,6 +1914,10 @@ protected void create(string name)
 		string cert = Stdio.read_file("certificate.pem");
 		string cert2 = Stdio.read_file("certificate_local.pem");
 		string combined = (cert || "") + (cert2 || ""); //If either cert changes, update both certs and keys
+		#ifdef STILLEBOT_HTTP_TIMINGS
+		//Hack: Timing tests are done with a duplicated bot, run it on a separate port
+		listen_port = 9876;
+		#endif
 		if (listen_port * -use_https != G->G->httpserver_port_used || combined != G->G->httpserver_certificate)
 		{
 			//Port or SSL status has changed. Force the server to be restarted.

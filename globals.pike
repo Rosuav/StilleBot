@@ -1158,8 +1158,10 @@ mapping(string:mixed)|string render_template(string template, mapping replacemen
 			});
 			//If possible, shortcut the "fail, then get transferred" by providing
 			//the hostname of the active bot.
+			#ifndef STILLEBOT_HTTP_TIMINGS
 			string|zero active = G->G->dbsettings->?active_bot;
 			if (active && active != "") vars += ({jsonvar(({"ws_host", active}))});
+			#endif
 		}
 		replacements->js_variables = "<script>" + vars * "\n" + "</script>";
 	}
@@ -1649,6 +1651,9 @@ object hyperlink = Regexp.PCRE("^http(s|)://[A-Za-z0-9.]+(/[-A-Za-z0-9/.+]*|)(\\
 
 //True if the bot is definitely active, or false if uncertain or not active.
 int(1bit) is_active_bot() {
+	#ifdef STILLEBOT_HTTP_TIMINGS
+	return 0;
+	#endif
 	string active = G->G->dbsettings->?active_bot;
 	if (!active || active == "") return 0; //Might be there's no active bot, or maybe we just don't know for sure.
 	return G->G->instance_config->local_address == active;
@@ -1656,6 +1661,9 @@ int(1bit) is_active_bot() {
 
 //Return the currently-active bot, or 0 if we don't know for sure
 string|zero get_active_bot() {
+	#ifdef STILLEBOT_HTTP_TIMINGS
+	return 0;
+	#endif
 	string active = G->G->dbsettings->?active_bot;
 	return active != "" && active;
 }
