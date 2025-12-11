@@ -16,7 +16,7 @@ names right at the time when I needed to figure out a name. (On such thin thread
 actual running bot is the Mustard Mine. The names can be used broadly interchangeably.)
 
 The reference bot is operated by [Rosuav](https://twitch.tv/rosuav) and is accessible at
-https://mustardmine.com/ where he serves a number of Twitch channels.
+[https://mustardmine.com/](https://mustardmine.com) where he serves a number of Twitch channels.
 
 ## What can the Mustard Mine do for you?
 
