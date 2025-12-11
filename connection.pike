@@ -1419,12 +1419,14 @@ __async__ void http_handler(Protocols.HTTP.Server.Request req) {
 	werror("STILLEBOT_HTTP_TIMINGS [fd %d] Done %O\n", req->my_fd->query_fd(), req->misc->timings->get());
 	#endif
 	req->response_and_finish(resp);
-	// *********** Current issue under investigation ************ //
 	//For some reason, open files are accumulating, sometimes reaching critical levels,
 	//without triggering garbage collection. This MAY be related to HTTP requests, but
 	//even if it's not, this is a place that gets hit fairly often, so we'll do the
 	//collection here.
-	//gc(); //CJA 20251211: Trying not having this now that we can use keep-alive
+	//CJA 20251211: Solving keep-alive issues reduces the rate at which they accumulate
+	//but does not deal with the problem. Must be a floop somewhere. So let's keep the
+	//forced garbage collection for now.
+	gc();
 	#ifdef STILLEBOT_HTTP_TIMINGS
 	werror("STILLEBOT_HTTP_TIMINGS [fd %d] GC complete %O\n", req->my_fd->query_fd(), req->misc->timings->get());
 	#endif
