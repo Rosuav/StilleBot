@@ -1148,6 +1148,7 @@ class channel(mapping identity) {
 					};
 					break;
 				}
+				case "onetapgiftredeemed": break; //Dunno if these are relevant; they are always accompanied by actual cheers, I think.
 				default: werror("Unrecognized %s with msg_id %O on channel %s\n%O\n%O\n",
 					type, params->msg_id, name, params, msg);
 					Stdio.append_file("notice.log", sprintf("%sUnknown %s %s %s %O\n", ctime(time()), type, chan, msg, params));
