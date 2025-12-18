@@ -127,11 +127,11 @@ __async__ mapping get_state(int|string chan)
 }
 
 //Confirmed as all unlockable 20250915
-constant emotes = #"FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume SpillTheTea ThatsAServe WhosThisDiva ConfettiHype FrogWow
-AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat RespectfullyNo ThatsIconique HerMind ImSpiraling LuvLuvLUV
-MegaMlep RawkOut FallDamage RedCard ApplauseBreak TouchOfSalt NoComment DownBad UghMood ShyGhost MeSweat
-KittyLove TurnUp CatScare LateSave NoTheyDidNot BeholdThis TheyAte PlotTwist AnActualQueen LilTrickster HiHand
-RaccoonPop GoblinJam YouMissed GriddyGoose CheersToThat StirThePot PackItUp InTheirBag SpitTheTruth PufferPop IAmClap
+constant emotes = #"FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume SpillTheTea ThatsAServe WhosThisDiva ConfettiHype FrogWow OhWow
+AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat RespectfullyNo ThatsIconique HerMind ImSpiraling LuvLuvLUV EpicClip
+MegaMlep RawkOut FallDamage RedCard ApplauseBreak TouchOfSalt NoComment DownBad UghMood ShyGhost MeSweat SoCinema
+KittyLove TurnUp CatScare LateSave NoTheyDidNot BeholdThis TheyAte PlotTwist AnActualQueen LilTrickster HiHand RageOut
+RaccoonPop GoblinJam YouMissed GriddyGoose CheersToThat StirThePot PackItUp InTheirBag SpitTheTruth PufferPop IAmClap HonkShoe
 Bonus emotes for even higher levels: BleedPurpleHD HeyHeyGuys PogChomp KappaInfinite";
 string avail_emotes = "";
 

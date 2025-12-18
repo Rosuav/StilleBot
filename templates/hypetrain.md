@@ -92,6 +92,7 @@ body:not(.emotes_allrows) #emotes li:not(.next):not(.available) {display: none;}
 .emotelevels em:nth-of-type(9) {left: 270px;}
 .emotelevels em:nth-of-type(10) {left: 300px;}
 .emotelevels em:nth-of-type(11) {left: 330px;}
+.emotelevels em:nth-of-type(12) {left: 360px;}
 .emotelevels em img {
 	display: none;
 	position: absolute;
@@ -115,11 +116,13 @@ body:not(.emotes_allrows) #emotes li:not(.next):not(.available) {display: none;}
 .emotes_large .emotelevels em:nth-of-type(5) {left: 500px;}
 .emotes_large .emotelevels em:nth-of-type(6) {left: 625px;}
 /* If Twitch rolls out a twelfth emote for each row, reset these to start at zero instead of staggering them. */
-.emotes_large .emotelevels em:nth-of-type(7) {top: 118px; left: 62.5px;}
-.emotes_large .emotelevels em:nth-of-type(8) {top: 118px; left: 187.5px;}
-.emotes_large .emotelevels em:nth-of-type(9) {top: 118px; left: 312.5px;}
-.emotes_large .emotelevels em:nth-of-type(10) {top: 118px; left: 437.5px;}
-.emotes_large .emotelevels em:nth-of-type(11) {top: 118px; left: 562.5px;}
+/* CJA 20251219: They did. If we go back to an odd number, move one up and go back to starting at 62.5px. */
+.emotes_large .emotelevels em:nth-of-type(7) {top: 118px; left: 0px;}
+.emotes_large .emotelevels em:nth-of-type(8) {top: 118px; left: 125px;}
+.emotes_large .emotelevels em:nth-of-type(9) {top: 118px; left: 250px;}
+.emotes_large .emotelevels em:nth-of-type(10) {top: 118px; left: 375px;}
+.emotes_large .emotelevels em:nth-of-type(11) {top: 118px; left: 500px;}
+.emotes_large .emotelevels em:nth-of-type(12) {top: 118px; left: 625px;}
 
 audio {display: none;}
 #config ul.gapbelow li {margin-bottom: 1.5em;}
