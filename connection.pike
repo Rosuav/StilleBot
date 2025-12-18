@@ -12,7 +12,7 @@ mapping irc_connections = ([]); //Not persisted across code reloads, but will be
 int(1bit) is_active; //Cache of is_active_bot() since we need to check it freuqently.
 
 constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
-	"broadcaster": "_mod", "moderator": "_mod", "staff": "_mod",
+	"broadcaster": "_mod", "moderator": "_mod", "staff": "_mod", "lead_moderator": "_mod",
 	"subscriber": "_sub", "founder": "_sub", //Founders (the first 10 or 25 subs) have a special badge.
 ]);
 //Go through a message's parameters/tags to get the info about the person
