@@ -287,3 +287,6 @@
 * "Drag me to OBS" might not be working in current versions of OBS - look into it.
   - Or maybe it's that browser sources are broken???
 * Raid finder category image broken if has question mark eg "RV There Yet?"
+* Add something to /serverstatus to do updates incl pulling changes
+  - Keep the GUI for fast updates maybe? It might not even be necessary though, just use
+    the web UI.
