@@ -1,4 +1,5 @@
 inherit http_websocket;
+constant subscription_valid = 1; //Not actually subscribed but it uses some of the same infrastructure
 constant markdown = #"# Preferences and configuration
 
 <section id=prefs></section>
