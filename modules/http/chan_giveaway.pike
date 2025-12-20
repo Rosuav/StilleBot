@@ -45,6 +45,7 @@ $$login$$
 > ### Master Control
 > * [Open giveaway](:.master #open) and allow people to buy tickets
 > * [Close giveaway](:.master #close) so no more tickets will be bought
+> * [Rig giveaway](:.master #rig) because everyone knows we always do that
 > * [Choose winner](:.master #pick) and remove that person's tickets
 > * [Cancel and refund](:.master #cancel) all points spent on tickets
 > * [End giveaway](:.master #end) <span id=refund_nonwinning_desc>clearing out</span> tickets
@@ -443,6 +444,10 @@ __async__ mapping|zero websocket_cmd_master(mapping(string:mixed) conn, mapping(
 				return 0;
 			}
 			open_close(chan, broadcaster_id, want_open);
+			break;
+		}
+		case "rig": {
+			channel->send((["{username}": channel->display_name]), "The giveaway has now been fully rigged, and we can draw a winner!");
 			break;
 		}
 		case "pick": {
