@@ -97,6 +97,7 @@ inherit builtin_command;
 constant visibility = "hidden";
 constant access = "none";
 @retain: mapping giveaway_tickets = ([]);
+@retain: mapping giveaway_rigged = ([]); //Map a channel ID to its rigged status (if non-null, the giveaway was rigged by that mod)
 @retain: multiset giveaway_purchases = (<>);
 
 constant giveaway_started = special_trigger("!giveaway_started", "A giveaway just opened, and people can buy tickets", "The broadcaster", "title, duration, duration_hms, duration_english", "Giveaways");
@@ -447,6 +448,7 @@ __async__ mapping|zero websocket_cmd_master(mapping(string:mixed) conn, mapping(
 			break;
 		}
 		case "rig": {
+			giveaway_rigged[broadcaster_id] = conn->session->user->display_name;
 			channel->send((["{username}": channel->display_name]), "The giveaway has now been fully rigged, and we can draw a winner!");
 			break;
 		}
@@ -483,6 +485,7 @@ __async__ mapping|zero websocket_cmd_master(mapping(string:mixed) conn, mapping(
 				"{winner_tickets}": (string)givcfg->last_winner[2],
 				"{tickets_total}": (string)givcfg->last_winner[3],
 				"{entries_total}": (string)sizeof(people[*][1]->tickets - ({0})),
+				"{rigged}": m_delete(giveaway_rigged, broadcaster_id) || "",
 			]));
 			break;
 		}
