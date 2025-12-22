@@ -153,7 +153,7 @@ __async__ string replication_status() {
 
 __async__ void database_status() {
 	admin_state->readonly = await(G->G->DB->query_ro("show default_transaction_read_only"))[0]->default_transaction_read_only;
-	admin_state->replication = (int)await(G->G->DB->query_ro("select pid from pg_stat_subscription where subname = 'multihome'"))[0]->pid ? "active" : "inactive";
+	admin_state->replication = (int)(await(G->G->DB->query_ro("select pid from pg_stat_subscription where subname = 'multihome'"))[0]->pid || 0) ? "active" : "inactive";
 
 	if (!G->G->DB->livedb && sizeof(G->G->DB->pg_connections) == 2) {
 		//Both databases are down. This likely means we're in the early phases of a transition, so
