@@ -272,11 +272,8 @@
   - If it reports "certificate verify failed", it's probably that certificate rollover has
     happened and the other end isn't using the new cert. Go to the other end and run
     `sudo systemctl reload postgres` which shouldn't otherwise break anything. I hope.
-  - Why is this even a thing? Shouldn't the cert rollover automatically signal all apps?
-  - Actually maybe it isn't signalling all apps, but that would be stillebot itself, so
-    unrelated to this symptom. Unsure. That should probably be fixed too - at the moment,
-    the bot has to have at least some level of major development every month or so, which
-    is fine so long as it's getting that multiple times a week, but eventually it won't be.
+  - Cert rollover should no longer be an issue - check it in a few months to make sure.
+    Monitor to see if there are any other causes of replication failure.
 * /serverstatus during hop from Gideon to Sikorsky might be losing the Gideon socket?? It's
   staying with the Gideon database reporting that it's read/write but it isn't actually RW.
 * Can I implement Happy Eyeballs into poll.pike::get_url_data() ?
