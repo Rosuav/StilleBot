@@ -130,7 +130,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 				img,
 				DIV({style: "display: flex; flex-direction: column; flex-grow: 1"}, [
 					DIV({class: "goalbar", style: `--oldpos: ${prevpos}%; --newpos: ${pos}%; border-radius: ${elem.style.borderRadius}`}, [
-						DIV({style: "padding: 2px 6px"}, curhp + "/" + maxhp),
+						DIV({style: "padding: 2px 6px"}, curhp + (t.format_style === "nomaxhp" ? "" : "/" + maxhp)),
 					]),
 					DIV({style: "position: relative; width: 100%"}, [
 						DIV({class: prevcredit ? "bosscredit waxing" : "bosscredit", style: "text-wrap: nowrap; width: 100%; text-align: left; overflow: hidden"}, name),
