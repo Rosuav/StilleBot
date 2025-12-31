@@ -502,6 +502,7 @@ __async__ void check_hooks() {
 	if (!G->G->eventhooks_ready) G->G->eventhooks_ready = completion = Concurrent.Promise();
 	array eventhooks = await(get_helix_paginated("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([]), (["authtype": "app"])));
 	multiset(string) have_conduitbroken = (<>);
+	mapping seen = ([]);
 	foreach (eventhooks, mapping hook) {
 		if (hook->transport->method == "conduit") {
 			string type = hook->type + "=" + hook->version;
@@ -512,8 +513,17 @@ __async__ void check_hooks() {
 			} else {
 				//TODO: Get rid of hooks for channels that don't exist or aren't tracked any more
 				foreach (({"", "from_", "to_"}), string pfx)
-					if (hook->condition[pfx + "broadcaster_user_id"])
+					if ((hook->condition[pfx + "broadcaster_user_id"] || "") != "") {
 						G_G_("eventhooks", type, "")[pfx + hook->condition[pfx + "broadcaster_user_id"]] = 1;
+						string key = type + ":" + pfx + hook->condition[pfx + "broadcaster_user_id"];
+						if (seen[key]) {
+							Stdio.append_file("duplicate_hooks.log", sprintf("\n%sREMOVING DUPLICATE HOOK %s\nKeep: %O\nDelete: %O\n---\n\n", ctime(time()), key, seen[key], hook));
+							write("Deleting duplicate conduit eventhook: %O\n", hook);
+							twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions?id=" + hook->id,
+								([]), (["method": "DELETE", "authtype": "app", "return_status": 1]));
+						}
+						else seen[key] = hook;
+					}
 			}
 			continue;
 		}
