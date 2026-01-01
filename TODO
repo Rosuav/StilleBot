@@ -298,3 +298,5 @@
   - Make a command or channel point redemption that updates the relevant variables
 * Switch (future-only?) crown redemptions to make "$crownholder:name$" and then also
   automatically save the avatar and cost
+  - Make an easy way to have a crownholder display. Maybe select a variable group and
+    the above definition of the monitor does the work?
