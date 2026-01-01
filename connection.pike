@@ -87,6 +87,10 @@ mapping(string:function(string:string)) text_filters = ([
 		if (c % 100) return sprintf("$%d.%02d", c / 100, c % 100);
 		return "$" + (c / 100);
 	},
+	"scale": lambda(string n, string dflt) {
+		if (has_value(dflt, '.')) return (string)((float)n / (float)dflt);
+		return (string)((int)n / (int)dflt);
+	},
 ]);
 
 __async__ void raidwatch(int channel, string raiddesc) {
