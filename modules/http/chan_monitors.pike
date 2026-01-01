@@ -277,7 +277,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id, str
 		}
 		if (info->type == "pile" && sscanf(var, "$" + info->varname + ":%s$", string type) && type)
 			send_updates_all(channel, nonce, (["newcount": ([type: (int)newval])]));
-		if (!has_value(info->text, var)) continue;
+		if (!has_value(info->text, var[..<1])) continue; //Remove the last character so we search for "$varname" in case it has a filter
 		mapping info = (["data": (["id": nonce, "display": channel->expand_variables(info->text)])]);
 		send_updates_all(channel, nonce, info); //Send to the group for just that nonce
 		info->id = nonce; send_updates_all(channel, "", info); //Send to the master group as a single-item update
