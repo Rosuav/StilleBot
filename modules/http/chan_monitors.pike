@@ -153,7 +153,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		mapping info = monitors[nonce];
 		if (!info) nonce = 0;
 		//Pile of Pics has different code, best to isolate them.
-		if (info->type == "pile") return render_template("monitor.html", ([
+		if (info->?type == "pile") return render_template("monitor.html", ([
 			"vars": ([
 				"ws_type": ws_type, "ws_group": nonce + "#" + req->misc->channel->userid, "ws_code": "pile",
 				"default_thing_image": default_thing_image,
