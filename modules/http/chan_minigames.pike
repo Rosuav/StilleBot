@@ -438,7 +438,11 @@ __async__ void update_crown(object channel, mapping game) {
 			"basecost": 0, "availability": "{online}",
 			"prompt": "Seize the crown for yourself! The crown is currently held by $crownholder:name$, who was the last person to take it.",
 		]);
-		rwd->formula = "PREV + " + game->increase;
+		//The formula magically captures the resultant cost in a variable.
+		//This might be a bit backwards; maybe it'd be better to not change the cost with the formula,
+		//but instead bind the cost to $crownholder:cost$, and have the !seizecrown command change that
+		//variable. For now, sticking to the dynrewards system.
+		rwd->formula = "@=\"crownholder:cost\" = (PREV + " + game->increase + ")";
 	});
 	if (!channel->commands->seizecrown) G->G->cmdmgr->update_command(channel, "", "seizecrown", #"
 		#access \"none\"
