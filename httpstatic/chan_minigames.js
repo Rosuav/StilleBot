@@ -146,6 +146,17 @@ export function render(data) {
 			]),
 			" If disallowed, each person may only claim the crown once per stream.",
 		]),
+		LI([
+			"On-screen display ",
+			SELECT({name: "wantmonitor", value: crown.wantmonitor, "data-dangerous": crown.monitorid ? "Disabling and reenabling this will require updating the URL in OBS. Confirm?" : ""}, [
+				OPTION({value: "0"}, "Disabled"),
+				OPTION({value: "1"}, "Enabled"),
+			]),
+			crown.monitorid ? [
+				LI(["To see the bar, ", A({class: "monitorlink", href: "monitors?view=" + boss.monitorid}, "drag this to OBS"), " or add this as a browser source"]),
+				LI(["Further configuration (colour, font, etc) can be done ", A({href: "monitors"}, "by editing the bar itself"), "."]),
+			] : LI([" If enabled, you will have a ", A({href: "monitors"}, "monitor"), " that can be added to OBS to show the current crown holder."]),
+		]),
 	]));
 	const first = {...sections.first, ...(data.first || { })};
 	replace_content("#first", UL([

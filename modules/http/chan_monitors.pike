@@ -463,7 +463,7 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 	}
 	foreach (saveable_attributes, string key) if (msg[key]) info[key] = msg[key];
 	if (info->needlesize == "") info->needlesize = "0";
-	if (info->varname) info->text = sprintf("$%s$:%s", info->varname, info->text);
+	if (info->varname && info->varname != "") info->text = sprintf("$%s$:%s", info->varname, info->text);
 	textformatting_validate(info);
 	G->G->DB->save_config(channel->userid, "monitors", monitors)->then() {
 		send_updates_all(channel, nonce);

@@ -65,7 +65,7 @@ First, and optionally Second, Third, and Last
 constant sections = ([
 	"rps": ([
 		"enabled": 0,
-		"theme": "halloween", //Change the default to "cute" (or maybe "default") when it's available
+		"theme": "cute", //Change the default to "default" if a non-cutesy one is added
 		"size": "medium",
 		"commands": ({ }),
 	]),
@@ -85,6 +85,7 @@ constant sections = ([
 		"increase": 1000,
 		"gracetime": 60,
 		"perpersonperstream": 0,
+		"wantmonitor": 0,
 	]),
 	"first": ([
 		"first": 0,
@@ -396,6 +397,10 @@ __async__ void update_crown(object channel, mapping game) {
 		}
 		if (channel->commands->seizecrown) G->G->cmdmgr->update_command(channel, "", "seizecrown", "");
 		if (channel->commands->retrievecrown) G->G->cmdmgr->update_command(channel, "", "retrievecrown", "");
+		if (string nonce = m_delete(game, "monitorid")) {
+			G->G->websocket_types->chan_monitors->delete_monitor(channel, nonce);
+			await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->crown = game;});
+		}
 		//No other config changes are done. The deletion of the reward will (asynchronously)
 		//result in other info getting cleaned up, but we broadly don't need to take action.
 		return;
@@ -471,7 +476,25 @@ __async__ void update_crown(object channel, mapping game) {
 		catch \"\"
 		\"Crown has been retrieved.\"
 		", (["language": "mustard"]));
-
+	if (game->wantmonitor && !game->monitorid) {
+		[game->monitorid, mapping info] = G->G->websocket_types->chan_monitors->create_monitor(channel, ([
+			"type": "goalbar", "varname": "",
+			"label": "Crown Holder",
+			"format": "hitpoints", "format_style": "nomaxhp",
+			"thresholds": "$crownholder:cost$ 1",
+			"text": "0:$crownholder:avatar$ $crownholder:name$",
+			"font": "Lexend", "fontsize": "30",
+			"fillcolor": "#ff0000", "barcolor": "#ffffdd", "color": "#000000", "altcolor": "#000000",
+			"borderwidth": "4", "bordercolor": "#00ffff",
+		]));
+		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->crown = game;});
+		send_updates_all(channel, "");
+	}
+	else if (string nonce = !game->wantmonitor && m_delete(game, "monitorid")) {
+		G->G->websocket_types->chan_monitors->delete_monitor(channel, nonce);
+		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->crown = game;});
+		send_updates_all(channel, "");
+	}
 }
 
 void wscmd_retrievecrown(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {

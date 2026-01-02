@@ -287,16 +287,7 @@
 * Add something to /serverstatus to do updates incl pulling changes
   - Keep the GUI for fast updates maybe? It might not even be necessary though, just use
     the web UI.
-* Make a way to create a monitor that shows a person's avatar, but not as bit boss
-  - This can be done very manually but requires some definite messing around
-  - Create new goal bar
-  - Change the Format to hitpoints (not normally a visible option)
-  - Optionally set Format Style to nomaxhp if you don't need max HP
-  - Set the Text to "$crownholderavatar$ $crownholder$"
-  - Set the Goal to "$crowncost$ 1"
-  - Disable all autoadvancement
-  - Make a command or channel point redemption that updates the relevant variables
-* Switch (future-only?) crown redemptions to make "$crownholder:name$" and then also
-  automatically save the avatar and cost
-  - Make an easy way to have a crownholder display. Maybe select a variable group and
-    the above definition of the monitor does the work?
+* Make a generic way to create a monitor that shows a person's avatar. Currently bit boss
+  and crown use this, but there's no general-purpose way to do it.
+  - Consider changing format from "hitpoints" to "avatar", and then having a format_style
+    to specify whether they get hitpoints.
