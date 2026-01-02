@@ -64,6 +64,11 @@ value: "word" "(" ")" {func_nullary};
 value: "word" "(" arglist ")" {func};
 value: "@" "word" {varlookup};
 value: "@" "string" {varlookup};
+/* This syntax is very weird - notably, "@var=1" will parse as "@var" (lookup) followed
+by "=1" (comparison), and the correct syntax is "@=var=1". Also, the value must be
+parenthesized if it is itself an expression; this avoids a bunch of shift/reduce conflicts.
+This entire feature is undocumented and has no backward-compatibility guarantee; if I'm
+ever going to make this an official feature, I'll want to make the syntax way better. */
 value: "@" "=" "word" "=" value {varassign};
 value: "@" "=" "string" "=" value {varassign};
 

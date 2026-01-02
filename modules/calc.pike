@@ -89,8 +89,10 @@ int|float|string varlookup(array context, string varname) {
 }
 int|float|string varassign(array context, string eq1, string varname, string eq2, int|float|string value) {
 	if (!context) error("Variable references require full context\n");
-	//Assignment returns the RHS.
-	return context[0]->set_variable(varname, (string)value, "set", context[1]->users);
+	//Assignment returns the RHS. Note that set_variable() will normally return the RHS, but cast
+	//to string, and we want to retain the type of the RHS.
+	context[0]->set_variable(varname, (string)value, "set", context[1]->users);
+	return value;
 }
 
 Parser.LR.Parser parser = Parser.LR.GrammarParser.make_parser_from_file("modules/calc.grammar");
