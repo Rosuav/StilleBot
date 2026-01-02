@@ -162,7 +162,7 @@ export const autorender = {
 					BUTTON({type: "button", class: "interactbtn", "data-action": "roll"}, "Roll"),
 				]),
 			]),
-			TD(A({className: "monitorlink", href: "monitors?view=" + nonce}, "Browser source")),
+			TD(A({className: "monitorlink", href: "monitors?view=" + nonce, title: "Drag me to OBS"}, "Browser source")),
 		]);
 		//HACK: For pile o' pics, the preview is actually just iframed in. Lower performance but easier.
 		//Note that this incurs the cost of a separate websocket with (partly) duplicate signals. Review

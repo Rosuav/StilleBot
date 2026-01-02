@@ -26,7 +26,7 @@ export function render_item(msg, obj) {
 			BUTTON({type: "button", className: "savebtn"}, "Save"),
 			BUTTON({type: "button", className: "deletebtn"}, "Delete?"),
 		]),
-		TD(A({className: "monitorlink", href: "subpoints?view=" + msg.id}, "Browser source")),
+		TD(A({className: "monitorlink", href: "subpoints?view=" + msg.id, title: "Drag me to OBS"}, "Browser source")),
 	]);
 }
 export function render_empty() {
