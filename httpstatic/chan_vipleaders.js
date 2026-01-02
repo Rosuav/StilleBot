@@ -154,7 +154,7 @@ export function render(data) {
 				DETAILS({id: "embedcfg"}, [SUMMARY("Embedded view"),
 					"Want a mini-view to embed in your overlay? Style it here:",
 					TEXTFORMATTING({textname: "embed_heading", textlabel: "Heading"}),
-					A({href: "vipleaders?embed=subs"}, "Drag me to OBS"), " (TODO: Allow you to pick which embed and maybe multiple)",
+					A({href: "vipleaders?embed=subs"}, "Browser source"), " (TODO: Allow you to pick which embed and maybe multiple)",
 				]),
 				P(BUTTON({type: "submit"}, "Save")),
 			]),
