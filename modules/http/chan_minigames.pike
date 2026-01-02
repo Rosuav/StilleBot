@@ -436,7 +436,7 @@ __async__ void update_crown(object channel, mapping game) {
 		mapping rwd = __ARGS__[0][game->rewardid];
 		if (!rwd) rwd = __ARGS__[0][game->rewardid] = ([
 			"basecost": 0, "availability": "{online}",
-			"prompt": "Seize the crown for yourself! The crown is currently held by $crownholder$, who was the last person to take it.",
+			"prompt": "Seize the crown for yourself! The crown is currently held by $crownholder:name$, who was the last person to take it.",
 		]);
 		rwd->formula = "PREV + " + game->increase;
 	});
@@ -444,22 +444,23 @@ __async__ void update_crown(object channel, mapping game) {
 		#access \"none\"
 		#visibility \"hidden\"
 		#redemption \"" + game->rewardid + #"\"
-		try {
-			chan_pointsrewards(\"{rewardid}\", \"fulfil\", \"{redemptionid}\") \"\"
-		}
+		try chan_pointsrewards(\"{rewardid}\", \"fulfil\", \"{redemptionid}\") \"\"
 		catch \"\"
-		if (\"{username}\" == \"$crownholder$\") {
-			\"You already hold the crown, {username} - good job wasting your points.\"
-		}
-		else {
-			\"Congratulations to {username} for successfully claiming the crown from $crownholder$! You will retain this title until someone else seizes it from you...\"
-			$crownholder$ = \"{username}\"
-		}
+		if (\"{uid}\" == \"$crownholder:uid$\") \"You already hold the crown, {username} - good job wasting your points.\"
+		else \"Congratulations to {username} for successfully claiming the crown from $crownholder:name$! You will retain this title until someone else seizes it from you...\"
+		//In case the person has renamed/changed avatar, update these even if you already held the crown.
+		$crownholder:uid$ = \"{uid}\"
+		$crownholder:name$ = \"{username}\"
+		uservars(\"\", \"{uid}\") $crownholder:avatar$ = \"{avatar}\"
 		", (["language": "mustard"]));
 	G->G->cmdmgr->update_command(channel, "", "retrievecrown", #"
 		#access \"mod\"
 		#visibility \"hidden\"
-		uservars(\"crownholder\", \"" + game->initialholder + #"\") $crownholder$ = \"{name}\"
+		uservars(\"crownholder\", \"" + game->initialholder + #"\") {
+			$crownholder:name$ = \"{name}\"
+			$crownholder:uid$ = \"{uid}\"
+			$crownholder:avatar$ = \"{avatar}\"
+		}
 		try {
 			chan_pointsrewards(\"" + game->rewardid + #"\", \"cost\", \"" + cfg->initialprice + #"\") \"\"
 		}
