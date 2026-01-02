@@ -104,7 +104,7 @@ export function render(data) {
 			//If the select isn't on "increase by...", hide the input :)
 			STYLE("select[name=hpgrowth]:not(:has( option[value=\"1\"]:checked )) ~ input[name=hpgrowth] {display: none;}"),
 		]),
-		boss.monitorid && LI(["To see the bar, ", A({class: "monitorlink", href: "monitors?view=" + boss.monitorid, "data-layername": "Bit Boss"}, "drag this to OBS"), " or add this as a browser source"]),
+		boss.monitorid && LI(["To see the bar, ", A({class: "monitorlink", href: "monitors?view=" + boss.monitorid, "data-layername": "Bit Boss", "data-width": 750, "data-height": 90}, "drag this to OBS"), " or add this as a browser source"]),
 		boss.monitorid && LI(["Further configuration (colour, font, etc) can be done ", A({href: "monitors"}, "by editing the bar itself"), "."]),
 		boss.monitorid && LI(["For testing purposes, you may ", BUTTON({id: "dealdamage"}, "deal some damage to the boss")]),
 	]));
@@ -153,7 +153,7 @@ export function render(data) {
 				OPTION({value: "1"}, "Enabled"),
 			]),
 			crown.monitorid ? [
-				LI(["To see the bar, ", A({class: "monitorlink", href: "monitors?view=" + boss.monitorid, "data-layername": "Crown Holder"}, "drag this to OBS"), " or add this as a browser source"]),
+				LI(["To show the current crown holder, ", A({class: "monitorlink", href: "monitors?view=" + crown.monitorid, "data-layername": "Crown Holder", "data-width": 750, "data-height": 90}, "drag this to OBS"), " or add this as a browser source"]),
 				LI(["Further configuration (colour, font, etc) can be done ", A({href: "monitors"}, "by editing the bar itself"), "."]),
 			] : LI([" If enabled, you will have a ", A({href: "monitors"}, "monitor"), " that can be added to OBS to show the current crown holder."]),
 		]),
@@ -191,7 +191,9 @@ on("change", "input,select", e => {
 });
 
 on("dragstart", ".monitorlink", e => {
-	const url = `${e.match.href}&layer-name=${e.match.dataset.layername}&layer-width=750&layer-height=90`;
+	const data = e.match.dataset;
+	let url = `${e.match.href}&layer-name=${data.layername}`;
+	if (data.width) url += `&layer-width=${data.width}&layer-height=${data.height}`
 	e.dataTransfer.setData("text/uri-list", url);
 });
 
