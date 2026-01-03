@@ -287,6 +287,7 @@
 * Add something to /serverstatus to do updates incl pulling changes
   - Keep the GUI for fast updates maybe? It might not even be necessary though, just use
     the web UI.
+  - Does it need 2FA since that has the power to make all kinds of code changes?
 * Make a generic way to create a monitor that shows a person's avatar. Currently bit boss
   and crown use this, but there's no general-purpose way to do it.
   - Consider changing format from "hitpoints" to "avatar", and then having a format_style
