@@ -228,7 +228,7 @@ function make_eventhook_handler(string hookname) {
 		//The hook function may report a different $$ user. It is provided as a mapping
 		//of the same three as above, but if only user or uid is provided, the rest will
 		//be fetched.
-		if (mapping u = m_delete(params, "$$")) {
+		if (mapping u = params && m_delete(params, "$$")) {
 			user = u;
 			if (!u->user || !u->displayname || !u->uid) {
 				mapping info = cached_user_info(u->uid ? (int)u->uid : u->user);

@@ -1716,7 +1716,7 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
 			werror("Hook %O channel %O\n", type, channel->?login);
 			foreach (G->G->eventhooks[type] || ([]); string name; function func)
 				if (mixed ex = name != "" && catch (func(channel, event)))
-					werror("Error in hook %s->%s: %s", name, event, describe_backtrace(ex));
+					werror("Error in hook %s %O\n%s", name, event, describe_backtrace(ex));
 			break;
 		}
 		default: werror("Got unknown WS message: %O\n", data); break;
