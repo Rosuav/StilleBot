@@ -3,6 +3,7 @@
 //how we got the clunky "pointsrewards" in the first place (due to /c/repeats),
 //but this really needs the name /c/polls and I don't think there's a better name.
 inherit http_websocket;
+inherit hook;
 
 //TODO: Copy in the !!pollbegin and !!pollended specials so they can be edited here too
 
@@ -11,8 +12,8 @@ constant markdown = #"# Polls
 When you run a poll on your channel, it will show up here. You can rerun any poll
 or make adjustments, and go back and see the past polls and their results.
 
-Created | Last asked | Title | Options | Duration | Results |
---------|------------|-------|---------|----------|---------|-
+Created | Last asked | Title | Options | Duration | Pts/vote | Results |
+--------|------------|-------|---------|----------|----------|---------|-
 loading... | -
 {:#polls}
 
@@ -22,6 +23,7 @@ loading... | -
 <tr><td><label for=title>Title:</label></td><td><input id=title name=title size=80></td></tr>
 <tr><td><label for=options>Options:</label></td><td><textarea id=options name=options rows=5 cols=80 placeholder='Yes&#10;No'></textarea></td></tr>
 <tr><td><label for=duration>Duration:</label></td><td><select id=duration name=duration><option value=60>One minute</select></td></tr>
+<tr><td><label for=points>Extra votes:</label></td><td><input id=points name=points type=number value=0> channel points to buy an extra vote, 0 to disable</td></tr>
 <tr><td>Results:</td><td>TODO</td></tr>
 </table>
 <button type=submit>Ask this!</button>
@@ -64,12 +66,44 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	]);
 }
 
-//TODO: Trigger this when Twitch says a poll happened
-void addpoll(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@EventNotify("channel.poll.begin=1", ({"channel:read:polls", "channel:manage:polls"})):
+void addpoll(object channel, mapping data) {
 	G->G->DB->mutate_config(channel->userid, "polls") {mapping info = __ARGS__[0];
-		//TODO: Search for an existing poll with the same title and options
-		msg->created = msg->lastused = time();
-		info->polls += ({msg & (<"created", "lastused", "title", "options">)});
+		if (!info->polls) info->polls = ({ });
+		string options = data->choices->title * "\n";
+		int idx = -1;
+		foreach (info->polls; int i; mapping p)
+			if (p->title == data->title && p->options == options) {idx = i; break;}
+		if (idx == -1) info->polls += ({([
+			"title": data->title,
+			"options": options,
+			"created": time(),
+			"results": ({ }),
+		])});
+		//Note that, if one wasn't found, idx will still be -1 and so we'll update the last entry in the array
+		info->polls[idx]->lastused = time();
+		info->polls[idx]->points = data->channel_points_voting->is_enabled ? data->channel_points_voting->amount_per_vote : 0;
+		info->polls[idx]->duration = time_from_iso(data->ends_at)->unix_time() - time_from_iso(data->started_at)->unix_time();
+	}->then() {send_updates_all(channel, "");};
+}
+
+@EventNotify("channel.poll.end=1", ({"channel:read:polls", "channel:manage:polls"})):
+void pollresult(object channel, mapping data) {
+	G->G->DB->mutate_config(channel->userid, "polls") {mapping info = __ARGS__[0];
+		if (!info->polls) return; //Obviously no match
+		string options = data->choices->title * "\n";
+		int idx = -1;
+		foreach (info->polls; int i; mapping p)
+			if (p->title == data->title && p->options == options) {idx = i; break;}
+		if (idx == -1) return; //No match? Possibly means we didn't see the begin-poll message.
+		//The choices array contains some junk, like bits_votes (always zero - once upon
+		//a time, you could pay bits to vote), so we filter them. If Twitch adds more info,
+		//we want to keep that, so just delete the ones we know aren't of interest.
+		foreach (data->choices, mapping c) {m_delete(c, "bits_votes"); m_delete(c, "id");}
+		info->polls[idx]->results += ({([
+			"completed": time(),
+			"options": data->choices,
+		])});
 	}->then() {send_updates_all(channel, "");};
 }
 
@@ -102,7 +136,9 @@ void wscmd_askpoll(object channel, mapping(string:mixed) conn, mapping(string:mi
 			"title": title,
 			"choices": (["title": options[*]]),
 			"duration": duration,
+			"channel_points_voting_enabled": (int)msg->points ? Val.true : Val.false,
+			"channel_points_per_vote": (int)msg->points,
 		])]));
 }
 
-//protected void create(string name) {::create(name);}
+protected void create(string name) {::create(name);}

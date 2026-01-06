@@ -24,6 +24,8 @@ export function render(data) {
 		TD(DATE(p.created)), TD(DATE(p.lastused)),
 		TD(p.title),
 		TD(UL(p.options.split("\n").map(o => LI(o)))),
+		TD(p.duration+""), //TODO: 60 -> "1 minute" etc
+		TD(p.points || ""),
 		TD("TODO"),
 		TD(BUTTON({class: "delete"}, "X")),
 	])));
@@ -37,6 +39,7 @@ on("click", "#polls tr[data-idx]", e => {
 	form.lastused.value = poll.lastused; //ditto
 	form.title.value = poll.title;
 	form.options.value = poll.options;
+	form.points.value = poll.points;
 	//TODO: Results
 });
 
@@ -44,7 +47,7 @@ on("submit", "#config", e => {
 	e.preventDefault();
 	const el = DOM("#config").elements;
 	const msg = {cmd: "askpoll"};
-	"title options duration".split(" ").forEach(id => msg[id] = el[id].value);
+	"title options duration points".split(" ").forEach(id => msg[id] = el[id].value);
 	ws_sync.send(msg);
 });
 
