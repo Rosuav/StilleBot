@@ -19,6 +19,7 @@ function DATE(d) {
 }
 
 export function render(data) {
+	//TODO: If !data.polls.length, put in a placeholder
 	replace_content("#polls tbody", data.polls.map((p, idx) => TR({".polldata": p, "data-idx": idx}, [
 		TD(DATE(p.created)), TD(DATE(p.lastused)),
 		TD(p.title),
@@ -43,7 +44,7 @@ on("submit", "#config", e => {
 	e.preventDefault();
 	const el = DOM("#config").elements;
 	const msg = {cmd: "askpoll"};
-	"title options".split(" ").forEach(id => msg[id] = el[id].value);
+	"title options duration".split(" ").forEach(id => msg[id] = el[id].value);
 	ws_sync.send(msg);
 });
 

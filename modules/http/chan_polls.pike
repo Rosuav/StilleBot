@@ -11,16 +11,17 @@ constant markdown = #"# Polls
 When you run a poll on your channel, it will show up here. You can rerun any poll
 or make adjustments, and go back and see the past polls and their results.
 
-Created | Last asked | Title | Options | Results |
---------|------------|-------|---------|---------|-
-loading... | - | - | - | - | -
+Created | Last asked | Title | Options | Duration | Results |
+--------|------------|-------|---------|----------|---------|-
+loading... | -
 {:#polls}
 
 <form id=config>
 <table>
 <tr><td>Date:</td><td><input name=created readonly> <input name=lastused readonly></td></tr>
-<tr><td><label for=title>Title:</label></td><td><input id=title name=title size=125></td></tr>
+<tr><td><label for=title>Title:</label></td><td><input id=title name=title size=80></td></tr>
 <tr><td><label for=options>Options:</label></td><td><textarea id=options name=options rows=5 cols=80 placeholder='Yes&#10;No'></textarea></td></tr>
+<tr><td><label for=duration>Duration:</label></td><td><select id=duration name=duration><option value=60>One minute</select></td></tr>
 <tr><td>Results:</td><td>TODO</td></tr>
 </table>
 <button type=submit>Ask this!</button>
@@ -80,6 +81,28 @@ void wscmd_delpoll(object channel, mapping(string:mixed) conn, mapping(string:mi
 }
 
 void wscmd_askpoll(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string title = String.trim(msg->title || "");
+	if (title == "") return;
+	array options = String.trim((msg->options / "\n")[*]) - ({""});
+	switch (sizeof(options)) {
+		case 0: options += ({"Yes"}); //fall through
+		case 1:
+			//Hack. Maybe it'd be better to return an error?
+			if (options[0] == "No") options += ({"Yes"});
+			else options += ({"No"});
+			break;
+		case 2: case 3: case 4: case 5: break;
+		default: options = options[..4]; //TODO: Give an error instead?
+	}
+	int duration = (int)msg->duration || 300;
+	twitch_api_request("https://api.twitch.tv/helix/polls",
+		(["Authorization": channel->userid]),
+		(["method": "POST", "return_errors": 1, "json": ([
+			"broadcaster_id": channel->userid,
+			"title": title,
+			"choices": (["title": options[*]]),
+			"duration": duration,
+		])]));
 }
 
 //protected void create(string name) {::create(name);}
