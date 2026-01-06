@@ -1,10 +1,12 @@
+//NOTE: This page has never really grown much, and is really just a table showing all
+//of your autocommands. Could easily be folded into a subpage within /c/commands (eg
+//in a dialog). Then /c/pointsrewards can be renamed to the much better /c/rewards,
+//leaving /c/pointsrewards as a simple redirect, and I don't mind if there's a redirect
+//that has a two-letter collision (here with /c/polls).
 inherit http_websocket;
 
 //TODO: Sort commands in some useful way?? Maybe by frequency?
 //Currently I think they're sorted affabeck by command name.
-
-//This page is now the place to put any repeat-related configs, eg (if I ever
-//implement it, of course) "don't autocommand unless chat within last X seconds"
 
 constant markdown = #"# Automated commands for $$channel$$
 

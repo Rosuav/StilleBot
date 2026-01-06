@@ -1,3 +1,6 @@
+//NOTE: This violates the "unique in two letters" by collision with /c/polls.
+//If renamed to /c/rewards, it would instead collide with /c/repeats.
+//Since /c/repeats is less relevant, look into deprecating it and renaming this.
 inherit http_websocket;
 inherit builtin_command;
 inherit hook;
