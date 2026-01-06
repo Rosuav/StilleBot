@@ -292,9 +292,3 @@
   and crown use this, but there's no general-purpose way to do it.
   - Consider changing format from "hitpoints" to "avatar", and then having a format_style
     to specify whether they get hitpoints.
-* Polls page
-  - Automatically record all polls as they start, if distinct from previous polls
-  - Record the results of a poll. Potentially there may be multiple (if a poll is redone)
-  - Like with stream setups, select one to fill in the active inputs below
-  - Easy way to create polls [maybe start here]
-  - Delete saved polls
