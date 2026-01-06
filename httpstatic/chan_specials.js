@@ -55,8 +55,8 @@ export function render(data) {
 						" Requires broadcaster authentication. This trigger will not currently be functional.",
 					] : scopes_required[cmd.id] && [
 						B("NOTE:"),
-						"Requires authentication. ",
-						BUTTON({class: "twitchlogin", "data-scopes": cmd.scopes_required}, "Authenticate"),
+						" Requires authentication. ",
+						BUTTON({class: "twitchlogin", "data-scopes": scopes_required[cmd.id]}, "Authenticate"),
 					],
 				])),
 			);
