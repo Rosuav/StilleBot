@@ -476,6 +476,51 @@ __async__ void validate_user_credentials() {
 	}
 }
 
+__async__ void emotify() {
+	//TODO: Get this from stdin or a file passed as an arg
+	string content = #"* Devi cleans her glasses kaypikeEYES1
+* Ironmania snipes the streamboss rosuavSnipe
+* Cat Tax unlocked devicatAww
+* We get raided by someone awesome twitchRaid
+* Puzzle completed 🧩
+* Two people in chat with the same nickname devicatWut
+* CandiCat is sassy devicatCandiCat
+* Raptor sighting scudDance
+* Devi is addressed by a long nickname devicatDab
+* Chii takes over the stream devicatCHII
+* Discussion of mental health devicatPop
+* Fourth Wall community gift devicatGift
+* Weird out-of-context quote ImTyping
+* Hype Train! devicatHypeTrain1
+* Evil Laughing Song plays maayaEvil
+* Reverse sub-only mode SUBprise
+* 500+ plushies have a party devicatCozy
+* Devi talks colour theory maaya25k
+* Euphonium makes a bad (good?) pun rosuavBadumTish
+* Wenffyria wins a colouring book page devicatGG
+* Devi's fastest at renaming someone HypeFirst
+* Really long stream streak HypeTrophy
+* Preview of a Devi WIP maayaHands
+* The crown is seized devicatCrown
+* PotatoIsFired promotes Devi devicatLvlup";
+	//Gather some sources of emote IDs
+	mapping emotes = (["devicatCHII": "1293024",
+		"devicatGift": "emotesv2_a3184def9f734983879da244b833ade9",
+		"ImTyping": "emotesv2_b0c6ccb3b12b4f99a9cc83af365a09f1",
+		"devicatCandiCat": "emotesv2_e5f5086f71454abeb8c6aa331a8b3ed6",
+		"rosuavBadumTish": "emotesv2_e31c8f16e34442d4a891876f93207c18"]);
+	emotes |= await(G->G->DB->load_config(49497888, "bot_emotes"));
+	emotes |= Standards.JSON.decode(Stdio.read_file("../devicatoutlet.github.io/_quotes.json"))->emotes;
+	foreach (content / "\n", string line) {
+		array words = (line - "* ") / " ";
+		string emoteid = emotes[words[-1]];
+		if (emoteid) write("<td>%s<br><img src=\"https://static-cdn.jtvnw.net/emoticons/v1/%s/1.0\" title=\"%s\"></td>\n",
+			words[..<1] * " ", emoteid, words[-1]);
+		else write("<td>%s</td>\n",
+			words * " ");
+	}
+}
+
 __async__ void test() {
 	//Recode this to whatever's needed, and use "pike stillebot --test" to run it.
 	werror("Nothing to see here, move along.\n");

@@ -292,3 +292,4 @@
   and crown use this, but there's no general-purpose way to do it.
   - Consider changing format from "hitpoints" to "avatar", and then having a format_style
     to specify whether they get hitpoints.
+* BUG: /c/commands Save All button is broken, seems to still send the old message
