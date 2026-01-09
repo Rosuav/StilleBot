@@ -30,6 +30,7 @@ $$greeting||$$
 * [Raid Train](raidtrain) - if one is organized by this streamer
 * [Leaderboard and VIP badges](vipleaders) - subgifting and cheering leaderboards, with option
   to grant VIP badges to your top-N
+* [Polls](polls) - see your past polls, ask new questions
 
 ## Keep you organized
 * [Stream setup](streamsetup) - prepare your title, category, tags, etc
