@@ -24,7 +24,7 @@ loading... | -
 <tr><td><label for=options>Options:</label></td><td><textarea id=options name=options rows=5 cols=80 placeholder='Yes&#10;No'></textarea></td></tr>
 <tr><td><label for=duration>Duration:</label></td><td><select id=duration name=duration><option value=15>15 secs<option value=60>One minute<option value=300>Five minutes</select></td></tr>
 <tr><td><label for=points>Extra votes:</label></td><td><input id=points name=points type=number value=0> channel points to buy an extra vote, 0 to disable</td></tr>
-<tr><td>Results:</td><td>TODO</td></tr>
+<tr><td>Results:</td><td id=results></td></tr>
 </table>
 <button type=submit>Ask this!</button>
 </form>

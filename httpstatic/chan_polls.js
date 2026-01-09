@@ -1,5 +1,5 @@
 import {lindt, replace_content, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, LI, TD, TIME, TR, UL} = lindt; //autoimport
+const {BUTTON, IMG, LI, OPTION, SELECT, SELECTEDCONTENT, TD, TIME, TR, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 function DATE(d) {
@@ -18,6 +18,29 @@ function DATE(d) {
 	]);
 }
 
+function results_summary(options) {
+	const votes = options.toSorted((a, b) => b.votes - a.votes);
+	let totvotes = 0; options.forEach(o => totvotes += o.votes);
+	if (!totvotes) return "no votes";
+	let ret = [];
+	//With five options, this might get quite long - only show the winner and runner-up
+	options.forEach(o => o.votes && ret.length < 2 && ret.push(Math.floor(o.votes * 100 / totvotes) + "% " + o.title));
+	return ret.join(", ");
+}
+
+function update_results_view(poll) {
+	replace_content("#results", [
+		//Summary of all times this has been asked
+		SELECT({id: "pickresults", value: poll.results[poll.results.length - 1]?.completed}, [
+			poll.results.map(r => OPTION({value: r.completed}, [
+				DATE(r.completed), //NOTE: Browsers ignore the element and just include the text. Would be nice to get the hover but so be it.
+				" - ",
+				results_summary(r.options),
+			])),
+		]),
+	]);
+}
+
 export function render(data) {
 	//TODO: If !data.polls.length, put in a placeholder
 	replace_content("#polls tbody", data.polls.map((p, idx) => TR({".polldata": p, "data-idx": idx}, [
@@ -29,6 +52,8 @@ export function render(data) {
 		TD("TODO"),
 		TD(BUTTON({class: "delete"}, "X")),
 	])));
+	//TODO: If you had a poll selected (which is common), update_results_view() with the same
+	//poll, to update its results. Notably, this will happen when a poll concludes.
 }
 
 on("click", "#polls tr[data-idx]", e => {
@@ -41,7 +66,7 @@ on("click", "#polls tr[data-idx]", e => {
 	form.options.value = poll.options;
 	form.duration.value = poll.duration;
 	form.points.value = poll.points;
-	//TODO: Results
+	update_results_view(poll);
 });
 
 on("submit", "#config", e => {
