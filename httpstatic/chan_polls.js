@@ -41,6 +41,7 @@ function update_results_view(poll) {
 	]);
 }
 
+let selectedpoll = null;
 export function render(data) {
 	//TODO: If !data.polls.length, put in a placeholder
 	replace_content("#polls tbody", data.polls.map((p, idx) => TR({".polldata": p, "data-idx": idx}, [
@@ -52,14 +53,16 @@ export function render(data) {
 		TD("TODO"),
 		TD(BUTTON({class: "delete"}, "X")),
 	])));
-	//TODO: If you had a poll selected (which is common), update_results_view() with the same
-	//poll, to update its results. Notably, this will happen when a poll concludes.
+	//If you have a poll selected, update any results. Should we update everything about it? Might mess with you
+	//if you're editing the poll for subsequent usage.
+	if (selectedpoll) data.polls.forEach(p => p.title + "\n" + p.options === selectedpoll && update_results_view(p));
 }
 
 on("click", "#polls tr[data-idx]", e => {
 	const poll = e.match.polldata;
 	if (!poll) return;
 	const form = DOM("#config").elements;
+	selectedpoll = poll.title + "\n" + poll.options;
 	form.created.value = poll.created; //TODO: Format with both date and time
 	form.lastused.value = poll.lastused; //ditto
 	form.title.value = poll.title;
