@@ -96,11 +96,13 @@ void pollresult(object channel, mapping data) {
 		foreach (info->polls; int i; mapping p)
 			if (p->title == data->title && p->options == options) {idx = i; break;}
 		if (idx == -1) return; //No match? Possibly means we didn't see the begin-poll message.
+		if (has_value(info->polls[idx]->results->id, data->id)) return; //We already have the results for this poll; it's probably just gotten archived.
 		//The choices array contains some junk, like bits_votes (always zero - once upon
 		//a time, you could pay bits to vote), so we filter them. If Twitch adds more info,
 		//we want to keep that, so just delete the ones we know aren't of interest.
 		foreach (data->choices, mapping c) {m_delete(c, "bits_votes"); m_delete(c, "id");}
 		info->polls[idx]->results += ({([
+			"id": data->id,
 			"completed": time(),
 			"options": data->choices,
 		])});
@@ -114,7 +116,7 @@ void wscmd_delpoll(object channel, mapping(string:mixed) conn, mapping(string:mi
 	}->then() {send_updates_all(channel, "");};
 }
 
-void wscmd_askpoll(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void wscmd_askpoll(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	string title = String.trim(msg->title || "");
 	if (title == "") return;
 	array options = String.trim((msg->options / "\n")[*]) - ({""});
@@ -129,7 +131,7 @@ void wscmd_askpoll(object channel, mapping(string:mixed) conn, mapping(string:mi
 		default: options = options[..4]; //TODO: Give an error instead?
 	}
 	int duration = (int)msg->duration || 300;
-	twitch_api_request("https://api.twitch.tv/helix/polls",
+	mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/polls",
 		(["Authorization": channel->userid]),
 		(["method": "POST", "return_errors": 1, "json": ([
 			"broadcaster_id": channel->userid,
@@ -138,7 +140,11 @@ void wscmd_askpoll(object channel, mapping(string:mixed) conn, mapping(string:mi
 			"duration": duration,
 			"channel_points_voting_enabled": (int)msg->points ? Val.true : Val.false,
 			"channel_points_per_vote": (int)msg->points,
-		])]));
+		])])));
+	if (ret->error) {
+		werror("FAILED TO START POLL %O\n", ret);
+		//TODO: Push this out to the front end
+	}
 }
 
 protected void create(string name) {::create(name);}
