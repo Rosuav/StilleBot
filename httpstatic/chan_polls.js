@@ -34,11 +34,11 @@ function describe_duration(d) {
 
 function results_summary(options) {
 	const votes = options.toSorted((a, b) => b.votes - a.votes);
-	let totvotes = 0; options.forEach(o => totvotes += o.votes);
+	let totvotes = 0; votes.forEach(o => totvotes += o.votes);
 	if (!totvotes) return "no votes";
 	let ret = [];
 	//With five options, this might get quite long - only show the winner and runner-up
-	options.forEach(o => o.votes && ret.length < 2 && ret.push(Math.floor(o.votes * 100 / totvotes) + "% " + o.title));
+	votes.forEach(o => o.votes && ret.length < 2 && ret.push(Math.floor(o.votes * 100 / totvotes) + "% " + o.title));
 	return ret.join(", ");
 }
 
