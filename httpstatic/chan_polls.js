@@ -2,6 +2,11 @@ import {lindt, replace_content, on} from "https://rosuav.github.io/choc/factory.
 const {BUTTON, CAPTION, LI, OPTION, SELECT, TABLE, TBODY, TD, TH, THEAD, TIME, TR, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
+function format_date(d) {
+	const date = new Date(d * 1000);
+	return date.toLocaleString(); //Is this useful enough?
+}
+
 function DATE(d) {
 	if (!d) return "(unknown)";
 	const date = new Date(d * 1000);
@@ -94,8 +99,8 @@ on("click", "#polls tr[data-idx]", e => {
 	if (!poll) return;
 	const form = DOM("#config").elements;
 	selectedpoll = poll.title + "\n" + poll.options;
-	form.created.value = poll.created; //TODO: Format with both date and time
-	form.lastused.value = poll.lastused; //ditto
+	form.created.value = format_date(poll.created);
+	form.lastused.value = format_date(poll.lastused);
 	form.title.value = poll.title;
 	form.options.value = poll.options;
 	form.duration.value = poll.duration;
