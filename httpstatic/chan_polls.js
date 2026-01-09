@@ -39,6 +39,7 @@ on("click", "#polls tr[data-idx]", e => {
 	form.lastused.value = poll.lastused; //ditto
 	form.title.value = poll.title;
 	form.options.value = poll.options;
+	form.duration.value = poll.duration;
 	form.points.value = poll.points;
 	//TODO: Results
 });
