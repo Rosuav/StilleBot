@@ -293,3 +293,5 @@
   - Consider changing format from "hitpoints" to "avatar", and then having a format_style
     to specify whether they get hitpoints.
 * BUG: /c/commands Save All button is broken, seems to still send the old message
+* BUG: /c/minigames can't create rewards if not already authenticated. Check scopes and
+  put a button on the page if needed.
