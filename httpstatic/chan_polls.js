@@ -23,6 +23,15 @@ function DATE(d) {
 	]);
 }
 
+//Assumes that the duration will be valid for a Twitch poll, 15 <= d <= 1800
+//If it isn't, the display may be weird.
+function describe_duration(d) {
+	if (d < 60) return d + " secs";
+	if (d === 60) return "1 min"; //The only singular that's relevant here
+	if (d % 60) return Math.floor(d / 60) + ":" + ("0" + (d%60)).slice(-2);
+	return d / 60 + " mins";
+}
+
 function results_summary(options) {
 	const votes = options.toSorted((a, b) => b.votes - a.votes);
 	let totvotes = 0; options.forEach(o => totvotes += o.votes);
@@ -84,7 +93,7 @@ export function render(data) {
 		TD(DATE(p.created)), TD(DATE(p.lastused)),
 		TD(p.title),
 		TD(UL(p.options.split("\n").map(o => LI(o)))),
-		TD(p.duration+""), //TODO: 60 -> "1 minute" etc
+		TD(describe_duration(p.duration)),
 		TD(p.points || ""),
 		TD(p.results.length && results_summary(p.results[p.results.length - 1].options)),
 		TD(BUTTON({class: "delete"}, "X")),
@@ -103,6 +112,10 @@ on("click", "#polls tr[data-idx]", e => {
 	form.lastused.value = format_date(poll.lastused);
 	form.title.value = poll.title;
 	form.options.value = poll.options;
+	if (!DOM("#duration option[value=\"" + poll.duration + "\"]")) {
+		//Note that we never *remove* these, so if you have weird durations, they'll stick around.
+		DOM("#duration").append(choc.OPTION({value: poll.duration}, describe_duration(poll.duration)));
+	}
 	form.duration.value = poll.duration;
 	form.points.value = poll.points;
 	update_results_view(poll);
