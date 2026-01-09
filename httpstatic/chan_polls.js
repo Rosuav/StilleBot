@@ -74,8 +74,8 @@ function update_results_view(poll) {
 
 let selectedpoll = null;
 export function render(data) {
-	//TODO: If !data.polls.length, put in a placeholder
-	replace_content("#polls tbody", data.polls.map((p, idx) => TR({".polldata": p, "data-idx": idx}, [
+	if (!data.polls.length) replace_content("#polls tbody", [TR(TD({colSpan: 8}, "Ask a poll for it to show up here!"))]);
+	else replace_content("#polls tbody", data.polls.map((p, idx) => TR({".polldata": p, "data-idx": idx}, [
 		TD(DATE(p.created)), TD(DATE(p.lastused)),
 		TD(p.title),
 		TD(UL(p.options.split("\n").map(o => LI(o)))),
