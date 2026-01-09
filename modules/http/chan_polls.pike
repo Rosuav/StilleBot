@@ -49,6 +49,7 @@ input[readonly] {
 	background-color: #ddd;
 }
 
+#resultdetails {display: flex;}
 #resultdetails table th {padding: 8px;}
 </style>
 ";

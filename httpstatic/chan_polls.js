@@ -28,12 +28,14 @@ function results_summary(options) {
 	return ret.join(", ");
 }
 
+let pollresults = { };
 function show_poll_results(rslt) {
 	if (!rslt) replace_content("#resultdetails", "");
 	const opts = rslt.options.toSorted((a, b) => b.votes - a.votes);
 	let totvotes = 0; rslt.options.forEach(o => totvotes += o.votes);
 	if (!totvotes) totvotes = 1; //If no votes were cast, everything shows as 0%.
 	replace_content("#resultdetails", [
+		BUTTON({type: "button", class: "pickresult", "data-id": rslt.previd, disabled: !rslt.previd}, "<"),
 		TABLE([
 			CAPTION(["Poll conducted ", DATE(rslt.completed)]),
 			THEAD(TR([TH("Option"), TH("Votes"), TH("Percentage")])),
@@ -43,10 +45,10 @@ function show_poll_results(rslt) {
 				TD(Math.floor(o.votes * 100 / totvotes) + "%"),
 			]))),
 		]),
+		BUTTON({type: "button", class: "pickresult", "data-id": rslt.nextid, disabled: !rslt.nextid}, ">"),
 	]);
 }
 
-let pollresults = { };
 function update_results_view(poll) {
 	replace_content("#resultsummary", [
 		//Summary of all times this has been asked
@@ -61,7 +63,12 @@ function update_results_view(poll) {
 		]),
 	]);
 	pollresults = { };
-	poll.results.forEach(r => pollresults[r.id] = r);
+	let lastid = null;
+	for (let r of poll.results) {
+		pollresults[r.id] = {...r, previd: lastid};
+		if (lastid) pollresults[lastid].nextid = r.id;
+		lastid = r.id;
+	}
 	show_poll_results(pollresults[DOM("#pickresults").value]);
 }
 
@@ -97,6 +104,7 @@ on("click", "#polls tr[data-idx]", e => {
 });
 
 on("change", "#pickresults", e => show_poll_results(pollresults[e.match.value]));
+on("click", ".pickresult", e => show_poll_results(pollresults[DOM("#pickresults").value = e.match.dataset.id]));
 
 on("submit", "#config", e => {
 	e.preventDefault();
