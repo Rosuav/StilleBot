@@ -75,7 +75,7 @@ export function render(data) {
 		TD(UL(p.options.split("\n").map(o => LI(o)))),
 		TD(p.duration+""), //TODO: 60 -> "1 minute" etc
 		TD(p.points || ""),
-		TD("TODO"),
+		TD(p.results.length && results_summary(p.results[p.results.length - 1].options)),
 		TD(BUTTON({class: "delete"}, "X")),
 	])));
 	//If you have a poll selected, update any results. Should we update everything about it? Might mess with you

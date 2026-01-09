@@ -12,8 +12,8 @@ constant markdown = #"# Polls
 When you run a poll on your channel, it will show up here. You can rerun any poll
 or make adjustments, and go back and see the past polls and their results.
 
-Created | Last asked | Title | Options | Duration | Pts/vote | Results |
---------|------------|-------|---------|----------|----------|---------|-
+Created | Last asked | Title | Options | Duration | Pts/vote | Latest Results |
+--------|------------|-------|---------|----------|----------|----------------|-
 loading... | -
 {:#polls}
 
