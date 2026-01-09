@@ -48,6 +48,8 @@ loading... | -
 input[readonly] {
 	background-color: #ddd;
 }
+
+#resultdetails table th {padding: 8px;}
 </style>
 ";
 

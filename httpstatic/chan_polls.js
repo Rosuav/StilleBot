@@ -1,5 +1,5 @@
 import {lindt, replace_content, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, LI, OPTION, SELECT, TABLE, TBODY, TD, TH, THEAD, TIME, TR, UL} = lindt; //autoimport
+const {BUTTON, CAPTION, LI, OPTION, SELECT, TABLE, TBODY, TD, TH, THEAD, TIME, TR, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 function DATE(d) {
@@ -35,8 +35,8 @@ function show_poll_results(rslt) {
 	let totvotes = 0; rslt.options.forEach(o => totvotes += o.votes);
 	if (!totvotes) totvotes = 1; //If no votes were cast, everything shows as 0%.
 	replace_content("#resultdetails", [
-		"Poll conducted ", DATE(rslt.completed),
 		TABLE([
+			CAPTION(["Poll conducted ", DATE(rslt.completed)]),
 			THEAD(TR([TH("Option"), TH("Votes"), TH("Percentage")])),
 			TBODY(opts.map(o => TR([
 				TD(o.title),
