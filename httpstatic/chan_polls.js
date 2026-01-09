@@ -30,7 +30,6 @@ function results_summary(options) {
 
 function show_poll_results(rslt) {
 	if (!rslt) replace_content("#resultdetails", "");
-	console.log(rslt)
 	const opts = rslt.options.toSorted((a, b) => b.votes - a.votes);
 	let totvotes = 0; rslt.options.forEach(o => totvotes += o.votes);
 	if (!totvotes) totvotes = 1; //If no votes were cast, everything shows as 0%.
@@ -51,8 +50,8 @@ let pollresults = { };
 function update_results_view(poll) {
 	replace_content("#resultsummary", [
 		//Summary of all times this has been asked
-		SELECT({id: "pickresults", value: poll.results[poll.results.length - 1]?.completed}, [
-			poll.results.map(r => OPTION({value: r.completed}, [
+		SELECT({id: "pickresults", value: poll.results[poll.results.length - 1]?.id}, [
+			poll.results.map(r => OPTION({value: r.id}, [
 				poll.results.length > 1 && [ //Differentiate results by date if there are multiple. If multiple on same day, sorry, use the sequence.
 					DATE(r.completed), //NOTE: Browsers ignore the element and just include the text. Would be nice to get the hover but so be it.
 					" - ",
@@ -62,7 +61,7 @@ function update_results_view(poll) {
 		]),
 	]);
 	pollresults = { };
-	poll.results.forEach(r => pollresults[r.completed] = r);
+	poll.results.forEach(r => pollresults[r.id] = r);
 	show_poll_results(pollresults[DOM("#pickresults").value]);
 }
 
