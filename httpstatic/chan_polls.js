@@ -1,5 +1,5 @@
 import {lindt, replace_content, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, IMG, LI, OPTION, SELECT, SELECTEDCONTENT, TD, TIME, TR, UL} = lindt; //autoimport
+const {BUTTON, LI, OPTION, SELECT, TABLE, TBODY, TD, TH, THEAD, TIME, TR, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 function DATE(d) {
@@ -28,17 +28,42 @@ function results_summary(options) {
 	return ret.join(", ");
 }
 
+function show_poll_results(rslt) {
+	if (!rslt) replace_content("#resultdetails", "");
+	console.log(rslt)
+	const opts = rslt.options.toSorted((a, b) => b.votes - a.votes);
+	let totvotes = 0; rslt.options.forEach(o => totvotes += o.votes);
+	if (!totvotes) totvotes = 1; //If no votes were cast, everything shows as 0%.
+	replace_content("#resultdetails", [
+		"Poll conducted ", DATE(rslt.completed),
+		TABLE([
+			THEAD(TR([TH("Option"), TH("Votes"), TH("Percentage")])),
+			TBODY(opts.map(o => TR([
+				TD(o.title),
+				TD([""+o.votes, o.channel_points_votes && " (" + (o.votes - o.channel_points_votes) + "+" + o.channel_points_votes + ")"]),
+				TD(Math.floor(o.votes * 100 / totvotes) + "%"),
+			]))),
+		]),
+	]);
+}
+
+let pollresults = { };
 function update_results_view(poll) {
-	replace_content("#results", [
+	replace_content("#resultsummary", [
 		//Summary of all times this has been asked
 		SELECT({id: "pickresults", value: poll.results[poll.results.length - 1]?.completed}, [
 			poll.results.map(r => OPTION({value: r.completed}, [
-				DATE(r.completed), //NOTE: Browsers ignore the element and just include the text. Would be nice to get the hover but so be it.
-				" - ",
+				poll.results.length > 1 && [ //Differentiate results by date if there are multiple. If multiple on same day, sorry, use the sequence.
+					DATE(r.completed), //NOTE: Browsers ignore the element and just include the text. Would be nice to get the hover but so be it.
+					" - ",
+				],
 				results_summary(r.options),
 			])),
 		]),
 	]);
+	pollresults = { };
+	poll.results.forEach(r => pollresults[r.completed] = r);
+	show_poll_results(pollresults[DOM("#pickresults").value]);
 }
 
 let selectedpoll = null;
@@ -71,6 +96,8 @@ on("click", "#polls tr[data-idx]", e => {
 	form.points.value = poll.points;
 	update_results_view(poll);
 });
+
+on("change", "#pickresults", e => show_poll_results(pollresults[e.match.value]));
 
 on("submit", "#config", e => {
 	e.preventDefault();
