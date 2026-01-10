@@ -295,3 +295,5 @@
 * BUG: /c/commands Save All button is broken, seems to still send the old message
 * BUG: /c/minigames can't create rewards if not already authenticated. Check scopes and
   put a button on the page if needed.
+  - What other scopes needed for minigame creation? Technically bit boss doesn't need any,
+    but it would be surprising if it didn't respond to bits.
