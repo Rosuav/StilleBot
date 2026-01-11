@@ -21,12 +21,14 @@ export function render(data) {
 	]));
 }
 
+//NOTE: Saving of existing commands is handled by command_editor.js which also hooks #saveall
+//This function need only handle the "new command" row.
 function addcmd(mode) {
 	const newcmd = DOM("#newcmd_name");
 	const cmdname = newcmd.value, response = DOM("#newcmd_resp").value;
 	newcmd.value = DOM("#newcmd_resp").value = "";
 	if (cmdname !== "" && response !== "") {
-		ws_sync.send({cmd: "update", cmdname, response});
+		ws_sync.send({cmd: "cmdedit_update", cmdname, response});
 		newcmd.closest("tr").classList.remove("dirty");
 	}
 	else if (mode !== "saveall" || cmdname || response)
