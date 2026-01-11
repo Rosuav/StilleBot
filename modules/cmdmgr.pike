@@ -568,7 +568,8 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 		channel->redemption_commands[response->redemption] += ({cmd});
 		updates["rew " + response->redemption] = 1;
 	}
-	if (object handler = G->G->websocket_types->chan_commands) {
+	//Push out notifications, once we've confirmed that it's been to the database
+	if (object handler = extra->?nosave && G->G->websocket_types->chan_commands) {
 		//If the command name starts with "!", it's a special, to be
 		//sent out to "!!#channel" and not to "#channel".
 		object cmdedit = G->G->websocket_types->cmdedit;
