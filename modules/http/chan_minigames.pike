@@ -327,7 +327,8 @@ __async__ void update_boss(object channel, mapping game) {
 		game->initialboss = (int)defvoice;
 		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->boss = game;});
 	}
-	if (!game->monitorid) {
+	mapping mon = G->G->DB->load_cached_config(channel->userid, "monitors");
+	if (!mon[game->monitorid]) { //Most likely, it either exists and is valid or doesn't exist (game->monitorid is null), but if the monitor is deleted, recreate it on next poke
 		//Note that the boss's current HP is max HP minus damage, and is not directly tracked.
 		await(reset_boss(channel, cfg));
 		[game->monitorid, mapping info] = G->G->websocket_types->chan_monitors->create_monitor(channel, ([
