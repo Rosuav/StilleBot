@@ -145,7 +145,6 @@
   - Autoindent? After a brace, indent. After a builtin function call or keyword,
     indent if there was nothing on the previous line. Dedent appropriately??
 * Minor changes noted during massive DB migration:
-  - chan_giveaway.pike giveaway_tickets[] should use user IDs (see FIXME-IDS)
   - Remove req->misc->session->token. Instead, have req->misc->token which is
     taken from the user ID, and always store the token against that user (not the
     session).
