@@ -276,11 +276,6 @@
     Monitor to see if there are any other causes of replication failure.
 * /serverstatus during hop from Gideon to Sikorsky might be losing the Gideon socket?? It's
   staying with the Gideon database reporting that it's read/write but it isn't actually RW.
-* Can I implement Happy Eyeballs into poll.pike::get_url_data() ?
-  - Probably not a huge priority; IPv6 support does exist in core, but it might be nice to
-    spawn multiple concurrent queries, with the first one to respond being used. Only
-    relevant when Sikorsky's or Gideon's IPv6 routing is broken, which has happened but is
-    probably a big enough problem to fix that way rather than with Happy Eyeballs.
 * Add something to /serverstatus to do updates incl pulling changes
   - Keep the GUI for fast updates maybe? It might not even be necessary though, just use
     the web UI.
