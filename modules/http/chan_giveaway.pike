@@ -133,9 +133,11 @@ Concurrent.Future set_redemption_status(mapping redem, string status) {
 __async__ void update_ticket_count(mapping givcfg, mapping redem, int|void removal) {
 	mapping values = givcfg->?rewards || ([]);
 	if (!values[redem->reward->id]) return; //No value assigned to this reward, so it's presumably not a giveaway ticket redemption
-	string chan = redem->broadcaster_login || redem->broadcaster_user_login;
-	mapping people = giveaway_tickets[chan];
-	if (!people) people = giveaway_tickets[chan] = ([]);
+	string chan = redem->broadcaster_login || redem->broadcaster_user_login; //FIXME-IDS
+	int channelid = (int)redem->broadcaster_id || (int)redem->broadcaster_user_id;
+	object channel = G->G->irc->id[channelid];
+	mapping people = giveaway_tickets[chan]; //FIXME-IDS
+	if (!people) people = giveaway_tickets[chan] = ([]); //FIXME-IDS
 	if (!people[redem->user_id]) people[redem->user_id] = ([
 		"name": redem->user_name,
 		"position": sizeof(people) + 1, //First person to buy a ticket gets position 1
@@ -178,7 +180,6 @@ __async__ void update_ticket_count(mapping givcfg, mapping redem, int|void remov
 						write("%s: %d (%+d)\n", ts_labels[i], ts, ts - time());
 				};
 				write("Cancelled (%d/%d): %O\n", now, max, resp);
-				object channel = G->G->irc->channels["#" + chan];
 				//If max is zero, you were probably too late. Should there be a different message?
 				if (max) channel->trigger_special("!giveaway_toomany", (["user": redem->user_name]), ([
 					"{title}": givcfg->title || "",
@@ -194,7 +195,6 @@ __async__ void update_ticket_count(mapping givcfg, mapping redem, int|void remov
 			if (!giveaway_purchases[redem->id]) {
 				//Only announce a given purchase once, even if we do a full recalc of giveaway_tickets
 				giveaway_purchases[redem->id] = 1;
-				object channel = G->G->irc->channels["#" + chan];
 				write("GIVEAWAY: %s bought %d, now %d/%d\n", redem->user_name,
 					values[redem->reward->id], now, givcfg->max_tickets);
 				channel->trigger_special("!giveaway_ticket", (["user": redem->user_name]), ([
@@ -208,23 +208,23 @@ __async__ void update_ticket_count(mapping givcfg, mapping redem, int|void remov
 	}
 }
 
-array tickets_in_order(string chan) {
+array tickets_in_order(string chan) { //FIXME-IDS
 	array tickets = ({ });
-	foreach (giveaway_tickets[chan] || ([]); ; mapping person)
+	foreach (giveaway_tickets[chan] || ([]); ; mapping person) //FIXME-IDS
 		if (person->tickets) tickets += ({person});
 	sort(tickets->position, tickets);
 	return tickets;
 }
 
 //Send an update based on cached data rather than forcing a full recalc every time
-void notify_websockets(int chan, string channame, mapping givcfg) { //TODO: Drop the second param
-	send_updates_all("control#" + chan, ([
+void notify_websockets(int channelid, string channame, mapping givcfg) { //FIXME-IDS
+	send_updates_all("control#" + channelid, ([
 		"tickets": tickets_in_order(channame),
 		"last_opened": givcfg->last_opened, "last_closed": givcfg->last_closed,
 		"is_open": givcfg->is_open, "end_time": givcfg->end_time,
 		"last_winner": givcfg->last_winner,
 	]));
-	send_updates_all("view#" + chan, ([
+	send_updates_all("view#" + channelid, ([
 		"last_opened": givcfg->last_opened, "last_closed": givcfg->last_closed,
 		"is_open": givcfg->is_open, "end_time": givcfg->end_time,
 		"last_winner": givcfg->last_winner,
@@ -239,7 +239,7 @@ __async__ void redemption(object channel, string rewardid, int(0..1) refund, map
 }
 
 //List all redemptions for a particular reward ID
-Concurrent.Future list_redemptions(int broadcaster_id, string chan, string id) {
+Concurrent.Future list_redemptions(int broadcaster_id, string id) {
 	return get_helix_paginated("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions",
 		([
 			"broadcaster_id": (string)broadcaster_id,
@@ -247,7 +247,7 @@ Concurrent.Future list_redemptions(int broadcaster_id, string chan, string id) {
 			"status": "UNFULFILLED",
 			"first": "50",
 		]),
-		(["Authorization": "Bearer " + token_for_user_login(chan)[0]]), //TODO: Switch to user_id once that's the fundamental
+		(["Authorization": broadcaster_id]),
 	);
 }
 
@@ -255,9 +255,8 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	mapping givcfg = await(G->G->DB->load_config(req->misc->channel->userid, "giveaways"));
 	mapping cfg = req->misc->channel->config;
-	string chan = req->misc->channel->name[1..];
 	string login = "[Broadcaster login](:.twitchlogin data-scopes=channel:manage:redemptions)";
-	if (string scopes = chan != "!demo" && ensure_bcaster_token(req, "channel:manage:redemptions")) return render(req, ([
+	if (string scopes = req->misc->channel->userid && ensure_bcaster_token(req, "channel:manage:redemptions")) return render(req, ([
 		"error": "This page will become available once the broadcaster has logged in and configured redemptions.",
 		"login": "[Broadcaster login](:.twitchlogin data-scopes=" + replace(scopes, " ", "%20") + ")",
 	]) | req->misc->chaninfo);
@@ -289,7 +288,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 bool need_mod(string grp) {return grp == "control";}
 __async__ mapping get_chan_state(object channel, string grp)
 {
-	string chan = channel->name[1..];
+	string chan = channel->name[1..]; //FIXME-IDS
 	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaways"));
 	if (grp == "view") return ([
 		"title": givcfg->?title,
@@ -298,8 +297,8 @@ __async__ mapping get_chan_state(object channel, string grp)
 	]);
 	if (grp != "control") return 0;
 	array rewards = ({ });
-	if (mixed ex = chan != "!demo" && catch {rewards = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + channel->userid,
-		(["Authorization": "Bearer " + token_for_user_id(channel->userid)[0]])))->data;
+	if (mixed ex = channel->userid && catch {rewards = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?only_manageable_rewards=true&broadcaster_id=" + channel->userid,
+		(["Authorization": channel->userid])))->data;
 	}) {
 		if (arrayp(ex) && stringp(ex[0]) && has_value(ex[0], "Error from Twitch") && has_value(ex[0], "401")) {
 			return (["error": "Unable to list channel rewards, may need reauthentication"]);
@@ -307,13 +306,13 @@ __async__ mapping get_chan_state(object channel, string grp)
 		werror("Unexpected error listing channel rewards: %s\n", describe_backtrace(ex));
 		return 0;
 	}
-	array(array) redemptions = chan == "!demo" ? ({ }) : await(Concurrent.all(list_redemptions(channel->userid, chan, rewards->id[*])));
+	array(array) redemptions = !channel->userid ? ({ }) : await(Concurrent.all(list_redemptions(channel->userid, rewards->id[*])));
 	//Every time a new websocket is established, fully recalculate. Guarantee fresh data.
-	giveaway_tickets[chan] = ([]);
+	giveaway_tickets[chan] = ([]); //FIXME-IDS
 	foreach (redemptions * ({ }), mapping redem) await(update_ticket_count(givcfg, redem));
 	return ([
 		"title": givcfg->?title,
-		"rewards": rewards, "tickets": tickets_in_order(chan),
+		"rewards": rewards, "tickets": tickets_in_order(chan), //FIXME-IDS
 		"is_open": givcfg->is_open, "end_time": givcfg->end_time,
 		"last_winner": givcfg->last_winner,
 		"can_activate": !channel->commands->tickets || !channel->commands->refund,
@@ -379,41 +378,39 @@ __async__ mapping get_chan_state(object channel, string grp)
 	send_updates_all(channel, "view", (["title": givcfg->title]));
 }
 
-mapping(string:mixed) autoclose = ([]);
-__async__ void open_close(string chan, int broadcaster_id, int want_open) {
+mapping(int:mixed) autoclose = ([]);
+__async__ void open_close(string chan, int broadcaster_id, int want_open) { //FIXME-IDS
 	mapping givcfg = await(G->G->DB->load_config(broadcaster_id, "giveaways", 0));
 	if (!givcfg) return; //No rewards, nothing to open/close
-	string token = token_for_user_login(chan)[0];
-	if (!token) {werror("Can't open/close giveaway w/o bcaster token\n"); return;}
 	givcfg->is_open = want_open;
 	givcfg[want_open ? "last_opened" : "last_closed"] = time();
-	if (mixed id = m_delete(autoclose, chan)) remove_call_out(id);
+	if (mixed id = m_delete(autoclose, broadcaster_id)) remove_call_out(id);
 	if (int d = want_open && givcfg->duration) {
 		givcfg->end_time = time() + d;
-		autoclose[chan] = call_out(open_close, d, chan, broadcaster_id, 0);
+		autoclose[broadcaster_id] = call_out(open_close, d, chan, broadcaster_id, 0); //FIXME-IDS
 	}
 	else m_delete(givcfg, "end_time");
 	//Note: Updates reward status in fire and forget mode.
 	foreach (givcfg->rewards || ([]); string id;)
 		twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id + "&id=" + id,
-			(["Authorization": "Bearer " + token]),
+			(["Authorization": broadcaster_id]),
 			(["method": "PATCH", "json": ([
 				"is_enabled": want_open || givcfg->pausemode,
 				"is_paused": !want_open && givcfg->pausemode,
 			])]),
 		);
 	await(G->G->DB->save_config(broadcaster_id, "giveaways", givcfg));
-	notify_websockets(broadcaster_id, chan, givcfg);
-	object channel = G->G->irc->channels["#" + chan];
-	array people = values(giveaway_tickets[chan]);
+	notify_websockets(broadcaster_id, chan, givcfg); //FIXME-IDS
+	object channel = G->G->irc->id[broadcaster_id];
+	array people = values(giveaway_tickets[chan]); //FIXME-IDS
 	int tickets = `+(0, @people->tickets), entrants = sizeof(people->tickets - ({0}));
-	if (givcfg->is_open) channel->trigger_special("!giveaway_started", (["user": chan]), ([
+	if (givcfg->is_open) channel->trigger_special("!giveaway_started", (["user": channel->login]), ([
 		"{title}": givcfg->title || "",
 		"{duration}": (string)givcfg->duration,
 		"{duration_hms}": describe_time_short(givcfg->duration),
 		"{duration_english}": describe_time(givcfg->duration),
 	]));
-	else channel->trigger_special("!giveaway_closed", (["user": chan]), ([
+	else channel->trigger_special("!giveaway_closed", (["user": channel->login]), ([
 		"{title}": givcfg->title || "",
 		"{tickets_total}": (string)tickets,
 		"{entries_total}": (string)entrants,
@@ -432,7 +429,7 @@ __async__ mapping|zero websocket_cmd_master(mapping(string:mixed) conn, mapping(
 	if (conn->session->fake) return (["cmd": "demo"]);
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
-	string chan = channel->name[1..];
+	string chan = channel->name[1..]; //FIXME-IDS
 	int broadcaster_id = channel->userid;
 	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaways", 0));
 	if (!givcfg) return 0; //No rewards, nothing to activate or anything
@@ -444,7 +441,7 @@ __async__ mapping|zero websocket_cmd_master(mapping(string:mixed) conn, mapping(
 				send_update(conn, (["message": "Giveaway is already " + (want_open ? "open" : "closed")]));
 				return 0;
 			}
-			open_close(chan, broadcaster_id, want_open);
+			open_close(chan, broadcaster_id, want_open); //FIXME-IDS
 			break;
 		}
 		case "rig": {
@@ -455,7 +452,7 @@ __async__ mapping|zero websocket_cmd_master(mapping(string:mixed) conn, mapping(
 		case "pick": {
 			//NOTE: This is subject to race conditions if the giveaway is open
 			//at the time of drawing. Close the giveaway first.
-			array people = (array)(giveaway_tickets[chan] || ([]));
+			array people = (array)(giveaway_tickets[chan] || ([])); //FIXME-IDS
 			int tot = 0;
 			array partials = ({ });
 			foreach (people, [mixed id, mapping person]) partials += ({tot += person->tickets});
@@ -477,9 +474,9 @@ __async__ mapping|zero websocket_cmd_master(mapping(string:mixed) conn, mapping(
 				winner[1]->redemptions = ([]);
 				winner[1]->tickets = 0;
 			}
-			notify_websockets(broadcaster_id, chan, givcfg);
+			notify_websockets(broadcaster_id, chan, givcfg); //FIXME-IDS
 			await(G->G->DB->save_config(channel->userid, "giveaways", givcfg));
-			channel->trigger_special("!giveaway_winner", (["user": chan]), ([
+			channel->trigger_special("!giveaway_winner", (["user": channel->login]), ([
 				"{title}": givcfg->title || "",
 				"{winner_name}": givcfg->last_winner[1],
 				"{winner_tickets}": (string)givcfg->last_winner[2],
@@ -495,19 +492,19 @@ __async__ mapping|zero websocket_cmd_master(mapping(string:mixed) conn, mapping(
 			if (!existing) break; //No rewards, nothing to cancel
 			m_delete(givcfg, "last_winner");
 			//Clear out the front end's view of ticket purchases to reduce flicker
-			foreach (values(giveaway_tickets[chan] || ([])), mapping p) {
+			foreach (values(giveaway_tickets[chan] || ([])), mapping p) { //FIXME-IDS
 				p->redemptions = ([]);
 				p->tickets = 0;
 			}
-			notify_websockets(broadcaster_id, chan, givcfg);
+			notify_websockets(broadcaster_id, chan, givcfg); //FIXME-IDS
 			await(G->G->DB->save_config(channel->userid, "giveaways", givcfg));
 			if (givcfg->refund_nonwinning) msg->action = "cancel";
-			array(array) redemptions = await(Concurrent.all(list_redemptions(broadcaster_id, chan, indices(existing)[*])));
+			array(array) redemptions = await(Concurrent.all(list_redemptions(broadcaster_id, indices(existing)[*])));
 			foreach (redemptions * ({ }), mapping redem)
 				set_redemption_status(redem, msg->action == "cancel" ? "CANCELED" : "FULFILLED");
-			array people = values(giveaway_tickets[chan]);
+			array people = values(giveaway_tickets[chan]); //FIXME-IDS
 			int tickets = sizeof(people->tickets) && `+(@people->tickets), entrants = sizeof(people->tickets - ({0}));
-			channel->trigger_special("!giveaway_ended", (["user": chan]), ([
+			channel->trigger_special("!giveaway_ended", (["user": channel->login]), ([
 				"{title}": givcfg->title || "",
 				"{tickets_total}": (string)tickets,
 				"{entries_total}": (string)entrants,
@@ -601,8 +598,8 @@ __async__ mapping message_params(object channel, mapping person, array params, m
 	if (cmd != "refund" && cmd != "status") error("Invalid subcommand\n");
 	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaways", 0));
 	if (!givcfg) error("Giveaways not active\n"); //Not the same as "giveaway not open", this one will not normally be seen
-	string chan = channel->name[1..];
-	mapping people = giveaway_tickets[chan] || ([]);
+	string chan = channel->name[1..]; //FIXME-IDS
+	mapping people = giveaway_tickets[chan] || ([]); //FIXME-IDS
 	mapping you = people[(string)person->uid] || ([]);
 	if (cmd == "refund") {
 		if (!you->tickets) return (["{action}": "none", "{tickets}": "0"]);
