@@ -220,7 +220,7 @@ class channel(mapping identity) {
 			};
 		}
 		load_commands(loading, commands);
-		establish_notifications(userid); //CHECK ME: Is this too soon on initial startup?
+		establish_notifications(userid);
 	}
 
 	__async__ void load_commands(multiset|void loading, array|void cmds) {

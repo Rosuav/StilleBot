@@ -497,6 +497,12 @@ void raidout(object _, mapping info) {
 		(int)info->to_broadcaster_user_id, info->to_broadcaster_user_name, 0, (int)info->viewers);
 }
 
+@EventNotify("channel.bits.use=1", ({"bits:read"})):
+void bitsused(object channel, mapping data) {
+	werror("Bits used! See bits.log for details. %O\n", channel);
+	Stdio.append_file("bits.log", sprintf("%sBITS USED %O\n%O\n\n", ctime(time()), channel, data));
+}
+
 __async__ void check_hooks() {
 	Concurrent.Promise completion;
 	if (!G->G->eventhooks_ready) G->G->eventhooks_ready = completion = Concurrent.Promise();
@@ -543,12 +549,15 @@ __async__ void check_hooks() {
 		if (!userid) continue; //Ignore the demo
 		//Seems unnecessary to do all this work every time.
 		multiset scopes = (multiset)(token_for_user_id(userid)[1] / " ");
+		//TODO: Replace these with a call to establish_notifications(), ensuring that the conditions all work
 		//TODO: Check if the bot is actually a mod and use that permission
 		if (scopes["moderator:read:followers"]) //If we have the necessary permission, use the broadcaster's authentication.
 			G->G->establish_hook_notification(userid, "channel.follow=2", (["broadcaster_user_id": (string)userid, "moderator_user_id": (string)userid]));
 		G->G->establish_hook_notification(userid, "channel.update=2", (["broadcaster_user_id": (string)userid]));
 		G->G->establish_hook_notification("from_" + userid, "channel.raid=1", (["from_broadcaster_user_id": (string)userid]));
 		G->G->establish_hook_notification("to_" + userid, "channel.raid=1", (["to_broadcaster_user_id": (string)userid]));
+		if (scopes["bits:read"])
+			G->G->establish_hook_notification(userid, "channel.bits.use=1", (["broadcaster_user_id": (string)userid]));
 	}
 
 	//If we don't have a conduitbroken eventhook for our local address, establish one.
