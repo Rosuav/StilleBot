@@ -288,3 +288,4 @@
   we can observe bits and subs go through as soon as the bot is activated. Do monitors
   autoupdate correctly? If not, find all places where bits/subs are referenced, and add
   some sort of annotation, possibly including a broadcaster login button.
+* Make an easy thing in /c/minigames to remove the bg/border from RPS (and claw?)

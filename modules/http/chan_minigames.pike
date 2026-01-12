@@ -219,6 +219,7 @@ __async__ void rpsrebuild(object channel) {
 		#}, cfg->monitorid, cmdname, response), (["language": "mustard"]));
 		if (!has_value(game->commands || ({ }), cmdname)) game->commands += ({cmdname});
 	}
+	if (channel->expand_variables("$rpsactive$") == "") channel->set_variable("rpsactive", "2", "set");
 	if (game->commands != orig) {
 		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->rps = game;});
 		send_updates_all(channel, "");
