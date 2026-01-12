@@ -110,11 +110,16 @@ export function render(data) {
 	]));
 	const crown = {...sections.crown, ...(data.crown || { })};
 	replace_content("#crown", UL([
+		!!rewardscopes && LI([
+			"NOTE: Enabling this minigame requires permission from the broadcaster. ",
+			rewardscopes === "bcaster" ? " Until then, this cannot be activated."
+			: BUTTON({class: "twitchlogin", "data-scopes": rewardscopes}, "Grant permission"),
+		]),
 		LI([
 			"Enabled? ",
 			SELECT({name: "enabled", value: crown.enabled, "data-dangerous": crown.enabled ? "Are you sure you want to disable crown seizing entirely?" : ""}, [
 				OPTION({value: "0"}, "No"),
-				OPTION({value: "1"}, "Yes"),
+				OPTION({value: "1", disabled: !!rewardscopes}, "Yes"),
 			]),
 			" Set to Yes to make the magic happen!",
 		]),
@@ -160,16 +165,19 @@ export function render(data) {
 	]));
 	const first = {...sections.first, ...(data.first || { })};
 	replace_content("#first", UL([
-		LI("Select which rewards you want active."),
+		!!rewardscopes ? LI([
+			"NOTE: Creating these rewards requires permission from the broadcaster. ",
+			rewardscopes !== "bcaster" && BUTTON({class: "twitchlogin", "data-scopes": rewardscopes}, "Grant permission"),
+		]) : LI("Select which rewards you want active."),
 		["First", "Second", "Third", "Last"].map(which => LI([
 			LABEL([
-				INPUT({type: "checkbox", name: which.toLowerCase(), checked: Boolean(first[which.toLowerCase()])}),
+				INPUT({type: "checkbox", name: which.toLowerCase(), checked: Boolean(first[which.toLowerCase()]), disabled: !!rewardscopes}),
 				SPAN({style: "display: inline-block; width: 4em; padding-left: 0.25em;"}, which),
 			]),
 			" ",
 			INPUT({name: which.toLowerCase() + "desc", value: first[which.toLowerCase() + "desc"] || "", size: 80}),
 		])),
-		LI(LABEL([INPUT({type: "checkbox", name: "checkin", checked: Boolean(first.checkin)}), " Check-in (may be redeemed once each by all users)"])),
+		LI(LABEL([INPUT({type: "checkbox", name: "checkin", checked: Boolean(first.checkin), disabled: !!rewardscopes}), " Check-in (may be redeemed once each by all users)"])),
 	]));
 }
 

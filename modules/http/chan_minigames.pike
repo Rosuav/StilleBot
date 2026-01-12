@@ -156,7 +156,12 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 		mapping bv = G->G->DB->load_cached_config(0, "voices");
 		if (bv[defvoice]) voices[defvoice] = bv[defvoice]->name;
 	}
-	return render(req, (["vars": (["ws_group": "", "sections": sections, "voices": voices])]) | req->misc->chaninfo);
+	string scopes = !req->misc->session->fake && ensure_bcaster_token(req, "channel:manage:redemptions");
+	if (scopes && (int)req->misc->session->user->id != req->misc->channel->userid) scopes = "bcaster";
+	return render(req, (["vars": ([
+		"ws_group": "", "sections": sections, "voices": voices,
+		"rewardscopes": scopes || "",
+	])]) | req->misc->chaninfo);
 }
 
 bool need_mod(string grp) {return 1;} //Is this redundant with anything else?

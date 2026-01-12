@@ -292,7 +292,7 @@
   and crown use this, but there's no general-purpose way to do it.
   - Consider changing format from "hitpoints" to "avatar", and then having a format_style
     to specify whether they get hitpoints.
-* BUG: /c/minigames can't create rewards if not already authenticated. Check scopes and
-  put a button on the page if needed.
-  - What other scopes needed for minigame creation? Technically bit boss doesn't need any,
-    but it would be surprising if it didn't respond to bits.
+* Find a monetized streamer who has not given much in the way of permissions, and see if
+  we can observe bits and subs go through as soon as the bot is activated. Do monitors
+  autoupdate correctly? If not, find all places where bits/subs are referenced, and add
+  some sort of annotation, possibly including a broadcaster login button.
