@@ -403,7 +403,7 @@ function render_stream_tiles(streams) {
 					LI([describe_notes(stream), describe_raid(stream.raids), raidbtn(stream)]),
 				]),
 				DIV({className: "img"}, A({href: "raidfinder?categories=" + encodeURIComponent(stream.category)},
-					IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + stream.category + "-40x54.jpg"})
+					IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + encodeURIComponent(stream.category) + "-40x54.jpg"})
 				)),
 			]),
 			stream.magic_breakdown && show_magic(stream.magic_breakdown), //Will only exist if the back end decides to send it.
