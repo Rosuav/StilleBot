@@ -403,7 +403,16 @@ function render_stream_tiles(streams) {
 					LI([describe_notes(stream), describe_raid(stream.raids), raidbtn(stream)]),
 				]),
 				DIV({className: "img"}, A({href: "raidfinder?categories=" + encodeURIComponent(stream.category)},
-					IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + encodeURIComponent(stream.category) + "-40x54.jpg"})
+					//NOTE: Not every box art URL follows the same pattern. As of 20260112, the three main
+					//patterns are "{category}", "{game_id}", and "{game_id}_IGDB". The category name works
+					//for most older games and categories, but sometimes gives old art. It's probably not
+					//worth using. Use of the game ID seems better, but some games have the IGDB tag and
+					//some do not, and to my knowledge, the only way to know which URL is correct is to
+					//query the game (/helix/games?name=Blah+Blah) and see what the URL returned is. This
+					//would be a significant additional serverside burden (the raid finder already incurs
+					//a lot of latency from the myriad API calls), so at the moment, we're just picking
+					//one and going with it.
+					IMG({src: "https://static-cdn.jtvnw.net/ttv-boxart/" + encodeURIComponent(stream.game_id) + "-40x54.jpg"})
 				)),
 			]),
 			stream.magic_breakdown && show_magic(stream.magic_breakdown), //Will only exist if the back end decides to send it.
