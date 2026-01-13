@@ -1122,37 +1122,6 @@ class channel(mapping identity) {
 					//If you're participating in a shared chat, and a notification is sent to the other,
 					//you get a sharedchatnotice that has a source_msg_id in it.
 					break;
-				case "onetapstreakstarted":
-					Stdio.append_file("onetap.log", sprintf("%s%O\n%O\n", ctime(time()), person, params));
-					trigger_special("!combostarted", person, ([ //Might need something other than person[]
-						"{gift_id}": params->msg_param_gift_id || "unknown",
-						"{time_remaining}": params->msg_param_ms_remaining || "0",
-					]));
-					break;
-				case "onetapbreakpointachieved":
-					Stdio.append_file("onetap.log", sprintf("%s%O\n%O\n", ctime(time()), person, params));
-					trigger_special("!combolvlup", person, ([
-						"{level}": params->breakpoint_number || "0",
-						"{threshold}": params->msg_param_breakpoint_threshold_bits || "0",
-					]));
-					break;
-				case "onetapstreakexpired": {
-					Stdio.append_file("onetap.log", sprintf("%s%O\n%O\n", ctime(time()), person, params));
-					mapping args = ([]);
-					foreach (params; string name; string val)
-						if (sscanf(name, "msg_param_%s", string n) && n && n != "")
-							args["{" + n + "}"] = val;
-					trigger_special("!combofinished", person, args);
-					//Count it as a cheer of that many bits. This doesn't trigger !cheer, and it
-					//pretends that it all came from the single top contributor, since we don't
-					//get all of the people's names.
-					int bits = (int)params->msg_param_streak_size_bits;
-					if (bits) get_user_info(params->msg_param_contributor_1, "login")->then() {mapping p = __ARGS__[0];
-						event_notify("cheer", this, (["displayname": p->display_name]), bits, params, msg);
-					};
-					break;
-				}
-				case "onetapgiftredeemed": break; //Dunno if these are relevant; they are always accompanied by actual cheers, I think.
 				default: werror("Unrecognized %s with msg_id %O on channel %s\n%O\n%O\n",
 					type, params->msg_id, name, params, msg);
 					Stdio.append_file("notice.log", sprintf("%sUnknown %s %s %s %O\n", ctime(time()), type, chan, msg, params));
@@ -1171,20 +1140,17 @@ class channel(mapping identity) {
 					//is ever useful to your testing. It may confuse things though!
 					params->bits = (string)bits;
 					person->bits = bits;
+					//1Bits cheered during shared chat will be seen on both channels, but should only trigger
+					//2specials in the origin channel. TODO: Should this check be done at a high level so we
+					//3completely ignore everything from other rooms?
+					//Note that this now only handles fake cheers, but still, only process them in the origin.
+					if (!params->source_room_id || (int)params->source_room_id == userid) {
+						event_notify("cheer", this, person, bits, params, msg);
+						trigger_special("!cheer", person, (["{bits}": (string)bits, "{msg}": msg, "{msgid}": params->id || ""]));
+					}
 				}
 				if (type != "WHISPER" || config->whispers_as_commands) //Whispers aren't normally counted as commands
 					handle_command(person, msg, responsedefaults, params);
-				if (params->bits && (int)params->bits) {
-					//Bits cheered during shared chat will be seen on both channels, but should only trigger
-					//specials in the origin channel. TODO: Should this check be done at a high level so we
-					//completely ignore everything from other rooms?
-					if (!params->source_room_id || (int)params->source_room_id == userid) {
-						event_notify("cheer", this, person, (int)params->bits, params, msg);
-						trigger_special("!cheer", person, (["{bits}": params->bits, "{msg}": msg, "{msgid}": params->id || ""]));
-					}
-					//If it's from a different channel, the bits attribute is still there, but it won't
-					//advance goal bars etc.
-				}
 				msg = person->displayname + (person->is_action_msg ? " " : ": ") + msg;
 				string pfx = sprintf("[%s%s] ", type == "PRIVMSG" ? "" : type, name);
 				#ifdef __NT__
@@ -1325,13 +1291,9 @@ void irc_closed(mapping options) {
 	({"channel:read:redemptions", "channel:manage:redemptions"})):
 void autoreward(object channel, mapping data) {
 	//Some automatic rewards (eg "unlock emote") cost channel points. Others (eg "gigantify")
-	//cost bits. The ones that cost bits count as cheers and advance goal bars.
+	//cost bits. The ones that cost bits count as cheers and advance goal bars by also triggering
+	//the channel.bits.use event, so currently none of these actually need to do anything.
 	werror("AUTO REWARD %O %O\n", channel, data);
-	if ((<"message_effect", "gigantify_an_emote", "celebration">)[data->reward->type]) {
-		//These three rewards cost bits, the others cost points.
-		mapping person = (["uid": data->user_id, "user": data->user_login, "displayname": data->user_name]);
-		event_notify("cheer", channel, person, data->reward->cost, data, data->message->text);
-	}
 }
 
 void session_cleanup() {

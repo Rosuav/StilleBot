@@ -499,8 +499,16 @@ void raidout(object _, mapping info) {
 
 @EventNotify("channel.bits.use=1", ({"bits:read"})):
 void bitsused(object channel, mapping data) {
-	werror("Bits used! See bits.log for details. %O\n", channel);
 	Stdio.append_file("bits.log", sprintf("%sBITS USED %O\n%O\n\n", ctime(time()), channel, data));
+	//TODO: Reconstruct person->emotes from data->message->fragments - it's used by chan_alertbox
+	string msg = data->message->?text || "";
+	mapping person = ([
+		"uid": (int)data->user_id, "user": data->user_login, "displayname": data->user_name,
+		"bits": data->bits, //Dunno if this is needed
+		"%s": msg,
+	]);
+	event_notify("cheer", channel, person, data->bits, ([]), msg);
+	channel->trigger_special("!cheer", person, (["{bits}": (string)data->bits, "{msg}": msg]));
 }
 
 __async__ void check_hooks() {
