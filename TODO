@@ -288,5 +288,10 @@
   we can observe bits and subs go through as soon as the bot is activated. Do monitors
   autoupdate correctly? If not, find all places where bits/subs are referenced, and add
   some sort of annotation, possibly including a broadcaster login button.
+  - Or maybe add more scopes to /activate so that we automatically get those. Would it be
+    a problem if people see "to activate this bot, you need to let it see bits spent"?
+  - Note that, with the shift from IRC to eventsub for bits messages, monitors likely
+    WON'T update if that permission hasn't been granted. Can I search for any case where
+    that's going to cause issues?
 * Make an easy thing in /c/minigames to remove the bg/border from RPS (and claw?)
 * Add a !mergeshake command alongside !mergeparty, easy button on /c/minigames?
