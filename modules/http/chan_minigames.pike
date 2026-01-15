@@ -131,7 +131,7 @@ constant rps_extra_commands = ([
 			"The fight is on!"
 			$rpsactive$ = "0"
 			chan_monitors("%monitorid%", "merge", "contest", "", "") {
-				"And the winner is..... {winner}!"
+				{#delay 5 "And the winner is..... {winner}!"}
 				{
 					#delay 10
 					//And back to BRB screen mode where everyone can play as much as they like.
