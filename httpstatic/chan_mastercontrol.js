@@ -25,4 +25,6 @@ on("click", "#deactivateaccount", e => {
 	if (!valid) return; //The button should have been disabled anyway, so don't bother giving feedback
 	ws_sync.send({cmd: "deactivate"});
 	DOM("#deactivatedlg").close();
+	//We expect to get kicked. This is slightly preemptive but unlikely to be an issue.
+	location.href = "/";
 });
