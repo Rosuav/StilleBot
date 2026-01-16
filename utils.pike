@@ -521,7 +521,7 @@ __async__ void emotify() {
 	}
 }
 
-__async__ void channelscopes() {
+__async__ void channel_scopes() {
 	//Audit channel permission scopes; we need all active channels to have granted these.
 	//Scope list copied from modules/http/activate.pike
 	array wantscopes = "chat:read channel:bot bits:read moderator:read:followers" / " ";
@@ -530,19 +530,32 @@ __async__ void channelscopes() {
 		from stillebot.botservice left join stillebot.config
 		on stillebot.botservice.twitchid = stillebot.config.twitchid and keyword = 'credentials'
 		where deactivated is null order by userid"));
-	string desc = "Common features", reason = "activation";
 	foreach (channels, mapping chan) {
 		array havescopes = chan->creds->scopes || ({ });
 		array needscopes = wantscopes - havescopes;
-		if (sizeof(needscopes)) await(G->G->DB->mutate_config(chan->userid, "userprefs") {mapping prefs = __ARGS__[0];
-			if (!prefs->notif_perms) prefs->notif_perms = ([]);
-			foreach (needscopes, string perm) {
-				int have = 0;
-				foreach (prefs->notif_perms[perm] || ({ }), mapping need)
-					if (need->reason == reason) {have = 1; need->desc = desc;}
-				if (!have) prefs->notif_perms[perm] += ({(["desc": desc, "reason": reason])});
-			}
-		});
+		if (sizeof(needscopes)) {
+			chan->creds->missing = needscopes;
+			await(G->G->DB->save_config(chan->userid, "credentials", chan->creds));
+		}
+	}
+}
+
+__async__ void clean_notif_perms() {
+	//TODO: Also check the currently-available scopes, and remove any notif perms now granted
+	//TODO: Check with each module to see if it still wants this need (eg if a command is gone,
+	//it won't need to trigger this). Currently hard-coded.
+	foreach (await(G->G->DB->load_all_configs("userprefs")); int twitchid; mapping prefs) {
+		if (!prefs->notif_perms) continue;
+		int changed = 0;
+		foreach (indices(prefs->notif_perms), string perm) {
+			array needs = prefs->notif_perms[perm];
+			foreach (needs; int i; mapping need)
+				if (need->reason == "activation") {needs[i] = 0; changed = 1;}
+			needs -= ({0});
+			if (!sizeof(needs)) {m_delete(prefs->notif_perms, perm); changed = 1;}
+			else prefs->notif_perms[perm] = needs;
+		}
+		if (changed) await(G->G->DB->save_config(twitchid, "userprefs", prefs));
 	}
 }
 

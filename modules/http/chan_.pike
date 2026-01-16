@@ -137,12 +137,7 @@ __async__ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, 
 		if ((int)user->id == channel->userid) {
 			//The channel may be in a reduced functionality state due to missing permissions.
 			mapping tok = G->G->user_credentials[channel->userid] || ([]);
-			mapping needperms = await(G->G->DB->load_config(channel->userid, "userprefs"))->notif_perms || ([]);
 			array need_scopes = tok->missing || ({ });
-			foreach (needperms; string perm; array needs)
-				foreach (needs, mapping need)
-					//TODO: What if there are other, lower-priority needs? Should there be a banner for those too?
-					if (need->reason == "activation") need_scopes += ({perm});
 			if (sizeof(need_scopes)) {
 				string btn = "<button class=twitchlogin data-scopes=\"" + need_scopes * " " + "\">Fix login</button>";
 				need_scopes_button = "<li style='margin-top: 0.5em'>" + btn + "</li>";
