@@ -530,7 +530,7 @@ __async__ void channelscopes() {
 		from stillebot.botservice left join stillebot.config
 		on stillebot.botservice.twitchid = stillebot.config.twitchid and keyword = 'credentials'
 		where deactivated is null order by userid"));
-	string desc = "Needed for common features", reason = "activation";
+	string desc = "Common features", reason = "activation";
 	foreach (channels, mapping chan) {
 		array havescopes = chan->creds->scopes || ({ });
 		array needscopes = wantscopes - havescopes;
@@ -538,7 +538,8 @@ __async__ void channelscopes() {
 			if (!prefs->notif_perms) prefs->notif_perms = ([]);
 			foreach (needscopes, string perm) {
 				int have = 0;
-				foreach (prefs->notif_perms[perm] || ({ }), mapping need) if (need->reason == reason) have = 1;
+				foreach (prefs->notif_perms[perm] || ({ }), mapping need)
+					if (need->reason == reason) {have = 1; need->desc = desc;}
 				if (!have) prefs->notif_perms[perm] += ({(["desc": desc, "reason": reason])});
 			}
 		});
