@@ -59,5 +59,7 @@ __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Reques
 		}
 		else return render_template(logged_in, ([]));
 	}
+	//Note that "not logged in" also includes the situation where you're logged in but haven't
+	//granted all the scopes necessary for bot activation.
 	return render_template(not_logged_in, (["scopes": scopes]));
 }
