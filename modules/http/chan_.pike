@@ -128,16 +128,27 @@ __async__ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, 
 		"backlink": "<a href=\"./\">Mustard Mine - " + channel->display_name + "</a>",
 		"menubutton": "<span id=togglesidebarbox><button type=button id=togglesidebar title=\"Show/hide sidebar\">Show/hide sidebar</button></span>",
 	]);
-	string navbar_warning = "";
+	string need_scopes_button = "", notification_banner = "";
 	if (mapping user = req->misc->session->?user) {
 		if (channel->user_badges[(int)user->id]->?_mod || is_localhost_mod(user->login, req->get_ip()))
 			req->misc->is_mod = 1;
 		else req->misc->chaninfo->save_or_login = "<i>You're logged in, but not a recognized mod. Before you can make changes, go to the channel and say something, so I can see your mod sword. Thanks!</i>";
 		req->misc->chaninfo->logout = "| <a href=\"/logout\" class=twitchlogout>Log out</a>";
 		if ((int)user->id == channel->userid) {
-			mapping tok = G->G->user_credentials[channel->userid] || ([]);
 			//The channel may be in a reduced functionality state due to missing permissions.
-			if (tok->missing) navbar_warning = "<li style='margin-top: 0.5em'><button class=twitchlogin scopes=\"" + tok->missing * " " + "\">Fix login</button></li>";
+			mapping tok = G->G->user_credentials[channel->userid] || ([]);
+			mapping needperms = await(G->G->DB->load_config(channel->userid, "userprefs"))->notif_perms || ([]);
+			array need_scopes = tok->missing || ({ });
+			foreach (needperms; string perm; array needs)
+				foreach (needs, mapping need)
+					//TODO: What if there are other, lower-priority needs? Should there be a banner for those too?
+					if (need->reason == "activation") need_scopes += ({perm});
+			if (sizeof(need_scopes)) {
+				string btn = "<button class=twitchlogin data-scopes=\"" + need_scopes * " " + "\">Fix login</button>";
+				need_scopes_button = "<li style='margin-top: 0.5em'>" + btn + "</li>";
+				notification_banner = #{<div style="background: #fec; border: 1px solid rebeccapurple; position: fixed; left: 120px; right: 0px; top: 40px; padding: 0.25em; text-align: center">
+					NOTE: Some functionality may be inoperative until the necessary permissions are granted. #} + btn + "</div>";
+			}
 		}
 	}
 	else req->misc->chaninfo->save_or_login = "[Mods, login to make changes](:.twitchlogin)";
@@ -162,12 +173,14 @@ __async__ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, 
 	]);
 	req->misc->chaninfo->menunav = sprintf(
 		"<nav id=sidebar><ul>%{<li><a href=%q>%s</a></li>%}%s</ul>"
-		"<a href=%q target=_blank><img src=%q alt=\"Channel avatar\" title=%q></a></nav>",
+		"<a href=%q target=_blank><img src=%q alt=\"Channel avatar\" title=%q></a></nav>%s",
 		req->misc->is_mod ? sidebar_modmenu : sidebar_nonmodmenu,
-		navbar_warning,
+		need_scopes_button,
 		profile->link_override || "https://twitch.tv/" + profile->login,
 		profile->profile_image_url || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=",
-		"Go to channel " + (profile->display_name || ""));
+		"Go to channel " + (profile->display_name || ""),
+		notification_banner,
+	);
 	if (req->misc->is_mod) {
 		int count = await(channel->error_count(1));
 		if (count) req->misc->chaninfo->menunav = replace(req->misc->chaninfo->menunav, "<span id=errcnt></span>",
