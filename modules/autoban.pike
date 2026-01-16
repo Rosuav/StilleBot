@@ -7,7 +7,7 @@ inherit annotated;
 //start noticing the new ones. Anything that has (at least) one from column
 //A and one from column B will be flagged as a follower seller.
 constant buyfollows = ({"cheap viewers", "cheap followers", "best viewers", "best followers"});
-constant urls = ({".ru", "streamboo"});
+constant urls = ({".ru", "streamboo", ".online"});
 
 @export: int(1bit) is_selling_followers(string msg) {
 	//To avoid bots messing with Unicode combining characters, strip 'em before comparing.
