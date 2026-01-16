@@ -17,6 +17,7 @@ on("input", "[data-expect]", e => {
 	DOM("#deactivateaccount").disabled = !valid;
 });
 
+export let socket_connected = null;
 on("click", "#deactivateaccount", e => {
 	let valid = true;
 	document.querySelectorAll("[data-expect]").forEach(inp => {
@@ -25,6 +26,6 @@ on("click", "#deactivateaccount", e => {
 	if (!valid) return; //The button should have been disabled anyway, so don't bother giving feedback
 	ws_sync.send({cmd: "deactivate"});
 	DOM("#deactivatedlg").close();
-	//We expect to get kicked. This is slightly preemptive but unlikely to be an issue.
-	location.href = "/";
+	//We expect to get kicked. When the socket is disconnected, send the user home.
+	socket_connected = sock => !sock && (location.href = "/");
 });
