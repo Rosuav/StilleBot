@@ -39,7 +39,7 @@ Still got questions? Reach out to [Rosuav](https://twitch.tv/rosuav) via Twitch,
 ";
 
 __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
-	string|zero scopes = "chat:read channel:bot bits:read moderator:read:followers";
+	string scopes = "chat:read channel:bot bits:read moderator:read:followers";
 	if (int userid = (int)req->misc->session->user->?id) {
 		object channel = G->G->irc->id[userid];
 		if (channel) return render_template(bot_is_active, ([]));
