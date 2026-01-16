@@ -11,6 +11,11 @@ Grant the following permissions:
 $$scopelist$$
 
 $$grantperms$$
+<style>
+.new:has( input:checked) {
+	background: #fdd;
+}
+</style>
 ";
 
 //Give additional explanatory notes for a few scopes
@@ -169,7 +174,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			continue;
 		}
 		order += ({desc - "*"});
-		scopelist += ({"* <label><input type=checkbox class=scope_cb" + (needscopes[id] || need_perms[id] ? " checked" : "") + " value=\"" + id + "\">"
+		scopelist += ({"* <label" + (havescopes[id] ? "" : " class=new") + "><input type=checkbox class=scope_cb" + (needscopes[id] || need_perms[id] ? " checked" : "") + " value=\"" + id + "\">"
 			//+ (desc[0] == '*' ? "<span class=warningicon>⚠️</span>" : "") //Do we need these here or are they just noise?
 			+ (desc - "*")});
 		if (scope_reasons[id]) scopelist[-1] += "\n  <br>*" + scope_reasons[id] + "*";
