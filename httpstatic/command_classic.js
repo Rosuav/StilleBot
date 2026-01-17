@@ -152,7 +152,7 @@ const conditional_types = {
 };
 
 function describe_builtin_vars(name) {
-	const builtin = builtins[name]; if (!builtin) return [];
+	const builtin = window.cmdedit_collections.builtins[name]; if (!builtin) return [];
 	const rows = [];
 	for (let v in builtin)
 		if (v[0] === '{') rows.push(TR([TD(CODE(v)), TD(builtin[v])]));

@@ -286,5 +286,3 @@
     to specify whether they get hitpoints.
 * Make an easy thing in /c/minigames to remove the bg/border from RPS (and claw?)
 * Add a !mergeshake command alongside !mergeparty, easy button on /c/minigames?
-* Classic command editor is broken. Again.
-* Classic does not load on startup? cls_load_message loading too late?

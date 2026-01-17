@@ -137,7 +137,11 @@ function change_tab(tab) {
 	else select_tab(tab, cmd_editing);
 }
 
-//If we try to open graphical view before it's loaded, twiddle our thumbs for a while.
+//If we try to open either view before it's loaded, twiddle our thumbs for a while. (Can these be combined?)
+function try_cls_load_message(basis, editing) {
+	if (cls_load_message) return cls_load_message(basis, editing);
+	setTimeout(try_cls_load_message, 0.025, basis, editing);
+}
 function try_gui_load_message(basis, editing) {
 	if (gui_load_message) return gui_load_message(basis, editing);
 	setTimeout(try_gui_load_message, 0.025, basis, editing);
@@ -150,7 +154,7 @@ function select_tab(tab, response) {
 	if (typeof hash === "string") history.replaceState(null, "", "#" + hash);
 	DOM("#command_frame").style.display = tab == "graphical" ? "block" : "none"; //Hack - hide and show the GUI rather than destroying and creating it.
 	switch (tab) {
-		case "classic": cls_load_message(cmd_basis, cmd_editing); break;
+		case "classic": try_cls_load_message(cmd_basis, cmd_editing); break;
 		case "graphical": {
 			set_content("#command_details", "");
 			try_gui_load_message(cmd_basis, cmd_editing);
