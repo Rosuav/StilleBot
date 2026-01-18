@@ -1434,6 +1434,20 @@ void ws_msg(Protocols.WebSocket.Frame frm, mapping conn)
 		};
 		return;
 	}
+	if (frm->opcode == Protocols.WebSocket.FRAME_CONTINUATION) {
+		object prev = m_delete(conn, "continuation");
+		if (!prev) {werror("Continuation frame without unfinished frame! %O\n", frm); return;} //Protocol error.
+		frm->data = prev->data + frm->data;
+		frm->opcode = prev->opcode;
+		//And carry on. Anything else that needs to be combined?
+	}
+	if (!frm->fin) {
+		//There's more content after this. Most likely, the JSON body is too large to fit, so
+		//it's been broken across two or more frames.
+		if (frm->opcode != Protocols.WebSocket.FRAME_TEXT) {werror("Unsupported frame type %O\n", frm); return;} //Sending me a big image or something? I dunno.
+		conn->continuation = frm;
+		return;
+	}
 	mixed data;
 	if (catch {data = Standards.JSON.decode(frm->text);}) return; //Ignore frames that aren't text or aren't valid JSON
 	if (!stringp(data->cmd)) return;
