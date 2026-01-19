@@ -15,6 +15,7 @@ constant markdown = #"# Import from other services - $$channel$$
 6. Click \"Translate\" to see them as Mustard Mine commands.
 
 * <textarea id=deepbot_commands></textarea>
+* <label><input type=checkbox id=include_groups> Include group names as comments</label>
 * <button type=button id=import_deepbot>Translate</button>
 * <div id=deepbot_results></div>
 {:#deepbot}
@@ -150,6 +151,7 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 			if (access == 8) flags->access = "mod";
 		}
 
+		if (!msg->include_groups) m_delete(cmd, "group"); //The group becomes a comment, if and only if you wanted them kept.
 		foreach (sort(indices(deepbot_comments)), string key) {
 			string val = m_delete(cmd, key) || "";
 			if (val != "") pre_comments = ({deepbot_comments[key] + ": " + val});
@@ -202,8 +204,11 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 		if (cmdname == "!cattax") werror("Chain result %O\n", cmd);
 	}
 	//Third pass: Translate everything into MustardScript for compactness.
-	foreach (commands_by_name; string cmdname; mapping cmd)
+	foreach (commands_by_name; string cmdname; mapping cmd) {
 		cmd->mustard = G->G->mustard->make_mustard(cmd->body);
+		m_delete(cmd, "chainto");
+		m_delete(cmd, "chaindelay");
+	}
 	if (sizeof(unknowns)) werror("DeepBot import unknowns: %O\n", unknowns);
 	array xlat = values(commands_by_name); sort(indices(commands_by_name), xlat);
 	return (["cmd": "translated", "commands": xlat]);
