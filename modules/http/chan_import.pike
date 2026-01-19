@@ -119,6 +119,7 @@ bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	return ([]); //Do we even need a websocket here? Maybe it'll be useful for the final import stage.
 }
+object special_command_variable = Regexp.PCRE.StudiedWidestring("@([A-Za-z0-9]+)@(\\[.+?\\])?");
 __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array commands = Array.arrayify(msg->commands); //Generally we expect an array (even if of just one), but allow the outer brackets to be omitted.
 	mapping unknowns = ([]);
@@ -127,9 +128,38 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 		//Attempt to interpret the command into native. Anything we don't understand,
 		//put a comment at the top of the script. We'll turn this into MustardScript for the
 		//display (or maybe call on the command GUI??).
-		echoable_message body = m_delete(cmd, "message") || "";
+		string text = m_delete(cmd, "message") || "";
 		array(string) pre_comments = ({ }), post_comments = ({ });
-		//TODO: If the message matches "%*s@%[A-Za-z0-9]@", check for special command variables and translate those too
+		//If the message matches "%*s@%[A-Za-z0-9]@", check for special command variables and translate those too
+		//First, some simple and easy translations.
+		text = replace(text, ([
+			"@target@": "{param}", //Is this actually the same, or does target have other behaviours?
+			"@user@": "{username}",
+		]));
+		//Then the more complicated ones. Some of them are parameterized. These may require wrapping in
+		//a builtin or other layer of structure; omit the "message" key and keep going with the parsing.
+		array layers = ({ });
+		text = special_command_variable->replace(text) {[string all, string var, string args] = __ARGS__;
+			werror("%O Var %O\n", cmd->command, __ARGS__);
+			switch (var) {
+				case "sendstreamermsg":
+					//If you use "@sendstreamermsg@[text]" it will send "text" as the streamer.
+					//I've no idea what happens if there's more text before/after that though.
+					//For simplicity, assume there won't be, and just return the original text.
+					layers += ({(["voice": (string)channel->userid])});
+					return String.trim(args[1..<1]); //Strip off the square brackets and any whitespace just inside them
+				case "uptime":
+					layers += ({(["builtin": "uptime"])});
+					return "{uptime|english}";
+				//case "followdate": //Maybe support this one?
+				default:
+					pre_comments += ({"WARNING: Unknown special variable @" + var + "@"});
+			}
+			return all;
+		};
+		echoable_message body = text;
+		foreach (layers, mapping l) body = l | (["message": text]);
+
 		mapping flags = ([]);
 		string cmdname = m_delete(cmd, "command");
 		mapping ret = (["cmdname": cmdname]);
@@ -194,13 +224,11 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 	foreach (sort(indices(commands_by_name)), string cmdname) {
 		mapping cmd = commands_by_name[cmdname];
 		if (!cmd->?chainto) continue; //cmd could be null if this was already processed as a chained command
-		if (cmdname == "!cattax") werror("Chain check %O\n", cmd);
 		mapping next = m_delete(commands_by_name, cmd->chainto);
 		int chaindelay = cmd->chaindelay;
 		multiset(string) comments = (<>);
 		foreach (cmd->body->message, mapping msg) if (mappingp(msg) && msg->dest == "//") comments[msg->message] = 1;
 		while (next) {
-			if (cmdname == "!cattax") werror("Chain to %O\n", next);
 			//Duplicated comments in both the base command and the chained-to command are redundant.
 			foreach (next->body->message; int i; mapping msg) if (mappingp(msg) && msg->dest == "//") {
 				if (comments[msg->message]) next->body->message[i] = 0;
@@ -211,7 +239,6 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 			chaindelay = next->chaindelay;
 			next = m_delete(commands_by_name, next->chainto);
 		}
-		if (cmdname == "!cattax") werror("Chain result %O\n", cmd);
 	}
 	//Third pass: Translate everything into MustardScript for compactness.
 	foreach (commands_by_name; string cmdname; mapping cmd) {
