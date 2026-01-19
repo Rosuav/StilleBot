@@ -122,11 +122,12 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 		//TODO: If the message matches "%*s@%[A-Za-z0-9]@", check for special command variables and translate those too
 		mapping flags = ([]);
 		string cmdname = m_delete(cmd, "command");
+		mapping ret = (["cmdname": cmdname]);
 		if (!cmdname) xlat += ({(["error": "No command name"])}); //Not sure how to link this back to the JSON with no command name.
 		//DeepBot maintains statistics, which we won't worry about.
 		cmd -= deepbot_uninteresting;
 
-		if (m_delete(cmd, "status") == Val.false) continue; //TODO: Have an option to include, or at least mention, disabled commands
+		if (m_delete(cmd, "status") == Val.false) ret->inactive = 1;
 		if (m_delete(cmd, "hideFromCmdList")) flags->visibility = "hidden";
 		string rew = m_delete(cmd, "pointsRewards") || "";
 
@@ -167,7 +168,8 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 			if (!has_value(unknowns[key] || ({ }), cmd[key])) unknowns[key] += ({cmd[key]});
 		}
 		body = (["dest": "//", "message": pre_comments[*]]) + ({body}) + (["dest": "//", "message": post_comments[*]]);
-		xlat += ({(["cmdname": cmdname, "mustard": G->G->mustard->make_mustard(flags | (["message": body]))])});
+		ret->mustard = G->G->mustard->make_mustard(flags | (["message": body]));
+		xlat += ({ret});
 	}
 	werror("Unknowns: %O\n", unknowns);
 	return (["cmd": "translated", "commands": xlat]);
