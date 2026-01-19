@@ -37,24 +37,29 @@ constant markdown = #"# Import from other services - $$channel$$
 //features that are impossible for StilleBot to support, and so if they are at non-default
 //settings, they need to be reported.
 constant deepbot_unknowns = ([
-	"APITarget": Val.false,
-	"CommandChaningRunAsAdmin": Val.false,
+	"APITarget": Val.false, //Can't see this in the screen shot???
+	"CommandChaningRunAsAdmin": Val.false, //Don't know what "Admin Access" on command chaining does
+	//Managing OBS from Mustard Mine is more complicated and will require careful permissions.
 	"OBSRemoteAction": 0,
 	"OBSRemoteEnabled": Val.false,
 	"OBSRemoteSceneName": "",
+	//Widgets like this might be able to be translated into Labels or other types of monitor,
+	//but it's not likely to be worth importing unless someone has a bunch of them.
 	"OnScreenWidgetAnimMode": 0,
 	"OnScreenWidgetEnabled": Val.false,
 	"OnScreenWidgetImageLink": "",
 	"OnScreenWidgetMessage": "",
 	"OnScreenWidgetName": "",
 	"OnScreenWidgetTitle": "",
+	//VIP status is a Deepbot-specific flag, not related to the Pink Diamond of Power
 	"VIPModAddDays": 30,
 	"VIPModEnabled": Val.false,
 	"VIPModIfVIPB": 0,
 	"VIPModIfVIPG": 0,
 	"VIPModIfVIPS": 0,
 	"VIPModIfViewer": 0,
-	"accessDeniedMsg": "",
+	"accessDeniedMsg": "", //Implementing this would require making the command open to all, but having an if {@vip} or {@mod} check
+	//We don't have the channel points system so these costs don't translate well.
 	"costAll": 0,
 	"costEnabled": Val.false,
 	"costVIPB": 0,
@@ -63,23 +68,26 @@ constant deepbot_unknowns = ([
 	"costVIPS": 0,
 	"costVIPStreamer": 0,
 	"costVIPViewer": 0,
+	//We only handle Twitch chat so these are likely irrelevant.
 	"disableChanAccess": Val.false,
 	"disableDiscordAccess": Val.false,
 	"disableWhisperAccess": Val.false,
+	//No sound file support here
+	"soundFile": "",
+	"soundVolume": 100,
 	"isSoundVolumeSet": Val.true,
+	//Do we need these?
 	"minHours": 0,
 	"minPoints": 0,
 	"noPointsMsg": "",
 	"runAsBot": Val.false,
 	"runAsUserElevated": Val.false,
-	"soundFile": "",
-	"soundVolume": 100,
 	"startsWithEx": Val.false,
 ]);
 //DeepBot has some command settings that aren't interesting, mostly statistical.
 multiset deepbot_uninteresting = (<
 	"lastUsed", "counter", "lastModified",
-	"countdown", //No idea what this means. It's the date/time of something, but what? Maybe creation date???
+	"countdown", //There's a field for @Countdown@ that might be able to be used for things like Labels do??
 >);
 //Some things can just become comments. They're not essential but they could be of value.
 mapping deepbot_comments = ([
@@ -105,7 +113,8 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 		//Attempt to interpret the command into native. Anything we don't understand,
 		//put a comment at the top of the script. We'll turn this into MustardScript for the
 		//display (or maybe call on the command GUI??).
-		echoable_message body = ({m_delete(cmd, "message") || ""});
+		echoable_message body = m_delete(cmd, "message") || "";
+		array(string) pre_comments = ({ }), post_comments = ({ });
 		//TODO: If the message matches "%*s@%[A-Za-z0-9]@", check for special command variables and translate those too
 		mapping flags = ([]);
 		string cmdname = m_delete(cmd, "command");
@@ -115,23 +124,45 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 
 		if (m_delete(cmd, "status") == Val.false) continue; //TODO: Have an option to include, or at least mention, disabled commands
 		if (m_delete(cmd, "hideFromCmdList")) flags->visibility = "hidden";
+		string rew = m_delete(cmd, "pointsRewards") || "";
+
+		//I suspect that these are not storing the ID but the label, so there would need to be a translation.
+		//Also, Mustard Mine might need to take over the reward.
+		if (rew != "") pre_comments += ({"POINTS REWARDS: " + rew});
+
+		//Wrap the body in cooldown checks if required. We wrap first in a user cooldown (if present), then
+		//in the global (if present), so that a global cooldown message takes precedence over a user one.
+		//The cooldown and message fields will be unconditionally removed, but a message without a numeric
+		//cooldown will be discarded.
+		string cdmsg = m_delete(cmd, "userCooldownMsg") || "";
+		if (int cd = m_delete(cmd, "userCooldown"))
+			body = (["conditional": "cooldown", "cdlength": cd, "message": body, "otherwise": cdmsg, "cdname": "*"]);
+		cdmsg = m_delete(cmd, "cmdCooldownMsg") || "";
+		if (int cd = m_delete(cmd, "cooldown"))
+			body = (["conditional": "cooldown", "cdlength": cd, "message": body, "otherwise": cdmsg]);
+
+		if (int access = m_delete(cmd, "accessLevel")) {
+			//TODO: What are the other access fields and are they relevant?
+			if (access == 8) flags->access = "mod";
+		}
 
 		foreach (sort(indices(deepbot_comments)), string key) {
 			string val = m_delete(cmd, key) || "";
-			if (val != "") body = ({(["dest": "//", "message": deepbot_comments[key] + ": " + val])}) + body;
+			if (val != "") pre_comments = ({deepbot_comments[key] + ": " + val});
 		}
 
 		//Scan the unknowns and get rid of them if, and only if, they are at their defaults.
 		foreach (deepbot_unknowns; string key; mixed expected) {
 			mixed actual = m_delete(cmd, key);
-			if (actual != expected) body += ({(["dest": "//", "message": sprintf("UNKNOWN: %s -> %O expected %O", key, actual, expected)])});
+			if (actual != expected) post_comments += ({sprintf("UNKNOWN: %s -> %O expected %O", key, actual, expected)});
 		}
 
 		//Okay. Anything left is unknown; add them as comments at the end.
 		foreach (sort(indices(cmd)), string key) {
-			body += ({(["dest": "//", "message": sprintf("UNKNOWN: %s -> %O", key, cmd[key])])});
+			post_comments += ({sprintf("UNKNOWN: %s -> %O", key, cmd[key])});
 			if (!has_value(unknowns[key] || ({ }), cmd[key])) unknowns[key] += ({cmd[key]});
 		}
+		body = (["dest": "//", "message": pre_comments[*]]) + ({body}) + (["dest": "//", "message": post_comments[*]]);
 		xlat += ({(["cmdname": cmdname, "mustard": G->G->mustard->make_mustard(flags | (["message": body]))])});
 	}
 	werror("Unknowns: %O\n", unknowns);
