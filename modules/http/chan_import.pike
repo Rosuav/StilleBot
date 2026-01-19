@@ -20,6 +20,13 @@ constant markdown = #"# Import from other services - $$channel$$
 * <div id=deepbot_results></div>
 {:#deepbot}
 
+> ### Import commands
+>
+> <div id=import_description></div>
+>
+> [Import](:#confirmimport) [Cancel](:.dialog_close)
+{: tag=dialog #importconfirmdlg}
+
 <style>
 #deepbot {
 	width: 100%;
@@ -31,6 +38,9 @@ constant markdown = #"# Import from other services - $$channel$$
 #deepbot textarea {
 	width: 100%;
 	height: 20em;
+}
+#import_description {
+	max-width: 50em;
 }
 </style>
 ";
