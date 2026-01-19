@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, CODE, INPUT, LABEL, LI, P, TEXTAREA, UL} = lindt; //autoimport
+const {B, BR, BUTTON, CODE, DETAILS, INPUT, LABEL, LI, P, TEXTAREA, UL} = lindt; //autoimport
 
 export function render(data) {
 }
@@ -16,14 +16,19 @@ on("click", "#import_deepbot", e => {
 });
 
 export function sockmsg_translated(msg) {
+	const warnings = Object.entries(msg.warnings).sort((a, b) => a[0].localeCompare(b[0]));
 	replace_content("#deepbot_results", [
 		P([
 			LABEL([INPUT({type: "checkbox", class: "selectall", checked: true}), " Select All"]),
 			" ",
 			BUTTON({class: "import_selected"}, "Import selected"),
 		]),
+		warnings.length && P({class: "warning"}, [
+			warnings.length + " commands have potential issues and have not been preselected for import. ",
+			DETAILS(UL(warnings.map(([cmd, msgs]) => LI([CODE(B(cmd)), UL(msgs.map(m => LI(m)))])))),
+		]),
 		UL(msg.commands.map(cmd => LI([
-			LABEL([INPUT({type: "checkbox", checked: !cmd.inactive, "data-cmdname": cmd.cmdname, "data-mustard": cmd.mustard}), " ", CODE(cmd.cmdname)]),
+			LABEL([INPUT({type: "checkbox", checked: !cmd.inactive && !msg.warnings[cmd.cmdname], "data-cmdname": cmd.cmdname, "data-mustard": cmd.mustard}), " ", CODE(cmd.cmdname)]),
 			TEXTAREA({style: "height: 8em", readonly: true}, cmd.mustard),
 		]))),
 		P([

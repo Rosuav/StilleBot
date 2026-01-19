@@ -42,6 +42,14 @@ constant markdown = #"# Import from other services - $$channel$$
 #import_description {
 	max-width: 50em;
 }
+.warning {
+	border: 1px solid yellow;
+	background: #ffdd99;
+}
+.warning details {
+	margin: 0 5em;
+	padding: 0.5em 1em;
+}
 </style>
 ";
 
@@ -124,10 +132,13 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 	array commands = Array.arrayify(msg->commands); //Generally we expect an array (even if of just one), but allow the outer brackets to be omitted.
 	mapping unknowns = ([]);
 	mapping commands_by_name = ([]);
+	mapping(string:array) warnings = ([]);
 	foreach (commands, mapping cmd) {
 		//Attempt to interpret the command into native. Anything we don't understand,
 		//put a comment at the top of the script. We'll turn this into MustardScript for the
 		//display (or maybe call on the command GUI??).
+		string cmdname = m_delete(cmd, "command");
+		if (channel->commands[cmdname[1..]]) warnings[cmdname] += ({"Command already exists, and will be overwritten by the import"});
 		string text = m_delete(cmd, "message") || "";
 		array(string) pre_comments = ({ }), post_comments = ({ });
 		//If the message matches "%*s@%[A-Za-z0-9]@", check for special command variables and translate those too
@@ -140,7 +151,6 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 		//a builtin or other layer of structure; omit the "message" key and keep going with the parsing.
 		array layers = ({ });
 		text = special_command_variable->replace(text) {[string all, string var, string args] = __ARGS__;
-			werror("%O Var %O\n", cmd->command, __ARGS__);
 			switch (var) {
 				case "sendstreamermsg":
 					//If you use "@sendstreamermsg@[text]" it will send "text" as the streamer.
@@ -154,6 +164,7 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 				//case "followdate": //Maybe support this one?
 				default:
 					pre_comments += ({"WARNING: Unknown special variable @" + var + "@"});
+					warnings[cmdname] += ({"Unknown special variable @" + var + "@"});
 			}
 			return all;
 		};
@@ -161,7 +172,6 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 		foreach (layers, mapping l) body = l | (["message": text]);
 
 		mapping flags = ([]);
-		string cmdname = m_delete(cmd, "command");
 		mapping ret = (["cmdname": cmdname]);
 		if (!cmdname) continue; //Not sure how to link this back to the JSON with no command name.
 		//DeepBot maintains statistics, which we won't worry about.
@@ -248,5 +258,5 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 	}
 	if (sizeof(unknowns)) werror("DeepBot import unknowns: %O\n", unknowns);
 	array xlat = values(commands_by_name); sort(indices(commands_by_name), xlat);
-	return (["cmd": "translated", "commands": xlat]);
+	return (["cmd": "translated", "commands": xlat, "warnings": warnings]);
 }
