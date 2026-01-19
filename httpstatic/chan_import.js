@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {CODE, INPUT, LABEL, LI, TEXTAREA, UL} = lindt; //autoimport
+const {CODE, INPUT, LABEL, LI, P, TEXTAREA, UL} = lindt; //autoimport
 
 export function render(data) {
 }
@@ -16,8 +16,18 @@ on("click", "#import_deepbot", e => {
 });
 
 export function sockmsg_translated(msg) {
-	replace_content("#deepbot_results", UL(msg.commands.map(cmd => LI([
-		LABEL([INPUT({type: "checkbox", checked: !cmd.inactive}), " ", CODE(cmd.cmdname)]),
-		TEXTAREA({style: "height: 8em", readonly: true}, cmd.mustard),
-	]))));
+	replace_content("#deepbot_results", [
+		P([
+			LABEL([INPUT({type: "checkbox", id: "selectall", checked: true}), " Select All"]),
+		]),
+		UL(msg.commands.map(cmd => LI([
+			LABEL([INPUT({type: "checkbox", checked: !cmd.inactive}), " ", CODE(cmd.cmdname)]),
+			TEXTAREA({style: "height: 8em", readonly: true}, cmd.mustard),
+		]))),
+	]);
 }
+
+on("click", "#selectall", e => {
+	const state = e.match.checked;
+	DOM("#deepbot_results").querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = state);
+});
