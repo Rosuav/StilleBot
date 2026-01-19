@@ -109,10 +109,9 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	return ([]); //Do we even need a websocket here? Maybe it'll be useful for the final import stage.
 }
 __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	werror("Requesting translation\n");
 	array commands = Array.arrayify(msg->commands); //Generally we expect an array (even if of just one), but allow the outer brackets to be omitted.
-	array xlat = ({ });
 	mapping unknowns = ([]);
+	mapping commands_by_name = ([]);
 	foreach (commands, mapping cmd) {
 		//Attempt to interpret the command into native. Anything we don't understand,
 		//put a comment at the top of the script. We'll turn this into MustardScript for the
@@ -123,7 +122,7 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 		mapping flags = ([]);
 		string cmdname = m_delete(cmd, "command");
 		mapping ret = (["cmdname": cmdname]);
-		if (!cmdname) xlat += ({(["error": "No command name"])}); //Not sure how to link this back to the JSON with no command name.
+		if (!cmdname) continue; //Not sure how to link this back to the JSON with no command name.
 		//DeepBot maintains statistics, which we won't worry about.
 		cmd -= deepbot_uninteresting;
 
@@ -156,6 +155,13 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 			if (val != "") pre_comments = ({deepbot_comments[key] + ": " + val});
 		}
 
+		//Command chaining is the way DeepBot does multi-message commands. However, the chained-to
+		//commands are themselves valid. Do we need an option to retain them?
+		ret->chainto = m_delete(cmd, "CommandChaningCmdName");
+		ret->chaindelay = m_delete(cmd, "CommandChaningRunAfter");
+		//Handle these in a second pass, since we can't know whether the chained-to command is earlier
+		//or later in the import file
+
 		//Scan the unknowns and get rid of them if, and only if, they are at their defaults.
 		foreach (deepbot_unknowns; string key; mixed expected) {
 			mixed actual = m_delete(cmd, key);
@@ -168,9 +174,37 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 			if (!has_value(unknowns[key] || ({ }), cmd[key])) unknowns[key] += ({cmd[key]});
 		}
 		body = (["dest": "//", "message": pre_comments[*]]) + ({body}) + (["dest": "//", "message": post_comments[*]]);
-		ret->mustard = G->G->mustard->make_mustard(flags | (["message": body]));
-		xlat += ({ret});
+		ret->body = flags | (["message": body]);
+		commands_by_name[cmdname] = ret;
 	}
-	werror("Unknowns: %O\n", unknowns);
+	//Second pass: Grab all command chainings and merge them into single commands.
+	//TODO: Keep the commands but unselected? Or just ignore them?
+	foreach (sort(indices(commands_by_name)), string cmdname) {
+		mapping cmd = commands_by_name[cmdname];
+		if (!cmd->?chainto) continue; //cmd could be null if this was already processed as a chained command
+		if (cmdname == "!cattax") werror("Chain check %O\n", cmd);
+		mapping next = m_delete(commands_by_name, cmd->chainto);
+		int chaindelay = cmd->chaindelay;
+		multiset(string) comments = (<>);
+		foreach (cmd->body->message, mapping msg) if (mappingp(msg) && msg->dest == "//") comments[msg->message] = 1;
+		while (next) {
+			if (cmdname == "!cattax") werror("Chain to %O\n", next);
+			//Duplicated comments in both the base command and the chained-to command are redundant.
+			foreach (next->body->message; int i; mapping msg) if (mappingp(msg) && msg->dest == "//") {
+				if (comments[msg->message]) next->body->message[i] = 0;
+				comments[msg->message] = 1;
+			}
+			if (chaindelay) cmd->body->message += (["delay": chaindelay, "message": next->body->message - ({0})]);
+			else cmd->body->message += next->body->message - ({0});
+			chaindelay = next->chaindelay;
+			next = m_delete(commands_by_name, next->chainto);
+		}
+		if (cmdname == "!cattax") werror("Chain result %O\n", cmd);
+	}
+	//Third pass: Translate everything into MustardScript for compactness.
+	foreach (commands_by_name; string cmdname; mapping cmd)
+		cmd->mustard = G->G->mustard->make_mustard(cmd->body);
+	if (sizeof(unknowns)) werror("DeepBot import unknowns: %O\n", unknowns);
+	array xlat = values(commands_by_name); sort(indices(commands_by_name), xlat);
 	return (["cmd": "translated", "commands": xlat]);
 }
