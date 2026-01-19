@@ -230,7 +230,9 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 		commands_by_name[cmdname] = ret;
 	}
 	//Second pass: Grab all command chainings and merge them into single commands.
-	//TODO: Keep the commands but unselected? Or just ignore them?
+	//Heuristically, we judge that commands are to be merged if the subsequent ones have names
+	//that begin with the initial one, so !rc -> !rc2 -> !rc3 is all combined, but !adbreak -> !ad
+	//will not be merged, so those will be two commands with an explicit chain-to.
 	foreach (sort(indices(commands_by_name)), string cmdname) {
 		mapping cmd = commands_by_name[cmdname];
 		if (!cmd->?chainto) continue; //cmd could be null if this was already processed as a chained command
@@ -239,6 +241,13 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 		multiset(string) comments = (<>);
 		foreach (cmd->body->message, mapping msg) if (mappingp(msg) && msg->dest == "//") comments[msg->message] = 1;
 		while (next) {
+			if (!has_prefix(next->cmdname, cmdname)) {
+				commands_by_name[next->cmdname] = next; //Reinstate it so it can be reviewed subsequently
+				//Chain to it. To my knowledge, Deepbot has no way to add parameters to the chained
+				//command, so the "message" will always be blank.
+				cmd->body->message += ({(["dest": "/chain", "target": next->cmdname, "message": "", "delay": chaindelay])});
+				break;
+			}
 			//Duplicated comments in both the base command and the chained-to command are redundant.
 			foreach (next->body->message; int i; mapping msg) if (mappingp(msg) && msg->dest == "//") {
 				if (comments[msg->message]) next->body->message[i] = 0;
@@ -255,6 +264,7 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 		cmd->mustard = G->G->mustard->make_mustard(cmd->body);
 		m_delete(cmd, "chainto");
 		m_delete(cmd, "chaindelay");
+		m_delete(cmd, "body"); //Unless we want to keep it so the front end can show it graphically?
 	}
 	if (sizeof(unknowns)) werror("DeepBot import unknowns: %O\n", unknowns);
 	array xlat = values(commands_by_name); sort(indices(commands_by_name), xlat);
