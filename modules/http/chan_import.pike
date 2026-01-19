@@ -6,9 +6,13 @@ constant markdown = #"# Import from other services - $$channel$$
 
 ## DeepBot commands
 
-1. Go to DeepBot
-2. Find the thing. Do the thing. Copy to clipboard.
-3. Paste the result here.
+1. Open DeepBot
+2. Click on the tab \"channel commands\"
+3. At the top under \"selection\", select \"all\"
+3. Right click anywhere in the list of commands
+4. Choose \"export commands\"
+5. Paste the result here
+6. Click \"Translate\" to see them as Mustard Mine commands.
 
 * <textarea id=deepbot_commands></textarea>
 * <button type=button id=import_deepbot>Translate</button>
