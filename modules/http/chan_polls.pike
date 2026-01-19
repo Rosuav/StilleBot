@@ -22,7 +22,7 @@ loading... | -
 <tr><td>Date:</td><td><input name=created readonly> <input name=lastused readonly></td></tr>
 <tr><td><label for=title>Title:</label></td><td><input id=title name=title size=80></td></tr>
 <tr><td><label for=options>Options:</label></td><td><textarea id=options name=options rows=5 cols=80 placeholder='Yes&#10;No'></textarea></td></tr>
-<tr><td><label for=duration>Duration:</label></td><td><select id=duration name=duration><option value=15>15 secs<option value=60>One minute<option value=300>Five minutes<option value=900>Fifteen minutes</select></td></tr>
+<tr><td><label for=duration>Duration:</label></td><td><select id=duration name=duration><option value=15>15 secs<option value=60>One minute<option value=120>Two minutes<option value=180>Three minutes<option value=300>Five minutes<option value=600>Ten minutes<option value=900>Fifteen minutes</select></td></tr>
 <tr><td><label for=points>Extra votes:</label></td><td><input id=points name=points type=number value=0> channel points to buy an extra vote, 0 to disable</td></tr>
 <tr><td>Results:</td><td id=resultsummary></td></tr>
 <tr><td></td><td id=resultdetails></td></tr>
