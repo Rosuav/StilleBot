@@ -270,3 +270,11 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 	array xlat = values(commands_by_name); sort(indices(commands_by_name), xlat);
 	return (["cmd": "translated", "commands": xlat, "warnings": warnings]);
 }
+
+__async__ mapping wscmd_deepbot_import(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	foreach (msg->commands, mapping cmd) {
+		//Note that we assume here that the user hasn't been fiddling with the MustardScript in the front end;
+		//if validation fails, there's no message sent back - the command is just silently skipped.
+		G->G->cmdmgr->update_command(channel, conn->subgroup, cmd->cmdname, cmd->mustard, (["language": "mustard"]));
+	}
+}
