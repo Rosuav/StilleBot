@@ -34,7 +34,7 @@ export function render(data) {
 			!rps.commands?.length && I("(none currently)"), BR(),
 			//What's a good UI for optional commands? If the command exists, there needs
 			//to be a way to delete it.
-			["mergeparty"].map(cmd => !rps.commands.includes(cmd) && BUTTON(
+			rps_extra_commands.map(cmd => !rps.commands.includes(cmd) && BUTTON(
 				{".onclick": () => ws_sync.send({cmd: "rpsaddcmd", command: cmd})},
 				["Create ", CODE("!" + cmd)],
 			)),

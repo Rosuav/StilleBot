@@ -143,6 +143,11 @@ constant rps_extra_commands = ([
 			}
 		}
 	#},
+	"mergeshake": #{
+		#access "mod"
+		#visibility "hidden"
+		chan_monitors("%monitorid%", "shake", "", "", "") "Time to shake things up a bit!"
+	#},
 ]);
 
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
@@ -162,6 +167,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	return render(req, (["vars": ([
 		"ws_group": "", "sections": sections, "voices": voices,
 		"rewardscopes": scopes || "",
+		"rps_extra_commands": indices(rps_extra_commands),
 	])]) | req->misc->chaninfo);
 }
 
