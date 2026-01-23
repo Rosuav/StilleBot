@@ -14,7 +14,7 @@ export function render_item(msg, obj) {
 		TD(msg.tags), //may need to be joined
 		TD(msg.ccls), //ditto
 		TD(msg.comments),
-		TD(BUTTON({class: "delete"}, "X")), //TODO
+		TD(BUTTON({class: "delete"}, "X")),
 	]);
 }
 export function render_empty() {
