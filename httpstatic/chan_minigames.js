@@ -17,8 +17,15 @@ export function render(data) {
 			"Theme ",
 			SELECT({name: "theme", value: rps.theme}, [
 				//OPTION({value: "default"}, "Default - rock/paper/scissors"), //Vanilla theme, may or may not happen
-				OPTION({value: "cute"}, "Cute - rock/paper/scissors"), //DeviCat upcoming theme
+				OPTION({value: "cute"}, "Cute - rock/paper/scissors"),
 				OPTION({value: "halloween"}, "Halloween - knife/pumpkin/ghost"),
+			]),
+		]),
+		LI([
+			"Style ",
+			SELECT({name: "style", value: rps.style}, [
+				OPTION({value: "bordered"}, "Coloured border and background"),
+				OPTION({value: "overlay"}, "No border/background"),
 			]),
 		]),
 		LI([

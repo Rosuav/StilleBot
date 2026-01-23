@@ -66,6 +66,7 @@ constant sections = ([
 	"rps": ([
 		"enabled": 0,
 		"theme": "cute", //Change the default to "default" if a non-cutesy one is added
+		"style": "bordered",
 		"size": "medium",
 		"commands": ({ }),
 	]),
@@ -262,6 +263,7 @@ __async__ void update_rps(object channel, mapping game) {
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
 	mapping info = monitors[game->monitorid];
 	int xsize = (["small": 50, "medium": 75, "large": 150])[cfg->size] || 75;
+	string wantalpha = cfg->style == "overlay" ? "0" : "100"; //In overlay mode, walls and bg are transparent
 	if (!info) { //Most likely this will be because game->monitorid is absent, but if you go delete the monitor, it can get recreated here
 		[game->monitorid, info] = G->G->websocket_types->chan_monitors->create_monitor(channel, ([
 			"type": "pile",
@@ -269,8 +271,8 @@ __async__ void update_rps(object channel, mapping game) {
 			"behaviour": "Floating",
 			"bouncemode": "Merge",
 			"addmode": "Explicit only",
-			"bgcolor": "#BEFEFA", "bgalpha": "100",
-			"wallcolor": "#0051a8", "wallalpha": "100",
+			"bgcolor": "#BEFEFA", "bgalpha": wantalpha,
+			"wallcolor": "#0051a8", "wallalpha": wantalpha,
 			"wall_top": "100",
 			"wall_left": "100",
 			"wall_right": "100",
@@ -298,6 +300,8 @@ __async__ void update_rps(object channel, mapping game) {
 			mapping thing = info->things[idx];
 			if (thing->xsize != xsize) {changed = 1; thing->xsize = xsize;}
 		}
+		if (info->bgalpha != wantalpha) {info->bgalpha = wantalpha; changed = 1;}
+		if (info->wallalpha != wantalpha) {info->wallalpha = wantalpha; changed = 1;}
 		if (changed) {
 			await(G->G->DB->save_config(channel->userid, "monitors", monitors));
 			G->G->websocket_types->chan_monitors->send_updates_all(channel, game->monitorid);
