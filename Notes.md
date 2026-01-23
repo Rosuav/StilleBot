@@ -34,6 +34,10 @@ Commonly-used emoji
 Hopping the Bot
 ---------------
 
+Prior to the /serverstatus page having the ability to directly hop the bot,
+this was the procedure. It is still available for situations in which a
+manual hop is required.
+
 Transferring the primary instance of the bot between Gideon and Sikorsky is
 simple in theory, but in practice, I have some safeguards to make sure that
 nothing goes wrong. Follow these steps to hop the bot back and forth.
