@@ -284,4 +284,3 @@
   and crown use this, but there's no general-purpose way to do it.
   - Consider changing format from "hitpoints" to "avatar", and then having a format_style
     to specify whether they get hitpoints.
-* Have a way to save a streamsetup back to its previous slot

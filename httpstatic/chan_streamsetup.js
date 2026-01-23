@@ -34,7 +34,6 @@ export function render(data) {
 }
 
 on("click", "#setups tr[data-id]", e => {
-	console.log("click");
 	const setup = setups[e.match.dataset.id];
 	if (!setup) return; //Shouldn't happen
 	pick_setup(setup);
@@ -46,6 +45,7 @@ function pick_setup(setup) {
 	setupform.tags.value = setup.tags;
 	setupform.ccls.value = setup.ccls;
 	setupform.comments.value = setup.comments || "";
+	DOM("#update").dataset.id = setup.id || "";
 	DOM("#setupconfig").classList.add("dirty");
 }
 
@@ -79,9 +79,10 @@ on("click", "#saveprev", e => {
 	ws_sync.send(msg);
 });
 
-on("click", "#save", e => {
+on("click", "#save,#update", e => {
 	const el = DOM("#setupconfig").elements;
 	const msg = {cmd: "newsetup"};
+	if (e.match.dataset.id) msg.id = e.match.dataset.id;
 	"category title tags ccls comments".split(" ").forEach(id => msg[id] = el[id].value);
 	ws_sync.send(msg);
 });
