@@ -14,8 +14,6 @@ Saved setups allow you to quickly select commonly-used settings. Retain your fav
 
 You can create [commands](commands) that change these same settings.
 
-Were you using the old Mustard Mine? [Import your settings here!](: .opendlg data-dlg=importdlg)
-
 Category | Title | Tags | CCLs | Comments |
 ---------|-------|------|------|----------|-
 loading... | - | - | - | - | -
@@ -42,16 +40,6 @@ loading... | - | - | - | - | -
 <ul id=checklist></ul>
 
 [Edit](:.opendlg data-dlg=editchecklistdlg)
-
-> ### Import old settings
->
-> Were you previously using [the old Mustard Mine](https://mustard-mine.herokuapp.com/)? You can
-> export settings from there (scroll all the way down) and import them here.
->
-> <input id=importfile type=file accept=application/json>
->
-> [Import](:#importsettings disabled=true) [Close](:.dialog_close)
-{: tag=dialog #importdlg}
 
 <style>
 #setups tbody tr:nth-child(odd) {
@@ -237,17 +225,6 @@ void wscmd_setchecklist(object channel, mapping(string:mixed) conn, mapping(stri
 	if (!stringp(msg->checklist)) return;
 	G->G->DB->mutate_config(channel->userid, "streamsetups") {
 		__ARGS__[0]->checklist = msg->checklist;
-	}->then() {send_updates_all(channel, "");};
-}
-
-void wscmd_import(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	G->G->DB->mutate_config(channel->userid, "streamsetups") { mapping cfg = __ARGS__[0];
-		foreach (msg->data->setups || ({ }), mapping|string setup) if (mappingp(setup)) {
-			setup->id = MIME.encode_base64(random_string(9));
-			setup->comments = m_delete(setup, "tweet") || ""; //Tweets aren't supported, but comments are new (and mean we don't lose any data)
-			cfg->setups += ({setup});
-		}
-		if (arrayp(msg->data->checklist)) cfg->checklist = String.trim(msg->data->checklist * "\n");
 	}->then() {send_updates_all(channel, "");};
 }
 

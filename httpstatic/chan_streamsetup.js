@@ -132,17 +132,6 @@ on("click", "#savechecklist", e => {
 	DOM("#editchecklistdlg").close();
 });
 
-on("change", "#importfile", e => DOM("#importsettings").disabled = e.match.value === "");
-
-on("click", "#importsettings", async e => {
-	const files = DOM("#importfile").files;
-	if (!files.length) return;
-	if (files[0].size > 1048576) return; //Seriously, these files should be tiny
-	const data = JSON.parse(await(files[0].text())); //TODO: What if it bombs (in reading, decoding UTF-8, or decoding JSON)?
-	ws_sync.send({cmd: "import", data});
-	DOM("#importdlg").close();
-});
-
 if (initialsetup) {
 	const el = DOM("#setupconfig").elements;
 	el.category.value = initialsetup.category;
