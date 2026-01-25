@@ -78,7 +78,7 @@ Encounters get spawned in at the RHS and there'll be a few of them visible ahead
 - Respawn chamber. Guaranteed to spawn if not on screen or more than X tiles ago.
 
 
-Might be nice to have some metrics that get reported each death. Maybe XP gained vs HP lost?
+Might be nice to have some metrics that get reported each death. Maybe gold and XP gained vs HP lost?
 
 
 Spawn Levels
@@ -108,7 +108,18 @@ Damage calculation
 - Enemy hitpoints: 3 * (1.1 ** enemy level)
 
 Crunch some numbers with these, see how it goes.
+
+<div id=display></div>
+<style>
+$$styles$$
+</style>
 #};
+
+constant styles = #"
+#pathway {
+	display: flex;
+}
+";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
@@ -117,14 +128,20 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		if (cfg->nonce != req->variables->view) return 0; //404 if you get the nonce wrong
 		return render_template("monitor.html", ([
 			"vars": (["ws_type": ws_type, "ws_group": req->variables->view + "#" + req->misc->channel->userid]),
+			"styles": styles,
 		]));
 	}
 	//TODO: Non-mod page with stats, and maybe voting (but only if logged in)
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
-	return render(req, (["vars": (["ws_group": ""])]) | req->misc->chaninfo);
+	return render(req, (["vars": (["ws_group": ""]), "styles": styles]) | req->misc->chaninfo);
 }
 
 bool need_mod(string grp) {return grp == "";}
 __async__ mapping get_chan_state(object channel, string grp, string|void id, string|void type) {
-	return await(G->G->DB->load_config(channel->userid, "respawn"));
+	return (["gamestate": await(G->G->DB->load_config(channel->userid, "respawn"))]);
+}
+
+@"is_mod": __async__ void wscmd_save_game(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!mappingp(msg->gamestate)) return;
+	await(G->G->DB->save_config(channel->userid, "respawn", msg->gamestate));
 }
