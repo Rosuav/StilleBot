@@ -1,0 +1,125 @@
+inherit http_websocket;
+
+constant markdown = #{# Respawn Technician
+
+A great hero roams the world, destroying evil, saving princesses, rescuing the needy, and becoming wealthy in the process. His story is told
+by kings and peasants alike, for his deeds are many and his accomplishments great.
+
+You are not that hero. You are the technician who operates his respawn chamber.
+
+When the hero dies, he comes back to life at the nearest respawn chamber, slightly weakened but ready to try again. In the interests of the
+realm at large, you must respawn him, again, and again, and again!
+
+The Hero has **stats** and **traits**. His stats affect his in-game combat ability, and his traits affect how he chooses his battles.
+- STR: Melee damage dealt. Efficient DPS.
+- DEX: Ranged damage dealt. Less efficient but less risky.
+- CON: Health. More health means less respawning... hopefully.
+- INT: Observation. Higher intelligence lets the hero evaluate enemies better.
+- WIS: Mental fortitude. Reduces the negative effects of running from battle.
+- CHA: Charisma. Has no effect whatsoever. (Maybe it can upgrade his sprite eventually??)
+
+Whenever the hero dies, he loses some experience points, which will make it harder for him to level up. Every time he reaches the next
+Fibonacci number, he levels up and gains three stat points. Defeating bosses will give him lots of XP and may also unlock a new trait.
+
+Traits are your way to influence the battle. When you respawn the hero, you can select from all the myriad versions of this hero throughout
+the multiverse, choosing one with the traits you desire. Each trait has two contradictory directions, each with its preferred combat style and
+preferred stats. Whenever the Hero makes a decision, his traits affect how he chooses.
+- Aggressive [STR]/Passive [INT]: An aggressive hero is more likely to take every fight he can, even if they are not worth much XP.
+- Headstrong [CON]/Prudent [WIS]: Headstrong heroes will take fights even when they look unwinnable; prudent heroes prefer to back off and level
+  up some more first.
+- Brave [CHA]/Cowardly [DEX]: Of course the hero is brave. At least in his own eyes! A brave hero will not shy away from battle, a cowardly one
+  will tend to retreat at the first sign of danger.
+- Other traits will have to be discovered as you defeat bosses!
+
+* Have a class for each trait, with a Power that could be positive or negative
+* To make a decision:
+  - List all traits with the absolute value of the Power
+  - Take a weighted random selection from those traits
+  - Ask that trait what it would want done, and do that
+* On level up, each stat point is a separate decision. So a hero with a single very strong trait might put all three into the same stat, or
+  a more balanced hero might spread them around.
+* On respawn, player get to pick one trait to promote. If that trait already exists in that direction, it gets empowered by random()/2+0.25 for
+  a 0.25-0.75 strength empowerment. This has diminishing returns if the trait's already very strong, as other traits are not weakened.
+* OTOH if the trait is in the opposite direction (eg you promote prudence when the hero's headstrong), take random()+0.5; if that number is more
+  than the current trait, flip the trait and make it random()/4+0.25 for a starting strength of 0.25-0.5. Otherwise, subtract it from the trait.
+* If Twitch chat is permitted to participate, they can use "!trait aggressive" to request a trait. This will be displayed on the button, with the
+  most-voted-for trait getting a highlight. On respawn, wait 10 seconds, then choose that button.
+* Unlocking a new trait starts it at random()/2-0.25 for a very weak initial impact. It's nearly impossible to completely remove a trait once
+  it's been unlocked, though you can certainly overpower it with others.
+
+Two modes: 2D and Linear
+- In 2D mode, the hero's path branches periodically. He looks down each path, and makes a choice. But he mostly still moves left to right.
+- In Linear mode, the branches are shown as doorways. He peeks into the door, and makes a choice. He moves exclusively left to right.
+
+Encounters get spawned in at the RHS and there'll be a few of them visible ahead of the hero's current location.
+- Clear. Just keep walking.
+- Enemy. Hero may choose to fight or to move on. If the enemy's level is very low (at least 10 levels below the hero), he can walk right past
+  without penalty, but if he chooses to fight anyway, he'll get minimal XP. Otherwise, choosing to move on will have the monster roll a dice to
+  see if they fight anyway - if so, monster gets first strike.
+  - The hero may choose to shoot the enemy with his bow before entering its square. Each time he does, the monster has a chance to force him to
+    close the distance next move; otherwise, he can continue using the bow until he chooses to switch to melee.
+- Boss. You can't walk past this, though you can back away and take the opposite choice from the most recent branch. You'll find the boss
+  again at some point, and new content is only unlocked by defeating bosses. Regular enemies have a soft level cap until boss defeated.
+  - NOTE: Block boss spawn if (a) there's a boss visible on screen, either defeated or undefeated; or (b) when the hero has retreated, until a
+    branch gets spawned.
+- Equipment. Could be any one of these, at a randomly selected level same as enemies are. The Hero carries one of each type of equipment, and
+  starts out with level 1 equipment in all slots.
+  - Sword: Melee damage.
+  - Bow: Ranged damage.
+  - Armor: Damage resistance.
+  - Divide the item's level by the current base level (see "Spawn Levels") to get the multiplier for the stat in question.
+- Item. Could be any one of these. The effectiveness given is for an item that spawns at exactly the current base level. For items spawned by
+  viewer generosity, they will be spawned at max level instead.
+  - Flash of Inspiration. It's a flashbang grenade, and it gives 1000 XP.
+  - Healing. Restore 50% of HP.
+  - Courage. If there are any retreating penalties, they are removed; otherwise, the hero gets a courage bonus for the next 10 squares.
+  - Stat. A potion of STR gives +5 STR for the next 10 squares. Any stat can spawn, except CHA.
+  - Stoneskin. 25% damage reduction for 10 squares.
+- Respawn chamber. Guaranteed to spawn if not on screen or more than X tiles ago.
+
+
+Might be nice to have some metrics that get reported each death. Maybe XP gained vs HP lost?
+
+
+Spawn Levels
+
+Whenever an enemy/item/equipment is spawned, it is given a level. This comes from a base level, a random component, and possibly a softcap.
+- The base level starts at 1, and increases by 1 every time the hero "ought to" level up (probably some number of squares traversed). Ideally,
+  the hero should remain approximately at the base level. If he's underlevelled, enemies will be worth more XP and items will be better; if he's
+  overlevelled, enemies will be worth reduced XP, possibly a pittance, and items will be the same or worse than current. So it should balance.
+- The random component is Math.trunc(random(20)-10), capped at +/- half of the base level.
+- Softcap. For every undefeated boss whose level is less than the base level, halve the excess levels.
+  - Example: Base level is 11, random +4, but you have yet to defeat the level 10 boss. The softcap applies to the 5 levels beyond 10, halving
+    them, so the actual spawned level will be Math.trunc(boss+(level-boss)/2) which works out to 12.
+  - Example: Base level is 57, random -3, but you have not defeated the level 50 boss or the level 40 boss. Start with the earliest undefeated:
+    - L40: boss+(level-boss)/2 = 40+(54-40)/2 = 47
+    - L50: Using the result of the previous calculation, 47, we're already below the level 50 cutoff, so no further softcapping.
+  - Example: Base level is 63, random +1, still haven't defeated either level 50 or level 40.
+    - L40: 40+(64-40)/2 = 52
+    - L50: 50+(52-50)/2 = 51
+    - The effective spawn level will be 51.
+
+Damage calculation
+- Hero melee damage: (1.05 ** hero level) * (1.1 ** STR) * (sword level / base level)
+- Hero ranged damage: (1.025 ** hero level) * (1.1 ** DEX) * (bow level / base level)
+- Enemy melee damage: (1.15 ** enemy level) / (armor level / base level)
+  - Note that this is almost the same damage (slightly lower) that you'd get if you keep your STR equal to your level
+- Hero hitpoints: 10 * (1.04 ** hero level) * (1.05 ** CON)
+- Enemy hitpoints: 3 * (1.1 ** enemy level)
+
+Crunch some numbers with these, see how it goes.
+#};
+
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
+{
+	mapping cfg = await(G->G->DB->load_config(req->misc->channel->userid, "respawn"));
+	if (req->variables->view) {
+		if (cfg->nonce != req->variables->view) return 0; //404 if you get the nonce wrong
+		return render_template("monitor.html", ([
+			"vars": (["ws_type": ws_type, "ws_group": req->variables->view + "#" + req->misc->channel->userid]),
+		]));
+	}
+	//TODO: Non-mod page with stats, and maybe voting (but only if logged in)
+	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
+	return render(req, (["vars": (["ws_group": ""])]) | req->misc->chaninfo);
+}
