@@ -57,8 +57,12 @@ input[readonly] {
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	//TODO: Should non-mods be allowed to see past polls?
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
-	if (string scopes = req->misc->channel->userid && ensure_bcaster_token(req, "channel:manage:polls"))
-		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
+	if (req->misc->channel->userid) {
+		if (string scopes = ensure_bcaster_token(req, "channel:manage:polls"))
+			return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
+		//TODO: Only establish notifications if you've asked for polls to be tracked?
+		establish_notifications(req->misc->channel->userid);
+	}
 	return render(req, (["vars": (["ws_group": ""])]) | req->misc->chaninfo);
 }
 
