@@ -92,6 +92,7 @@ int(1bit) contains_link(string msg) {
 	}
 }
 
+object twitchlink = Regexp.SimpleRegexp("(https://)*(www.)*twitch.tv/");
 @hook_allmsgs: int message(object channel, mapping person, string msg) {
 	mapping cfg = channel->config->hyperlinks || ([]);
 	if (!cfg->blocked) return 0; //All links are permitted, no filtering is being done
@@ -108,6 +109,12 @@ int(1bit) contains_link(string msg) {
 	}
 	if (!cfg->warnings || !sizeof(cfg->warnings)) return 0; //No actions to be taken against links
 	if (!contains_link(msg)) return 0; //No link? No problem.
+	if (cfg->permit_twitch_links) {
+		//When Twitch links are permitted, permit anything from any Twitch subdomain.
+		//Note that this doesn't allow you to specify "only clips from my channel".
+		//TODO: Allow "only clips"?
+		if (!contains_link(twitchlink->replace(msg, ""))) return 0; //Remove the Twitch links, then if there's any other links, it's still got links.
+	}
 	if (person->badges->?vip && has_value(cfg->permit, "vip")) return 0;
 	if (channel->raiders[person->uid] && has_value(cfg->permit, "raider")) return 0;
 	//If we got this far, the user probably needs to be punished.
@@ -204,6 +211,7 @@ int(1bit) contains_link(string msg) {
 	mapping cfg = channel->botconfig->hyperlinks;
 	if (!cfg) cfg = channel->botconfig->hyperlinks = ([]);
 	if ((int)msg->voice) cfg->voice = (int)msg->voice;
+	if (msg->permit_twitch_links) cfg->permit_twitch_links = (int)msg->permit_twitch_links; //Note that setting it to "0" will set it to false
 	channel->botconfig_save();
 	send_updates_all(channel, "");
 	send_updates_all(channel, "control");

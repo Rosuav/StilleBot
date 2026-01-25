@@ -35,9 +35,13 @@ set_content("#settings", [
 		A({href: "voices"}, "Voices"),
 		" to authenticate it - requires the ", CODE("Ban/timeout/unban users"), " permission.",
 	]),
+	P([
+		"Allow Twitch links? ",
+		//TODO maybe: "Allow clips only"
+		SELECT({id: "permit_twitch_links"}, [OPTION({value: "0"}, "No special handling"), OPTION({value: "1"}, "Allow any twitch.tv links")]),
+	]),
 	P(["Want more flexibility? The ", BUTTON({"data-id": "!hyperlink", class: "advview"}, CODE("!!hyperlink")), " ", A({href: "specials"}, "special trigger"), " can do whatever you need, eg", BR(),
 		"issuing warnings with the ", CODE("/warn"), " command to enforce that they be acknowledged."]),
-	//TODO: Have a button that opens up the command editor for !!hyperlink
 ]);
 
 export function render(data) {
@@ -62,6 +66,7 @@ export function render(data) {
 	set_content("#modvoice", data.voices.map(v =>
 		OPTION({value: v.id, disabled: !v.scopes.includes("moderator:manage:banned_users")}, v.desc))
 	).value = data.voice;
+	DOM("#permit_twitch_links").value = data.permit_twitch_links;
 }
 
 //The radio button
@@ -83,3 +88,4 @@ on("click", ".confirmdelete", simpleconfirm("Delete this warning level?", e => w
 on("change", "#warnings input,#warnings select", e => ws_sync.send({cmd: "editwarning", idx: e.match.closest_data("idx"), [e.match.name]: e.match.value}));
 
 on("change", "#modvoice", e => ws_sync.send({cmd: "configure", "voice": e.match.value}));
+on("change", "#permit_twitch_links", e => ws_sync.send({cmd: "configure", "permit_twitch_links": e.match.value}));
