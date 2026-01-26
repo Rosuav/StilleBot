@@ -119,6 +119,20 @@ constant styles = #"
 #pathway {
 	display: flex;
 }
+#stats {display: flex; gap: 2em;}
+#stats ul {
+	list-style-type: none;
+	padding: 0.25em;
+	border: 1px solid black;
+}
+.twocol {
+	padding: 0.25em;
+	border: 1px solid black;
+}
+.twocol td, .twocol th {
+	padding: 0 0.5em;
+	text-align: center;
+}
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
