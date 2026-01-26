@@ -100,6 +100,15 @@ $$styles$$
 constant styles = #"
 #pathway {
 	display: flex;
+	flex-direction: row-reverse;
+	overflow: hidden;
+}
+#pathway div {
+	flex: 0 0 100px;
+	height: 30px;
+	border: 1px solid rebeccapurple;
+	margin: 2px;
+	padding: 3px;
 }
 #stats {display: flex; gap: 2em;}
 #stats ul {

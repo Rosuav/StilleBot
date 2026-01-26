@@ -72,6 +72,54 @@ function TWO_COL(elements) {
 
 const TICK_LENGTH = 1000; //FIXME: For normal operation, a tick should be 100ms
 const MAX_PATHWAY_LENGTH = 20; //Ideally this should be more than can be seen on any reasonable screen
+
+function populate() {
+	//First, populate the world. We need to have enough behind us to draw, our current
+	//location, and three cells ahead of us.
+	while (gamestate.world.location >= gamestate.world.pathway.length - 3) {
+		//Choose an encounter type.
+		//TODO: Dynamically adjust these weights according to circumstances;
+		//for example, be generous with equipment if all items are subpar, or
+		//offer more enemies if you have good gear.
+		let distance_to_respawn = 1000;
+		for (let enc of gamestate.world.pathway) {
+			++distance_to_respawn;
+			if (enc.type === "respawn") distance_to_respawn = 0;
+		}
+		const weights = {
+			//Respawners become more likely as you get further from one,
+			//and (not shown here) guaranteed to spawn once you're too far.
+			respawn: distance_to_respawn < 8 ? 0 : distance_to_respawn,
+			clear: 10,
+			enemy: 15,
+			equipment: 2,
+			//item: 2,
+			//boss: 3, //Zero this out if there is no undefeated boss at/below base level, or if there's any boss on screen (including a defeated one)
+			//branch: 4, //BIG OL' TODO RIGHT THERE
+		};
+		let enctype;
+		//First, are there any guaranteed spawn demands?
+		if (distance_to_respawn >= 15) enctype = "respawn"; //NOTE: This figure includes the 3-square advancement
+		//else if (there's a user-provided item spawn requested) enctype = "item";
+		//Otherwise, weighted random
+		else {
+			let totweight = 0;
+			for (let w of Object.values(weights)) totweight += w;
+			let selection = Math.random() * totweight; //Yes, this isn't 100% perfect, but it's close enough
+			for (let [t, w] of Object.entries(weights)) if ((selection -= w) < 0) {enctype = t; break;}
+		}
+		if (!enctype || !encounter[enctype]) break; //Shouldn't happen - for some reason nothing can spawn.
+		console.log("ADDING", enctype);
+		const enc = encounter[enctype]();
+		if (!enc.distance) enc.distance = Math.max(Math.floor(Math.random() * spawnlevel()), 10); //Distances tend to increase as the game progresses
+		enc.progress = 0;
+		if (gamestate.world.pathway.push(enc) > MAX_PATHWAY_LENGTH) {
+			gamestate.world.pathway.shift(); //Discard the oldest
+			--gamestate.world.location;
+		}
+	}
+}
+
 //NOTE: The game tick is not started until we first receive status from the server, but
 //after that, it will continue to run.
 let ticking = null, basetime, curtick = 0;
@@ -83,50 +131,7 @@ function gametick() {
 	while (curtick < nowtick) {
 		++curtick;
 		console.log("Tick ", curtick);
-		//First, populate the world. We need to have enough behind us to draw, our current
-		//location, and three cells ahead of us.
-		while (gamestate.world.location >= gamestate.world.pathway.length - 3) {
-			//Choose an encounter type.
-			//TODO: Dynamically adjust these weights according to circumstances;
-			//for example, be generous with equipment if all items are subpar, or
-			//offer more enemies if you have good gear.
-			let distance_to_respawn = 1000;
-			for (let enc of gamestate.world.pathway) {
-				++distance_to_respawn;
-				if (enc.type === "respawn") distance_to_respawn = 0;
-			}
-			const weights = {
-				//Respawners become more likely as you get further from one,
-				//and (not shown here) guaranteed to spawn once you're too far.
-				respawn: distance_to_respawn < 8 ? 0 : distance_to_respawn,
-				clear: 10,
-				enemy: 15,
-				equipment: 2,
-				//item: 2,
-				//boss: 3, //Zero this out if there is no undefeated boss at/below base level, or if there's any boss on screen (including a defeated one)
-				//branch: 4, //BIG OL' TODO RIGHT THERE
-			};
-			let enctype;
-			//First, are there any guaranteed spawn demands?
-			if (distance_to_respawn >= 15) enctype = "respawn"; //NOTE: This figure includes the 3-square advancement
-			//else if (there's a user-provided item spawn requested) enctype = "item";
-			//Otherwise, weighted random
-			else {
-				let totweight = 0;
-				for (let w of Object.values(weights)) totweight += w;
-				let selection = Math.random() * totweight; //Yes, this isn't 100% perfect, but it's close enough
-				for (let [t, w] of Object.entries(weights)) if ((selection -= w) < 0) {enctype = t; break;}
-			}
-			if (!enctype || !encounter[enctype]) break; //Shouldn't happen - for some reason nothing can spawn.
-			console.log("ADDING", enctype);
-			const enc = encounter[enctype]();
-			if (!enc.distance) enc.distance = Math.max(Math.floor(Math.random() * spawnlevel()), 10); //Distances tend to increase as the game progresses
-			enc.progress = 0;
-			if (gamestate.world.pathway.push(enc) > MAX_PATHWAY_LENGTH) {
-				gamestate.world.pathway.shift(); //Discard the oldest
-				--gamestate.world.location;
-			}
-		}
+		populate();
 
 		//Take a step!
 		//Does the current location demand more action? Time delays are counted in ticks.
@@ -134,7 +139,7 @@ function gametick() {
 		const handler = encounter_action[location.type]; if (handler) handler(location);
 		//The handler may have changed state. The last step is always to move, either advance or retreat.
 		if (gamestate.world.direction === "advancing") {
-			if (++location.progress >= location.distance) ++gamestate.world.location;
+			if (++location.progress >= location.distance) {++gamestate.world.location; populate();}
 		} else {
 			if (--location.progress <= 0) --gamestate.world.location;
 		}
@@ -174,11 +179,10 @@ function gametick() {
 				]))
 			])),
 		]),
-		DIV({id: "pathway"}, [
-			DIV("Tile behind us"),
-			DIV("Current tile"),
-			DIV("Tile ahead of us"),
-		]),
+		DIV({id: "pathway"}, gamestate.world.pathway.map((enc, idx) => DIV([
+			idx === gamestate.world.location && ">",
+			enc.type,
+		])).reverse()),
 	]);
 }
 
