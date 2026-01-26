@@ -6,7 +6,7 @@ inherit annotated;
 //added to as necessary, and all users of this blacklist will automatically
 //start noticing the new ones. Anything that has (at least) one from column
 //A and one from column B will be flagged as a follower seller.
-constant buyfollows = ({"cheap viewers", "cheap followers", "best viewers", "best followers"});
+constant buyfollows = ({"viewers", "cheap followers", "best followers"});
 constant urls = ({".ru", "streamboo", ".online"});
 
 @export: int(1bit) is_selling_followers(string msg) {
