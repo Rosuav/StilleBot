@@ -44,7 +44,7 @@ const encounter = {
 	clear() {return {type: "clear"};},
 	enemy() {return {type: "enemy", level: spawnlevel()};},
 	//boss should be handled differently, and will require a hard-coded list of bosses
-	equipment() {return {type: "equipment", type: "unknown", level: spawnlevel()};}, //Type becomes known when the item is collected
+	equipment() {return {type: "equipment", slot: "unknown", level: spawnlevel()};}, //Slot becomes known when the item is collected
 	//item() {return {type: "item"};}, //Not sure how to do these yet
 	//branch() {console.error("IMPLEMENT ME");},
 };
