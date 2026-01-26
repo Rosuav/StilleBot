@@ -1,6 +1,20 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {BUTTON, DIV, TABLE, TD, TH, TR} = lindt; //autoimport
 
+//ENCOUNTER OPTIONS
+const encounter = {
+	respawn(state) {
+		console.log("Spawning a respawner");
+		//Respawner states:
+		//unreached - new, hasn't yet been tagged
+		//reached - has been activated, but isn't current
+		//current - where the Hero will respawn
+		//When a respawner becomes current, any existing current respawner becomes Reached.
+		return {type: "respawn", state: state || "unreached"};
+	},
+	clear() {return {type: "clear"};},
+};
+
 let gamestate = { };
 
 //The cost to advance past the Nth level is given by the Nth Fibonacci number. This gives
@@ -19,6 +33,7 @@ function TWO_COL(elements) {
 }
 
 const TICK_LENGTH = 1000; //FIXME: For normal operation, a tick should be 100ms
+const MAX_PATHWAY_LENGTH = 20; //Ideally this should be more than can be seen on any reasonable screen
 //NOTE: The game tick is not started until we first receive status from the server, but
 //after that, it will continue to run.
 let ticking = null, basetime, curtick = 0;
@@ -30,6 +45,43 @@ function gametick() {
 	while (curtick < nowtick) {
 		++curtick;
 		console.log("Tick ", curtick);
+		//First, populate the world. We need to have enough behind us to draw, our current
+		//location, and three cells ahead of us.
+		while (gamestate.world.location >= gamestate.world.pathway.length - 3) {
+			//Choose an encounter type.
+			//TODO: Dynamically adjust these weights according to circumstances;
+			//for example, be generous with equipment if all items are subpar, or
+			//offer more enemies if you have good gear.
+			let distance_to_respawn = 1000;
+			for (let enc of gamestate.world.pathway) {
+				++distance_to_respawn;
+				if (enc.type === "respawn") distance_to_respawn = 0;
+			}
+			const weights = {
+				//Respawners become more likely as you get further from one,
+				//and (not shown here) guaranteed to spawn once you're too far.
+				respawn: distance_to_respawn < 8 ? 0 : distance_to_respawn,
+				clear: 10,
+			};
+			let enctype;
+			//First, are there any guaranteed spawn demands?
+			if (distance_to_respawn >= 15) enctype = "respawn"; //NOTE: This figure includes the 3-square advancement
+			//else if (there's a user-provided item spawn requested) enctype = "item";
+			//Otherwise, weighted random
+			else {
+				let totweight = 0;
+				for (let w of Object.values(weights)) totweight += w;
+				let selection = Math.random() * totweight; //Yes, this isn't 100% perfect, but it's close enough
+				for (let [t, w] of Object.entries(weights)) if ((selection -= w) < 0) {enctype = t; break;}
+			}
+			if (!enctype || !encounter[enctype]) break; //Shouldn't happen - for some reason nothing can spawn.
+			console.log("ADDING", enctype);
+			const enc = encounter[enctype]();
+			if (gamestate.world.pathway.push(enc) > MAX_PATHWAY_LENGTH) {
+				gamestate.world.pathway.shift(); //Discard the oldest
+				--gamestate.world.location;
+			}
+		}
 
 		//Finally, check state-based updates.
 		if (!gamestate.stats.nextlevel) gamestate.stats.nextlevel = tnl(gamestate.stats.level);
@@ -76,7 +128,7 @@ export function render(data) {
 		if (!gamestate.stats) gamestate.stats = {STR:1, DEX:1, CON:1, INT:1, WIS:1, CHA:1, level: 1, xp: 0};
 		if (!gamestate.traits) gamestate.traits = {aggressive: 0.1};
 		if (!gamestate.equipment) gamestate.equipment = {sword: 1, bow: 1, armor: 1};
-		if (!gamestate.world) gamestate.world = {baselevel: 1, pathway: []};
+		if (!gamestate.world) gamestate.world = {baselevel: 1, pathway: [encounter.respawn("current")], location: 0};
 		basetime = performance.now();
 		ticking = setInterval(gametick, TICK_LENGTH);
 	}
