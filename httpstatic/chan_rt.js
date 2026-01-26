@@ -160,9 +160,9 @@ function gametick() {
 		//The handler may have changed state. The last step is always to move, either advance or retreat.
 		if (gamestate.world.direction === "advancing") {
 			if (++location.progress >= location.distance) {++gamestate.world.location; populate();}
-		} else {
+		} else if (gamestate.world.direction === "retreating") {
 			if (--location.progress <= 0) --gamestate.world.location;
-		}
+		} //Otherwise something's holding us here.
 		console.log("At", location.progress + "/" + location.distance, location);
 		//TODO: If advancing and the next location has an enemy, chance to take a bow shot
 
