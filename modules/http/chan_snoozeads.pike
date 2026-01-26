@@ -1,6 +1,7 @@
 inherit http_websocket;
 inherit hook;
 inherit annotated;
+inherit builtin_command;
 
 constant markdown = #"# Ads and snoozes
 
@@ -164,6 +165,28 @@ void wscmd_advance_warning(object channel, mapping(string:mixed) conn, mapping(s
 	channel->botconfig->advance_warning = (int)msg->value;
 	channel->botconfig_save();
 	check_stats(channel); //Will send_updates_all when it has all the stats
+}
+
+constant builtin_name = "Snooze ads";
+constant builtin_param = ({"/Action/query/snooze"});
+constant MOCKUP_builtin_param = ({
+	"/Action",
+});
+constant scope_required = "channel:manage:ads"; //NOTE: If "run ad" were added as a builtin, it would require channel:edit:commercial instead
+constant vars_provided = ([
+	"{snoozes}": "Number of snoozes remaining",
+]);
+
+__async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
+	switch (param[0]) {
+		case "query": return ([]); //FIXME
+		case "snooze": {
+			mapping info = await(twitch_api_request("https://api.twitch.tv/helix/channels/ads/schedule/snooze?broadcaster_id=" + channel->userid,
+				(["Authorization": channel->userid]),
+				(["method": "POST"])));
+			return (["{snoozes}": (string)info->data->snooze_count]);
+		}
+	}
 }
 
 protected void create(string name) {::create(name); G->G->recheck_ad_status = check_stats;}
