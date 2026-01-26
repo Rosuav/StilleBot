@@ -132,6 +132,14 @@ function populate() {
 	}
 }
 
+function pathway_background(pos, enc) {
+	//Transition from future colour to past colour with a progress bar in the current encounter
+	if (pos < 0) return "#88f";
+	if (pos > 0) return "aliceblue";
+	const progress = enc.progress * 100 / enc.distance;
+	return "linear-gradient(to right, #88f, #88f " + progress + "%, aliceblue " + progress + "%, aliceblue)";
+}
+
 //NOTE: The game tick is not started until we first receive status from the server, but
 //after that, it will continue to run.
 let ticking = null, basetime, curtick = 0;
@@ -191,8 +199,10 @@ function gametick() {
 				]))
 			])),
 		]),
-		DIV({id: "pathway"}, gamestate.world.pathway.map((enc, idx) => DIV([
-			idx === gamestate.world.location && ">",
+		DIV({id: "pathway"}, gamestate.world.pathway.map((enc, idx) => DIV(
+		{style: "background: " + pathway_background(idx - gamestate.world.location, enc)},
+		[
+			//TODO: Nicer content here.
 			enc.type,
 		])).reverse()),
 	]);
