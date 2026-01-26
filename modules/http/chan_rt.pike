@@ -81,24 +81,6 @@ Encounters get spawned in at the RHS and there'll be a few of them visible ahead
 Might be nice to have some metrics that get reported each death. Maybe gold and XP gained vs HP lost?
 
 
-Spawn Levels
-
-Whenever an enemy/item/equipment is spawned, it is given a level. This comes from a base level, a random component, and possibly a softcap.
-- The base level starts at 1, and increases by 1 every time the hero "ought to" level up (probably some number of squares traversed). Ideally,
-  the hero should remain approximately at the base level. If he's underlevelled, enemies will be worth more XP and items will be better; if he's
-  overlevelled, enemies will be worth reduced XP, possibly a pittance, and items will be the same or worse than current. So it should balance.
-- The random component is Math.trunc(random(20)-10), capped at +/- half of the base level.
-- Softcap. For every undefeated boss whose level is less than the base level, halve the excess levels.
-  - Example: Base level is 11, random +4, but you have yet to defeat the level 10 boss. The softcap applies to the 5 levels beyond 10, halving
-    them, so the actual spawned level will be Math.trunc(boss+(level-boss)/2) which works out to 12.
-  - Example: Base level is 57, random -3, but you have not defeated the level 50 boss or the level 40 boss. Start with the earliest undefeated:
-    - L40: boss+(level-boss)/2 = 40+(54-40)/2 = 47
-    - L50: Using the result of the previous calculation, 47, we're already below the level 50 cutoff, so no further softcapping.
-  - Example: Base level is 63, random +1, still haven't defeated either level 50 or level 40.
-    - L40: 40+(64-40)/2 = 52
-    - L50: 50+(52-50)/2 = 51
-    - The effective spawn level will be 51.
-
 Damage calculation
 - Hero melee damage: (1.05 ** hero level) * (1.1 ** STR) * (sword level / base level)
 - Hero ranged damage: (1.025 ** hero level) * (1.1 ** DEX) * (bow level / base level)
