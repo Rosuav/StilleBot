@@ -3,6 +3,10 @@ const {BUTTON, DIV, TABLE, TD, TH, TR} = lindt; //autoimport
 
 let gamestate = { };
 
+function random_choice(options) {
+	return options[Math.floor(Math.random() * options.length)];
+}
+
 /*
 Damage calculation
 - Hero melee damage: (1.05 ** hero level) * (1.1 ** STR) * (sword level / base level)
@@ -56,7 +60,7 @@ const encounter = {
 	clear() {return {type: "clear"};},
 	enemy() {return {type: "enemy", level: spawnlevel()};},
 	//boss should be handled differently, and will require a hard-coded list of bosses
-	equipment() {return {type: "equipment", slot: "unknown", level: spawnlevel()};}, //Slot becomes known when the item is collected
+	equipment() {return {type: "equipment", slot: "unknown", level: spawnlevel() + 1};}, //Slot becomes known when the item is collected
 	//item() {return {type: "item"};}, //Not sure how to do these yet
 	//branch() {console.error("IMPLEMENT ME");},
 };
@@ -64,6 +68,24 @@ const encounter_action = {
 	respawn(loc) {
 		if (loc.state !== "current") loc.state = "current"; //TODO: And set all other currents to "reached"
 		gamestate.world.direction = "advancing"; //Once you run back as far as a respawner, there's no reason to keep retreating.
+	},
+	equipment(loc) {
+		if (loc.slot === "unknown") {
+			//Not yet collected!
+			loc.slot = random_choice(["sword", "bow", "armor"]);
+			if (gamestate.equipment[loc.slot] < loc.level) {
+				//It's an upgrade! Take some time to pick it up.
+				loc.delay = loc.slot === "armor" ? 10 : 5;
+				gamestate.world.direction = "none";
+				//TODO: Report "Equipping a level 5 Sword"
+			} //TODO: Else report "Bypassing a mere level 5 Sword"
+		}
+		if (loc.delay) {
+			if (!--loc.delay) {
+				gamestate.equipment[loc.slot] = loc.level; //Done equipping it, let's go!
+				gamestate.world.direction = "advancing";
+			}
+		}
 	},
 };
 
@@ -141,7 +163,7 @@ function pathway_background(pos, enc) {
 }
 
 //NOTE: The game tick is not started until we first receive status from the server, but
-//after that, it will continue to run.
+//after that, it will continue to run even if we get disconnected.
 let ticking = null, basetime, curtick = 0;
 function gametick() {
 	const nowtick = (performance.now() - basetime) / TICK_LENGTH; //Note that this may be fractional
@@ -150,7 +172,6 @@ function gametick() {
 	//game ticks (albeit delayed), so we'll catch up before trying to render.
 	while (curtick < nowtick) {
 		++curtick;
-		console.log("Tick ", curtick);
 		populate();
 
 		//Take a step!
