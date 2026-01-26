@@ -52,7 +52,6 @@ Two modes: 2D and Linear
 - In Linear mode, the branches are shown as doorways. He peeks into the door, and makes a choice. He moves exclusively left to right.
 
 Encounters get spawned in at the RHS and there'll be a few of them visible ahead of the hero's current location.
-- Clear. Just keep walking.
 - Enemy. Hero may choose to fight or to move on. If the enemy's level is very low (at least 10 levels below the hero), he can walk right past
   without penalty, but if he chooses to fight anyway, he'll get minimal XP. Otherwise, choosing to move on will have the monster roll a dice to
   see if they fight anyway - if so, monster gets first strike.
@@ -62,12 +61,6 @@ Encounters get spawned in at the RHS and there'll be a few of them visible ahead
   again at some point, and new content is only unlocked by defeating bosses. Regular enemies have a soft level cap until boss defeated.
   - NOTE: Block boss spawn if (a) there's a boss visible on screen, either defeated or undefeated; or (b) when the hero has retreated, until a
     branch gets spawned.
-- Equipment. Could be any one of these, at a randomly selected level same as enemies are. The Hero carries one of each type of equipment, and
-  starts out with level 1 equipment in all slots.
-  - Sword: Melee damage.
-  - Bow: Ranged damage.
-  - Armor: Damage resistance.
-  - Divide the item's level by the current base level (see "Spawn Levels") to get the multiplier for the stat in question.
 - Item. Could be any one of these. The effectiveness given is for an item that spawns at exactly the current base level. For items spawned by
   viewer generosity, they will be spawned at max level instead.
   - Flash of Inspiration. It's a flashbang grenade, and it gives 1000 XP.
@@ -75,7 +68,6 @@ Encounters get spawned in at the RHS and there'll be a few of them visible ahead
   - Courage. If there are any retreating penalties, they are removed; otherwise, the hero gets a courage bonus for the next 10 squares.
   - Stat. A potion of STR gives +5 STR for the next 10 squares. Any stat can spawn, except CHA.
   - Stoneskin. 25% damage reduction for 10 squares.
-- Respawn chamber. Guaranteed to spawn if not on screen or more than X tiles ago.
 
 <div id=display></div>
 <style>

@@ -208,7 +208,7 @@ function gametick() {
 	}
 	//Once all game ticks have been processed, update the display.
 	replace_content("#display", [
-		DIV({id: "controls", class: "buttonbox"}, [
+		DIV({id: "controls", class: "buttonbox"}, [ //TODO: Hide these if we're in overlay mode
 			BUTTON({type: "button", id: "save"}, "Save game now"), "Game saves automatically on level up and death",
 		]),
 		DIV({id: "stats"}, [
