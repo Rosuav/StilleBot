@@ -162,6 +162,10 @@ function gametick() {
 			DIV(TWO_COL([
 				"Level", gamestate.stats.level,
 				"Next", ""+(gamestate.stats.nextlevel - gamestate.stats.xp),
+				"\xa0", "",
+				"Sword", gamestate.equipment.sword,
+				"Bow", gamestate.equipment.bow,
+				"Armor", gamestate.equipment.armor,
 			])),
 			DIV(TABLE({class: "twocol"}, [
 				["STR", "DEX", "CON", "INT", "WIS", "CHA"].map(stat => TR([
