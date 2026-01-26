@@ -7,6 +7,12 @@ function random_choice(options) {
 	return options[Math.floor(Math.random() * options.length)];
 }
 
+const messages = ["Starting on an adventure!"];
+function msg(txt) {
+	messages.push(txt);
+	if (messages.length > 6) messages.shift();
+}
+
 /*
 Damage calculation
 - Hero melee damage: (1.05 ** hero level) * (1.1 ** STR) * (sword level / base level)
@@ -49,7 +55,6 @@ function spawnlevel() {
 //ENCOUNTER OPTIONS
 const encounter = {
 	respawn(state) {
-		console.log("Spawning a respawner");
 		//Respawner states:
 		//unreached - new, hasn't yet been tagged
 		//reached - has been activated, but isn't current
@@ -66,7 +71,11 @@ const encounter = {
 };
 const encounter_action = {
 	respawn(loc) {
-		if (loc.state !== "current") loc.state = "current"; //TODO: And set all other currents to "reached"
+		if (loc.state !== "current") {
+			loc.state = "current";
+			//TODO: And set all other currents to "reached"
+			msg("Activating respawn chamber");
+		}
 		gamestate.world.direction = "advancing"; //Once you run back as far as a respawner, there's no reason to keep retreating.
 	},
 	equipment(loc) {
@@ -77,8 +86,8 @@ const encounter_action = {
 				//It's an upgrade! Take some time to pick it up.
 				loc.delay = loc.slot === "armor" ? 10 : 5;
 				gamestate.world.direction = "none";
-				//TODO: Report "Equipping a level 5 Sword"
-			} //TODO: Else report "Bypassing a mere level 5 Sword"
+				msg("Equipping a level " + loc.level + " " + loc.slot); //TODO: Word them differently
+			} else msg("Bypassing a mere level " + loc.level + " " + loc.slot);
 		}
 		if (loc.delay) {
 			if (!--loc.delay) {
@@ -143,7 +152,6 @@ function populate() {
 			for (let [t, w] of Object.entries(weights)) if ((selection -= w) < 0) {enctype = t; break;}
 		}
 		if (!enctype || !encounter[enctype]) break; //Shouldn't happen - for some reason nothing can spawn.
-		console.log("ADDING", enctype);
 		const enc = encounter[enctype]();
 		if (!enc.distance) enc.distance = Math.max(Math.floor(Math.random() * spawnlevel()), 10); //Distances tend to increase as the game progresses
 		enc.progress = 0;
@@ -184,7 +192,6 @@ function gametick() {
 		} else if (gamestate.world.direction === "retreating") {
 			if (--location.progress <= 0) --gamestate.world.location;
 		} //Otherwise something's holding us here.
-		console.log("At", location.progress + "/" + location.distance, location);
 		//TODO: If advancing and the next location has an enemy, chance to take a bow shot
 
 		//Finally, check state-based updates.
@@ -219,6 +226,7 @@ function gametick() {
 					TD(gamestate.stats[stat]),
 				]))
 			])),
+			DIV({id: "messages"}, messages.map(m => DIV(m))),
 		]),
 		DIV({id: "pathway"}, gamestate.world.pathway.map((enc, idx) => DIV(
 		{style: "background: " + pathway_background(idx - gamestate.world.location, enc)},

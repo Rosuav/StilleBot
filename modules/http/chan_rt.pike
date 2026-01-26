@@ -110,6 +110,11 @@ constant styles = #"
 	padding: 0 0.5em;
 	text-align: center;
 }
+#messages {
+	/* TODO: Give new messages (divs inside #messages) a background that fades? */
+	border: 1px solid grey;
+	padding: 0 8px;
+}
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
