@@ -66,8 +66,8 @@ Encounters get spawned in at the RHS and there'll be a few of them visible ahead
   - Flash of Inspiration. It's a flashbang grenade, and it gives 1000 XP.
   - Healing. Restore 50% of HP.
   - Courage. If there are any retreating penalties, they are removed; otherwise, the hero gets a courage bonus for the next 10 squares.
-  - Stat. A potion of STR gives +5 STR for the next 10 squares. Any stat can spawn, except CHA.
-  - Stoneskin. 25% damage reduction for 10 squares.
+  - Stat. A potion of STR gives +5 STR for the next 10 squares. Any stat can spawn, except CHA (because it's useless) and CON (because it's weird to gain and lose HP).
+  - Stoneskin. 25% damage reduction for 10 squares. Should feel like getting a CON potion.
 
 <div id=display></div>
 <style>
