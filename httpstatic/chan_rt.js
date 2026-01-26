@@ -3,6 +3,18 @@ const {BUTTON, DIV, TABLE, TD, TH, TR} = lindt; //autoimport
 
 let gamestate = { };
 
+/*
+Damage calculation
+- Hero melee damage: (1.05 ** hero level) * (1.1 ** STR) * (sword level / base level)
+- Hero ranged damage: (1.025 ** hero level) * (1.1 ** DEX) * (bow level / base level)
+- Enemy melee damage: (1.15 ** enemy level) / (armor level / base level)
+  - Note that this is almost the same damage (slightly lower) that you'd get if you keep your STR equal to your level
+- Hero hitpoints: 10 * (1.04 ** hero level) * (1.05 ** CON)
+- Enemy hitpoints: 3 * (1.1 ** enemy level)
+
+Crunch some numbers with these, see how it goes.
+*/
+
 //Calculate the level at which something should spawn
 //Whenever an enemy/item/equipment is spawned, it is given a level. This comes from a base level, a random component, and possibly a softcap.
 //The base level starts at 1, and increases by 1 every time the hero "ought to" level up (probably some number of squares traversed). Ideally,

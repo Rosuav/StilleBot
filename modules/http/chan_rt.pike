@@ -77,20 +77,6 @@ Encounters get spawned in at the RHS and there'll be a few of them visible ahead
   - Stoneskin. 25% damage reduction for 10 squares.
 - Respawn chamber. Guaranteed to spawn if not on screen or more than X tiles ago.
 
-
-Might be nice to have some metrics that get reported each death. Maybe gold and XP gained vs HP lost?
-
-
-Damage calculation
-- Hero melee damage: (1.05 ** hero level) * (1.1 ** STR) * (sword level / base level)
-- Hero ranged damage: (1.025 ** hero level) * (1.1 ** DEX) * (bow level / base level)
-- Enemy melee damage: (1.15 ** enemy level) / (armor level / base level)
-  - Note that this is almost the same damage (slightly lower) that you'd get if you keep your STR equal to your level
-- Hero hitpoints: 10 * (1.04 ** hero level) * (1.05 ** CON)
-- Enemy hitpoints: 3 * (1.1 ** enemy level)
-
-Crunch some numbers with these, see how it goes.
-
 <div id=display></div>
 <style>
 $$styles$$
