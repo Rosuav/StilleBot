@@ -48,6 +48,12 @@ const encounter = {
 	//item() {return {type: "item"};}, //Not sure how to do these yet
 	//branch() {console.error("IMPLEMENT ME");},
 };
+const encounter_action = {
+	respawn(loc) {
+		if (loc.state !== "current") loc.state = "current"; //TODO: And set all other currents to "reached"
+		gamestate.world.direction = "advancing"; //Once you run back as far as a respawner, there's no reason to keep retreating.
+	},
+};
 
 //The cost to advance past the Nth level is given by the Nth Fibonacci number. This gives
 //several cheap levels to start, but then requires more and more to advance.
@@ -114,11 +120,26 @@ function gametick() {
 			if (!enctype || !encounter[enctype]) break; //Shouldn't happen - for some reason nothing can spawn.
 			console.log("ADDING", enctype);
 			const enc = encounter[enctype]();
+			if (!enc.distance) enc.distance = Math.max(Math.floor(Math.random() * spawnlevel()), 10); //Distances tend to increase as the game progresses
+			enc.progress = 0;
 			if (gamestate.world.pathway.push(enc) > MAX_PATHWAY_LENGTH) {
 				gamestate.world.pathway.shift(); //Discard the oldest
 				--gamestate.world.location;
 			}
 		}
+
+		//Take a step!
+		//Does the current location demand more action? Time delays are counted in ticks.
+		const location = gamestate.world.pathway[gamestate.world.location];
+		const handler = encounter_action[location.type]; if (handler) handler(location);
+		//The handler may have changed state. The last step is always to move, either advance or retreat.
+		if (gamestate.world.direction === "advancing") {
+			if (++location.progress >= location.distance) ++gamestate.world.location;
+		} else {
+			if (--location.progress <= 0) --gamestate.world.location;
+		}
+		console.log("At", location.progress + "/" + location.distance, location);
+		//TODO: If advancing and the next location has an enemy, chance to take a bow shot
 
 		//Finally, check state-based updates.
 		if (!gamestate.stats.nextlevel) gamestate.stats.nextlevel = tnl(gamestate.stats.level);
@@ -167,6 +188,8 @@ export function render(data) {
 		if (!gamestate.traits) gamestate.traits = {aggressive: 0.1};
 		if (!gamestate.equipment) gamestate.equipment = {sword: 1, bow: 1, armor: 1};
 		if (!gamestate.world) gamestate.world = {baselevel: 1, pathway: [encounter.respawn("current")], location: 0};
+		if (!gamestate.world.direction) gamestate.world.direction = "advancing";
+		gamestate.world.pathway.forEach(enc => {if (!enc.distance) enc.distance = 10; if (!enc.progress) enc.progress = 0;});
 		basetime = performance.now();
 		ticking = setInterval(gametick, TICK_LENGTH);
 	}
