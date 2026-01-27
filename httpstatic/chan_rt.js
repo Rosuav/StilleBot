@@ -67,7 +67,14 @@ const encounter = {
 	//boss should be handled differently, and will require a hard-coded list of bosses
 	equipment() {return {type: "equipment", slot: "unknown", level: spawnlevel() + 1};}, //Slot becomes known when the item is collected
 	//item() {return {type: "item"};}, //Not sure how to do these yet
-	//branch() {console.error("IMPLEMENT ME");},
+	branch() {
+		//A branch needs to have its own pathway in it. Note that its location gets a fixed value; this
+		//makes the populate() function simpler, and has no other effect.
+		const ret = {type: "branch", pathway: [], location: -1};
+		populate(ret);
+		console.log("MAKING A BRANCH", ret);
+		return ret;
+	},
 };
 const encounter_action = {
 	respawn(loc) {
@@ -93,6 +100,31 @@ const encounter_action = {
 			if (!--loc.delay) {
 				gamestate.equipment[loc.slot] = loc.level; //Done equipping it, let's go!
 				gamestate.world.direction = "advancing";
+			}
+		}
+	},
+	branch(loc) {
+		//TODO:
+		//1) Trait check to choose a scoring algorithm
+		//2) Use that algorithm to score both the current path and the alternate
+		//3) Pick whichever's higher? Or take a weighted sample, so the higher score is merely more likely?
+		if (!loc.delay && !loc.progress) {
+			msg("Contemplating which path to take...");
+			loc.delay = 10;
+			gamestate.world.direction = "none";
+		} else if (gamestate.world.direction === "none" && !--loc.delay) {
+			console.log("BRANCH! Compare", loc.pathway, "to", gamestate.world.pathway.slice(gamestate.world.location+1));
+			//For now, always switch, since it's the most relevant to what a branch actually is.
+			//TODO: If retreating, do a bravery check to switch and stop retreating. This won't
+			//require the ten-round delay.
+			gamestate.world.direction = "advancing";
+			if (1) {
+				//To switch, we actually mutate both paths. However, we also flag the
+				//branch so that we invert the display; the 2D view, when implemented,
+				//will use this to know that the display should be flipped back to
+				//compensate.
+				loc.flipped = !loc.flipped;
+				loc.pathway = gamestate.world.pathway.splice(gamestate.world.location+1, Infinity, ...loc.pathway);
 			}
 		}
 	},
@@ -124,25 +156,30 @@ function populate(world) {
 		//TODO: Dynamically adjust these weights according to circumstances;
 		//for example, be generous with equipment if all items are subpar, or
 		//offer more enemies if you have good gear.
-		let distance_to_respawn = 1000;
+		//Measure off the distance from certain things. Note that a branch is itself a world,
+		//but since it's a branch, it implicitly starts with a branch.
+		//TODO: After a branch, track the true distance to respawners (and potentially branches,
+		//if it's convenient to do so). Might require a back-reference of some sort - a branch
+		//could need a parent node.
+		let distance = {respawn: world.type === "branch" ? 0 : 1000, branch: world.type === "branch" ? 0 : 20};
 		for (let enc of world.pathway) {
-			++distance_to_respawn;
-			if (enc.type === "respawn") distance_to_respawn = 0;
+			++distance.respawn; ++distance.branch;
+			distance[enc.type] = 0;
 		}
 		const weights = {
 			//Respawners become more likely as you get further from one,
 			//and (not shown here) guaranteed to spawn once you're too far.
-			respawn: distance_to_respawn < 8 ? 0 : distance_to_respawn,
+			respawn: distance.respawn < 8 ? 0 : distance.respawn,
 			clear: 10,
 			enemy: 15,
 			equipment: 2,
 			//item: 2,
 			//boss: 3, //Zero this out if there is no undefeated boss at/below base level, or if there's any boss on screen (including a defeated one)
-			//branch: 4, //BIG OL' TODO RIGHT THERE
+			branch: distance.branch < 3 ? 0 : distance.branch,
 		};
 		let enctype;
 		//First, are there any guaranteed spawn demands?
-		if (distance_to_respawn >= 15) enctype = "respawn"; //NOTE: This figure includes the 3-square advancement
+		if (distance.respawn >= 15) enctype = "respawn"; //NOTE: This figure includes the 3-square advancement
 		//else if (there's a user-provided item spawn requested) enctype = "item";
 		//Otherwise, weighted random
 		else {
