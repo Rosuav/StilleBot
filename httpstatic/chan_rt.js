@@ -116,16 +116,16 @@ function TWO_COL(elements) {
 const TICK_LENGTH = 1000; //FIXME: For normal operation, a tick should be 100ms
 const MAX_PATHWAY_LENGTH = 20; //Ideally this should be more than can be seen on any reasonable screen
 
-function populate() {
+function populate(world) {
 	//First, populate the world. We need to have enough behind us to draw, our current
 	//location, and three cells ahead of us.
-	while (gamestate.world.location >= gamestate.world.pathway.length - 3) {
+	while (world.location >= world.pathway.length - 3) {
 		//Choose an encounter type.
 		//TODO: Dynamically adjust these weights according to circumstances;
 		//for example, be generous with equipment if all items are subpar, or
 		//offer more enemies if you have good gear.
 		let distance_to_respawn = 1000;
-		for (let enc of gamestate.world.pathway) {
+		for (let enc of world.pathway) {
 			++distance_to_respawn;
 			if (enc.type === "respawn") distance_to_respawn = 0;
 		}
@@ -155,9 +155,9 @@ function populate() {
 		const enc = encounter[enctype]();
 		if (!enc.distance) enc.distance = Math.max(Math.floor(Math.random() * spawnlevel()), 10); //Distances tend to increase as the game progresses
 		enc.progress = 0;
-		if (gamestate.world.pathway.push(enc) > MAX_PATHWAY_LENGTH) {
-			gamestate.world.pathway.shift(); //Discard the oldest
-			--gamestate.world.location;
+		if (world.pathway.push(enc) > MAX_PATHWAY_LENGTH) {
+			world.pathway.shift(); //Discard the oldest
+			--world.location;
 		}
 	}
 }
@@ -180,7 +180,7 @@ function gametick() {
 	//game ticks (albeit delayed), so we'll catch up before trying to render.
 	while (curtick < nowtick) {
 		++curtick;
-		populate();
+		populate(gamestate.world);
 
 		//Take a step!
 		//Does the current location demand more action? Time delays are counted in ticks.
@@ -188,7 +188,7 @@ function gametick() {
 		const handler = encounter_action[location.type]; if (handler) handler(location);
 		//The handler may have changed state. The last step is always to move, either advance or retreat.
 		if (gamestate.world.direction === "advancing") {
-			if (++location.progress >= location.distance) {++gamestate.world.location; populate();}
+			if (++location.progress >= location.distance) {++gamestate.world.location; populate(gamestate.world);}
 		} else if (gamestate.world.direction === "retreating") {
 			if (--location.progress <= 0) --gamestate.world.location;
 		} //Otherwise something's holding us here.
