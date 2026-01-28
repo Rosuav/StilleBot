@@ -1,7 +1,19 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, DIV, TABLE, TD, TH, TR} = lindt; //autoimport
+const {BUTTON, DIV, METER, TABLE, TD, TH, TR} = lindt; //autoimport
 
 let gamestate = { };
+//Traits can be positive or negative. For the display (both status and control),
+//it's easier to treat them as alternatives. This is kinda like an L10n table
+//and could be expanded into one.
+const trait_labels = {
+	aggressiveP: "Aggressive",
+	aggressiveN: "Passive",
+	headstrongP: "Headstrong",
+	headstrongN: "Prudent",
+	braveP: "Brave",
+	braveN: "Cowardly",
+};
+const trait_display_order = "aggressive headstrong brave".split(" ");
 
 function random_choice(options) {
 	return options[Math.floor(Math.random() * options.length)];
@@ -244,6 +256,23 @@ function gametick() {
 		}
 	}
 	//Once all game ticks have been processed, update the display.
+	//Calculate the traits for display. Traits themselves could be positive
+	//or negative (but if zero, will not be shown at all), and can be any
+	//value; for display, we normalize them so all traits are positive
+	//(using counterpart names ie -0.25 Brave becomes +0.25 Cowardly), and
+	//the strongest trait is 1.0, with all others scaled accordingly.
+	//However, if all your traits are close to zero, scale to 1.0 so that
+	//the display indicates room for the traits to grow and shift.
+	//Or should it be scaled so the (absolute) sum of all traits is 1.0?
+	let scale = 1.0, traits = [];
+	for (let tr of trait_display_order) {
+		const t = gamestate.traits[tr]; if (!t) continue;
+		traits.push(trait_labels[tr + (t < 0 ? "N" : "P")]);
+		const abs = t < 0 ? -t : t;
+		traits.push(abs);
+		//scale += abs; //To scale to the sum
+		if (scale < abs) scale = abs; //To scale to the largest
+	}
 	replace_content("#display", [
 		DIV({id: "controls", class: "buttonbox"}, [ //TODO: Hide these if we're in overlay mode
 			BUTTON({type: "button", id: "save"}, "Save game now"), "Game saves automatically on level up and death",
@@ -263,6 +292,7 @@ function gametick() {
 					TD(gamestate.stats[stat]),
 				]))
 			])),
+			DIV(TWO_COL(traits.map(t => typeof t === "string" ? t : METER({value: t / scale})))),
 			DIV({id: "messages"}, messages.map(m => DIV(m))),
 		]),
 		DIV({id: "pathway"}, gamestate.world.pathway.map((enc, idx) => DIV(
