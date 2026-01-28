@@ -15,6 +15,15 @@ const trait_labels = {
 };
 const trait_display_order = "aggressive headstrong brave".split(" ");
 
+//Weighted selection from a collection of options. Uses the absolute value of the weight, so -3.14 is equivalent to 3.14.
+function weighted_random(weights) {
+	let totweight = 0;
+	for (let w of Object.values(weights)) totweight += w < 0 ? -w : w;
+	let selection = Math.random() * totweight; //Yes, this isn't 100% perfect, but it's close enough
+	for (let [t, w] of Object.entries(weights)) if ((selection -= (w < 0 ? -w : w)) < 0) return t;
+}
+
+//Flat random. Equivalent to weighted_random({choice1: 1, choice2: 1, choice3: 1, ...})
 function random_choice(options) {
 	return options[Math.floor(Math.random() * options.length)];
 }
@@ -194,12 +203,7 @@ function populate(world) {
 		if (distance.respawn >= 15) enctype = "respawn"; //NOTE: This figure includes the 3-square advancement
 		//else if (there's a user-provided item spawn requested) enctype = "item";
 		//Otherwise, weighted random
-		else {
-			let totweight = 0;
-			for (let w of Object.values(weights)) totweight += w;
-			let selection = Math.random() * totweight; //Yes, this isn't 100% perfect, but it's close enough
-			for (let [t, w] of Object.entries(weights)) if ((selection -= w) < 0) {enctype = t; break;}
-		}
+		else enctype = weighted_random(weights);
 		if (!enctype || !encounter[enctype]) break; //Shouldn't happen - for some reason nothing can spawn.
 		const enc = encounter[enctype]();
 		if (!enc.distance) enc.distance = Math.max(Math.floor(Math.random() * spawnlevel()), 10); //Distances tend to increase as the game progresses
