@@ -139,6 +139,8 @@ const encounter_action = {
 			//TODO: If retreating, do a bravery check to switch and stop retreating. This won't
 			//require the ten-round delay.
 			gamestate.world.direction = "advancing";
+			const trait = weighted_random(gamestate.traits);
+			//TODO: Score the two paths based on a per-trait scoring function
 			if (1) {
 				//To switch, we actually mutate both paths. However, we also flag the
 				//branch so that we invert the display; the 2D view, when implemented,
