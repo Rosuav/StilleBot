@@ -84,6 +84,14 @@ const encounter = {
 			//When a respawner becomes current, any existing current respawner becomes Reached.
 			return {type: "respawn", state: "unreached"};
 		},
+		action(loc) {
+			if (loc.state !== "current") {
+				loc.state = "current";
+				//TODO: And set all other currents to "reached"
+				msg("Activating respawn chamber");
+			}
+			gamestate.world.direction = "advancing"; //Once you run back as far as a respawner, there's no reason to keep retreating.
+		},
 	},
 	clear: {
 		create() {return {type: "clear"};},
@@ -94,6 +102,24 @@ const encounter = {
 	//boss should be handled differently, and will require a hard-coded list of bosses
 	equipment: {
 		create() {return {type: "equipment", slot: "unknown", level: spawnlevel() + 1};}, //Slot becomes known when the item is collected
+		action(loc) {
+			if (loc.slot === "unknown") {
+				//Not yet collected!
+				loc.slot = random_choice(["sword", "bow", "armor"]);
+				if (gamestate.equipment[loc.slot] < loc.level) {
+					//It's an upgrade! Take some time to pick it up.
+					loc.delay = loc.slot === "armor" ? 10 : 5;
+					gamestate.world.direction = "none";
+					msg("Equipping a level " + loc.level + " " + loc.slot); //TODO: Word them differently
+				} else msg("Bypassing a mere level " + loc.level + " " + loc.slot);
+			}
+			if (loc.delay) {
+				if (!--loc.delay) {
+					gamestate.equipment[loc.slot] = loc.level; //Done equipping it, let's go!
+					gamestate.world.direction = "advancing";
+				}
+			}
+		},
 	},
 	//item: {create() {return {type: "item"};}}, //Not sure how to do these yet
 	branch: {
@@ -105,61 +131,33 @@ const encounter = {
 			console.log("MAKING A BRANCH", ret);
 			return ret;
 		},
-	},
-};
-const encounter_action = {
-	respawn(loc) {
-		if (loc.state !== "current") {
-			loc.state = "current";
-			//TODO: And set all other currents to "reached"
-			msg("Activating respawn chamber");
-		}
-		gamestate.world.direction = "advancing"; //Once you run back as far as a respawner, there's no reason to keep retreating.
-	},
-	equipment(loc) {
-		if (loc.slot === "unknown") {
-			//Not yet collected!
-			loc.slot = random_choice(["sword", "bow", "armor"]);
-			if (gamestate.equipment[loc.slot] < loc.level) {
-				//It's an upgrade! Take some time to pick it up.
-				loc.delay = loc.slot === "armor" ? 10 : 5;
+		action(loc) {
+			//TODO:
+			//1) Trait check to choose a scoring algorithm
+			//2) Use that algorithm to score both the current path and the alternate
+			//3) Pick whichever's higher? Or take a weighted sample, so the higher score is merely more likely?
+			if (!loc.delay && !loc.progress) {
+				msg("Contemplating which path to take...");
+				loc.delay = 10;
 				gamestate.world.direction = "none";
-				msg("Equipping a level " + loc.level + " " + loc.slot); //TODO: Word them differently
-			} else msg("Bypassing a mere level " + loc.level + " " + loc.slot);
-		}
-		if (loc.delay) {
-			if (!--loc.delay) {
-				gamestate.equipment[loc.slot] = loc.level; //Done equipping it, let's go!
+			} else if (gamestate.world.direction === "none" && !--loc.delay) {
+				console.log("BRANCH! Compare", loc.pathway, "to", gamestate.world.pathway.slice(gamestate.world.location+1));
+				//For now, always switch, since it's the most relevant to what a branch actually is.
+				//TODO: If retreating, do a bravery check to switch and stop retreating. This won't
+				//require the ten-round delay.
 				gamestate.world.direction = "advancing";
+				const trait = weighted_random(gamestate.traits);
+				//TODO: Score the two paths based on a per-trait scoring function
+				if (1) {
+					//To switch, we actually mutate both paths. However, we also flag the
+					//branch so that we invert the display; the 2D view, when implemented,
+					//will use this to know that the display should be flipped back to
+					//compensate.
+					loc.flipped = !loc.flipped;
+					loc.pathway = gamestate.world.pathway.splice(gamestate.world.location+1, Infinity, ...loc.pathway);
+				}
 			}
-		}
-	},
-	branch(loc) {
-		//TODO:
-		//1) Trait check to choose a scoring algorithm
-		//2) Use that algorithm to score both the current path and the alternate
-		//3) Pick whichever's higher? Or take a weighted sample, so the higher score is merely more likely?
-		if (!loc.delay && !loc.progress) {
-			msg("Contemplating which path to take...");
-			loc.delay = 10;
-			gamestate.world.direction = "none";
-		} else if (gamestate.world.direction === "none" && !--loc.delay) {
-			console.log("BRANCH! Compare", loc.pathway, "to", gamestate.world.pathway.slice(gamestate.world.location+1));
-			//For now, always switch, since it's the most relevant to what a branch actually is.
-			//TODO: If retreating, do a bravery check to switch and stop retreating. This won't
-			//require the ten-round delay.
-			gamestate.world.direction = "advancing";
-			const trait = weighted_random(gamestate.traits);
-			//TODO: Score the two paths based on a per-trait scoring function
-			if (1) {
-				//To switch, we actually mutate both paths. However, we also flag the
-				//branch so that we invert the display; the 2D view, when implemented,
-				//will use this to know that the display should be flipped back to
-				//compensate.
-				loc.flipped = !loc.flipped;
-				loc.pathway = gamestate.world.pathway.splice(gamestate.world.location+1, Infinity, ...loc.pathway);
-			}
-		}
+		},
 	},
 };
 
@@ -250,7 +248,7 @@ function gametick() {
 		//Take a step!
 		//Does the current location demand more action? Time delays are counted in ticks.
 		const location = gamestate.world.pathway[gamestate.world.location];
-		const handler = encounter_action[location.type]; if (handler) handler(location);
+		const handler = encounter[location.type]; if (handler) handler.action(location);
 		//The handler may have changed state. The last step is always to move, either advance or retreat.
 		if (gamestate.world.direction === "advancing") {
 			if (++location.progress >= location.distance) {++gamestate.world.location; populate(gamestate.world);}
