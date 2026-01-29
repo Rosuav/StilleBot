@@ -2,6 +2,8 @@ inherit http_websocket;
 
 constant markdown = #{# Respawn Technician
 
+## The Story
+	
 A great hero roams the world, destroying evil, saving princesses, rescuing the needy, and becoming wealthy in the process. His story is told
 by kings and peasants alike, for his deeds are many and his accomplishments great.
 
@@ -30,6 +32,8 @@ preferred stats. Whenever the Hero makes a decision, his traits affect how he ch
 - Brave [CHA]/Cowardly [DEX]: Of course the hero is brave. At least in his own eyes! A brave hero will not shy away from battle, a cowardly one
   will tend to retreat at the first sign of danger.
 - Other traits will have to be discovered as you defeat bosses!
+
+## Dev notes
 
 * Have a class for each trait, with a Power that could be positive or negative
 * To make a decision:
