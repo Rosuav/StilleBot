@@ -100,6 +100,17 @@ const encounter = {
 	},
 	enemy: {
 		create() {return {type: "enemy", level: spawnlevel()};},
+		action(loc) {
+			if (!loc.maxhp) {
+				//Make a decision. Fight, flee, or move past? Moving past is
+				//only an option if we massively outlevel.
+			}
+			//TODO: If loc.delay, always delay, count it as a decision. This will override "advancing".
+			//May need a separate "enter(loc)" callback where decisions will usually be made. This is
+			//called once on arrival, in any direction. Some locations (enemies, equipment) will have
+			//their own state that marks them as permanently completed (eg the enemy is dead), which
+			//can be checked in the enter() function.
+		},
 		desire: {aggressiveP: 10, headstrongP: 5, braveP: 5},
 	},
 	//boss should be handled differently, and will require a hard-coded list of bosses
