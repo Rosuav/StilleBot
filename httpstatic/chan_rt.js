@@ -75,26 +75,36 @@ function spawnlevel() {
 
 //ENCOUNTER OPTIONS
 const encounter = {
-	respawn(state) {
-		//Respawner states:
-		//unreached - new, hasn't yet been tagged
-		//reached - has been activated, but isn't current
-		//current - where the Hero will respawn
-		//When a respawner becomes current, any existing current respawner becomes Reached.
-		return {type: "respawn", state: state || "unreached"};
+	respawn: {
+		create() {
+			//Respawner states:
+			//unreached - new, hasn't yet been tagged
+			//reached - has been activated, but isn't current
+			//current - where the Hero will respawn
+			//When a respawner becomes current, any existing current respawner becomes Reached.
+			return {type: "respawn", state: "unreached"};
+		},
 	},
-	clear() {return {type: "clear"};},
-	enemy() {return {type: "enemy", level: spawnlevel()};},
+	clear: {
+		create() {return {type: "clear"};},
+	},
+	enemy: {
+		create() {return {type: "enemy", level: spawnlevel()};},
+	},
 	//boss should be handled differently, and will require a hard-coded list of bosses
-	equipment() {return {type: "equipment", slot: "unknown", level: spawnlevel() + 1};}, //Slot becomes known when the item is collected
-	//item() {return {type: "item"};}, //Not sure how to do these yet
-	branch() {
-		//A branch needs to have its own pathway in it. Note that its location gets a fixed value; this
-		//makes the populate() function simpler, and has no other effect.
-		const ret = {type: "branch", pathway: [], location: -1};
-		populate(ret);
-		console.log("MAKING A BRANCH", ret);
-		return ret;
+	equipment: {
+		create() {return {type: "equipment", slot: "unknown", level: spawnlevel() + 1};}, //Slot becomes known when the item is collected
+	},
+	//item: {create() {return {type: "item"};}}, //Not sure how to do these yet
+	branch: {
+		create() {
+			//A branch needs to have its own pathway in it. Note that its location gets a fixed value; this
+			//makes the populate() function simpler, and has no other effect.
+			const ret = {type: "branch", pathway: [], location: -1};
+			populate(ret);
+			console.log("MAKING A BRANCH", ret);
+			return ret;
+		},
 	},
 };
 const encounter_action = {
@@ -207,7 +217,7 @@ function populate(world) {
 		//Otherwise, weighted random
 		else enctype = weighted_random(weights);
 		if (!enctype || !encounter[enctype]) break; //Shouldn't happen - for some reason nothing can spawn.
-		const enc = encounter[enctype]();
+		const enc = encounter[enctype].create();
 		if (!enc.distance) enc.distance = Math.max(Math.floor(Math.random() * spawnlevel()), 10); //Distances tend to increase as the game progresses
 		enc.progress = 0;
 		if (world.pathway.push(enc) > MAX_PATHWAY_LENGTH) {
@@ -319,7 +329,7 @@ export function render(data) {
 		if (!gamestate.stats.gold) gamestate.stats.gold = 0;
 		if (!gamestate.traits) gamestate.traits = {aggressive: 0.1};
 		if (!gamestate.equipment) gamestate.equipment = {sword: 1, bow: 1, armor: 1};
-		if (!gamestate.world) gamestate.world = {baselevel: 1, pathway: [encounter.respawn("current")], location: 0};
+		if (!gamestate.world) gamestate.world = {baselevel: 1, pathway: [encounter.respawn.create()], location: 0};
 		if (!gamestate.world.direction) gamestate.world.direction = "advancing";
 		gamestate.world.pathway.forEach(enc => {if (!enc.distance) enc.distance = 10; if (!enc.progress) enc.progress = 0;});
 		basetime = performance.now();
