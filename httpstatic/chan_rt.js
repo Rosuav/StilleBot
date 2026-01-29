@@ -92,12 +92,15 @@ const encounter = {
 			}
 			gamestate.world.direction = "advancing"; //Once you run back as far as a respawner, there's no reason to keep retreating.
 		},
+		desire: {braveN: 3, headstrongN: 3},
 	},
 	clear: {
 		create() {return {type: "clear"};},
+		desire: {braveN: 5},
 	},
 	enemy: {
 		create() {return {type: "enemy", level: spawnlevel()};},
+		desire: {aggressiveP: 10, headstrongP: 5, braveP: 5},
 	},
 	//boss should be handled differently, and will require a hard-coded list of bosses
 	equipment: {
@@ -120,6 +123,7 @@ const encounter = {
 				}
 			}
 		},
+		desire: {headstrongN: 10},
 	},
 	//item: {create() {return {type: "item"};}}, //Not sure how to do these yet
 	branch: {
@@ -146,9 +150,23 @@ const encounter = {
 				//TODO: If retreating, do a bravery check to switch and stop retreating. This won't
 				//require the ten-round delay.
 				gamestate.world.direction = "advancing";
-				const trait = weighted_random(gamestate.traits);
-				//TODO: Score the two paths based on a per-trait scoring function
-				if (1) {
+				//Okay. So. Got a few options here.
+				//1) For every encounter, multiply each trait's desire for it by the trait's strength.
+				//2) Pick one trait at random (based on trait weights) and use that trait's desire.
+				//3) Pick one trait and use both its positive and negative effects?
+				//Also once the scores are calculated, we can either:
+				//1) Pick whichever branch has the higher score, even if it's a marginal difference
+				//2) Take a weighted random selection between them - which can be simplified since there's just two options
+				//For now, picking one trait and the max score path.
+				const t = weighted_random(gamestate.traits);
+				const trait = t + (gamestate.traits[t] < 0 ? "N" : "P");
+				let score1 = 0, score2 = 0;
+				for (let i = 0; i < 3; ++i) { //There should always be at least 3 cells ahead of us. If there are more, we can't see beyond three anyway.
+					const enc1 = loc.pathway[i], enc2 = gamestate.world.pathway[gamestate.world.location + 1 + i];
+					score1 += encounter[enc1.type].desire[trait] || 0;
+					score2 += encounter[enc2.type].desire[trait] || 0;
+				}
+				if (score1 > score2) {
 					//To switch, we actually mutate both paths. However, we also flag the
 					//branch so that we invert the display; the 2D view, when implemented,
 					//will use this to know that the display should be flipped back to
@@ -158,6 +176,7 @@ const encounter = {
 				}
 			}
 		},
+		desire: {headstrongN: 3},
 	},
 };
 
@@ -248,7 +267,7 @@ function gametick() {
 		//Take a step!
 		//Does the current location demand more action? Time delays are counted in ticks.
 		const location = gamestate.world.pathway[gamestate.world.location];
-		const handler = encounter[location.type]; if (handler) handler.action(location);
+		const handler = encounter[location.type].action; if (handler) handler(location);
 		//The handler may have changed state. The last step is always to move, either advance or retreat.
 		if (gamestate.world.direction === "advancing") {
 			if (++location.progress >= location.distance) {++gamestate.world.location; populate(gamestate.world);}
