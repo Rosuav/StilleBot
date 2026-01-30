@@ -146,10 +146,12 @@ const encounter = {
 			msg("Your hero emerges from respawn.");
 		},
 		desire: {braveN: 3, headstrongN: 3},
+		render(loc) {return "Respawn";},
 	},
 	clear: {
 		create() {return {type: "clear"};},
 		desire: {braveN: 5},
+		render(loc) {return "";},
 	},
 	enemy: {
 		create() {return {type: "enemy", level: spawnlevel()};},
@@ -208,6 +210,11 @@ const encounter = {
 			return "hold";
 		},
 		desire: {aggressiveP: 10, headstrongP: 5, braveP: 5},
+		render(loc) {
+			if (loc.curhp) return "Enemy: " + loc.curhp + "/" + loc.maxhp;
+			if (loc.maxhp) return "Corpse";
+			return "Enemy";
+		},
 	},
 	//boss should be handled differently, and will require a hard-coded list of bosses
 	equipment: {
@@ -227,6 +234,10 @@ const encounter = {
 			gamestate.equipment[loc.slot] = loc.level; //Done equipping it, let's go!
 		},
 		desire: {headstrongN: 10},
+		render(loc) {
+			if (loc.slot === "unknown") return "Equipment";
+			return "L" + loc.level + " " + loc.slot;
+		},
 	},
 	//item: {create() {return {type: "item"};}}, //Not sure how to do these yet
 	branch: {
@@ -271,6 +282,7 @@ const encounter = {
 			}
 		},
 		desire: {headstrongN: 3},
+		render(loc) {return "Branch";},
 	},
 };
 
@@ -427,6 +439,8 @@ function gametick() {
 		//scale += abs; //To scale to the sum
 		if (scale < abs) scale = abs; //To scale to the largest
 	}
+	let path = gamestate.world.pathway;
+	if (path.length > gamestate.world.location + 10) path = gamestate.world.pathway.slice(0, 10);
 	replace_content("#display", [
 		DIV({id: "controls", class: "buttonbox"}, [ //TODO: Hide these if we're in overlay mode
 			BUTTON({type: "button", id: "save"}, "Save game now"), "Game saves automatically on level up and death",
@@ -457,13 +471,10 @@ function gametick() {
 			DIV(TWO_COL(traits.map(t => typeof t === "string" ? t : METER({value: t / scale})))),
 			DIV({id: "messages"}, messages.map(m => DIV(m))),
 		]),
-		DIV({id: "pathway"}, gamestate.world.pathway.map((enc, idx) => DIV(
-		{style: "background: " + pathway_background(idx - gamestate.world.location, enc)},
-		[
-			//TODO: Nicer content here.
-			enc.type === "enemy" && enc.curhp ? "Enemy: " + enc.curhp + "/" + enc.maxhp
-			: enc.type,
-		])).reverse()),
+		DIV({id: "pathway"}, path.map((enc, idx) => DIV(
+			{style: "background: " + pathway_background(idx - gamestate.world.location, enc)},
+			encounter[enc.type].render(enc)
+		)).reverse()),
 	]);
 }
 
