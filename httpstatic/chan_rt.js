@@ -137,7 +137,6 @@ const encounter = {
 			//makes the populate() function simpler, and has no other effect.
 			const ret = {type: "branch", pathway: [], location: -1};
 			populate(ret);
-			console.log("MAKING A BRANCH", ret);
 			return ret;
 		},
 		enter(loc) {
@@ -145,7 +144,6 @@ const encounter = {
 			gamestate.world.delay = [10, "pickpath"];
 		},
 		pickpath(loc) {
-			console.log("BRANCH! Compare", loc.pathway, "to", gamestate.world.pathway.slice(gamestate.world.location+1));
 			//TODO: If retreating, do a bravery check to switch and stop retreating. This won't
 			//require the ten-round delay.
 
