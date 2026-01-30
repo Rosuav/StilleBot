@@ -100,39 +100,34 @@ const encounter = {
 	},
 	enemy: {
 		create() {return {type: "enemy", level: spawnlevel()};},
-		action(loc) {
+		enter(loc) {
 			if (!loc.maxhp) {
 				//Make a decision. Fight, flee, or move past? Moving past is
 				//only an option if we massively outlevel.
 			}
-			//TODO: If loc.delay, always delay, count it as a decision. This will override "advancing".
-			//May need a separate "enter(loc)" callback where decisions will usually be made. This is
-			//called once on arrival, in any direction. Some locations (enemies, equipment) will have
-			//their own state that marks them as permanently completed (eg the enemy is dead), which
-			//can be checked in the enter() function.
+		},
+		action(loc) {
+			//If we're fighting, have a round of combat.
 		},
 		desire: {aggressiveP: 10, headstrongP: 5, braveP: 5},
 	},
 	//boss should be handled differently, and will require a hard-coded list of bosses
 	equipment: {
 		create() {return {type: "equipment", slot: "unknown", level: spawnlevel() + 1};}, //Slot becomes known when the item is collected
-		action(loc) {
+		enter(loc) {
 			if (loc.slot === "unknown") {
 				//Not yet collected!
 				loc.slot = random_choice(["sword", "bow", "armor"]);
 				if (gamestate.equipment[loc.slot] < loc.level) {
 					//It's an upgrade! Take some time to pick it up.
-					loc.delay = loc.slot === "armor" ? 10 : 5;
+					gamestate.world.delay = loc.slot === "armor" ? 10 : 5;
 					gamestate.world.direction = "none";
 					msg("Equipping a level " + loc.level + " " + loc.slot); //TODO: Word them differently
 				} else msg("Bypassing a mere level " + loc.level + " " + loc.slot);
 			}
-			if (loc.delay) {
-				if (!--loc.delay) {
-					gamestate.equipment[loc.slot] = loc.level; //Done equipping it, let's go!
-					gamestate.world.direction = "advancing";
-				}
-			}
+		},
+		action(loc) {
+			if (gamestate.equipment[loc.slot] < loc.level) gamestate.equipment[loc.slot] = loc.level; //Done equipping it, let's go!
 		},
 		desire: {headstrongN: 10},
 	},
@@ -146,21 +141,18 @@ const encounter = {
 			console.log("MAKING A BRANCH", ret);
 			return ret;
 		},
+		enter(loc) {
+			msg("Contemplating which path to take...");
+			gamestate.world.delay = 10;
+			//TODO maybe: Give delayed actions a callback, so that it doesn't go through the action function
+		},
 		action(loc) {
-			//TODO:
-			//1) Trait check to choose a scoring algorithm
-			//2) Use that algorithm to score both the current path and the alternate
-			//3) Pick whichever's higher? Or take a weighted sample, so the higher score is merely more likely?
-			if (!loc.delay && !loc.progress) {
-				msg("Contemplating which path to take...");
-				loc.delay = 10;
-				gamestate.world.direction = "none";
-			} else if (gamestate.world.direction === "none" && !--loc.delay) {
+			if (loc.progress) return;
+			if (gamestate.world.direction === "none" && !--loc.delay) {
 				console.log("BRANCH! Compare", loc.pathway, "to", gamestate.world.pathway.slice(gamestate.world.location+1));
-				//For now, always switch, since it's the most relevant to what a branch actually is.
 				//TODO: If retreating, do a bravery check to switch and stop retreating. This won't
 				//require the ten-round delay.
-				gamestate.world.direction = "advancing";
+
 				//Okay. So. Got a few options here.
 				//1) For every encounter, multiply each trait's desire for it by the trait's strength.
 				//2) Pick one trait at random (based on trait weights) and use that trait's desire.
@@ -255,6 +247,14 @@ function populate(world) {
 	}
 }
 
+function change_encounter(dir) {
+	gamestate.world.location += dir;
+	populate(gamestate.world); //Check if we need to generate some more pathway. Won't be needed if dir is -1 but it doesn't hurt.
+	//Does this need to become its own function, eg location_trigger("enter") ?
+	const location = gamestate.world.pathway[gamestate.world.location];
+	const handler = encounter[location.type].enter; if (handler) handler(location);
+}
+	
 function pathway_background(pos, enc) {
 	//Transition from future colour to past colour with a progress bar in the current encounter
 	if (pos < 0) return "#88f";
@@ -277,13 +277,14 @@ function gametick() {
 
 		//Take a step!
 		//Does the current location demand more action? Time delays are counted in ticks.
+		if (gamestate.world.delay) {--gamestate.world.delay; continue;} //Note that this is skipping state-based updates currently, maybe this isn't good
 		const location = gamestate.world.pathway[gamestate.world.location];
 		const handler = encounter[location.type].action; if (handler) handler(location);
 		//The handler may have changed state. The last step is always to move, either advance or retreat.
 		if (gamestate.world.direction === "advancing") {
-			if (++location.progress >= location.distance) {++gamestate.world.location; populate(gamestate.world);}
+			if (++location.progress >= location.distance) change_encounter(1);
 		} else if (gamestate.world.direction === "retreating") {
-			if (--location.progress <= 0) --gamestate.world.location;
+			if (--location.progress <= 0) change_encounter(-1);
 		} //Otherwise something's holding us here.
 		//TODO: If advancing and the next location has an enemy, chance to take a bow shot
 
