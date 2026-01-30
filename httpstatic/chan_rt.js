@@ -80,6 +80,7 @@ function take_damage(dmg) {
 }
 
 function respawn() {
+	msg("Respawning.");
 	let newloc = -1;
 	for (let l = 0; l < gamestate.world.pathway.length; ++l) {
 		const loc = gamestate.world.pathway[l];
@@ -370,6 +371,7 @@ function gametick() {
 				//Delay is over. Call the callback.
 				const cb = gamestate.world.delay[1];
 				//Special-case the respawn delay; maybe will need others that are also global.
+				console.log("Delayed callback, going to " + cb);
 				if (cb === "::respawn") respawn();
 				else {
 					const location = gamestate.world.pathway[gamestate.world.location];
