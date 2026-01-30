@@ -14,6 +14,8 @@ const trait_labels = {
 	braveN: "Cowardly",
 };
 const trait_display_order = "aggressive headstrong brave".split(" ");
+const stat_display_order = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
+const BASE_MONSTER_XP = 100;
 
 //Weighted selection from a collection of options. Uses the absolute value of the weight, so -3.14 is equivalent to 3.14.
 function weighted_random(weights) {
@@ -194,7 +196,7 @@ const encounter = {
 					if (loc.level < gamestate.stats.level - 10) gamestate.stats.xp += 1; //Minimal XP for super-low-level enemies
 					else {
 						const diff = loc.level - gamestate.stats.level;
-						gamestate.stats.xp += Math.ceil(100 * (1.17 ** diff));
+						gamestate.stats.xp += Math.ceil(BASE_MONSTER_XP * (1.17 ** diff));
 					}
 					return "hold";
 				}
@@ -416,6 +418,20 @@ function gametick() {
 			gamestate.stats.nextlevel = tnl(++gamestate.stats.level);
 			for (let i = 0; i < 3; ++i) {
 				//Boost some stat. Let the traits decide.
+				//TODO: If a stat is too high, exclude it.
+				const t = weighted_random(gamestate.traits);
+				const trait = t + (gamestate.traits[t] < 0 ? "N" : "P");
+				let stat = {
+					aggressiveP: "STR",
+					aggressiveN: "INT",
+					headstrongP: "CON",
+					headstrongN: "WIS",
+					braveP: "CHA",
+					braveN: "DEX",
+				}[trait] || "INT";
+				//There's always a 20% chance that he picks a random stat.
+				if (Math.random() < 0.2) stat = random_choice(stat_display_order);
+				++gamestate.stats[stat];
 			}
 		}
 	}
@@ -461,7 +477,7 @@ function gametick() {
 				"Armor", gamestate.equipment.armor,
 			])),
 			DIV(TABLE({class: "twocol"}, [
-				["STR", "DEX", "CON", "INT", "WIS", "CHA"].map(stat => TR([
+				stat_display_order.map(stat => TR([
 					TH(stat),
 					TD(gamestate.stats[stat]),
 				]))
