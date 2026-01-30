@@ -418,19 +418,24 @@ function gametick() {
 			gamestate.stats.nextlevel = tnl(++gamestate.stats.level);
 			for (let i = 0; i < 3; ++i) {
 				//Boost some stat. Let the traits decide.
-				//TODO: If a stat is too high, exclude it.
-				const t = weighted_random(gamestate.traits);
-				const trait = t + (gamestate.traits[t] < 0 ? "N" : "P");
-				let stat = {
-					aggressiveP: "STR",
-					aggressiveN: "INT",
-					headstrongP: "CON",
-					headstrongN: "WIS",
-					braveP: "CHA",
-					braveN: "DEX",
-				}[trait] || "INT";
-				//There's always a 20% chance that he picks a random stat.
-				if (Math.random() < 0.2) stat = random_choice(stat_display_order);
+				//There is a baseline chance of catching any stat.
+				const weights = {STR: 0.1, DEX: 0.1, CON: 0.1, INT: 0.1, WIS: 0.1, CHA: 0.1};
+				for (let [t, w] of Object.entries(gamestate.traits)) {
+					if (!w) continue;
+					if (w < 0) {t += "N"; w = -w;}
+					else t += "P";
+					const stat = {
+						aggressiveP: "STR",
+						aggressiveN: "INT",
+						headstrongP: "CON",
+						headstrongN: "WIS",
+						braveP: "CHA",
+						braveN: "DEX",
+					}[t] || "INT";
+					weights[stat] += w;
+				}
+				//TODO: If a stat is too high, exclude it (zero out its chance), unless all stats are high
+				const stat = weighted_random(weights);
 				++gamestate.stats[stat];
 			}
 		}
