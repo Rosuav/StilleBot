@@ -188,7 +188,7 @@ const encounter = {
 					msg("Enemy defeated!"); //TODO: Get some nicer messages, possibly using level range to determine an enemy name
 					loc.state = "dead";
 					//TODO: Gain XP
-					return;
+					return "hold";
 				}
 				msg("Hero hits for " + dmg + "!"); //Won't eventually be needed
 				loc.curhp -= dmg;
@@ -453,7 +453,8 @@ function gametick() {
 		{style: "background: " + pathway_background(idx - gamestate.world.location, enc)},
 		[
 			//TODO: Nicer content here.
-			enc.type,
+			enc.type === "enemy" && enc.curhp ? "Enemy: " + enc.curhp + "/" + enc.maxhp
+			: enc.type,
 		])).reverse()),
 	]);
 }
