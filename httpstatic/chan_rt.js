@@ -120,14 +120,13 @@ const encounter = {
 				loc.slot = random_choice(["sword", "bow", "armor"]);
 				if (gamestate.equipment[loc.slot] < loc.level) {
 					//It's an upgrade! Take some time to pick it up.
-					gamestate.world.delay = loc.slot === "armor" ? 10 : 5;
-					gamestate.world.direction = "none";
+					gamestate.world.delay = [loc.slot === "armor" ? 10 : 5, "equip"];
 					msg("Equipping a level " + loc.level + " " + loc.slot); //TODO: Word them differently
 				} else msg("Bypassing a mere level " + loc.level + " " + loc.slot);
 			}
 		},
-		action(loc) {
-			if (gamestate.equipment[loc.slot] < loc.level) gamestate.equipment[loc.slot] = loc.level; //Done equipping it, let's go!
+		equip(loc) {
+			gamestate.equipment[loc.slot] = loc.level; //Done equipping it, let's go!
 		},
 		desire: {headstrongN: 10},
 	},
@@ -143,40 +142,36 @@ const encounter = {
 		},
 		enter(loc) {
 			msg("Contemplating which path to take...");
-			gamestate.world.delay = 10;
-			//TODO maybe: Give delayed actions a callback, so that it doesn't go through the action function
+			gamestate.world.delay = [10, "pickpath"];
 		},
-		action(loc) {
-			if (loc.progress) return;
-			if (gamestate.world.direction === "none" && !--loc.delay) {
-				console.log("BRANCH! Compare", loc.pathway, "to", gamestate.world.pathway.slice(gamestate.world.location+1));
-				//TODO: If retreating, do a bravery check to switch and stop retreating. This won't
-				//require the ten-round delay.
+		pickpath(loc) {
+			console.log("BRANCH! Compare", loc.pathway, "to", gamestate.world.pathway.slice(gamestate.world.location+1));
+			//TODO: If retreating, do a bravery check to switch and stop retreating. This won't
+			//require the ten-round delay.
 
-				//Okay. So. Got a few options here.
-				//1) For every encounter, multiply each trait's desire for it by the trait's strength.
-				//2) Pick one trait at random (based on trait weights) and use that trait's desire.
-				//3) Pick one trait and use both its positive and negative effects?
-				//Also once the scores are calculated, we can either:
-				//1) Pick whichever branch has the higher score, even if it's a marginal difference
-				//2) Take a weighted random selection between them - which can be simplified since there's just two options
-				//For now, picking one trait and the max score path.
-				const t = weighted_random(gamestate.traits);
-				const trait = t + (gamestate.traits[t] < 0 ? "N" : "P");
-				let score1 = 0, score2 = 0;
-				for (let i = 0; i < 3; ++i) { //There should always be at least 3 cells ahead of us. If there are more, we can't see beyond three anyway.
-					const enc1 = loc.pathway[i], enc2 = gamestate.world.pathway[gamestate.world.location + 1 + i];
-					score1 += encounter[enc1.type].desire[trait] || 0;
-					score2 += encounter[enc2.type].desire[trait] || 0;
-				}
-				if (score1 > score2) {
-					//To switch, we actually mutate both paths. However, we also flag the
-					//branch so that we invert the display; the 2D view, when implemented,
-					//will use this to know that the display should be flipped back to
-					//compensate.
-					loc.flipped = !loc.flipped;
-					loc.pathway = gamestate.world.pathway.splice(gamestate.world.location+1, Infinity, ...loc.pathway);
-				}
+			//Okay. So. Got a few options here.
+			//1) For every encounter, multiply each trait's desire for it by the trait's strength.
+			//2) Pick one trait at random (based on trait weights) and use that trait's desire.
+			//3) Pick one trait and use both its positive and negative effects?
+			//Also once the scores are calculated, we can either:
+			//1) Pick whichever branch has the higher score, even if it's a marginal difference
+			//2) Take a weighted random selection between them - which can be simplified since there's just two options
+			//For now, picking one trait and the max score path.
+			const t = weighted_random(gamestate.traits);
+			const trait = t + (gamestate.traits[t] < 0 ? "N" : "P");
+			let score1 = 0, score2 = 0;
+			for (let i = 0; i < 3; ++i) { //There should always be at least 3 cells ahead of us. If there are more, we can't see beyond three anyway.
+				const enc1 = loc.pathway[i], enc2 = gamestate.world.pathway[gamestate.world.location + 1 + i];
+				score1 += encounter[enc1.type].desire[trait] || 0;
+				score2 += encounter[enc2.type].desire[trait] || 0;
+			}
+			if (score1 > score2) {
+				//To switch, we actually mutate both paths. However, we also flag the
+				//branch so that we invert the display; the 2D view, when implemented,
+				//will use this to know that the display should be flipped back to
+				//compensate.
+				loc.flipped = !loc.flipped;
+				loc.pathway = gamestate.world.pathway.splice(gamestate.world.location+1, Infinity, ...loc.pathway);
 			}
 		},
 		desire: {headstrongN: 3},
@@ -277,7 +272,15 @@ function gametick() {
 
 		//Take a step!
 		//Does the current location demand more action? Time delays are counted in ticks.
-		if (gamestate.world.delay) {--gamestate.world.delay; continue;} //Note that this is skipping state-based updates currently, maybe this isn't good
+		if (gamestate.world.delay) {
+			if (!--gamestate.world.delay[0]) {
+				//Delay is over. Call the callback.
+				const location = gamestate.world.pathway[gamestate.world.location];
+				encounter[location.type][gamestate.world.delay[1]](location);
+				delete gamestate.world.delay;
+			}
+			continue; //Note that this is skipping state-based updates currently, maybe this isn't good
+		}
 		const location = gamestate.world.pathway[gamestate.world.location];
 		const handler = encounter[location.type].action; if (handler) handler(location);
 		//The handler may have changed state. The last step is always to move, either advance or retreat.
