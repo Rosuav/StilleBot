@@ -2,8 +2,6 @@ inherit http_websocket;
 
 constant markdown = #{# Respawn Technician
 
-## The Story
-	
 A great hero roams the world, destroying evil, saving princesses, rescuing the needy, and becoming wealthy in the process. His story is told
 by kings and peasants alike, for his deeds are many and his accomplishments great.
 
@@ -12,27 +10,35 @@ You are not that hero. You are the technician who operates his respawn chamber.
 When the hero dies, he comes back to life at the nearest respawn chamber, slightly weakened but ready to try again. In the interests of the
 realm at large, you must respawn him, again, and again, and again!
 
-The Hero has **stats** and **traits**. His stats affect his in-game combat ability, and his traits affect how he chooses his battles.
-- STR: Melee damage dealt. Efficient DPS.
-- DEX: Ranged damage dealt. Less efficient but less risky.
-- CON: Health. More health means less respawning... hopefully.
-- INT: Observation. Higher intelligence lets the hero evaluate enemies better.
-- WIS: Mental fortitude. Reduces the negative effects of running from battle.
-- CHA: Charisma. Has no effect whatsoever. (Maybe it can upgrade his sprite eventually??)
+> ### Stats and Traits
+> The Hero has **stats** and **traits**. His stats affect his in-game combat ability, and his traits affect how he chooses his battles.
+> - STR: Melee damage dealt. Efficient DPS.
+> - DEX: Ranged damage dealt. Less efficient but less risky.
+> - CON: Health. More health means less respawning... hopefully.
+> - INT: Observation. Higher intelligence lets the hero evaluate enemies better.
+> - WIS: Mental fortitude. Reduces the negative effects of running from battle.
+> - CHA: Charisma. Has no effect whatsoever. (Maybe it can upgrade his sprite eventually??)
+>
+> Traits are your way to influence the battle. When you respawn the hero, you can select from all the myriad versions of this hero throughout
+> the multiverse, choosing one with the traits you desire. Each trait has two contradictory directions, each with its preferred combat style and
+> preferred stats. Whenever the Hero makes a decision, his traits affect how he chooses.
+> - Aggressive [STR]/Passive [INT]: An aggressive hero is more likely to take every fight he can, even if they are not worth much XP.
+> - Headstrong [CON]/Prudent [WIS]: Headstrong heroes will take fights even when they look unwinnable; prudent heroes prefer to back off and level
+>   up some more first.
+> - Brave [CHA]/Cowardly [DEX]: Of course the hero is brave. At least in his own eyes! A brave hero will not shy away from battle, a cowardly one
+>   will tend to retreat at the first sign of danger.
+> - Other traits will have to be discovered as you defeat bosses!
+>
+{: tag=details}
 
-Whenever the hero dies, he loses some experience points, which will make it harder for him to level up. Every time he reaches the next
-Fibonacci number, he levels up and gains three stat points. Defeating bosses will give him lots of XP and may also unlock a new trait.
+<div id=display></div>
+<style>
+details {border: 1px solid black; margin: 5px; padding: 5px;}
+$$styles$$
+</style>
+#};
 
-Traits are your way to influence the battle. When you respawn the hero, you can select from all the myriad versions of this hero throughout
-the multiverse, choosing one with the traits you desire. Each trait has two contradictory directions, each with its preferred combat style and
-preferred stats. Whenever the Hero makes a decision, his traits affect how he chooses.
-- Aggressive [STR]/Passive [INT]: An aggressive hero is more likely to take every fight he can, even if they are not worth much XP.
-- Headstrong [CON]/Prudent [WIS]: Headstrong heroes will take fights even when they look unwinnable; prudent heroes prefer to back off and level
-  up some more first.
-- Brave [CHA]/Cowardly [DEX]: Of course the hero is brave. At least in his own eyes! A brave hero will not shy away from battle, a cowardly one
-  will tend to retreat at the first sign of danger.
-- Other traits will have to be discovered as you defeat bosses!
-
+constant dev_notes = #{
 ## Dev notes
 
 * Have a class for each trait, with a Power that could be positive or negative
@@ -67,11 +73,6 @@ Encounters get spawned in at the RHS and there'll be a few of them visible ahead
   - Courage. If there are any retreating penalties, they are removed; otherwise, the hero gets a courage bonus for the next 10 squares.
   - Stat. A potion of STR gives +5 STR for the next 10 squares. Any stat can spawn, except CHA (because it's useless) and CON (because it's weird to gain and lose HP).
   - Stoneskin. 25% damage reduction for 10 squares. Should feel like getting a CON potion.
-
-<div id=display></div>
-<style>
-$$styles$$
-</style>
 #};
 
 constant styles = #"

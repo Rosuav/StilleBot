@@ -71,6 +71,7 @@ function enemy_melee_damage(level) {
 function take_damage(dmg) {
 	if (dmg >= gamestate.stats.curhp) {
 		//You died, Mr Reynolds.
+		//TODO: Reduce XP or add an XP gain penalty for a while
 		msg("THE HERO DIED");
 		//But hey, death isn't the end!
 		gamestate.world.delay = [10, "::respawn"];
