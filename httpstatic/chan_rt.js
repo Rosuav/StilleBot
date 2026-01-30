@@ -45,6 +45,11 @@ Damage calculation
 
 Crunch some numbers with these, see how it goes.
 */
+function recalc_max_hp() {
+	const maxhp = Math.ceil(10 * (1.04 ** gamestate.stats.level) * (1.05 ** gamestate.stats.CON));
+	//Whenever your max HP changes, which will usually be a level-up, restore full health.
+	if (maxhp !== gamestate.stats.maxhp) gamestate.stats.maxhp = gamestate.stats.curhp = maxhp;
+}
 
 //Calculate the level at which something should spawn
 //Whenever an enemy/item/equipment is spawned, it is given a level. This comes from a base level, a random component, and possibly a softcap.
@@ -186,8 +191,10 @@ function tnl(level) {
 
 function TWO_COL(elements) {
 	let rows = [];
-	for (let i = 0; i < elements.length; i += 2)
-		rows.push(TR([TH(elements[i]), TD(elements[i+1])]));
+	for (let i = 0; i < elements.length; i += 2) {
+		if (!elements[i]) rows.push(TR(TD({colSpan: 2}, elements[i+1]))); //No heading, span the cell across both
+		else rows.push(TR([TH(elements[i]), TD(elements[i+1])]));
+	}
 	return TABLE({class: "twocol"}, rows);
 }
 
@@ -327,7 +334,15 @@ function gametick() {
 			DIV(TWO_COL([
 				"Level", gamestate.stats.level,
 				"Next", ""+(gamestate.stats.nextlevel - gamestate.stats.xp),
-				"\xa0", "",
+				//Hitpoints graph. If you get below 75%, the browser should start showing it in
+				//scarier colours, eg yellow or red, but I am not in control of that.
+				undefined, METER({
+					value: gamestate.stats.curhp,
+					low: gamestate.stats.maxhp / 4,
+					high: gamestate.stats.maxhp * 3 / 4,
+					optimum: gamestate.stats.maxhp,
+					max: gamestate.stats.maxhp,
+				}),
 				"Sword", gamestate.equipment.sword,
 				"Bow", gamestate.equipment.bow,
 				"Armor", gamestate.equipment.armor,
@@ -362,6 +377,7 @@ export function render(data) {
 		if (!gamestate.world) gamestate.world = {baselevel: 1, pathway: [encounter.respawn.create()], location: 0};
 		if (!gamestate.world.direction) gamestate.world.direction = "advancing";
 		gamestate.world.pathway.forEach(enc => {if (!enc.distance) enc.distance = 10; if (!enc.progress) enc.progress = 0;});
+		recalc_max_hp();
 		basetime = performance.now();
 		ticking = setInterval(gametick, TICK_LENGTH);
 	}
