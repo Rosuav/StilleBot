@@ -56,11 +56,6 @@ Two modes: 2D and Linear
 - In Linear mode, the branches are shown as doorways. He peeks into the door, and makes a choice. He moves exclusively left to right.
 
 Encounters get spawned in at the RHS and there'll be a few of them visible ahead of the hero's current location.
-- Enemy. Hero may choose to fight or to move on. If the enemy's level is very low (at least 10 levels below the hero), he can walk right past
-  without penalty, but if he chooses to fight anyway, he'll get minimal XP. Otherwise, choosing to move on will have the monster roll a dice to
-  see if they fight anyway - if so, monster gets first strike.
-  - The hero may choose to shoot the enemy with his bow before entering its square. Each time he does, the monster has a chance to force him to
-    close the distance next move; otherwise, he can continue using the bow until he chooses to switch to melee.
 - Boss. You can't walk past this, though you can back away and take the opposite choice from the most recent branch. You'll find the boss
   again at some point, and new content is only unlocked by defeating bosses. Regular enemies have a soft level cap until boss defeated.
   - NOTE: Block boss spawn if (a) there's a boss visible on screen, either defeated or undefeated; or (b) when the hero has retreated, until a

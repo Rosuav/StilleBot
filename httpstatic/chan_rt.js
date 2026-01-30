@@ -34,21 +34,63 @@ function msg(txt) {
 	if (messages.length > 6) messages.shift();
 }
 
-/*
-Damage calculation
-- Hero melee damage: (1.05 ** hero level) * (1.1 ** STR) * (sword level / base level)
-- Hero ranged damage: (1.025 ** hero level) * (1.1 ** DEX) * (bow level / base level)
-- Enemy melee damage: (1.15 ** enemy level) / (armor level / base level)
-  - Note that this is almost the same damage (slightly lower) that you'd get if you keep your STR equal to your level
-- Hero hitpoints: 10 * (1.04 ** hero level) * (1.05 ** CON)
-- Enemy hitpoints: 3 * (1.1 ** enemy level)
-
-Crunch some numbers with these, see how it goes.
-*/
 function recalc_max_hp() {
 	const maxhp = Math.ceil(10 * (1.04 ** gamestate.stats.level) * (1.05 ** gamestate.stats.CON));
 	//Whenever your max HP changes, which will usually be a level-up, restore full health.
 	if (maxhp !== gamestate.stats.maxhp) gamestate.stats.maxhp = gamestate.stats.curhp = maxhp;
+}
+function hero_melee_damage() {
+	return Math.ceil(
+		(1.05 ** gamestate.stats.level)
+		* (1.1 ** gamestate.stats.STR)
+		* (gamestate.equipment.sword / gamestate.world.baselevel)
+		* (Math.random() * 0.4 + 0.8)
+	);
+}
+function hero_ranged_damage() {
+	return Math.ceil(
+		(1.025 ** gamestate.stats.level)
+		* (1.1 ** gamestate.stats.DEX)
+		* (gamestate.equipment.BOW / gamestate.world.baselevel)
+		* (Math.random() * 0.4 + 0.8)
+	);
+}
+function enemy_max_hp(level) {
+	return Math.ceil(3 * (1.08 ** level) * (Math.random() * 0.5 + 0.75)); //Enemy hitpoints will be +/-25% of the basic calculation
+}
+function enemy_melee_damage(level) {
+	return Math.ceil(
+		(1.15 ** level)
+		* (gamestate.world.baselevel / gamestate.equipment.armor) //Note that armor is functionally a damage reduction effect
+		* (Math.random() * 0.6 + 0.70)
+	);
+}
+
+function take_damage(dmg) {
+	if (dmg >= gamestate.stats.curhp) {
+		//You died, Mr Reynolds.
+		msg("THE HERO DIED");
+		//But hey, death isn't the end!
+		gamestate.world.delay = [10, "::respawn"];
+		gamestate.stats.curhp = 0;
+		return;
+	}
+	msg("Ouch! " + dmg + " damage!");
+	gamestate.stats.curhp -= dmg;
+}
+
+function respawn() {
+	let newloc = -1;
+	for (let l = 0; l < gamestate.world.pathway.length; ++l) {
+		const loc = gamestate.world.pathway[l];
+		if (loc.type === "respawn" && loc.state === "current") newloc = l; //TODO: There should only be one of these.
+	}
+	if (newloc === -1) {msg("NO RESPAWN CHAMBER!"); newloc = 0;} //Shouldn't happen.
+	gamestate.world.location = newloc;
+	gamestate.world.direction = "advancing";
+	gamestate.world.delay = [5, "emerge"];
+	gamestate.stats.curhp = gamestate.stats.maxhp;
+	//TODO: Update traits.
 }
 
 //Calculate the level at which something should spawn
@@ -97,6 +139,9 @@ const encounter = {
 			}
 			gamestate.world.direction = "advancing"; //Once you run back as far as a respawner, there's no reason to keep retreating.
 		},
+		emerge(loc) {
+			msg("Your hero emerges from respawn.");
+		},
 		desire: {braveN: 3, headstrongN: 3},
 	},
 	clear: {
@@ -108,11 +153,52 @@ const encounter = {
 		enter(loc) {
 			if (!loc.maxhp) {
 				//Make a decision. Fight, flee, or move past? Moving past is
-				//only an option if we massively outlevel.
+				//only an option if we massively outlevel. Attempting to flee
+				//may result in the monster getting a free hit first.
+				const t = weighted_random(gamestate.traits);
+				const trait = t + (gamestate.traits[t] < 0 ? "N" : "P");
+				let choice = "attack"; //By default, we fight.
+				switch (trait) {
+					case "aggressiveP": break; //Aggressive heroes will fight every time.
+					case "aggressiveN": break; //Passive heroes don't really care so they'll fight, it's the straight-forward option. TODO: Prefer to move past if that's an option.
+					case "headstrongP": break; //Headstrong heroes will take any fight, no matter how scary.
+					case "headstrongN": if (loc.level >= gamestate.stats.level) choice = "flee"; break; //Prudent heroes will avoid dangerous fights.
+					case "braveP": break; //TODO: Bypass any enemy that would be dishonourable to fight
+					case "braveN": choice = "flee"; break; //Cowards can't block warriors.
+				}
+				if (choice === "flee") {
+					//The enemy gets a free hit. TODO: Make this probablistic based on levels and stats?
+					take_damage(enemy_melee_damage(loc.level));
+					gamestate.world.direction = "retreating";
+					return;
+				}
+				//Alright, let's fight.
+				loc.maxhp = loc.curhp = enemy_max_hp(loc.level);
+				loc.state = Math.random() < 0.5 ? "herohit" : "enemyhit"; //TODO: Randomize this based on stats
 			}
 		},
 		action(loc) {
 			//If we're fighting, have a round of combat.
+			if (!loc.curhp) return;
+			if (loc.state === "herohit") {
+				//Hero gets a melee attack on the enemy!
+				const dmg = hero_melee_damage();
+				if (dmg >= loc.curhp) {
+					loc.curhp = 0;
+					msg("Enemy defeated!"); //TODO: Get some nicer messages, possibly using level range to determine an enemy name
+					loc.state = "dead";
+					//TODO: Gain XP
+					return;
+				}
+				msg("Hero hits for " + dmg + "!"); //Won't eventually be needed
+				loc.curhp -= dmg;
+				loc.state = "enemyhit";
+			} else {
+				//Uh oh, here comes a blow in response!
+				take_damage(enemy_melee_damage(loc.level)); //Might result in death.
+				loc.state = "herohit";
+			}
+			return "hold";
 		},
 		desire: {aggressiveP: 10, headstrongP: 5, braveP: 5},
 	},
@@ -280,16 +366,23 @@ function gametick() {
 		if (gamestate.world.delay) {
 			if (!--gamestate.world.delay[0]) {
 				//Delay is over. Call the callback.
-				const location = gamestate.world.pathway[gamestate.world.location];
-				encounter[location.type][gamestate.world.delay[1]](location);
+				const cb = gamestate.world.delay[1];
+				//Special-case the respawn delay; maybe will need others that are also global.
+				if (cb === "::respawn") respawn();
+				else {
+					const location = gamestate.world.pathway[gamestate.world.location];
+					encounter[location.type][cb](location);
+				}
 				delete gamestate.world.delay;
 			}
 			continue; //Note that this is skipping state-based updates currently, maybe this isn't good
 		}
 		const location = gamestate.world.pathway[gamestate.world.location];
-		const handler = encounter[location.type].action; if (handler) handler(location);
+		const handler = encounter[location.type].action;
+		const result = handler && handler(location);
 		//The handler may have changed state. The last step is always to move, either advance or retreat.
-		if (gamestate.world.direction === "advancing") {
+		if (result === "hold") ; //Stay here this turn. Doesn't overwrite the direction but does override it.
+		else if (gamestate.world.direction === "advancing") {
 			if (++location.progress >= location.distance) change_encounter(1);
 		} else if (gamestate.world.direction === "retreating") {
 			if (--location.progress <= 0) change_encounter(-1);
