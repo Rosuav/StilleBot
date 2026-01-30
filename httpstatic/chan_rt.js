@@ -190,7 +190,11 @@ const encounter = {
 					loc.curhp = 0;
 					msg("Enemy defeated!"); //TODO: Get some nicer messages, possibly using level range to determine an enemy name
 					loc.state = "dead";
-					//TODO: Gain XP
+					if (loc.level < gamestate.stats.level - 10) gamestate.stats.xp += 1; //Minimal XP for super-low-level enemies
+					else {
+						const diff = loc.level - gamestate.stats.level;
+						gamestate.stats.xp += Math.ceil(100 * (1.17 ** diff));
+					}
 					return "hold";
 				}
 				msg("Hero hits for " + dmg + "!"); //Won't eventually be needed
