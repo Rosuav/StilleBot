@@ -86,6 +86,8 @@ function respawn() {
 		if (loc.type === "respawn" && loc.state === "current") newloc = l; //TODO: There should only be one of these.
 	}
 	if (newloc === -1) {msg("NO RESPAWN CHAMBER!"); newloc = 0;} //Shouldn't happen.
+	for (let l = newloc; l <= gamestate.world.location; ++l)
+		gamestate.world.pathway[l].progress = 0;
 	gamestate.world.location = newloc;
 	gamestate.world.direction = "advancing";
 	gamestate.world.delay = [5, "emerge"];
