@@ -138,8 +138,12 @@ const encounter = {
 		},
 		action(loc) {
 			if (loc.state !== "current") {
+				//Set all current respawners to "reached". Note that there should only be one,
+				//and it should be on the current path (not a branch). You should never go
+				//backwards past a respawner, so you should never switch paths.
+				for (let loc of gamestate.world.pathway)
+					if (loc.type === "respawn" && loc.state === "current") loc.state = "reached";
 				loc.state = "current";
-				//TODO: And set all other currents to "reached"
 				msg("Activating respawn chamber");
 			}
 			gamestate.world.direction = "advancing"; //Once you run back as far as a respawner, there's no reason to keep retreating.
