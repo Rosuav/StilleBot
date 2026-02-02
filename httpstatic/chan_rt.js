@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, CAPTION, DIV, METER, TABLE, TD, TH, TR} = lindt; //autoimport
+const {BUTTON, CAPTION, DIV, METER, SPAN, TABLE, TD, TH, TR} = lindt; //autoimport
 
 let gamestate = { };
 //Traits can be positive or negative. For the display (both status and control),
@@ -74,7 +74,7 @@ function take_damage(dmg) {
 		//TODO: Reduce XP or add an XP gain penalty for a while
 		msg("THE HERO DIED");
 		//But hey, death isn't the end!
-		gamestate.world.delay = [10, "::respawn"];
+		gamestate.world.delay = [0, 10, "::respawn", "DEAD"];
 		gamestate.stats.curhp = 0;
 		return;
 	}
@@ -93,7 +93,7 @@ function respawn() {
 		gamestate.world.pathway[l].progress = 0;
 	gamestate.world.location = newloc;
 	gamestate.world.direction = "advancing";
-	gamestate.world.delay = [5, "emerge"];
+	gamestate.world.delay = [0, 5, "emerge", "Respawning..."];
 	gamestate.stats.curhp = gamestate.stats.maxhp;
 	//Okay. Now the big one: Update traits.
 	//First, look at the requested traits. Note that there could be junk in the requests[] mapping, so
@@ -259,7 +259,7 @@ const encounter = {
 				loc.slot = random_choice(["sword", "bow", "armor"]);
 				if (gamestate.equipment[loc.slot] < loc.level) {
 					//It's an upgrade! Take some time to pick it up.
-					gamestate.world.delay = [loc.slot === "armor" ? 10 : 5, "equip"];
+					gamestate.world.delay = [0, loc.slot === "armor" ? 10 : 5, "equip", "Equipping..."];
 					msg("Equipping a grade " + loc.level + " " + loc.slot); //TODO: Word them differently
 				} else msg("Bypassing a mere grade " + loc.level + " " + loc.slot);
 			}
@@ -283,8 +283,7 @@ const encounter = {
 			return ret;
 		},
 		enter(loc) {
-			msg("Contemplating which path to take...");
-			gamestate.world.delay = [10, "pickpath"];
+			gamestate.world.delay = [0, 10, "pickpath", "Contemplating..."];
 		},
 		pickpath(loc) {
 			//TODO: If retreating, do a bravery check to switch and stop retreating. This won't
@@ -417,9 +416,9 @@ function gametick() {
 		//Take a step!
 		//Does the current location demand more action? Time delays are counted in ticks.
 		if (gamestate.world.delay) {
-			if (!--gamestate.world.delay[0]) {
+			if (++gamestate.world.delay[0] >= gamestate.world.delay[1]) {
 				//Delay is over. Call the callback.
-				const cb = gamestate.world.delay[1];
+				const cb = gamestate.world.delay[2];
 				delete gamestate.world.delay;
 				//Special-case the respawn delay; maybe will need others that are also global.
 				if (cb === "::respawn") respawn();
@@ -493,6 +492,7 @@ function gametick() {
 	}
 	let path = gamestate.world.pathway;
 	if (path.length > gamestate.world.location + 10) path = gamestate.world.pathway.slice(0, 10);
+	const delay_proportion = gamestate.world.delay && gamestate.world.delay[0] / gamestate.world.delay[1];
 	replace_content("#display", [
 		DIV({id: "controls", class: "buttonbox"}, [ //TODO: Hide these if we're in overlay mode
 			BUTTON({type: "button", id: "save"}, "Save game now"), "Game saves automatically on level up and death",
@@ -521,8 +521,25 @@ function gametick() {
 				]))
 			])),
 			DIV(TWO_COL(traits.map(t => typeof t === "string" ? t : METER({value: t / scale})))),
-			DIV({id: "messages"}, messages.map(m => DIV(m))),
-			DIV(TABLE({class: "twocol"}, [
+			DIV({id: "messages"}, [
+				messages.map(m => DIV(m)),
+				gamestate.world.delay && DIV([ //"Current action" spinner. Absent if no action - should it be retained for display stability?
+					SPAN({
+						//Simple CSS spinner. The radial gradient specifies that, once we've reached the closest side, the rest is
+						//the page background colour; this gives us a circle to work in, instead of filling out a square. Then the
+						//actual spinner is defined by the conic gradient, giving a proportion in one colour and the rest in another.
+						//In the center of the ring, we have the same lavender colour that makes up the background of the ring. Maybe
+						//this should be #eee again? Unsure.
+						style: `display: inline-block;
+							width: 1.25em; height: 1.25em;
+							background: radial-gradient(circle closest-side, lavender 50%, transparent 50% 100%, #eee 100%),
+								conic-gradient(lavender 0 ${delay_proportion - .01}turn, rebeccapurple ${delay_proportion + .01}turn)
+						`,
+					}),
+					" " + gamestate.world.delay[3],
+				]),
+			]),
+			DIV(TABLE([
 				CAPTION("Next respawn, prefer:"),
 				trait_display_order.map(t => gamestate.traits[t] && TR([
 					TD(BUTTON({"data-traitrequest": t + "N"}, [trait_labels[t + "N"], " (" + (gamestate.requests[t + "N"]||0) + ")"])),
