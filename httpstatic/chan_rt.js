@@ -361,7 +361,7 @@ function populate(world) {
 			//Respawners become more likely as you get further from one,
 			//and (not shown here) guaranteed to spawn once you're too far.
 			respawn: distance.respawn < 8 ? 0 : distance.respawn,
-			clear: 10,
+			clear: 5,
 			enemy: 15,
 			equipment: 2,
 			//item: 2,
