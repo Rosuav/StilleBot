@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, DIV, METER, TABLE, TD, TH, TR} = lindt; //autoimport
+const {BUTTON, CAPTION, DIV, METER, TABLE, TD, TH, TR} = lindt; //autoimport
 
 let gamestate = { };
 //Traits can be positive or negative. For the display (both status and control),
@@ -95,7 +95,35 @@ function respawn() {
 	gamestate.world.direction = "advancing";
 	gamestate.world.delay = [5, "emerge"];
 	gamestate.stats.curhp = gamestate.stats.maxhp;
-	//TODO: Update traits.
+	//Okay. Now the big one: Update traits.
+	//First, look at the requested traits. Note that there could be junk in the requests[] mapping, so
+	//we whitelist to valid traits. A trait is valid if and only if it is in the trait_display_order
+	//AND you already have some of that trait. (New traits get unlocked by defeating bosses, and you
+	//will always get a little of it when that happens.)
+	//NOTE: Currently using winner-takes-all voting; if Aggressive has 8 votes and Passive has 7, you
+	//will without a doubt become more aggressive. It may be better instead to randomly sample.
+	let top_trait = "", top_dir = "", top_count = 0;
+	for (let t of trait_display_order) {
+		if (!gamestate.traits[t]) continue;
+		if (gamestate.requests[t + "N"] > top_count) top_count = gamestate.requests[(top_trait = t) + (top_dir = "N")];
+		if (gamestate.requests[t + "P"] > top_count) top_count = gamestate.requests[(top_trait = t) + (top_dir = "P")];
+	}
+	gamestate.requests = { }; //After each respawn, all requests are consumed.
+	if (!top_count) return; //No requests. Hero retains his current traits.
+	const cur_dir = gamestate.traits[top_trait] > 0 ? "P" : "N";
+	if (cur_dir === top_dir) {
+		//Strengthen the current trait. For example, you're already Aggressive and the request was for more aggressiveness.
+		gamestate.traits[top_trait] += Math.random() / 2 + 0.25; //Empower it by 0.25-0.75
+	} else {
+		//Weaken the current trait, which might flip it.
+		const effect = Math.random() + 0.5;
+		if (effect > Math.abs(gamestate.traits[top_trait])) {
+			//Flip the trait - reset it to a starting trait value in the opposite direction.
+			gamestate.traits[top_trait] = Math.random() / 4 + 0.25; //Starting strength of 0.25-0.5
+			if (top_dir === "N") gamestate.traits[top_trait] *= -1;
+		}
+		else gamestate.traits[top_trait] -= effect; //Weaken the trait but keep it as is.
+	}
 }
 
 //Calculate the level at which something should spawn
@@ -494,6 +522,13 @@ function gametick() {
 			])),
 			DIV(TWO_COL(traits.map(t => typeof t === "string" ? t : METER({value: t / scale})))),
 			DIV({id: "messages"}, messages.map(m => DIV(m))),
+			DIV(TABLE({class: "twocol"}, [
+				CAPTION("Next respawn, prefer:"),
+				trait_display_order.map(t => gamestate.traits[t] && TR([
+					TD(BUTTON({"data-traitrequest": t + "N"}, [trait_labels[t + "N"], " (" + (gamestate.requests[t + "N"]||0) + ")"])),
+					TD(BUTTON({"data-traitrequest": t + "P"}, [trait_labels[t + "P"], " (" + (gamestate.requests[t + "P"]||0) + ")"])),
+				])),
+			])),
 		]),
 		DIV({id: "pathway"}, path.map((enc, idx) => DIV(
 			{style: "background: " + pathway_background(idx - gamestate.world.location, enc)},
@@ -513,13 +548,25 @@ export function render(data) {
 		if (!gamestate.equipment) gamestate.equipment = {sword: 1, bow: 1, armor: 1};
 		if (!gamestate.world) gamestate.world = {baselevel: 1, pathway: [encounter.respawn.create()], location: 0};
 		if (!gamestate.world.direction) gamestate.world.direction = "advancing";
+		if (!gamestate.requests) gamestate.requests = { };
 		gamestate.world.pathway.forEach(enc => {if (!enc.distance) enc.distance = 10; if (!enc.progress) enc.progress = 0;});
 		recalc_max_hp();
 		basetime = performance.now();
 		ticking = setInterval(gametick, TICK_LENGTH);
 	}
-	//Signals other than game state will be things like "viewer-sponsored gift".
+	//Signals other than game state will be things like "viewer-sponsored gift" or "trait requested".
 }
+
+on("click", "[data-traitrequest]", e => {
+	const tr = e.match.dataset.traitrequest;
+	//NOTE: This does not do any validation on the requested trait. Maybe it should?
+	//All validation is done in respawn() itself, so junk may stick around until then.
+	gamestate.requests[tr] = (gamestate.requests[tr]||0) + 1;
+	//FIXME: Don't mix set_content and replace_content like this; it could mess up the display
+	//if you click the button in the very last tick before a respawn AND the trait had not been
+	//requested prior to that (was on "(0)" now "(1)").
+	set_content(e.match, [trait_labels[tr], " (" + gamestate.requests[tr] + ")"]);
+});
 
 //TODO: Call this automatically periodically, not too often but often enough.
 //On levelup and on death may not be sufficient.

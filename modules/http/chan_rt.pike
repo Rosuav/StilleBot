@@ -41,19 +41,6 @@ $$styles$$
 constant dev_notes = #{
 ## Dev notes
 
-* Have a class for each trait, with a Power that could be positive or negative
-* To make a decision:
-  - List all traits with the absolute value of the Power
-  - Take a weighted random selection from those traits
-  - Ask that trait what it would want done, and do that
-* On level up, each stat point is a separate decision. So a hero with a single very strong trait might put all three into the same stat, or
-  a more balanced hero might spread them around.
-* On respawn, player get to pick one trait to promote. If that trait already exists in that direction, it gets empowered by random()/2+0.25 for
-  a 0.25-0.75 strength empowerment. This has diminishing returns if the trait's already very strong, as other traits are not weakened.
-* OTOH if the trait is in the opposite direction (eg you promote prudence when the hero's headstrong), take random()+0.5; if that number is more
-  than the current trait, flip the trait and make it random()/4+0.25 for a starting strength of 0.25-0.5. Otherwise, subtract it from the trait.
-* If Twitch chat is permitted to participate, they can use "!trait aggressive" to request a trait. This will be displayed on the button, with the
-  most-voted-for trait getting a highlight. On respawn, wait 10 seconds, then choose that button.
 * Unlocking a new trait starts it at random()/2-0.25 for a very weak initial impact. It's nearly impossible to completely remove a trait once
   it's been unlocked, though you can certainly overpower it with others.
 
