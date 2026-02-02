@@ -16,6 +16,7 @@ const trait_labels = {
 const trait_display_order = "aggressive headstrong brave".split(" ");
 const stat_display_order = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
 const BASE_MONSTER_XP = 100;
+const BASELEVEL_ADVANCEMENT_RATE = 25; //The base level will increase every this-many rooms.
 
 //Weighted selection from a collection of options. Uses the absolute value of the weight, so -3.14 is equivalent to 3.14.
 function weighted_random(weights) {
@@ -279,6 +280,7 @@ const encounter = {
 			//A branch needs to have its own pathway in it. Note that its location gets a fixed value; this
 			//makes the populate() function simpler, and has no other effect.
 			const ret = {type: "branch", pathway: [], location: -1};
+			gamestate.world.blfrac -= 3; //The three preview cells don't count to base level advancement.
 			populate(ret);
 			return ret;
 		},
@@ -381,6 +383,12 @@ function populate(world) {
 		if (world.pathway.push(enc) > MAX_PATHWAY_LENGTH) {
 			world.pathway.shift(); //Discard the oldest
 			--world.location;
+		}
+		//Every time we spawn a new location, advance the base level by a fraction.
+		//Special case: Reduce this when we create a branch, to compensate for the three-room preview.
+		if (++gamestate.world.blfrac > BASELEVEL_ADVANCEMENT_RATE) {
+			++gamestate.world.baselevel;
+			gamestate.world.blfrac = 0;
 		}
 	}
 }
@@ -563,8 +571,9 @@ export function render(data) {
 		if (!gamestate.stats.gold) gamestate.stats.gold = 0;
 		if (!gamestate.traits) gamestate.traits = {aggressive: 0.1};
 		if (!gamestate.equipment) gamestate.equipment = {sword: 1, bow: 1, armor: 1};
-		if (!gamestate.world) gamestate.world = {baselevel: 1, pathway: [encounter.respawn.create()], location: 0};
+		if (!gamestate.world) gamestate.world = {baselevel: 1, blfrac: 0, pathway: [encounter.respawn.create()], location: 0, direction: "advancing"};
 		if (!gamestate.world.direction) gamestate.world.direction = "advancing";
+		if (!gamestate.world.blfrac) gamestate.world.blfrac = 0;
 		if (!gamestate.requests) gamestate.requests = { };
 		gamestate.world.pathway.forEach(enc => {if (!enc.distance) enc.distance = 10; if (!enc.progress) enc.progress = 0;});
 		recalc_max_hp();
