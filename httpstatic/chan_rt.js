@@ -260,8 +260,8 @@ const encounter = {
 				if (gamestate.equipment[loc.slot] < loc.level) {
 					//It's an upgrade! Take some time to pick it up.
 					gamestate.world.delay = [loc.slot === "armor" ? 10 : 5, "equip"];
-					msg("Equipping a level " + loc.level + " " + loc.slot); //TODO: Word them differently
-				} else msg("Bypassing a mere level " + loc.level + " " + loc.slot);
+					msg("Equipping a grade " + loc.level + " " + loc.slot); //TODO: Word them differently
+				} else msg("Bypassing a mere grade " + loc.level + " " + loc.slot);
 			}
 		},
 		equip(loc) {
@@ -270,7 +270,7 @@ const encounter = {
 		desire: {headstrongN: 10},
 		render(loc) {
 			if (loc.slot === "unknown") return "Equipment";
-			return "L" + loc.level + " " + loc.slot;
+			return "G" + loc.level + " " + loc.slot;
 		},
 	},
 	//item: {create() {return {type: "item"};}}, //Not sure how to do these yet
