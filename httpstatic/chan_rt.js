@@ -507,7 +507,8 @@ function gametick() {
 		]),
 		DIV({id: "stats"}, [
 			DIV(TWO_COL([
-				"Level", gamestate.stats.level,
+				//~ "Level", gamestate.stats.level,
+				"Level", gamestate.stats.level + " (" + gamestate.world.baselevel + ")", //DEBUG: Show the base level
 				"Next", ""+(gamestate.stats.nextlevel - gamestate.stats.xp),
 				//Hitpoints graph. If you get below 75%, the browser should start showing it in
 				//scarier colours, eg yellow or red, but I am not in control of that.
@@ -529,6 +530,7 @@ function gametick() {
 				]))
 			])),
 			DIV(TWO_COL(traits.map(t => typeof t === "string" ? t : METER({value: t / scale})))),
+			//TODO: Cap the height of the messages div and discard from the top if there isn't room
 			DIV({id: "messages"}, [
 				messages.map(m => DIV(m)),
 				gamestate.world.delay && DIV([ //"Current action" spinner. Absent if no action - should it be retained for display stability?
