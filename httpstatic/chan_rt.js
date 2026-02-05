@@ -18,6 +18,24 @@ const stat_display_order = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
 const BASE_MONSTER_XP = 100;
 const BASELEVEL_ADVANCEMENT_RATE = 25; //The base level will increase every this-many rooms.
 
+function unlock_trait(t) {if (!gamestate.traits[t]) gamestate.traits[t] = Math.random() / 2 - 0.25;}
+
+//Bosses are defined in sequence. You will never encounter a later boss before an earlier one.
+//If you have somehow already defeated a boss, but a new one is created earlier, you'll likely
+//meet the new boss fairly soon.
+//TODO: Have a "boss rush" special action that respawns every boss from the beginning, in order,
+//and lets you kill them. This will ensure that their death triggers all fire.
+//TODO: Allow bosses to have special abilities like parrying attacks. They'll need to hook into
+//the combat system.
+const bosses = [{
+	minlevel: 5, //Boss will not spawn until the baselevel is at least this
+	level: 10, //The boss's actual level as will be used for damage calculations
+	hpmul: 1.1, //Calculate normal hitpoints for a monster of the boss's level, then multiply by this.
+	name: "Snowman", //Short name, used in damage messages
+	longname: "Evil Snowman of Doom", //Name shown once upon encounter, and again on death
+	ondeath() {unlock_trait("headstrong");},
+}];
+
 //Weighted selection from a collection of options. Uses the absolute value of the weight, so -3.14 is equivalent to 3.14.
 function weighted_random(weights) {
 	let totweight = 0;
