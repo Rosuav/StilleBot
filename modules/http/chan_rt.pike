@@ -90,9 +90,11 @@ constant styles = #"
 	text-align: center;
 }
 #messages {
-	/* TODO: Give new messages (divs inside #messages) a background that fades? */
 	border: 1px solid grey;
 	padding: 0 8px;
+	height: 8em;
+	flex: 0 0 300px;
+	overflow-y: hidden;
 }
 ";
 

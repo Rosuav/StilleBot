@@ -661,6 +661,7 @@ function gametick() {
 			encounter[enc.type].render(enc)
 		)).reverse()),
 	]);
+	DOM("#messages").scroll(0, 9999); //Keep the messages showing the newest
 }
 
 export function render(data) {
