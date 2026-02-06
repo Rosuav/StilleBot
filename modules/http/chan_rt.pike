@@ -41,9 +41,6 @@ $$styles$$
 constant dev_notes = #{
 ## Dev notes
 
-* Unlocking a new trait starts it at random()/2-0.25 for a very weak initial impact. It's nearly impossible to completely remove a trait once
-  it's been unlocked, though you can certainly overpower it with others.
-
 Two modes: 2D and Linear
 - In 2D mode, the hero's path branches periodically. He looks down each path, and makes a choice. But he mostly still moves left to right.
 - In Linear mode, the branches are shown as doorways. He peeks into the door, and makes a choice. He moves exclusively left to right.
