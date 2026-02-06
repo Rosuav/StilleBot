@@ -15,8 +15,10 @@ const trait_labels = {
 };
 const trait_display_order = "aggressive headstrong brave".split(" ");
 const stat_display_order = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
-const BASE_MONSTER_XP = 100;
+const BASE_MONSTER_XP = 100, BASE_BOSS_XP = 150; //Monster XP increases if it's above your level. Boss XP increases by its level regardless.
 const BASELEVEL_ADVANCEMENT_RATE = 30; //The base level will increase every this-many rooms.
+const TICK_LENGTH = 1000; //Normal combat tick. It may be worth reducing this to 100ms and having intermediate ticks.
+const MAX_PATHWAY_LENGTH = 20; //Ideally this should be more than can be seen on any reasonable screen
 
 function unlock_trait(t) {if (!gamestate.traits[t]) gamestate.traits[t] = Math.random() / 2 - 0.25;}
 
@@ -54,6 +56,16 @@ const messages = ["Starting on an adventure!"];
 function msg(txt) {
 	messages.push(txt);
 	if (messages.length > 6) messages.shift();
+}
+
+function recalc_next_boss() {
+	//Scan the bosses, find which is next, and record that. If all bosses have been defeated,
+	//gamestate.bosses._next >= bosses.length; gamestate.bosses._next_level is the level at
+	//which that boss can first spawn.
+	gamestate.bosses._next_level = Infinity;
+	for (var boss = 0; boss < bosses.length; ++boss)
+		if (!gamestate.bosses[bosses[boss].name]) {gamestate.bosses._next_level = bosses[boss].minlevel; break;}
+	gamestate.bosses._next = boss;
 }
 
 function recalc_max_hp() {
@@ -270,7 +282,70 @@ const encounter = {
 			return "Enemy";
 		},
 	},
-	//boss should be handled differently, and will require a hard-coded list of bosses
+	boss: {
+		create() {return {type: "boss", boss: gamestate.bosses._next};},
+		enter(loc) {
+			const boss = bosses[loc.boss];
+			if (!loc.maxhp) {
+				//Make a decision. Fight or flee? This is a big and nasty boss.
+				const t = weighted_random(gamestate.traits);
+				const trait = t + (gamestate.traits[t] < 0 ? "N" : "P");
+				let choice = "attack"; //By default, we fight.
+				switch (trait) {
+					case "aggressiveP": break; //Aggressive heroes will fight every time.
+					case "aggressiveN": choice = "flee"; break; //Passive heroes would prefer simpler enemies and will not take on a boss.
+					case "headstrongP": break; //Headstrong heroes will take any fight, no matter how scary.
+					case "headstrongN": if (boss.level >= gamestate.stats.level) choice = "flee"; break; //Prudent heroes will avoid dangerous fights.
+					case "braveP": break; //Brave heroes ALWAYS fight bosses
+					case "braveN": choice = "flee"; break; //Cowards can't block warriors.
+				}
+				if (choice === "flee") {
+					//Bosses always get the free hit. (Regular enemies might not.)
+					take_damage(enemy_melee_damage(boss.level));
+					gamestate.world.direction = "retreating";
+					return;
+				}
+				//Alright, let's fight.
+				loc.maxhp = loc.curhp = enemy_max_hp(boss.level) * boss.hpmul;
+				loc.state = "enemyhit"; //Bosses always get first strike.
+				msg("FIGHT: " + boss.longname);
+			}
+		},
+		action(loc) {
+			//If we're fighting, have a round of combat.
+			if (!loc.curhp) return;
+			const boss = bosses[loc.boss];
+			if (loc.state === "herohit") {
+				//Hero gets a melee attack on the enemy!
+				const dmg = hero_melee_damage();
+				if (dmg >= loc.curhp) {
+					loc.curhp = 0;
+					msg("The " + boss.longname + " is defeated!");
+					gamestate.bosses[boss.name] = +new Date;
+					if (boss.ondeath) boss.ondeath();
+					recalc_next_boss();
+					loc.state = "dead";
+					//Boss XP is functionally fixed, regardless of the hero's level.
+					//Note that this number goes up fairly fast, but will take a long
+					//time to exceed the cost of gaining a level (which approximates to
+					//phi ** level).
+					gamestate.stats.xp += Math.ceil(BASE_BOSS_XP * (1.25 ** boss.level));
+					return "hold";
+				}
+				msg("Hero hits for " + dmg + "!"); //Won't eventually be needed
+				loc.curhp -= dmg;
+				loc.state = "enemyhit";
+			} else {
+				//Uh oh, here comes a blow in response!
+				take_damage(enemy_melee_damage(boss.level)); //Might result in death.
+				loc.state = "herohit";
+			}
+			return "hold";
+		},
+		//TODO: Prudent should want this if the level is reasonable.
+		desire: {aggressiveP: 20, headstrongP: 10, braveP: 20},
+		render(loc) {return bosses[loc.boss].name;},
+	},
 	equipment: {
 		create() {return {type: "equipment", slot: "unknown", level: spawnlevel() + 1};}, //Slot becomes known when the item is collected
 		enter(loc) {
@@ -357,9 +432,6 @@ function TWO_COL(elements) {
 	return TABLE({class: "twocol"}, rows);
 }
 
-const TICK_LENGTH = 1000; //FIXME: For normal operation, a tick should be 100ms
-const MAX_PATHWAY_LENGTH = 20; //Ideally this should be more than can be seen on any reasonable screen
-
 function populate(world) {
 	//First, populate the world. We need to have enough behind us to draw, our current
 	//location, and three cells ahead of us.
@@ -386,11 +458,12 @@ function populate(world) {
 			enemy: 15,
 			equipment: 2,
 			//item: 2,
-			//boss: 3, //Zero this out if there is no undefeated boss at/below base level, or if there's any boss on screen (including a defeated one)
+			boss: gamestate.world.baselevel >= gamestate.bosses._next_level ? 3 : 0,
 			branch: distance.branch < 3 ? 0 : distance.branch,
 		};
 		let enctype;
 		//First, are there any guaranteed spawn demands?
+		//if (boss rush mode) {if (weights.boss) enctype = "boss"; else boss rush mode ends}
 		if (distance.respawn >= 15) enctype = "respawn"; //NOTE: This figure includes the 3-square advancement
 		//else if (there's a user-provided item spawn requested) enctype = "item";
 		//Otherwise, weighted random
@@ -596,7 +669,9 @@ export function render(data) {
 		if (!gamestate.world.direction) gamestate.world.direction = "advancing";
 		if (!gamestate.world.blfrac) gamestate.world.blfrac = 0;
 		if (!gamestate.requests) gamestate.requests = { };
+		if (!gamestate.bosses) gamestate.bosses = { };
 		gamestate.world.pathway.forEach(enc => {if (!enc.distance) enc.distance = 10; if (!enc.progress) enc.progress = 0;});
+		recalc_next_boss();
 		recalc_max_hp();
 		basetime = performance.now();
 		ticking = setInterval(gametick, TICK_LENGTH);
