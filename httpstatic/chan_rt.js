@@ -497,7 +497,8 @@ function populate(world) {
 		}
 		//Every time we spawn a new location, advance the base level by a fraction.
 		//Special case: Reduce this when we create a branch, to compensate for the three-room preview.
-		if (++gamestate.world.blfrac > BASELEVEL_ADVANCEMENT_RATE) {
+		//The base level may not exceed the hero's level by more than 10.
+		if (++gamestate.world.blfrac > BASELEVEL_ADVANCEMENT_RATE && gamestate.world.baselevel < gamestate.stats.level + 10) {
 			++gamestate.world.baselevel;
 			gamestate.world.blfrac = 0;
 		}
