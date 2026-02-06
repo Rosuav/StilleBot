@@ -7,7 +7,7 @@ by kings and peasants alike, for his deeds are many and his accomplishments grea
 
 You are not that hero. You are the technician who operates his respawn chamber.
 
-When the hero dies, he comes back to life at the nearest respawn chamber, slightly weakened but ready to try again. In the interests of the
+When the hero dies, he comes back to life at the nearest respawn chamber, ready to try again. In the interests of the
 realm at large, you must respawn him, again, and again, and again!
 
 > ### Stats and Traits
