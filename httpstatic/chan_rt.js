@@ -16,7 +16,7 @@ const trait_labels = {
 const trait_display_order = "aggressive headstrong brave".split(" ");
 const stat_display_order = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
 const BASE_MONSTER_XP = 100;
-const BASELEVEL_ADVANCEMENT_RATE = 25; //The base level will increase every this-many rooms.
+const BASELEVEL_ADVANCEMENT_RATE = 30; //The base level will increase every this-many rooms.
 
 function unlock_trait(t) {if (!gamestate.traits[t]) gamestate.traits[t] = Math.random() / 2 - 0.25;}
 
@@ -27,6 +27,7 @@ function unlock_trait(t) {if (!gamestate.traits[t]) gamestate.traits[t] = Math.r
 //and lets you kill them. This will ensure that their death triggers all fire.
 //TODO: Allow bosses to have special abilities like parrying attacks. They'll need to hook into
 //the combat system.
+//TODO: Have some boss that unlocks the bow, giving you a grade 1 bow (or maybe his level) to start with.
 const bosses = [{
 	minlevel: 5, //Boss will not spawn until the baselevel is at least this
 	level: 10, //The boss's actual level as will be used for damage calculations
@@ -275,7 +276,7 @@ const encounter = {
 		enter(loc) {
 			if (loc.slot === "unknown") {
 				//Not yet collected!
-				loc.slot = random_choice(["sword", "bow", "armor"]);
+				loc.slot = random_choice(Object.keys(gamestate.equipment));
 				if (gamestate.equipment[loc.slot] < loc.level) {
 					//It's an upgrade! Take some time to pick it up.
 					gamestate.world.delay = [0, loc.slot === "armor" ? 10 : 5, "equip", "Equipping..."];
@@ -465,7 +466,7 @@ function gametick() {
 		} else if (gamestate.world.direction === "retreating") {
 			if (--location.progress <= 0) change_encounter(-1);
 		} //Otherwise something's holding us here.
-		//TODO: If advancing and the next location has an enemy, chance to take a bow shot
+		//TODO: If advancing and the next location has an enemy, and you have a bow, chance to take a bow shot
 
 		//Finally, check state-based updates.
 		if (!gamestate.stats.nextlevel) gamestate.stats.nextlevel = tnl(gamestate.stats.level);
@@ -538,7 +539,7 @@ function gametick() {
 					max: gamestate.stats.maxhp,
 				}),
 				"Sword", gamestate.equipment.sword,
-				"Bow", gamestate.equipment.bow,
+				gamestate.equipment.bow && "Bow", gamestate.equipment.bow || "\xA0", //Hide the bow altogether if it hasn't yet been unlocked
 				"Armor", gamestate.equipment.armor,
 			])),
 			DIV(TABLE({class: "twocol"}, [
@@ -590,7 +591,7 @@ export function render(data) {
 		if (!gamestate.stats) gamestate.stats = {STR:1, DEX:1, CON:1, INT:1, WIS:1, CHA:1, level: 1, xp: 0};
 		if (!gamestate.stats.gold) gamestate.stats.gold = 0;
 		if (!gamestate.traits) gamestate.traits = {aggressive: 0.1};
-		if (!gamestate.equipment) gamestate.equipment = {sword: 1, bow: 1, armor: 1};
+		if (!gamestate.equipment) gamestate.equipment = {sword: 1, armor: 1};
 		if (!gamestate.world) gamestate.world = {baselevel: 1, blfrac: 0, pathway: [encounter.respawn.create()], location: 0, direction: "advancing"};
 		if (!gamestate.world.direction) gamestate.world.direction = "advancing";
 		if (!gamestate.world.blfrac) gamestate.world.blfrac = 0;
