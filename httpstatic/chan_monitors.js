@@ -347,12 +347,15 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 			TABLE({style: "border: none"}, [
 				//TR(TH({colSpan: 2}, "Other")), //I detest calling this "Other", but what else is it??
 				[
-					["Cheers", "bit"],
+					["Cheers", "bit", bitsscopes],
 					["Streamlabs", "tip"],
 					["Follows", "follow"],
-				].map(([lbl, name]) => TR([
+				].map(([lbl, name, scopes]) => TR([
 					TD(LABEL({for: name}, lbl)),
-					TD(SELECT({id: name, name, "data-nocopy": 1}, [OPTION({value: ""}, "No"), OPTION({value: 1}, "Yes")]))
+					TD([
+						scopes && BUTTON({type: "button", class: "twitchlogin", "data-scopes": scopes}, "Auth"),
+						SELECT({id: name, name, "data-nocopy": 1, style: scopes ? "display: none" : ""}, [OPTION({value: ""}, "No"), OPTION({value: 1}, "Yes")])
+					]),
 				])),
 			]),
 			TABLE([

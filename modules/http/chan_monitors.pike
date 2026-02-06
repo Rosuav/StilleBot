@@ -224,7 +224,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	}
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
 	return render(req, ([
-		"vars": (["ws_group": ""]),
+		"vars": (["ws_group": "", "bitsscopes": ensure_bcaster_token(req, "bits:read")]),
 		"styles": replace(monitorstyles, "#display", ".preview"),
 	]) | req->misc->chaninfo);
 }
