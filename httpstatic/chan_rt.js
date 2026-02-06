@@ -178,13 +178,16 @@ function respawn() {
     - L40: 40+(64-40)/2 = 52
     - L50: 50+(52-50)/2 = 51
     - The effective spawn level will be 51.
-Softcap not currently implemented as there are no bosses.
 */
 function spawnlevel() {
 	let level = gamestate.world.baselevel;
 	let rand = Math.min(level/2, 10); //Spread by +/- 10 levels each way, but not more than half the base level
 	level += Math.trunc(Math.random() * rand*2 - rand);
-	//TODO: Softcap based on undefeated bosses
+	//Softcap based on undefeated bosses
+	for (let boss of bosses) if (!gamestate.bosses[boss.name]) {
+		//Excess levels above the boss's minlevel get halved.
+		level -= Math.max(0, Math.floor((level - boss.minlevel) / 2));
+	}
 	return level;
 }
 

@@ -49,10 +49,6 @@ Two modes: 2D and Linear
 - In Linear mode, the branches are shown as doorways. He peeks into the door, and makes a choice. He moves exclusively left to right.
 
 Encounters get spawned in at the RHS and there'll be a few of them visible ahead of the hero's current location.
-- Boss. You can't walk past this, though you can back away and take the opposite choice from the most recent branch. You'll find the boss
-  again at some point, and new content is only unlocked by defeating bosses. Regular enemies have a soft level cap until boss defeated.
-  - NOTE: Block boss spawn if (a) there's a boss visible on screen, either defeated or undefeated; or (b) when the hero has retreated, until a
-    branch gets spawned.
 - Item. Could be any one of these. The effectiveness given is for an item that spawns at exactly the current base level. For items spawned by
   viewer generosity, they will be spawned at max level instead.
   - Flash of Inspiration. It's a flashbang grenade, and it gives 1000 XP.
