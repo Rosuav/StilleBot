@@ -282,7 +282,23 @@ const encounter = {
 		},
 	},
 	boss: {
-		create() {return {type: "boss", boss: gamestate.bosses._next};},
+		create() {
+			//When spawning a boss, check to see if other bosses exist; if so,
+			//spawn sequential bosses (for a boss rush). If we're out of bosses
+			//for the current level, instead spawn a regular enemy.
+			//TODO: What about branches?
+			let boss = gamestate.bosses._next;
+			for (let enc of gamestate.world.pathway) {
+				if (enc.type === "boss" && enc.boss <= boss) {
+					console.log("Already got boss #" + boss + ", checking the next");
+					++boss;
+					if (boss >= bosses.length || bosses[boss].minlevel > gamestate.world.baselevel)
+						return encounter.enemy.create();
+				}
+			}
+			console.log("Spawning boss #" + boss);
+			return {type: "boss", boss};
+		},
 		enter(loc) {
 			const boss = bosses[loc.boss];
 			if (!loc.maxhp) {
@@ -457,7 +473,7 @@ function populate(world) {
 			enemy: 15,
 			equipment: 2,
 			//item: 2,
-			boss: gamestate.world.baselevel >= gamestate.bosses._next_level ? 3 : 0,
+			boss: gamestate.world.baselevel >= gamestate.bosses._next_level ? 3 : 0, //If there are no suitable bosses, it will spawn a regular enemy instead.
 			branch: distance.branch < 3 ? 0 : distance.branch,
 		};
 		let enctype;
