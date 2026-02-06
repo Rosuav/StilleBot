@@ -141,21 +141,24 @@ function respawn() {
 		if (gamestate.requests[t + "P"] > top_count) top_count = gamestate.requests[(top_trait = t) + (top_dir = "P")];
 	}
 	gamestate.requests = { }; //After each respawn, all requests are consumed.
-	if (!top_count) return; //No requests. Hero retains his current traits.
-	const cur_dir = gamestate.traits[top_trait] > 0 ? "P" : "N";
-	if (cur_dir === top_dir) {
-		//Strengthen the current trait. For example, you're already Aggressive and the request was for more aggressiveness.
-		gamestate.traits[top_trait] += Math.random() / 2 + 0.25; //Empower it by 0.25-0.75
-	} else {
-		//Weaken the current trait, which might flip it.
-		const effect = Math.random() + 0.5;
-		if (effect > Math.abs(gamestate.traits[top_trait])) {
-			//Flip the trait - reset it to a starting trait value in the opposite direction.
-			gamestate.traits[top_trait] = Math.random() / 4 + 0.25; //Starting strength of 0.25-0.5
-			if (top_dir === "N") gamestate.traits[top_trait] *= -1;
+	if (top_count) {
+		const cur_dir = gamestate.traits[top_trait] > 0 ? "P" : "N";
+		if (cur_dir === top_dir) {
+			//Strengthen the current trait. For example, you're already Aggressive and the request was for more aggressiveness.
+			gamestate.traits[top_trait] += Math.random() / 2 + 0.25; //Empower it by 0.25-0.75
+		} else {
+			//Weaken the current trait, which might flip it.
+			const effect = Math.random() + 0.5;
+			if (effect > Math.abs(gamestate.traits[top_trait])) {
+				//Flip the trait - reset it to a starting trait value in the opposite direction.
+				gamestate.traits[top_trait] = Math.random() / 4 + 0.25; //Starting strength of 0.25-0.5
+				if (top_dir === "N") gamestate.traits[top_trait] *= -1;
+			}
+			else gamestate.traits[top_trait] -= effect; //Weaken the trait but keep it as is.
 		}
-		else gamestate.traits[top_trait] -= effect; //Weaken the trait but keep it as is.
 	}
+	//Else there were no requests - Hero retains his current traits.
+	save_game();
 }
 
 //Calculate the level at which something should spawn
@@ -290,13 +293,11 @@ const encounter = {
 			let boss = gamestate.bosses._next;
 			for (let enc of gamestate.world.pathway) {
 				if (enc.type === "boss" && enc.boss <= boss) {
-					console.log("Already got boss #" + boss + ", checking the next");
 					++boss;
 					if (boss >= bosses.length || bosses[boss].minlevel > gamestate.world.baselevel)
 						return encounter.enemy.create();
 				}
 			}
-			console.log("Spawning boss #" + boss);
 			return {type: "boss", boss};
 		},
 		enter(loc) {
@@ -593,6 +594,7 @@ function gametick() {
 				const stat = weighted_random(weights);
 				++gamestate.stats[stat];
 			}
+			save_game();
 		}
 	}
 	//Once all game ticks have been processed, update the display.
