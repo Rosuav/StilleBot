@@ -277,8 +277,7 @@ const encounter = {
 		},
 		desire: {aggressiveP: 10, headstrongP: 5, braveP: 5},
 		render(loc) {
-			if (loc.curhp) return "Enemy: " + loc.curhp + "/" + loc.maxhp;
-			if (loc.maxhp) return "Corpse";
+			if (loc.maxhp && !loc.curhp) return "Corpse";
 			return "Enemy";
 		},
 	},
@@ -495,10 +494,18 @@ function change_encounter(dir) {
 	
 function pathway_background(pos, enc) {
 	//Transition from future colour to past colour with a progress bar in the current encounter
-	if (pos < 0) return "#88f";
-	if (pos > 0) return "aliceblue";
-	const progress = enc.progress * 100 / enc.distance;
-	return "linear-gradient(to right, #88f, #88f " + progress + "%, aliceblue " + progress + "%, aliceblue)";
+	if (pos === 0 && enc.progress) {
+		const progress = enc.progress * 100 / enc.distance;
+		return "linear-gradient(to right, #88f, #88f " + progress + "%, aliceblue " + progress + "%, aliceblue)";
+	}
+	//For fully-past and fully-future cells, show a solid cell of that colour, possibly adorned with a health bar.
+	const col = pos < 0 ? "#88f" : "aliceblue";
+	//For the current cell, if it is an enemy (with max hitpoints), show the health bar.
+	if (enc.curhp && enc.maxhp) {
+		const health = enc.curhp / enc.maxhp * 100;
+		return "linear-gradient(to bottom, " + col + " 10%, transparent 10% 20%, " + col + " 20%), linear-gradient(to right, red " + health + "%, blue " + health + "%)";
+	}
+	return col;
 }
 
 //NOTE: The game tick is not started until we first receive status from the server, but
