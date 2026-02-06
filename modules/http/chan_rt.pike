@@ -55,7 +55,7 @@ Encounters get spawned in at the RHS and there'll be a few of them visible ahead
 
 Next steps:
 1. Items, girl, items! You'll know them when you see them.
-2. More bosses to unlock more content - Brave/Cowardly (easy), Bow (once implement) - and then some more bosses just to be bosses
+2. More bosses to unlock more content - Brave/Cowardly (easy), Bow (once implemented) - and then some more bosses just to be bosses
 3. Chat integration. Make a builtin so that any command can do things.
 4. 2D mode maybe
 #};
