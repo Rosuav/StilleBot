@@ -52,6 +52,12 @@ Encounters get spawned in at the RHS and there'll be a few of them visible ahead
   - Courage. If there are any retreating penalties, they are removed; otherwise, the hero gets a courage bonus for the next 10 squares.
   - Stat. A potion of STR gives +5 STR for the next 10 squares. Any stat can spawn, except CHA (because it's useless) and CON (because it's weird to gain and lose HP).
   - Stoneskin. 25% damage reduction for 10 squares. Should feel like getting a CON potion.
+
+Next steps:
+1. Items, girl, items! You'll know them when you see them.
+2. More bosses to unlock more content - Brave/Cowardly (easy), Bow (once implement) - and then some more bosses just to be bosses
+3. Chat integration. Make a builtin so that any command can do things.
+4. 2D mode maybe
 #};
 
 constant styles = #"
