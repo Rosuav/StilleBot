@@ -501,7 +501,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		"vars": (["ws_group": "control",
 			"maxfilesize": G->G->DB->MAX_PER_FILE, "maxtotsize": G->G->DB->MAX_TOTAL_STORAGE,
 			"avail_voices": tts_config->avail_voices[?prem->tts_rate] || ({ }),
-			"follower_alert_scopes": req->misc->channel->name != "#!demo" && ensure_bcaster_token(req, "moderator:read:followers"),
+			"alert_scopes": ([
+				"follower": req->misc->channel->userid && ensure_bcaster_token(req, "moderator:read:followers"),
+				"cheer": req->misc->channel->userid && ensure_bcaster_token(req, "bits:read"),
+			]),
 		]),
 	]) | req->misc->chaninfo);
 }

@@ -309,12 +309,10 @@ export function render(data) {
 				SPAN({class: "description not-alertset"}, info.description),
 				type === "variant" && SPAN({class: "not-variant"}, "Create alert sets to easily enable/disable all associated alert variants. You can also set layout defaults for alert sets."),
 			]),
-			type === "follower" && P({class: "no-dirty no-inherit"}, [
-				follower_alert_scopes && DIV({class: "need-auth"}, [
-					"As of August 2023, follower alerts require authentication as the broadcaster. ",
-					BUTTON({class: "twitchlogin", "data-scopes": follower_alert_scopes}, "Grant permissions"),
-				]),
-			]),
+			alert_scopes[type] && P({class: "no-dirty no-inherit"}, DIV({class: "need-auth"}, [
+				"This alert require authentication as the broadcaster. ",
+				BUTTON({class: "twitchlogin", "data-scopes": alert_scopes[type]}, "Grant permissions"),
+			])),
 			type === "variant" && P({class: "no-inherit no-dirty"}, [
 				//No inherit and no dirty, this is a selector not a saveable
 				LABEL([VS("Select variant:", "Select alert set:"), SELECT({name: "variant"}, OPTION({value: ""}, "Add new"))]),

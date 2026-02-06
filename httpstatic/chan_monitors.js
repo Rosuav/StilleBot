@@ -349,7 +349,7 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 				[
 					["Cheers", "bit", bitsscopes],
 					["Streamlabs", "tip"],
-					["Follows", "follow"],
+					["Follows", "follow", followersscopes],
 				].map(([lbl, name, scopes]) => TR([
 					TD(LABEL({for: name}, lbl)),
 					TD([
