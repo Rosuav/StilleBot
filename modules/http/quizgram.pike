@@ -20,6 +20,9 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 1. What level of chaos is acceptable? `_-3-__`
 2. What is Camae's favourite colour? `_____-1-` `_____`
 3. Name the cat who hangs out on stream. `______`
+
+### ABluSkittle
+1. What kind of animals get hidden in all Skittle's art? `-29-___`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
