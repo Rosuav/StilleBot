@@ -8,7 +8,7 @@ const {A, B, BUTTON, DIV, FORM, IMG, INPUT, LABEL, LI} = choc; //autoimport
 let nextidx = 0;
 for (let el of [...document.getElementsByTagName("code")]) {
 	const attrs = {maxlength: 1, size: 1, autocomplete: "off", class: "ltr"};
-	if (el.closest("h2")) attrs.readonly = "on";
+	if (el.closest("h2")) attrs.readonly = "on"; else attrs["class"] = "ltr editable";
 	el.replaceWith(...el.textContent.matchAll(/_|-\d+-/g).map(c => INPUT({
 		...attrs, "data-linkage": attrs.readonly ? "-" + (++nextidx) + "-" : c[0],
 	})));
@@ -29,4 +29,11 @@ on("input", ".ltr", e => {
 	const linkage = e.match.dataset.linkage;
 	console.log("Entered linkage", linkage)
 	if (linkage !== "_") DOM('h2 input[data-linkage="' + linkage + '"]').value = e.match.value;
+});
+
+on("focusin", "h2 .ltr", e => {
+	//TODO: Highlight the linked letter, and if there isn't one, make it clear to an admin that one's needed
+	//Putting focus there isn't the best but it'll do for now
+	const linked = DOM('.ltr.editable[data-linkage="' + e.match.dataset.linkage + '"]');
+	if (linked) linked.focus();
 });

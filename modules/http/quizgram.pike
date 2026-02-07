@@ -4,6 +4,7 @@ constant markdown = #"# Quizgram
 <style>
 input.ltr {font-size: 100%; width: 1.25em; text-transform: uppercase;}
 input[readonly].ltr {background: aliceblue;}
+img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 </style>
 
 ## `_____` `___` `__` `________`, `____` `_____` `_________`.
@@ -16,11 +17,18 @@ input[readonly].ltr {background: aliceblue;}
 2. What colour are CandiCat's ears? `____` and `______`
 
 ### CamaeSoultamer
-1. What level of chaos is acceptable? `____`
+1. What level of chaos is acceptable? `_-3-__`
 2. What is Camae's favourite colour? `_____-1-` `_____`
 3. Name the cat who hangs out on stream. `______`
 ";
 
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
-	return render_template(markdown, (["js": "quizgram.js"]));
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
+	array parts = markdown / "\n### ";
+	foreach (parts; int i; string text) {
+		if (!i) continue; //Skip the initial blob
+		sscanf(text, "%s\n%s", string channel, text);
+		mapping user = await(get_user_info(channel, "login"));
+		parts[i] = sprintf("%s\n[![Avatar](%s) Visit %s's channel](https://twitch.tv/%s :target=_blank)\n\n%s", channel, user->profile_image_url, user->display_name, user->login, text);
+	}
+	return render_template(parts * "\n### ", (["js": "quizgram.js"]));
 }
