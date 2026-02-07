@@ -37,3 +37,5 @@ on("focusin", "h2 .ltr", e => {
 	const linked = DOM('.ltr.editable[data-linkage="' + e.match.dataset.linkage + '"]');
 	if (linked) linked.focus();
 });
+
+//TODO: Save everything into localStorage, and have a button (with confirmation) to clear that
