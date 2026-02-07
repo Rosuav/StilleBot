@@ -27,7 +27,6 @@ on("input", ".ltr", e => {
 		if (next && next.tagName === "INPUT") next.focus();
 	}
 	const linkage = e.match.dataset.linkage;
-	console.log("Entered linkage", linkage)
 	if (linkage !== "_") DOM('h2 input[data-linkage="' + linkage + '"]').value = e.match.value;
 });
 
