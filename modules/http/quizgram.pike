@@ -27,6 +27,9 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 ### RissaBunn
 1. How many children does Rissa have? `__-10-`
 2. What kind of cat is Tsuki? `___-35-__`
+
+### Maaya
+1. Maaya's raid call derives from a song from which band? `_`-`__-20-_`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
