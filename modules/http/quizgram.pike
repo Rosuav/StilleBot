@@ -30,6 +30,9 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 
 ### Maaya
 1. Maaya's raid call derives from a song from which band? `_`-`__-20-_`
+
+### LexSin81
+1. What's the adorable pink plushie's name? `_____-16-`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
