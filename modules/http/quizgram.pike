@@ -23,6 +23,10 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 
 ### ABluSkittle
 1. What kind of animals get hidden in all Skittle's art? `-29-___`
+
+### RissaBunn
+1. How many children does Rissa have? `__-10-`
+2. What kind of cat is Tsuki? `___-35-__`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
