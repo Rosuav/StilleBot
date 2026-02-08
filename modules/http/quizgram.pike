@@ -13,13 +13,13 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 ---
 
 ### DeviCat
-1. What is your husband's username? `_____________`
-2. What colour are CandiCat's ears? `____` and `______`
+1. What is the channel mascot's name? `_-15-______`
+2. How old was Devi when she started drawing? [Digits or words? Do I need digits?]
 
 ### CamaeSoultamer
 1. What level of chaos is acceptable? `_-3-__`
 2. What is Camae's favourite colour? `_____-1-` `_____`
-3. Name the cat who hangs out on stream. `______`
+3. Name the cat who hangs out on stream. `_____-40-`
 
 ### ABluSkittle
 1. What kind of animals get hidden in all Skittle's art? `-29-___`
