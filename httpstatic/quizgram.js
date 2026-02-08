@@ -14,6 +14,31 @@ for (let el of [...document.getElementsByTagName("code")]) {
 	})));
 }
 
+function save() {
+	const channels = { };
+	let curchan = "";
+	document.querySelectorAll("h3,input").forEach(el => {
+		if (el.tagName === "H3") channels[curchan = el.id] = [];
+		else if (curchan !== "") channels[curchan].push(el.value);
+	});
+	localStorage.setItem("quizgram", JSON.stringify(channels));
+}
+function load() {
+	let channels;
+	try {channels = JSON.parse(localStorage.getItem("quizgram"));} catch (e) {}
+	if (!channels) return;
+	let curchan = "";
+	document.querySelectorAll("h3,input").forEach(el => {
+		if (el.tagName === "H3") curchan = el.id;
+		else if (channels[curchan]?.length) {
+			el.value = channels[curchan].shift();
+			const linkage = el.dataset.linkage;
+			if (linkage !== "_") DOM('h2 input[data-linkage="' + linkage + '"]').value = el.value;
+		}
+	});
+}
+load();
+
 //Jump from input to input within a group.
 on("beforeinput", ".ltr", e => {
 	if (e.inputType === "deleteContentBackward" && e.match.value === "") {
@@ -28,6 +53,7 @@ on("input", ".ltr", e => {
 	}
 	const linkage = e.match.dataset.linkage;
 	if (linkage !== "_") DOM('h2 input[data-linkage="' + linkage + '"]').value = e.match.value;
+	save();
 });
 
 on("focusin", "h2 .ltr", e => {
