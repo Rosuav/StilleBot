@@ -14,7 +14,7 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 
 ### DeviCat
 1. What is the channel mascot's name? `_-15-______`
-2. How old was Devi when she started drawing? [Digits or words? Do I need digits?]
+2. What is Devi's favorite color? `__-34-_`
 
 ### CamaeSoultamer
 1. What level of chaos is acceptable? `_-3-__`
@@ -32,7 +32,7 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 1. Maaya's raid call derives from a song from which band? `_`-`__-20-_`
 
 ### LexSin81
-1. What's the adorable pink plushie's name? `_____-16-`
+1. What's the adorable pink plushie's name? `-18-_____`
 
 ### Lolalli
 1. What is Lolalli's favourite art medium? `___-27-____`
@@ -40,6 +40,10 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 ### LisaJarwal
 1. What anatomical feature is emphasized in Lisa's art? `_-22-__`
 2. What is Lisa's cat's name? `___-11-_`
+
+### MangoLily0
+1. What would Mango bring to the pot-luck? `___-16-__`
+2. Who's the girl who runs the chat? `_____-7-___`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
