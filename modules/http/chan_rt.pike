@@ -48,14 +48,13 @@ Two modes: 2D and Linear
 Encounters get spawned in at the RHS and there'll be a few of them visible ahead of the hero's current location.
 - Item. Could be any one of these. The effectiveness given is for an item that spawns at exactly the current base level. For items spawned by
   viewer generosity, they will be spawned at max level instead.
-  - Flash of Inspiration. It's a flashbang grenade, and it gives 1000 XP.
   - Courage. If there are any retreating penalties, they are removed; otherwise, the hero gets a courage bonus for the next 10 squares.
   - Stat. A potion of STR gives +5 STR for the next 10 squares. Any stat can spawn, except CHA (because it's useless) and CON (because it's weird to gain and lose HP).
   - Stoneskin. 25% damage reduction for 10 squares. Should feel like getting a CON potion.
 
 Next steps:
-1. Items, girl, items! You'll know them when you see them.
-2. More bosses to unlock more content - Brave/Cowardly (easy), Bow (once implemented) - and then some more bosses just to be bosses
+1. More bosses to unlock more content - Brave/Cowardly (easy), Bow (once implemented) - and then some more bosses just to be bosses
+2. More effects of stats. Borrow idea from Murkon and have better chance to get first strike based on DEX vs WIS?
 3. Chat integration. Make a builtin so that any command can do things.
 4. 2D mode maybe
 #};
