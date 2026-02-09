@@ -48,6 +48,11 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 ### SharpBalloons
 1. What's the special cleanup tool called? `_____-5-_`
 2. How does the raid saber make that noise? `-13-___________`
+
+### StaticTides
+1. How many cosplays has Static done? `__-19-` `____` and counting!
+2. What is Static's favourite colour? `_____` `___-37-`
+3. What's the cat's full name? `_____-6-_`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
