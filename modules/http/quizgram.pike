@@ -33,6 +33,9 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 
 ### LexSin81
 1. What's the adorable pink plushie's name? `_____-16-`
+
+### Lolalli
+1. What is Lolalli's favourite art medium? `___-27-____`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
