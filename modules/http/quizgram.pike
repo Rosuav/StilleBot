@@ -44,6 +44,10 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 ### MangoLily0
 1. What would Mango bring to the pot-luck? `___-16-__`
 2. Who's the girl who runs the chat? `_____-7-___`
+
+### SharpBalloons
+1. What's the special cleanup tool called? `_____-5-_`
+2. How does the raid saber make that noise? `-13-___________`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
