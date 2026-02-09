@@ -36,6 +36,10 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 
 ### Lolalli
 1. What is Lolalli's favourite art medium? `___-27-____`
+
+### LisaJarwal
+1. What anatomical feature is emphasized in Lisa's art? `_-22-__`
+2. What is Lisa's cat's name? `___-11-_`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
