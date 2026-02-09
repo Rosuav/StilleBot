@@ -69,7 +69,7 @@ function recalc_next_boss() {
 }
 
 function recalc_max_hp() {
-	const maxhp = Math.ceil(10 * (1.04 ** gamestate.stats.level) * (1.05 ** gamestate.stats.CON));
+	const maxhp = Math.ceil(10 * (1.04 ** gamestate.stats.level) * (1.15 ** gamestate.stats.CON));
 	//Whenever your max HP changes, which will usually be a level-up, restore full health.
 	if (maxhp !== gamestate.stats.maxhp) gamestate.stats.maxhp = gamestate.stats.curhp = maxhp;
 }
@@ -90,7 +90,7 @@ function hero_ranged_damage() {
 	);
 }
 function enemy_max_hp(level) {
-	return Math.ceil(3 * (1.08 ** level) * (Math.random() * 0.5 + 0.75)); //Enemy hitpoints will be +/-25% of the basic calculation
+	return Math.ceil(3 * (1.17 ** level) * (Math.random() * 0.5 + 0.75)); //Enemy hitpoints will be +/-25% of the basic calculation
 }
 function enemy_melee_damage(level) {
 	return Math.ceil(
