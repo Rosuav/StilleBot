@@ -110,7 +110,6 @@ function take_damage(dmg) {
 		gamestate.stats.curhp = 0;
 		return;
 	}
-	msg("Ouch! " + dmg + " damage!");
 	gamestate.stats.curhp -= dmg;
 }
 
@@ -210,7 +209,6 @@ const encounter = {
 				for (let loc of gamestate.world.pathway)
 					if (loc.type === "respawn" && loc.state === "current") loc.state = "reached";
 				loc.state = "current";
-				msg("Activating respawn chamber");
 			}
 			gamestate.world.direction = "advancing"; //Once you run back as far as a respawner, there's no reason to keep retreating.
 		},
@@ -271,7 +269,6 @@ const encounter = {
 					}
 					return "hold";
 				}
-				msg("Hero hits for " + dmg + "!"); //Won't eventually be needed
 				loc.curhp -= dmg;
 				loc.state = "enemyhit";
 			} else {
@@ -351,7 +348,6 @@ const encounter = {
 					gamestate.stats.xp += Math.ceil(BASE_BOSS_XP * (1.25 ** boss.level));
 					return "hold";
 				}
-				msg("Hero hits for " + dmg + "!"); //Won't eventually be needed
 				loc.curhp -= dmg;
 				loc.state = "enemyhit";
 			} else {
@@ -375,7 +371,7 @@ const encounter = {
 					//It's an upgrade! Take some time to pick it up.
 					gamestate.world.delay = [0, loc.slot === "armor" ? 10 : 5, "equip", "Equipping..."];
 					msg("Equipping a grade " + loc.level + " " + loc.slot); //TODO: Word them differently
-				} else msg("Bypassing a mere grade " + loc.level + " " + loc.slot);
+				}
 			}
 		},
 		equip(loc) {
