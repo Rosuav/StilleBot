@@ -593,11 +593,13 @@ function gametick() {
 		//TODO: If advancing and the next location has an enemy, and you have a bow, chance to take a bow shot
 
 		//Finally, check state-based updates.
+		if (!gamestate.stats.prevlevel) gamestate.stats.prevlevel = tnl(gamestate.stats.level - 1);
 		if (!gamestate.stats.nextlevel) gamestate.stats.nextlevel = tnl(gamestate.stats.level);
 		//In the unlikely event that you one-shot more than one level's worth of XP, level up once
 		//per tick at most. In fact, if there's any sort of animation for the level up effect, we
 		//need to block further advancement until that animation is complete.
 		if (gamestate.stats.xp >= gamestate.stats.nextlevel) {
+			gamestate.stats.prevlevel = gamestate.stats.nextlevel;
 			gamestate.stats.nextlevel = tnl(++gamestate.stats.level);
 			for (let i = 0; i < 3; ++i) {
 				//Boost some stat. Let the traits decide.
@@ -653,16 +655,12 @@ function gametick() {
 			DIV(TWO_COL([
 				//~ "Level", gamestate.stats.level,
 				"Level", gamestate.stats.level + " (" + gamestate.world.baselevel + ")", //DEBUG: Show the base level
-				"Next", ""+(gamestate.stats.nextlevel - gamestate.stats.xp),
-				//Hitpoints graph. If you get below 75%, the browser should start showing it in
-				//scarier colours, eg yellow or red, but I am not in control of that.
+				//"Next", ""+(gamestate.stats.nextlevel - gamestate.stats.xp), //DEBUG: Numeric display of TNL
 				undefined, METER({
-					value: gamestate.stats.curhp,
-					low: gamestate.stats.maxhp / 4,
-					high: gamestate.stats.maxhp * 3 / 4,
-					optimum: gamestate.stats.maxhp,
-					max: gamestate.stats.maxhp,
+					value: gamestate.stats.xp - gamestate.stats.prevlevel,
+					max: gamestate.stats.nextlevel - gamestate.stats.prevlevel,
 				}),
+				"", "\xA0", //Shim
 				"Sword", gamestate.equipment.sword,
 				gamestate.equipment.bow && "Bow", gamestate.equipment.bow || "\xA0", //Hide the bow altogether if it hasn't yet been unlocked
 				"Armor", gamestate.equipment.armor,
@@ -692,6 +690,16 @@ function gametick() {
 					}),
 					" " + gamestate.world.delay[3],
 				]),
+				//Hitpoints graph. If you get below 75%, the browser should start showing it in
+				//scarier colours, eg yellow or red, but I am not in control of that.
+				METER({
+					style: "width: 100%",
+					value: gamestate.stats.curhp,
+					low: gamestate.stats.maxhp / 4,
+					high: gamestate.stats.maxhp * 3 / 4,
+					optimum: gamestate.stats.maxhp,
+					max: gamestate.stats.maxhp,
+				}),
 			]),
 			DIV(TABLE([
 				CAPTION("Next respawn, prefer:"),
