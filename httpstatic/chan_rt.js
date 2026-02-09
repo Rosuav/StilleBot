@@ -281,7 +281,7 @@ const encounter = {
 			}
 			return "hold";
 		},
-		desire: {aggressiveP: 10, headstrongP: 5, braveP: 5},
+		desire: {aggressiveP: 10, headstrongP: 5, braveP: 5, braveN: -5},
 		render(loc) {
 			if (loc.maxhp && !loc.curhp) return "Corpse";
 			return "Enemy";
@@ -387,7 +387,30 @@ const encounter = {
 			return "G" + loc.level + " " + loc.slot;
 		},
 	},
-	//item: {create() {return {type: "item"};}}, //Not sure how to do these yet
+	item: {
+		create() {return {type: "item", item: "unknown", level: spawnlevel()};},
+		enter(loc) {
+			if (loc.item === "unknown") {
+				loc.item = random_choice(["flash"]); //Yeah, lotta choice here. Need to implement stat boots for this to be reasonable.
+				switch (loc.item) {
+					case "flash":
+						gamestate.world.delay = [0, 3, "flashed", "Oops..."];
+						break;
+					default: msg("BUGGED ITEM " + loc.item);
+				}
+			}
+		},
+		flashed(loc) {
+			gamestate.stats.xp += Math.ceil(BASE_MONSTER_XP * 4 * (1.4 ** loc.level));
+			DOM("#pathway").classList.add("flashed");
+			setTimeout(() => DOM("#pathway").classList.remove("flashed"), 4000);
+		},
+		desire: {headstrongN: 10, aggressiveN: 3},
+		render(loc) {
+			if (loc.item === "unknown") return "Item";
+			return loc.item; //TODO: Localize these
+		},
+	},
 	branch: {
 		create() {
 			//A branch needs to have its own pathway in it. Note that its location gets a fixed value; this
@@ -476,7 +499,7 @@ function populate(world) {
 			clear: 5,
 			enemy: 15,
 			equipment: 2,
-			//item: 2,
+			item: 2,
 			boss: gamestate.world.baselevel >= gamestate.bosses._next_level ? 3 : 0, //If there are no suitable bosses, it will spawn a regular enemy instead.
 			branch: distance.branch < 3 ? 0 : distance.branch,
 		};

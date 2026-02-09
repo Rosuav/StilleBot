@@ -65,6 +65,11 @@ constant styles = #"
 	display: flex;
 	flex-direction: row-reverse;
 	overflow: hidden;
+	transition: all 30s;
+}
+#pathway.flashed {
+	filter: contrast(0.1) brightness(200);
+	transition: all 0.25s;
 }
 #pathway div {
 	flex: 0 0 100px;
