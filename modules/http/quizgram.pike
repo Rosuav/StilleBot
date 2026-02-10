@@ -5,6 +5,7 @@ constant markdown = #"# Quizgram
 input.ltr {font-size: 100%; width: 1.25em; text-transform: uppercase; text-align: center;}
 input[readonly].ltr {background: aliceblue;}
 img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
+.word {margin-right: 0.3em;}
 </style>
 
 ## `_____` `___` `__` `________`, `____` `_____` `_________`.

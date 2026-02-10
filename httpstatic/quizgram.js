@@ -1,5 +1,5 @@
 import {choc, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, B, BUTTON, DIV, FORM, IMG, INPUT, LABEL, LI} = choc; //autoimport
+const {INPUT, SPAN} = choc; //autoimport
 
 //<input maxlength=1 size=1 autocomplete=off>
 
@@ -9,9 +9,9 @@ let nextidx = 0;
 for (let el of [...document.getElementsByTagName("code")]) {
 	const attrs = {maxlength: 1, size: 1, autocomplete: "off", class: "ltr"};
 	if (el.closest("h2")) attrs.readonly = "on"; else attrs["class"] = "ltr editable";
-	el.replaceWith(...el.textContent.matchAll(/_|-\d+-/g).map(c => INPUT({
+	el.replaceWith(SPAN({class: "word"}, [...el.textContent.matchAll(/_|-\d+-/g).map(c => INPUT({
 		...attrs, "data-linkage": attrs.readonly ? "-" + (++nextidx) + "-" : c[0],
-	})));
+	}))]));
 }
 
 function save() {
