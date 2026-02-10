@@ -53,6 +53,10 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 1. How many cosplays has Static done? `__-19-` `____` and counting!
 2. What is Static's favourite colour? `_____` `___-37-`
 3. What's the cat's full name? `_____-6-_`
+
+### AtomicKawaii
+1. What is everything made of? `-33-___`
+2. When will the placeholder commands be fixed? `-6-____`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
