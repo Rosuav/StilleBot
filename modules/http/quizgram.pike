@@ -52,15 +52,18 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 
 ### StaticTides
 1. How many cosplays has Static done? `__-19-` `____` and counting!
-2. What is Static's favourite colour? `_____` `___-37-`
+2. What is Static's favourite colour? `_____` `___-39-`
 3. What's the cat's full name? `_____-6-_`
 
 ### AtomicKawaii
 1. What is everything made of? `-33-___`
-2. When will the placeholder commands be fixed? `-6-____`
+2. When will the placeholder commands be fixed? `-9-____`
 
 ### 1Neila1
 1. Who's the alien sometimes seen on stream? `__-24-_`
+
+### Wenffyria
+1. What kind of animal is Bowlie? `_-41-___` `____`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
