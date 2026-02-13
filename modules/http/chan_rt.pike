@@ -108,34 +108,54 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	if (req->variables->view) {
 		if (cfg->nonce != req->variables->view) return 0; //404 if you get the nonce wrong
 		return render_template("monitor.html", ([
-			"vars": (["ws_type": ws_type, "ws_group": req->variables->view + "#" + req->misc->channel->userid]),
+			"vars": (["ws_type": ws_type, "ws_group": req->variables->view + "#" + req->misc->channel->userid, "display_mode": "active"]),
 			"title": "Respawn Technician",
 			"css": "stillebot.css",
 			"styles": styles,
 		]));
 	}
-	//TODO: Non-mod page with stats, and maybe voting (but only if logged in)
-	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
-	if ((int)req->misc->session->user->id == req->misc->channel->userid) {
+	mapping repl = (["vars": (["ws_group": "", "allow_trait_requests": 0, "display_mode": "status"]), "styles": styles]) | req->misc->chaninfo;
+	if ((int)req->misc->session->user->?id == req->misc->channel->userid) {
 		//Create a nonce if one doesn't exist.
 		if (!cfg->nonce) {
 			//Deliberately not the same length as a chan_monitors nonce, just in case it gets confusing
 			cfg->nonce = replace(MIME.encode_base64(random_string(30)), (["/": "1", "+": "0"]));
 			await(G->G->DB->save_config(req->misc->channel->userid, "respawn", cfg));
 		}
-		req->misc->chaninfo->viewlink = sprintf( //Hack.
+		repl->viewlink = sprintf(
 			"To have this game play on your stream, add [this browser source](rt?view=%s :#browsersource) to OBS, eg by dragging it to the canvas.",
 			cfg->nonce);
 	}
-	return render(req, (["vars": (["ws_group": ""]), "styles": styles]) | req->misc->chaninfo);
+	if (!req->misc->channel->userid) repl->vars->display_mode = "active+status"; //Gameplay inlined into the status page for the demo
+	if (req->misc->session->user) repl->vars->allow_trait_requests = 1;
+	if (req->misc->is_mod) repl->vars->allow_trait_requests = 2;
+	return render(req, repl);
 }
 
-bool need_mod(string grp) {return grp == "";}
 __async__ mapping get_chan_state(object channel, string grp, string|void id, string|void type) {
-	return (["gamestate": await(G->G->DB->load_config(channel->userid, "respawn"))]);
+	mapping gamestate = await(G->G->DB->load_config(channel->userid, "respawn"));
+	string nonce = m_delete(gamestate, "nonce");
+	if (grp == "" || grp == nonce) return (["gamestate": gamestate]);
+	return ([]);
 }
 
-@"is_mod": __async__ void wscmd_save_game(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void wscmd_save_game(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!mappingp(msg->gamestate)) return;
-	await(G->G->DB->save_config(channel->userid, "respawn", msg->gamestate));
+	await(G->G->DB->mutate_config(channel->userid, "respawn") {
+		if (__ARGS__[0]->nonce != conn->subgroup) return 0;
+		return msg->gamestate | (["nonce": __ARGS__[0]->nonce]);;
+	});
 }
+
+/* Potentially five different pages that can be seen
+
+1. In-OBS view, cut down, requires ?view=NONCE
+2. Broadcaster view, full information incl nonce, requires login cookie giving same UID as channel ID
+3. Mod view? May have additional information above user view
+4. User view, game state display (as of last save) and buttons to request a trait
+5. Guest view, game state display but no trait request buttons
+
+Gameplay occurs only in type 1. This will require a unique group; also display_mode is "active".
+Types 2-4 allow trait requesting. They can share a group.
+Type 5 can be in the same group as 2-4 but can be recognized by not being logged in.
+*/

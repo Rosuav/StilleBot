@@ -684,6 +684,10 @@ function gametick() {
 			save_game();
 		}
 	}
+	repaint();
+}
+
+function repaint() {
 	//Once all game ticks have been processed, update the display.
 	//Calculate the traits for display. Traits themselves could be positive
 	//or negative (but if zero, will not be shown at all), and can be any
@@ -705,11 +709,40 @@ function gametick() {
 	let path = gamestate.world.pathway;
 	if (path.length > gamestate.world.location + 10) path = gamestate.world.pathway.slice(0, 10);
 	const delay_proportion = gamestate.world.delay && gamestate.world.delay[0] / gamestate.world.delay[1];
+	const current_action = gamestate.world.delay && DIV([ //"Current action" spinner. Absent if no action - should it be retained for display stability?
+		SPAN({
+			//Simple CSS spinner. The radial gradient specifies that, once we've reached the closest side, the rest is
+			//the page background colour; this gives us a circle to work in, instead of filling out a square. Then the
+			//actual spinner is defined by the conic gradient, giving a proportion in one colour and the rest in another.
+			//In the center of the ring, we have the same lavender colour that makes up the background of the ring. Maybe
+			//this should be #eee again? Unsure.
+			style: `display: inline-block;
+				width: 1.25em; height: 1.25em;
+				background: radial-gradient(circle closest-side, lavender 50%, transparent 50% 100%, #eee 100%),
+					conic-gradient(lavender 0 ${delay_proportion - .01}turn, rebeccapurple ${delay_proportion + .01}turn)
+			`,
+		}),
+		" " + gamestate.world.delay[3],
+	]);
+	//Hitpoints graph. If you get below 75%, the browser should start showing it in
+	//scarier colours, eg yellow or red, but I am not in control of that.
+	const hpmeter = METER({
+		style: "width: 100%",
+		value: gamestate.stats.curhp,
+		low: gamestate.stats.maxhp / 4,
+		high: gamestate.stats.maxhp * 3 / 4,
+		optimum: gamestate.stats.maxhp,
+		max: gamestate.stats.maxhp,
+	});
 	replace_content("#display", [
-		DIV({id: "controls", class: "buttonbox"}, [ //TODO: Hide these if we're in overlay mode
+		/*DIV({id: "controls", class: "buttonbox"}, [ //TODO: In debug mode, reenable this
 			BUTTON({type: "button", id: "save"}, "Save game now"), "Game saves automatically on level up and death",
-		]),
-		DIV({id: "stats"}, [
+		]),*/
+		//In gameplay mode, show a massively reduced top section - intended for inside OBS
+		display_mode === "active" ? DIV([
+			current_action || DIV(SPAN({style: "display: inline-block; height: 1.25em"}, "\xA0")), //Ensure consistent height
+			hpmeter,
+		]) : DIV({id: "stats"}, [
 			DIV(TWO_COL([
 				//~ "Level", gamestate.stats.level,
 				"Level", gamestate.stats.level + " (" + gamestate.world.baselevel + ")", //DEBUG: Show the base level
@@ -730,49 +763,26 @@ function gametick() {
 				]))
 			])),
 			DIV(TWO_COL(traits.map(t => typeof t === "string" ? t : METER({value: t / scale})))),
-			//TODO: Cap the height of the messages div and discard from the top if there isn't room
 			DIV({id: "messages"}, [
 				messages.map(m => DIV(m)),
-				gamestate.world.delay && DIV([ //"Current action" spinner. Absent if no action - should it be retained for display stability?
-					SPAN({
-						//Simple CSS spinner. The radial gradient specifies that, once we've reached the closest side, the rest is
-						//the page background colour; this gives us a circle to work in, instead of filling out a square. Then the
-						//actual spinner is defined by the conic gradient, giving a proportion in one colour and the rest in another.
-						//In the center of the ring, we have the same lavender colour that makes up the background of the ring. Maybe
-						//this should be #eee again? Unsure.
-						style: `display: inline-block;
-							width: 1.25em; height: 1.25em;
-							background: radial-gradient(circle closest-side, lavender 50%, transparent 50% 100%, #eee 100%),
-								conic-gradient(lavender 0 ${delay_proportion - .01}turn, rebeccapurple ${delay_proportion + .01}turn)
-						`,
-					}),
-					" " + gamestate.world.delay[3],
-				]),
-				//Hitpoints graph. If you get below 75%, the browser should start showing it in
-				//scarier colours, eg yellow or red, but I am not in control of that.
-				METER({
-					style: "width: 100%",
-					value: gamestate.stats.curhp,
-					low: gamestate.stats.maxhp / 4,
-					high: gamestate.stats.maxhp * 3 / 4,
-					optimum: gamestate.stats.maxhp,
-					max: gamestate.stats.maxhp,
-				}),
+				display_mode === "active+status" && [current_action, hpmeter],
 			]),
-			DIV(TABLE([
+			allow_trait_requests ? DIV(TABLE([
 				CAPTION("Next respawn, prefer:"),
 				trait_display_order.map(t => gamestate.traits[t] && TR([
 					TD(BUTTON({"data-traitrequest": t + "N"}, [trait_labels[t + "N"], " (" + (gamestate.requests[t + "N"]||0) + ")"])),
 					TD(BUTTON({"data-traitrequest": t + "P"}, [trait_labels[t + "P"], " (" + (gamestate.requests[t + "P"]||0) + ")"])),
 				])),
-			])),
+			])) : DIV([
+				BUTTON({class: "twitchlogin", type: "button"}, "Log in to suggest traits"),
+			]),
 		]),
 		DIV({id: "pathway"}, path.map((enc, idx) => DIV(
 			{style: "background: " + pathway_background(idx - gamestate.world.location, enc)},
 			encounter[enc.type].render(enc)
 		)).reverse()),
 	]);
-	DOM("#messages").scroll(0, 9999); //Keep the messages showing the newest
+	const msgs = DOM("#messages"); if (msgs) msgs.scroll(0, 9999); //Keep the messages showing the newest
 }
 
 export function render(data) {
@@ -796,7 +806,12 @@ export function render(data) {
 		recalc_next_boss();
 		recalc_max_hp();
 		basetime = performance.now();
-		ticking = setInterval(gametick, TICK_LENGTH);
+		//In status-only mode, we never start ticking, and will always accept game state from the server.
+		//In active gameplay mode (including active+status), we start ticking from the first state update,
+		//and then maintain our own state internally, pushing back to the server periodically (which will
+		//be ignored if we're on the demo channel).
+		if (display_mode === "status") repaint();
+		else ticking = setInterval(gametick, TICK_LENGTH);
 	}
 	//Signals other than game state will be things like "viewer-sponsored gift" or "trait requested".
 }
