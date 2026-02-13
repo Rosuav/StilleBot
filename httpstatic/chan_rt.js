@@ -432,10 +432,13 @@ const encounter = {
 		create() {return {type: "item", item: "unknown", level: spawnlevel()};},
 		enter(loc) {
 			if (loc.item === "unknown") {
-				loc.item = random_choice(["flash"]); //Yeah, lotta choice here. Need to implement stat boots for this to be reasonable.
+				loc.item = random_choice(["flash", "STR", "DEX", "INT", "WIS", "CON"]);
 				switch (loc.item) {
 					case "flash":
 						gamestate.world.delay = [0, 3, "flashed", "Oops..."];
+						break;
+					case "STR": case "DEX": case "INT": case "WIS": case "CON":
+						gamestate.world.delay = [0, 3, "statboost", "Drinking..."];
 						break;
 					default: msg("BUGGED ITEM " + loc.item);
 				}
@@ -445,6 +448,19 @@ const encounter = {
 			gamestate.stats.xp += Math.ceil(BASE_MONSTER_XP * 4 * (1.4 ** loc.level));
 			DOM("#pathway").classList.add("flashed");
 			setTimeout(() => DOM("#pathway").classList.remove("flashed"), 4000);
+		},
+		statboost(loc) {
+			//Higher level potions have the same effect but last longer.
+			//Note that, currently, you can drink two STR potions and be
+			//even stronger, rather than stacking the durations.
+			const _duration = 15 + (loc.level - gamestate.world.baselevel);
+			//Constitution is a special case because buffing CON is messy.
+			//So instead of giving you +5 CON, which would give you roughly
+			//double the horsepower, we give a 33% damage modifier, meaning
+			//that it takes 40 damage to deal 30 to you - more in line with
+			//the effect that +5 STR gives in the other direction.
+			if (loc.item === "CON") apply_buff({_duration, dr: 33});
+			else apply_buff({_duration, [loc.item]: 5});
 		},
 		desire: {headstrongN: 10, aggressiveN: 3},
 		render(loc) {
@@ -540,7 +556,7 @@ function populate(world) {
 			clear: 5,
 			enemy: 15,
 			equipment: 2,
-			item: 2,
+			item: 4,
 			boss: gamestate.world.baselevel >= gamestate.bosses._next_level ? 3 : 0, //If there are no suitable bosses, it will spawn a regular enemy instead.
 			branch: distance.branch < 3 ? 0 : distance.branch,
 		};
