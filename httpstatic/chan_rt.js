@@ -818,3 +818,8 @@ function save_game() {
 	ws_sync.send({cmd: "save_game", gamestate});
 }
 on("click", "#save", save_game);
+
+on("dragstart", "#browsersource", e => {
+	const url = e.match.href + "&layer-name=Respawn%20Technician&layer-width=1920&layer-height=120";
+	e.dataTransfer.setData("text/uri-list", url);
+});

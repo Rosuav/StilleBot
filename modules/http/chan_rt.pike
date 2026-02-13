@@ -9,6 +9,8 @@ You are not that hero. You are the technician who operates his respawn chamber.
 
 When the hero dies, he comes back to life at the nearest respawn chamber, ready to try again. In the interests of the
 realm at large, you must respawn him, again, and again, and again!
+	
+$$viewlink||$$
 
 > ### Stats and Traits
 > The Hero has **stats** and **traits**. His stats affect his in-game combat ability, and his traits affect how he chooses his battles.
@@ -101,18 +103,30 @@ constant styles = #"
 }
 ";
 
-__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
-{
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	mapping cfg = await(G->G->DB->load_config(req->misc->channel->userid, "respawn"));
 	if (req->variables->view) {
 		if (cfg->nonce != req->variables->view) return 0; //404 if you get the nonce wrong
 		return render_template("monitor.html", ([
 			"vars": (["ws_type": ws_type, "ws_group": req->variables->view + "#" + req->misc->channel->userid]),
+			"title": "Respawn Technician",
+			"css": "stillebot.css",
 			"styles": styles,
 		]));
 	}
 	//TODO: Non-mod page with stats, and maybe voting (but only if logged in)
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
+	if ((int)req->misc->session->user->id == req->misc->channel->userid) {
+		//Create a nonce if one doesn't exist.
+		if (!cfg->nonce) {
+			//Deliberately not the same length as a chan_monitors nonce, just in case it gets confusing
+			cfg->nonce = replace(MIME.encode_base64(random_string(30)), (["/": "1", "+": "0"]));
+			await(G->G->DB->save_config(req->misc->channel->userid, "respawn", cfg));
+		}
+		req->misc->chaninfo->viewlink = sprintf( //Hack.
+			"To have this game play on your stream, add [this browser source](rt?view=%s :#browsersource) to OBS, eg by dragging it to the canvas.",
+			cfg->nonce);
+	}
 	return render(req, (["vars": (["ws_group": ""]), "styles": styles]) | req->misc->chaninfo);
 }
 
