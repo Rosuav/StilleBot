@@ -274,7 +274,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 					"https://api.pixelplush.dev/v1/analytics/sessions/live"
 				));
 				mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
-				if (!arrayp(data)) title = "Unable to fetch";
+				if (!arrayp(data)) {title = "Unable to fetch"; args->user_id = ({"49497888"});}
 				else {
 					title = "Active Pixel Plush streamers";
 					foreach (data, mapping strm)
