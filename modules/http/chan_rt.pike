@@ -52,6 +52,7 @@ Next steps:
 2. More effects of stats. Borrow idea from Murkon and have better chance to get first strike based on DEX vs WIS?
 3. Chat integration. Make a builtin so that any command can do things.
 4. 2D mode maybe
+5. Trait request buttons need to send the request to the back end, which will change a specific user's request, and send all requests back out
 #};
 
 constant styles = #"
