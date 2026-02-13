@@ -98,6 +98,14 @@ constant styles = #"
 	flex: 0 0 300px;
 	overflow-y: hidden;
 }
+.boosted {
+	font-weight: bold;
+	color: #292;
+}
+.reduced {
+	font-weight: bold;
+	color: #c33;
+}
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)

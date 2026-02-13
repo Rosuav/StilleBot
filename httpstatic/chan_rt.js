@@ -58,6 +58,39 @@ function msg(txt) {
 	if (messages.length > 6) messages.shift();
 }
 
+//A (de)buff is an object identifying a series of stats to be affected, and has
+//a _duration that counts the number of encounters that it will last for.
+let stat_buff = { };
+function decay_buffs(amt) {
+	//Decay all buffs by the given amount and recalculate what's been affected
+	if (amt) for (let i = 0; i < gamestate.buffs.length; ++i)
+		if ((gamestate.buffs[i]._duration -= amt) <= 0) {
+			const buff = gamestate.buffs.splice(i--, 1)[0];
+			for (let attr in buff) if (attr !== "_duration")
+				gamestate.stats[attr] -= buff[attr];
+		}
+	//Check all stats that have been affected by buffs so they can be coloured.
+	stat_buff = { };
+	for (let buff of gamestate.buffs)
+		for (let attr in buff)
+			if (attr !== "_duration")
+				if (stat_buff[attr]) stat_buff[attr] += buff[attr];
+				else stat_buff[attr] = buff[attr];
+	console.log("Buffs decayed, now", stat_buff);
+}
+function apply_buff(buff) {
+	for (let attr in buff) if (attr !== "_duration")
+		gamestate.stats[attr] += buff[attr];
+	gamestate.buffs.push(buff);
+	decay_buffs(0);
+}
+function buff_color(modifier) {
+	if (!modifier) return "";
+	if (modifier > 0) return "boosted";
+	if (modifier < 0) return "reduced";
+	return "altered"; //If for some reason we have a non-comparable change, make it yellow
+}
+
 function recalc_next_boss() {
 	//Scan the bosses, find which is next, and record that. If all bosses have been defeated,
 	//gamestate.bosses._next >= bosses.length; gamestate.bosses._next_level is the level at
@@ -527,6 +560,7 @@ function populate(world) {
 function change_encounter(dir) {
 	gamestate.world.location += dir;
 	populate(gamestate.world); //Check if we need to generate some more pathway. Won't be needed if dir is -1 but it doesn't hurt.
+	decay_buffs(1);
 	//Does this need to become its own function, eg location_trigger("enter") ?
 	const location = gamestate.world.pathway[gamestate.world.location];
 	const handler = encounter[location.type].enter; if (handler) handler(location);
@@ -664,7 +698,7 @@ function gametick() {
 			DIV(TABLE({class: "twocol"}, [
 				stat_display_order.map(stat => TR([
 					TH(stat),
-					TD(gamestate.stats[stat]),
+					TD({class: buff_color(stat_buff[stat])}, gamestate.stats[stat]),
 				]))
 			])),
 			DIV(TWO_COL(traits.map(t => typeof t === "string" ? t : METER({value: t / scale})))),
@@ -718,7 +752,7 @@ export function render(data) {
 		gamestate = data.gamestate;
 		//Update game state. If older data is loaded (or null data), this is the place to update it and
 		//initialize any subsystems that need to be.
-		if (!gamestate.stats) gamestate.stats = {STR:1, DEX:1, CON:1, INT:1, WIS:1, CHA:1, level: 1, xp: 0};
+		if (!gamestate.stats) gamestate.stats = {STR:1, DEX:1, CON:1, INT:1, WIS:1, CHA:1, level: 1, xp: 0, gold: 0};
 		if (!gamestate.stats.gold) gamestate.stats.gold = 0;
 		if (!gamestate.traits) gamestate.traits = {aggressive: 0.1};
 		if (!gamestate.equipment) gamestate.equipment = {sword: 1, armor: 1};
@@ -727,6 +761,8 @@ export function render(data) {
 		if (!gamestate.world.blfrac) gamestate.world.blfrac = 0;
 		if (!gamestate.requests) gamestate.requests = { };
 		if (!gamestate.bosses) gamestate.bosses = { };
+		if (!gamestate.buffs) gamestate.buffs = [];
+		decay_buffs(0);
 		gamestate.world.pathway.forEach(enc => {if (!enc.distance) enc.distance = 10; if (!enc.progress) enc.progress = 0;});
 		recalc_next_boss();
 		recalc_max_hp();
