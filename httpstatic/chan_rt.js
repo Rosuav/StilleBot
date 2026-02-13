@@ -60,7 +60,7 @@ function msg(txt) {
 
 //A (de)buff is an object identifying a series of stats to be affected, and has
 //a _duration that counts the number of encounters that it will last for.
-let stat_buff = { };
+let stat_buff = { }, incoming_damage_multiplier = 1.0;
 function decay_buffs(amt) {
 	//Decay all buffs by the given amount and recalculate what's been affected
 	if (amt) for (let i = 0; i < gamestate.buffs.length; ++i)
@@ -76,6 +76,17 @@ function decay_buffs(amt) {
 			if (attr !== "_duration")
 				if (stat_buff[attr]) stat_buff[attr] += buff[attr];
 				else stat_buff[attr] = buff[attr];
+	//Damage reduction is defined as the amount of additional damage required to inflict a
+	//certain amount of resultant damage. Thus 10% DR does not reduce your incoming damage
+	//by 10%, but it means that it takes 10% more to hurt you as much - that is, it takes
+	//11 of a monster's hit to inflict 10 points of damage. This stacks linearly; if you
+	//have two sources of 10% DR, this makes 20% DR, requiring 12 of hit to achieve 10 dmg.
+	//The number stored in gamestate.stats.dr is a percentage eg 20 for 20%, and should
+	//usually be an integer; for efficiency, we precompute 100/(100+gamestate.stats.dr)
+	//which is stored as incoming_damage_multiplier.
+	incoming_damage_multiplier = 100 / (100 + gamestate.stats.dr);
+	//Minor hack: If you have damage reduction, show this as a constitution modifier.
+	if (gamestate.stats.dr) stat_buff.CON = gamestate.stats.dr;
 	console.log("Buffs decayed, now", stat_buff);
 }
 function apply_buff(buff) {
@@ -134,6 +145,7 @@ function enemy_melee_damage(level) {
 }
 
 function take_damage(dmg) {
+	dmg *= incoming_damage_multiplier; //Note that damage MAY be fractional.
 	if (dmg >= gamestate.stats.curhp) {
 		//You died, Mr Reynolds.
 		//TODO: Reduce XP or add an XP gain penalty for a while
@@ -752,8 +764,9 @@ export function render(data) {
 		gamestate = data.gamestate;
 		//Update game state. If older data is loaded (or null data), this is the place to update it and
 		//initialize any subsystems that need to be.
-		if (!gamestate.stats) gamestate.stats = {STR:1, DEX:1, CON:1, INT:1, WIS:1, CHA:1, level: 1, xp: 0, gold: 0};
+		if (!gamestate.stats) gamestate.stats = {STR:1, DEX:1, CON:1, INT:1, WIS:1, CHA:1, level: 1, xp: 0, gold: 0, dr: 0};
 		if (!gamestate.stats.gold) gamestate.stats.gold = 0;
+		if (!gamestate.stats.dr) gamestate.stats.dr = 0;
 		if (!gamestate.traits) gamestate.traits = {aggressive: 0.1};
 		if (!gamestate.equipment) gamestate.equipment = {sword: 1, armor: 1};
 		if (!gamestate.world) gamestate.world = {baselevel: 1, blfrac: 0, pathway: [encounter.respawn.create()], location: 0, direction: "advancing"};
