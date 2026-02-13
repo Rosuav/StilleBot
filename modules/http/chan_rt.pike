@@ -45,13 +45,6 @@ Two modes: 2D and Linear
 - In 2D mode, the hero's path branches periodically. He looks down each path, and makes a choice. But he mostly still moves left to right.
 - In Linear mode, the branches are shown as doorways. He peeks into the door, and makes a choice. He moves exclusively left to right.
 
-Encounters get spawned in at the RHS and there'll be a few of them visible ahead of the hero's current location.
-- Item. Could be any one of these. The effectiveness given is for an item that spawns at exactly the current base level. For items spawned by
-  viewer generosity, they will be spawned at max level instead.
-  - Courage. If there are any retreating penalties, they are removed; otherwise, the hero gets a courage bonus for the next 10 squares.
-  - Stat. A potion of STR gives +5 STR for the next 10 squares. Any stat can spawn, except CHA (because it's useless) and CON (because it's weird to gain and lose HP).
-  - Stoneskin. 25% damage reduction for 10 squares. Should feel like getting a CON potion.
-
 Next steps:
 1. More bosses to unlock more content - Brave/Cowardly (easy), Bow (once implemented) - and then some more bosses just to be bosses
 2. More effects of stats. Borrow idea from Murkon and have better chance to get first strike based on DEX vs WIS?
