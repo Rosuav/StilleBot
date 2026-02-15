@@ -1,8 +1,6 @@
 import {choc, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {INPUT, SPAN} = choc; //autoimport
 
-//<input maxlength=1 size=1 autocomplete=off>
-
 //Code blocks containing underscores are shorthand for sets of inputs.
 //Inside the heading, give them automatic linkages so we can reference them below.
 let nextidx = 0;
