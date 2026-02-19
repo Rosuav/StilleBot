@@ -68,7 +68,11 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 ### PantoufflesArt
 1. Name the resident dog: `_-28-_`
 2. What's the name of the channel mascot? `-43-_____`
-3. What's Pan's favourite flower? `______-30-_`
+3. What's Pan's favourite flower? `______-31-_`
+
+### YarncraftersCorner
+1. What's the type of spindle used here, with two arms? `______-23-`
+2. What variety of pet will visit the stream? `_-38-__`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
