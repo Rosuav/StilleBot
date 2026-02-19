@@ -64,6 +64,11 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 
 ### Wenffyria
 1. What kind of animal is Bowlie? `_-41-___` `____`
+
+### PantoufflesArt
+1. Name the resident dog: `_-28-_`
+2. What's the name of the channel mascot? `-43-_____`
+3. What's Pan's favourite flower? `______-30-_`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
