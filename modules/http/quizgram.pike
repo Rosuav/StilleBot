@@ -70,7 +70,7 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 2. What's the name of the channel mascot? `-43-_____`
 3. What's Pan's favourite flower? `______-31-_`
 
-### YarncraftersCorner
+### YarnCraftersCorner
 1. What's the type of spindle used here, with two arms? `______-23-`
 2. What variety of pet will visit the stream? `_-38-__`
 ";
