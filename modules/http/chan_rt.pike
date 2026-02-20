@@ -195,6 +195,11 @@ void wscmd_cleartraitreqs(object channel, mapping(string:mixed) conn, mapping(st
 	m_delete(respawn_traitrequests, channel->userid);
 	notify(channel, (["requests": ([])]));
 }
+__async__ void wscmd_msg(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping gamestate = await(G->G->DB->load_config(channel->userid, "respawn"));
+	//If we're the game group, send to the control group, nothing else
+	if (conn->subgroup == gamestate->nonce) send_updates_all(channel, "", (["msg": msg->msg]));
+}
 
 constant command_description = "Respawn Technician";
 constant builtin_name = "Respawn Tech";

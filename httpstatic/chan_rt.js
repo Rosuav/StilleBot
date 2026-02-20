@@ -56,6 +56,7 @@ const messages = ["Starting on an adventure!"];
 function msg(txt) {
 	messages.push(txt);
 	if (messages.length > 6) messages.shift();
+	if (display_mode === "active") ws_sync.send({cmd: "msg", msg: txt});
 }
 
 //A (de)buff is an object identifying a series of stats to be affected, and has
@@ -798,7 +799,7 @@ function repaint() {
 				BUTTON({class: "twitchlogin", type: "button"}, "Log in to suggest traits"),
 			]),
 		]),
-		DIV({id: "pathway"}, path.map((enc, idx) => DIV(
+		display_mode !== "status" && DIV({id: "pathway"}, path.map((enc, idx) => DIV(
 			{style: "background: " + pathway_background(idx - gamestate.world.location, enc)},
 			encounter[enc.type].render(enc)
 		)).reverse()),
@@ -836,6 +837,7 @@ export function render(data) {
 	}
 	if (data.requests) {gamestate.requests = data.requests; repaint();}
 	if (data.gift) pending_gifts.append(data.gift);
+	if (data.msg && display_mode !== "active") msg(data.msg);
 }
 
 on("click", "[data-traitrequest]", e => {
