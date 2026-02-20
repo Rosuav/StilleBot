@@ -629,6 +629,7 @@ function pathway_background(pos, enc) {
 //NOTE: The game tick is not started until we first receive status from the server, but
 //after that, it will continue to run even if we get disconnected.
 let ticking = null, basetime, curtick = 0;
+const pending_gifts = [];
 function gametick() {
 	const nowtick = (performance.now() - basetime) / TICK_LENGTH; //Note that this may be fractional
 	//Whenever this function is called, update game state for all ticks that have happened
@@ -656,6 +657,8 @@ function gametick() {
 			}
 			continue; //Note that this is skipping state-based updates currently, maybe this isn't good
 		}
+		//Give a user-sent gift only once we don't have any other delayed callbacks pending
+		if (pending_gifts.length) {receive_item(spawnlevel(1), pending_gifts.shift()); continue;}
 		const location = gamestate.world.pathway[gamestate.world.location];
 		const handler = encounter[location.type].action;
 		const result = handler && handler(location);
@@ -832,7 +835,7 @@ export function render(data) {
 		else ticking = setInterval(gametick, TICK_LENGTH);
 	}
 	if (data.requests) {gamestate.requests = data.requests; repaint();}
-	if (data.gift) receive_item(spawnlevel(1), data.gift);
+	if (data.gift) pending_gifts.append(data.gift);
 }
 
 on("click", "[data-traitrequest]", e => {
