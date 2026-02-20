@@ -159,7 +159,13 @@ __async__ void wscmd_save_game(object channel, mapping(string:mixed) conn, mappi
 	});
 }
 
-__async__ void traitrequest(object channel, string uid, string trait) {
+//Send a signal to both the user group and the game group
+__async__ void notify(object channel, mapping msg) {
+	mapping gamestate = await(G->G->DB->load_config(channel->userid, "respawn"));
+	send_updates_all(channel, "", msg);
+	send_updates_all(channel, gamestate->nonce, msg);
+}
+void traitrequest(object channel, string uid, string trait) {
 	//Note that this does not save to the database; if the game is active, it will be saved at
 	//some point, and if the game isn't active, it won't matter anyway.
 	mapping tr = respawn_traitrequests[channel->userid];
@@ -167,12 +173,14 @@ __async__ void traitrequest(object channel, string uid, string trait) {
 	tr[uid] = trait;
 	mapping count = ([]);
 	foreach (values(tr), string t) count[t] += 1;
-	mapping gamestate = await(G->G->DB->load_config(channel->userid, "respawn"));
-	send_updates_all(channel, "", (["requests": count]));
-	send_updates_all(channel, gamestate->nonce, (["requests": count]));
+	notify(channel, (["requests": count]));
 }
 void wscmd_traitrequest(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	traitrequest(channel, conn->session->user->id, (string)msg->trait);
+}
+void wscmd_cleartraitreqs(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	m_delete(respawn_traitrequests, channel->userid);
+	notify(channel, (["requests": ([])]));
 }
 
 constant command_description = "Respawn Technician";

@@ -184,7 +184,7 @@ function respawn() {
 		if (gamestate.requests[t + "N"] > top_count) top_count = gamestate.requests[(top_trait = t) + (top_dir = "N")];
 		if (gamestate.requests[t + "P"] > top_count) top_count = gamestate.requests[(top_trait = t) + (top_dir = "P")];
 	}
-	gamestate.requests = { }; //After each respawn, all requests are consumed.
+	gamestate.requests = { }; ws_sync.send({cmd: "cleartraitreqs"}); //After each respawn, all requests are consumed.
 	if (top_count) {
 		const cur_dir = gamestate.traits[top_trait] > 0 ? "P" : "N";
 		if (cur_dir === top_dir) {
