@@ -833,7 +833,6 @@ export function render(data) {
 	}
 	if (data.requests) {gamestate.requests = data.requests; repaint();}
 	if (data.gift) receive_item(spawnlevel(1), data.gift);
-	//Signals other than game state will be things like "viewer-sponsored gift" or "trait requested".
 }
 
 on("click", "[data-traitrequest]", e => {
