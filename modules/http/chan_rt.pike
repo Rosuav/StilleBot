@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit annotated;
 
 constant markdown = #{# Respawn Technician
 
@@ -104,6 +105,9 @@ constant styles = #"
 }
 ";
 
+//rtr[channelid][userid] = "trait"
+@retain: mapping respawn_traitrequests = ([]);
+
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	mapping cfg = await(G->G->DB->load_config(req->misc->channel->userid, "respawn"));
 	if (req->variables->view) {
@@ -135,6 +139,12 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 
 __async__ mapping get_chan_state(object channel, string grp, string|void id, string|void type) {
 	mapping gamestate = await(G->G->DB->load_config(channel->userid, "respawn"));
+	mapping tr = respawn_traitrequests[channel->userid];
+	if (tr) {
+		mapping count = ([]);
+		foreach (values(tr), string t) count[t] += 1;
+		gamestate->requests = count;
+	}
 	string nonce = m_delete(gamestate, "nonce");
 	if (grp == "" || grp == nonce) return (["gamestate": gamestate]);
 	return ([]);
@@ -147,3 +157,18 @@ __async__ void wscmd_save_game(object channel, mapping(string:mixed) conn, mappi
 		return msg->gamestate | (["nonce": __ARGS__[0]->nonce]);
 	});
 }
+
+__async__ void wscmd_traitrequest(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//Note that this does not save to the database; if the game is active, it will be saved at
+	//some point, and if the game isn't active, it won't matter anyway.
+	mapping tr = respawn_traitrequests[channel->userid];
+	if (!tr) respawn_traitrequests[channel->userid] = tr = ([]);
+	tr[conn->session->user->id] = (string)msg->trait;
+	mapping count = ([]);
+	foreach (values(tr), string t) count[t] += 1;
+	mapping gamestate = await(G->G->DB->load_config(channel->userid, "respawn"));
+	send_updates_all(channel, "", (["requests": count]));
+	send_updates_all(channel, gamestate->nonce, (["requests": count]));
+}
+
+protected void create(string name) {::create(name);}

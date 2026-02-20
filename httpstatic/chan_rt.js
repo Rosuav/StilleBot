@@ -813,18 +813,14 @@ export function render(data) {
 		if (display_mode === "status") repaint();
 		else ticking = setInterval(gametick, TICK_LENGTH);
 	}
+	if (data.requests) {gamestate.requests = data.requests; repaint();}
 	//Signals other than game state will be things like "viewer-sponsored gift" or "trait requested".
 }
 
 on("click", "[data-traitrequest]", e => {
-	const tr = e.match.dataset.traitrequest;
-	//NOTE: This does not do any validation on the requested trait. Maybe it should?
-	//All validation is done in respawn() itself, so junk may stick around until then.
-	gamestate.requests[tr] = (gamestate.requests[tr]||0) + 1;
-	//FIXME: Don't mix set_content and replace_content like this; it could mess up the display
-	//if you click the button in the very last tick before a respawn AND the trait had not been
-	//requested prior to that (was on "(0)" now "(1)").
-	set_content(e.match, [trait_labels[tr], " (" + gamestate.requests[tr] + ")"]);
+	//NOTE: This currently does not immediately update the local display in any way.
+	//It may be nice to have faster feedback, though the number won't necessarily update.
+	ws_sync.send({cmd: "traitrequest", trait: e.match.dataset.traitrequest});
 });
 
 //TODO: Call this automatically periodically, not too often but often enough.
