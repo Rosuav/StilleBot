@@ -743,7 +743,7 @@ function repaint() {
 		]),*/
 		//In gameplay mode, show a massively reduced top section - intended for inside OBS
 		display_mode === "active" ? DIV([
-			current_action || DIV(SPAN({style: "display: inline-block; height: 1.25em"}, "\xA0")), //Ensure consistent height
+			current_action || DIV([SPAN({style: "display: inline-block; height: 1.25em"}), "\xA0"]), //Ensure consistent height
 			hpmeter,
 		]) : DIV({id: "stats"}, [
 			DIV(TWO_COL([
