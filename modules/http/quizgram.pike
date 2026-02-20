@@ -76,7 +76,7 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 
 ### Suitedx
 1. What is Suited's void called? `_-17-__`
-2. What should death do to you? `_____-37-`
+2. Complete this quote: `_____-37-` ME, DEATH
 3. What does a six-month subscriber become? `_-19-____`
 ";
 
