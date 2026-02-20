@@ -153,10 +153,16 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id, str
 
 __async__ void wscmd_save_game(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!mappingp(msg->gamestate)) return;
+	string|void nonce;
 	await(G->G->DB->mutate_config(channel->userid, "respawn") {
 		if (__ARGS__[0]->nonce != conn->subgroup) return 0;
+		nonce = __ARGS__[0]->nonce; //Set only if we actually accept the save
 		return msg->gamestate | (["nonce": __ARGS__[0]->nonce]);
 	});
+	if (nonce) {
+		send_updates_all(channel, "");
+		send_updates_all(channel, nonce);
+	}
 }
 
 //Send a signal to both the user group and the game group
