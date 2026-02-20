@@ -144,19 +144,6 @@ __async__ void wscmd_save_game(object channel, mapping(string:mixed) conn, mappi
 	if (!mappingp(msg->gamestate)) return;
 	await(G->G->DB->mutate_config(channel->userid, "respawn") {
 		if (__ARGS__[0]->nonce != conn->subgroup) return 0;
-		return msg->gamestate | (["nonce": __ARGS__[0]->nonce]);;
+		return msg->gamestate | (["nonce": __ARGS__[0]->nonce]);
 	});
 }
-
-/* Potentially five different pages that can be seen
-
-1. In-OBS view, cut down, requires ?view=NONCE
-2. Broadcaster view, full information incl nonce, requires login cookie giving same UID as channel ID
-3. Mod view? May have additional information above user view
-4. User view, game state display (as of last save) and buttons to request a trait
-5. Guest view, game state display but no trait request buttons
-
-Gameplay occurs only in type 1. This will require a unique group; also display_mode is "active".
-Types 2-4 allow trait requesting. They can share a group.
-Type 5 can be in the same group as 2-4 but can be recognized by not being logged in.
-*/
