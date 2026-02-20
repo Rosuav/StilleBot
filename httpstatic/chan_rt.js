@@ -838,6 +838,9 @@ export function render(data) {
 	if (data.requests) {gamestate.requests = data.requests; repaint();}
 	if (data.gift) pending_gifts.append(data.gift);
 	if (data.msg && display_mode !== "active") msg(data.msg);
+	//If the server says "refresh the page", we first save, and when that's done, THEN we refresh.
+	if (data.force_refresh) ws_sync.send({cmd: "save_game", gamestate, notify_saved: 1});
+	if (data.save_complete) location.reload(); //Ideally only reload if we previously had a force_refresh signal
 }
 
 on("click", "[data-traitrequest]", e => {

@@ -158,7 +158,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id, str
 	return ([]);
 }
 
-__async__ void wscmd_save_game(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ mapping|void wscmd_save_game(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!mappingp(msg->gamestate)) return;
 	string|void nonce;
 	await(G->G->DB->mutate_config(channel->userid, "respawn") {
@@ -170,6 +170,7 @@ __async__ void wscmd_save_game(object channel, mapping(string:mixed) conn, mappi
 		send_updates_all(channel, "");
 		send_updates_all(channel, nonce);
 	}
+	if (msg->notify_saved) return (["cmd": "update", "save_complete": 1]);
 }
 
 //Send a signal to both the user group and the game group
@@ -224,4 +225,12 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 	return ([]);
 }
 
-protected void create(string name) {::create(name);}
+//Trigger this once if we need the client to refresh
+__async__ void force_refresh() {
+	mapping gamestates = await(G->G->DB->load_all_configs("respawn"));
+	foreach (gamestates; int chanid; mapping gamestate) {
+		if (gamestate->nonce) send_updates_all(gamestate->nonce + "#" + chanid, (["force_refresh": 1]));
+	}
+}
+
+protected void create(string name) {::create(name); /*force_refresh();*/}
