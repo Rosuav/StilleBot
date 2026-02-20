@@ -205,7 +205,46 @@ const callbacks = {
 		//Else there were no requests - Hero retains his current traits.
 		save_game();
 	},
+	flashed(level) {
+		gamestate.stats.xp += Math.ceil(BASE_MONSTER_XP * 4 * (1.4 ** level));
+		DOM("#pathway").classList.add("flashed");
+		setTimeout(() => DOM("#pathway").classList.remove("flashed"), 4000);
+	},
+	statboost(level, item) {
+		//Higher level potions have the same effect but last longer.
+		//Note that, currently, you can drink two STR potions and be
+		//even stronger, rather than stacking the durations.
+		const _duration = 15 + (level - gamestate.world.baselevel);
+		//Constitution is a special case because buffing CON is messy.
+		//So instead of giving you +5 CON, which would give you roughly
+		//double the horsepower, we give a 33% damage modifier, meaning
+		//that it takes 40 damage to deal 30 to you - more in line with
+		//the effect that +5 STR gives in the other direction.
+		if (item === "CON") apply_buff({_duration, dr: 33});
+		else apply_buff({_duration, [item]: 5});
+	},
 };
+
+//The item can be any actual item, or a selector from this list. The actual item selected will be returned.
+const item_selectors = {
+	boon: ["flash", "STR", "DEX", "INT", "WIS", "CON"],
+	stat: ["STR", "DEX", "INT", "WIS", "CON"],
+	//In the future, there may be an "any" option which will potentially give a bad item,
+	//but the "boon" randomizer is guaranteed to be something good.
+};
+function receive_item(level, item) {
+	if (item_selectors[item]) item = random_choice(item_selectors[item]);
+	switch (item) {
+		case "flash":
+			gamestate.world.delay = [0, 3, "::flashed", "Oops...", level];
+			break;
+		case "STR": case "DEX": case "INT": case "WIS": case "CON":
+			gamestate.world.delay = [0, 3, "::statboost", "Drinking...", level, item];
+			break;
+		default: break;
+	}
+	return item;
+}
 
 //Calculate the level at which something should spawn
 //Whenever an enemy/item/equipment is spawned, it is given a level. This comes from a base level, a random component, and possibly a softcap.
@@ -225,10 +264,11 @@ const callbacks = {
     - L50: 50+(52-50)/2 = 51
     - The effective spawn level will be 51.
 */
-function spawnlevel() {
+function spawnlevel(force_max) {
 	let level = gamestate.world.baselevel;
 	let rand = Math.min(level/2, 10); //Spread by +/- 10 levels each way, but not more than half the base level
-	level += Math.trunc(Math.random() * rand*2 - rand);
+	if (force_max) level += rand;
+	else level += Math.trunc(Math.random() * rand*2 - rand);
 	//Softcap based on undefeated bosses
 	for (let boss of bosses) if (!gamestate.bosses[boss.name]) {
 		//Excess levels above the boss's minlevel get halved.
@@ -433,36 +473,7 @@ const encounter = {
 	item: {
 		create() {return {type: "item", item: "unknown", level: spawnlevel()};},
 		enter(loc) {
-			if (loc.item === "unknown") {
-				loc.item = random_choice(["flash", "STR", "DEX", "INT", "WIS", "CON"]);
-				switch (loc.item) {
-					case "flash":
-						gamestate.world.delay = [0, 3, "flashed", "Oops..."];
-						break;
-					case "STR": case "DEX": case "INT": case "WIS": case "CON":
-						gamestate.world.delay = [0, 3, "statboost", "Drinking..."];
-						break;
-					default: msg("BUGGED ITEM " + loc.item);
-				}
-			}
-		},
-		flashed(loc) {
-			gamestate.stats.xp += Math.ceil(BASE_MONSTER_XP * 4 * (1.4 ** loc.level));
-			DOM("#pathway").classList.add("flashed");
-			setTimeout(() => DOM("#pathway").classList.remove("flashed"), 4000);
-		},
-		statboost(loc) {
-			//Higher level potions have the same effect but last longer.
-			//Note that, currently, you can drink two STR potions and be
-			//even stronger, rather than stacking the durations.
-			const _duration = 15 + (loc.level - gamestate.world.baselevel);
-			//Constitution is a special case because buffing CON is messy.
-			//So instead of giving you +5 CON, which would give you roughly
-			//double the horsepower, we give a 33% damage modifier, meaning
-			//that it takes 40 damage to deal 30 to you - more in line with
-			//the effect that +5 STR gives in the other direction.
-			if (loc.item === "CON") apply_buff({_duration, dr: 33});
-			else apply_buff({_duration, [loc.item]: 5});
+			if (loc.item === "unknown") loc.item = receive_item(loc.level, "boon");
 		},
 		desire: {headstrongN: 10, aggressiveN: 3},
 		render(loc) {
@@ -632,10 +643,10 @@ function gametick() {
 		if (gamestate.world.delay) {
 			if (++gamestate.world.delay[0] >= gamestate.world.delay[1]) {
 				//Delay is over. Call the callback.
-				const cb = gamestate.world.delay[2];
+				const cb = gamestate.world.delay[2], cbargs = gamestate.world.delay.slice(4);
 				delete gamestate.world.delay;
-				//Global callbacks may require additional args, so hand them the delay array
-				if (cb.startsWith("::")) callbacks[cb.slice(2)](gamestate.world.delay);
+				//Global callbacks may require additional args
+				if (cb.startsWith("::")) callbacks[cb.slice(2)](...cbargs);
 				else {
 					//Location callbacks should have all their parameterization done by
 					//the location object itself, so pass them that instead.
@@ -821,6 +832,7 @@ export function render(data) {
 		else ticking = setInterval(gametick, TICK_LENGTH);
 	}
 	if (data.requests) {gamestate.requests = data.requests; repaint();}
+	if (data.gift) receive_item(spawnlevel(1), data.gift);
 	//Signals other than game state will be things like "viewer-sponsored gift" or "trait requested".
 }
 

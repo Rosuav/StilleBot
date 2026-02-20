@@ -202,7 +202,11 @@ constant MOCKUP_builtin_param = ({
 constant vars_provided = ([]);
 __async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
 	switch (param[0]) {
-		case "item": break; //FIXME
+		case "item": {
+			mapping gamestate = await(G->G->DB->load_config(channel->userid, "respawn"));
+			send_updates_all(channel, gamestate->nonce, (["gift": param[1]]));
+			break;
+		}
 		case "trait": traitrequest(channel, (string)person->uid, param[1]); break;
 	}
 	return ([]);
