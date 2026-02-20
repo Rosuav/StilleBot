@@ -103,6 +103,15 @@ constant styles = #"
 	color: #c33;
 }
 ";
+constant gamestyles = #"
+/* Override the usual main styles, giving a transparent background */
+html main {
+	max-width: unset;
+	margin: 0;
+	background: none;
+	padding: 0;
+}
+";
 
 //rtr[channelid][userid] = "trait"
 @retain: mapping respawn_traitrequests = ([]);
@@ -115,7 +124,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			"vars": (["ws_type": ws_type, "ws_group": req->variables->view + "#" + req->misc->channel->userid, "display_mode": "active"]),
 			"title": "Respawn Technician",
 			"css": "stillebot.css",
-			"styles": styles,
+			"styles": styles + gamestyles,
 		]));
 	}
 	mapping repl = (["vars": (["ws_group": "", "allow_trait_requests": 0, "display_mode": "status"]), "styles": styles]) | req->misc->chaninfo;
