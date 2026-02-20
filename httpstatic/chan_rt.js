@@ -478,12 +478,14 @@ const encounter = {
 			return ret;
 		},
 		enter(loc) {
-			gamestate.world.delay = [0, 10, "pickpath", "Contemplating..."];
+			if (gamestate.world.direction === "retreating") {
+				//He's running away and will definitely switch paths.
+				gamestate.world.direction = "advancing";
+				gamestate.world.delay = [0, 10, "switchpath", "Going the other way..."];
+			}
+			else gamestate.world.delay = [0, 10, "pickpath", "Contemplating..."];
 		},
 		pickpath(loc) {
-			//TODO: If retreating, do a bravery check to switch and stop retreating. This won't
-			//require the ten-round delay.
-
 			//Okay. So. Got a few options here.
 			//1) For every encounter, multiply each trait's desire for it by the trait's strength.
 			//2) Pick one trait at random (based on trait weights) and use that trait's desire.
@@ -500,14 +502,15 @@ const encounter = {
 				score1 += encounter[enc1.type].desire[trait] || 0;
 				score2 += encounter[enc2.type].desire[trait] || 0;
 			}
-			if (score1 > score2) {
-				//To switch, we actually mutate both paths. However, we also flag the
-				//branch so that we invert the display; the 2D view, when implemented,
-				//will use this to know that the display should be flipped back to
-				//compensate.
-				loc.flipped = !loc.flipped;
-				loc.pathway = gamestate.world.pathway.splice(gamestate.world.location+1, Infinity, ...loc.pathway);
-			}
+			if (score1 > score2) this.switchpath(loc);
+		},
+		switchpath(loc) {
+			//To switch, we actually mutate both paths. However, we also flag the
+			//branch so that we invert the display; the 2D view, when implemented,
+			//will use this to know that the display should be flipped back to
+			//compensate.
+			loc.flipped = !loc.flipped;
+			loc.pathway = gamestate.world.pathway.splice(gamestate.world.location+1, Infinity, ...loc.pathway);
 		},
 		desire: {headstrongN: 3},
 		render(loc) {return "Branch";},
