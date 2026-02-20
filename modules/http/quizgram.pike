@@ -51,7 +51,7 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 2. How does the raid saber make that noise? `-13-___________`
 
 ### StaticTides
-1. How many cosplays has Static done? `__-19-` `____` and counting!
+1. How many cosplays has Static done? `-14-__` `____` and counting!
 2. What is Static's favourite colour? `_____` `___-39-`
 3. What's the cat's full name? `_____-6-_`
 
@@ -73,6 +73,11 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 ### YarnCraftersCorner
 1. What's the type of spindle used here, with two arms? `______-23-`
 2. What variety of pet will visit the stream? `_-38-__`
+
+### Suitedx
+1. What is Suited's void called? `_-17-__`
+2. What should death do to you? `_____-37-`
+3. What does a six-month subscriber become? `_-19-____`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
