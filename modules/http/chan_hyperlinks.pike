@@ -1,5 +1,4 @@
 inherit http_websocket;
-inherit builtin_command;
 inherit annotated;
 inherit hook;
 
