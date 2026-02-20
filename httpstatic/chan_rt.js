@@ -158,52 +158,54 @@ function take_damage(dmg) {
 	gamestate.stats.curhp -= dmg;
 }
 
-function respawn() {
-	let newloc = -1;
-	for (let l = 0; l < gamestate.world.pathway.length; ++l) {
-		const loc = gamestate.world.pathway[l];
-		if (loc.type === "respawn" && loc.state === "current") newloc = l; //TODO: There should only be one of these.
-	}
-	if (newloc === -1) {msg("NO RESPAWN CHAMBER!"); newloc = 0;} //Shouldn't happen.
-	for (let l = newloc; l <= gamestate.world.location; ++l)
-		gamestate.world.pathway[l].progress = 0;
-	gamestate.world.location = newloc;
-	gamestate.world.direction = "advancing";
-	gamestate.world.delay = [0, 5, "emerge", "Respawning..."];
-	gamestate.stats.curhp = gamestate.stats.maxhp;
-	//Okay. Now the big one: Update traits.
-	//First, look at the requested traits. Note that there could be junk in the requests[] mapping, so
-	//we whitelist to valid traits. A trait is valid if and only if it is in the trait_display_order
-	//AND you already have some of that trait. (New traits get unlocked by defeating bosses, and you
-	//will always get a little of it when that happens.)
-	//NOTE: Currently using winner-takes-all voting; if Aggressive has 8 votes and Passive has 7, you
-	//will without a doubt become more aggressive. It may be better instead to randomly sample.
-	let top_trait = "", top_dir = "", top_count = 0;
-	for (let t of trait_display_order) {
-		if (!gamestate.traits[t]) continue;
-		if (gamestate.requests[t + "N"] > top_count) top_count = gamestate.requests[(top_trait = t) + (top_dir = "N")];
-		if (gamestate.requests[t + "P"] > top_count) top_count = gamestate.requests[(top_trait = t) + (top_dir = "P")];
-	}
-	gamestate.requests = { }; ws_sync.send({cmd: "cleartraitreqs"}); //After each respawn, all requests are consumed.
-	if (top_count) {
-		const cur_dir = gamestate.traits[top_trait] > 0 ? "P" : "N";
-		if (cur_dir === top_dir) {
-			//Strengthen the current trait. For example, you're already Aggressive and the request was for more aggressiveness.
-			gamestate.traits[top_trait] += Math.random() / 2 + 0.25; //Empower it by 0.25-0.75
-		} else {
-			//Weaken the current trait, which might flip it.
-			const effect = Math.random() + 0.5;
-			if (effect > Math.abs(gamestate.traits[top_trait])) {
-				//Flip the trait - reset it to a starting trait value in the opposite direction.
-				gamestate.traits[top_trait] = Math.random() / 4 + 0.25; //Starting strength of 0.25-0.5
-				if (top_dir === "N") gamestate.traits[top_trait] *= -1;
-			}
-			else gamestate.traits[top_trait] -= effect; //Weaken the trait but keep it as is.
+const callbacks = {
+	respawn() {
+		let newloc = -1;
+		for (let l = 0; l < gamestate.world.pathway.length; ++l) {
+			const loc = gamestate.world.pathway[l];
+			if (loc.type === "respawn" && loc.state === "current") newloc = l; //TODO: There should only be one of these.
 		}
-	}
-	//Else there were no requests - Hero retains his current traits.
-	save_game();
-}
+		if (newloc === -1) {msg("NO RESPAWN CHAMBER!"); newloc = 0;} //Shouldn't happen.
+		for (let l = newloc; l <= gamestate.world.location; ++l)
+			gamestate.world.pathway[l].progress = 0;
+		gamestate.world.location = newloc;
+		gamestate.world.direction = "advancing";
+		gamestate.world.delay = [0, 5, "emerge", "Respawning..."];
+		gamestate.stats.curhp = gamestate.stats.maxhp;
+		//Okay. Now the big one: Update traits.
+		//First, look at the requested traits. Note that there could be junk in the requests[] mapping, so
+		//we whitelist to valid traits. A trait is valid if and only if it is in the trait_display_order
+		//AND you already have some of that trait. (New traits get unlocked by defeating bosses, and you
+		//will always get a little of it when that happens.)
+		//NOTE: Currently using winner-takes-all voting; if Aggressive has 8 votes and Passive has 7, you
+		//will without a doubt become more aggressive. It may be better instead to randomly sample.
+		let top_trait = "", top_dir = "", top_count = 0;
+		for (let t of trait_display_order) {
+			if (!gamestate.traits[t]) continue;
+			if (gamestate.requests[t + "N"] > top_count) top_count = gamestate.requests[(top_trait = t) + (top_dir = "N")];
+			if (gamestate.requests[t + "P"] > top_count) top_count = gamestate.requests[(top_trait = t) + (top_dir = "P")];
+		}
+		gamestate.requests = { }; ws_sync.send({cmd: "cleartraitreqs"}); //After each respawn, all requests are consumed.
+		if (top_count) {
+			const cur_dir = gamestate.traits[top_trait] > 0 ? "P" : "N";
+			if (cur_dir === top_dir) {
+				//Strengthen the current trait. For example, you're already Aggressive and the request was for more aggressiveness.
+				gamestate.traits[top_trait] += Math.random() / 2 + 0.25; //Empower it by 0.25-0.75
+			} else {
+				//Weaken the current trait, which might flip it.
+				const effect = Math.random() + 0.5;
+				if (effect > Math.abs(gamestate.traits[top_trait])) {
+					//Flip the trait - reset it to a starting trait value in the opposite direction.
+					gamestate.traits[top_trait] = Math.random() / 4 + 0.25; //Starting strength of 0.25-0.5
+					if (top_dir === "N") gamestate.traits[top_trait] *= -1;
+				}
+				else gamestate.traits[top_trait] -= effect; //Weaken the trait but keep it as is.
+			}
+		}
+		//Else there were no requests - Hero retains his current traits.
+		save_game();
+	},
+};
 
 //Calculate the level at which something should spawn
 //Whenever an enemy/item/equipment is spawned, it is given a level. This comes from a base level, a random component, and possibly a softcap.
@@ -632,9 +634,11 @@ function gametick() {
 				//Delay is over. Call the callback.
 				const cb = gamestate.world.delay[2];
 				delete gamestate.world.delay;
-				//Special-case the respawn delay; maybe will need others that are also global.
-				if (cb === "::respawn") respawn();
+				//Global callbacks may require additional args, so hand them the delay array
+				if (cb.startsWith("::")) callbacks[cb.slice(2)](gamestate.world.delay);
 				else {
+					//Location callbacks should have all their parameterization done by
+					//the location object itself, so pass them that instead.
 					const location = gamestate.world.pathway[gamestate.world.location];
 					encounter[location.type][cb](location);
 				}
