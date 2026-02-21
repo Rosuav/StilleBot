@@ -618,7 +618,7 @@ __async__ void update_first(object channel, mapping game) {
 			if (string id = m_delete(game, which + "rwd")) {
 				await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + id,
 					(["Authorization": channel->userid]),
-					(["method": "DELETE"])));
+					(["method": "DELETE", "return_errors": 1]))); //If the reward's been manually deleted, ignore the failure
 				changed = 1;
 			}
 			if (channel->commands["rwd" + which]) G->G->cmdmgr->update_command(channel, "", "rwd" + which, "");
@@ -645,7 +645,7 @@ __async__ void update_first(object channel, mapping game) {
 		if (string id = m_delete(game, "checkinrwd")) {
 			await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + id,
 				(["Authorization": channel->userid]),
-				(["method": "DELETE"])));
+				(["method": "DELETE", "return_errors": 1])));
 			changed = 1;
 		}
 		if (channel->commands["rwdcheckin"]) G->G->cmdmgr->update_command(channel, "", "rwdcheckin", "");
