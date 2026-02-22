@@ -17,7 +17,7 @@ const trait_display_order = "aggressive headstrong brave".split(" ");
 const stat_display_order = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
 const BASE_MONSTER_XP = 100, BASE_BOSS_XP = 150; //Monster XP increases if it's above your level. Boss XP increases by its level regardless.
 const BASELEVEL_ADVANCEMENT_RATE = 30; //The base level will increase every this-many rooms.
-const TICK_LENGTH = 1000; //Normal combat tick. It may be worth reducing this to 100ms and having intermediate ticks.
+const TICK_LENGTH = 100; //Normal combat tick. It may be worth reducing this to 100ms and having intermediate ticks.
 const MAX_PATHWAY_LENGTH = 20; //Ideally this should be more than can be seen on any reasonable screen
 
 function unlock_trait(t) {if (!gamestate.traits[t]) gamestate.traits[t] = Math.random() / 2 - 0.25;}
@@ -29,7 +29,6 @@ function unlock_trait(t) {if (!gamestate.traits[t]) gamestate.traits[t] = Math.r
 //and lets you kill them. This will ensure that their death triggers all fire.
 //TODO: Allow bosses to have special abilities like parrying attacks. They'll need to hook into
 //the combat system.
-//TODO: Have some boss that unlocks the bow, giving you a grade 1 bow (or maybe his level) to start with.
 const bosses = [{
 	minlevel: 5, //Boss will not spawn until the baselevel is at least this
 	level: 10, //The boss's actual level as will be used for damage calculations
@@ -37,6 +36,18 @@ const bosses = [{
 	name: "Snowman", //Short name, used in damage messages
 	longname: "Evil Snowman of Doom", //Name shown once upon encounter, and again on death
 	ondeath() {unlock_trait("headstrong");},
+}, {
+	minlevel: 20, level: 30, hpmul: 1.2,
+	name: "Bow Tree",
+	longname: "Terrifyingly Tall Bow Tree",
+	ondeath() {
+		if (!gamestate.equipment.bow) {
+			msg("You hack the tree to bits... ");
+			//Would be nice to delay these messages a little
+			gamestate.equipment.bow = 1;
+			msg("...and make yourself a longbow!");
+		}
+	},
 }];
 
 //Weighted selection from a collection of options. Uses the absolute value of the weight, so -3.14 is equivalent to 3.14.
@@ -88,7 +99,6 @@ function decay_buffs(amt) {
 	incoming_damage_multiplier = 100 / (100 + gamestate.stats.dr);
 	//Minor hack: If you have damage reduction, show this as a constitution modifier.
 	if (gamestate.stats.dr) stat_buff.CON = gamestate.stats.dr;
-	console.log("Buffs decayed, now", stat_buff);
 }
 function apply_buff(buff) {
 	for (let attr in buff) if (attr !== "_duration")
