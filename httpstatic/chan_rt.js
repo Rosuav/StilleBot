@@ -129,9 +129,9 @@ function hero_melee_damage() {
 function hero_ranged_damage() {
 	return Math.ceil(
 		(1.025 ** gamestate.stats.level)
-		* (1.1 ** gamestate.stats.DEX)
-		* (gamestate.equipment.BOW / gamestate.world.baselevel)
-		* (Math.random() * 0.4 + 0.8)
+		* (1.08 ** gamestate.stats.DEX)
+		* (gamestate.equipment.bow / gamestate.world.baselevel)
+		* (Math.random() * 0.8 + 0.6) //Significantly more spread than melee shots
 	);
 }
 function enemy_max_hp(level) {
@@ -157,6 +157,20 @@ function take_damage(dmg) {
 		return;
 	}
 	gamestate.stats.curhp -= dmg;
+}
+
+function monster_take_damage(loc, dmg) {
+	loc.curhp -= dmg;
+	if (loc.curhp <= 0) {
+		loc.curhp = 0;
+		msg("Enemy defeated!"); //TODO: Get some nicer messages, possibly using level range to determine an enemy name
+		loc.state = "dead";
+		if (loc.level < gamestate.stats.level - 10) gamestate.stats.xp += 1; //Minimal XP for super-low-level enemies
+		else {
+			const diff = loc.level - gamestate.stats.level;
+			gamestate.stats.xp += Math.ceil(BASE_MONSTER_XP * (1.17 ** diff));
+		}
+	}
 }
 
 const callbacks = {
@@ -247,6 +261,11 @@ function receive_item(level, item) {
 	return item;
 }
 
+//If you have a stat of 32, going for a target (challenge) level of 48, you have 32 chances in 48 of success.
+function stat_check(stat, target_level) {
+	return Math.random() * target_level < gamestate.stats[stat];
+}
+
 //Calculate the level at which something should spawn
 //Whenever an enemy/item/equipment is spawned, it is given a level. This comes from a base level, a random component, and possibly a softcap.
 //The base level starts at 1, and increases by 1 every time the hero "ought to" level up (probably some number of squares traversed). Ideally,
@@ -330,8 +349,8 @@ const encounter = {
 					case "braveN": choice = "flee"; break; //Cowards can't block warriors.
 				}
 				if (choice === "flee") {
-					//The enemy gets a free hit. TODO: Make this probablistic based on levels and stats?
-					take_damage(enemy_melee_damage(loc.level));
+					//The enemy may get a free hit, unless we're observant and clever enough to avoid it.
+					if (!stat_check("WIS", loc.level)) take_damage(enemy_melee_damage(loc.level));
 					gamestate.world.direction = "retreating";
 					return;
 				}
@@ -339,25 +358,48 @@ const encounter = {
 				loc.maxhp = loc.curhp = enemy_max_hp(loc.level);
 				loc.state = Math.random() < 0.5 ? "herohit" : "enemyhit"; //TODO: Randomize this based on stats
 			}
+			//If you have a bow, attempt ranged combat. Otherwise, straight to melee.
+			loc.ranged_status = gamestate.equipment.bow ? 0 : -1;
 		},
 		action(loc) {
 			//If we're fighting, have a round of combat.
 			if (!loc.curhp) return;
-			if (loc.state === "herohit") {
-				//Hero gets a melee attack on the enemy!
-				const dmg = hero_melee_damage();
-				if (dmg >= loc.curhp) {
-					loc.curhp = 0;
-					msg("Enemy defeated!"); //TODO: Get some nicer messages, possibly using level range to determine an enemy name
-					loc.state = "dead";
-					if (loc.level < gamestate.stats.level - 10) gamestate.stats.xp += 1; //Minimal XP for super-low-level enemies
-					else {
-						const diff = loc.level - gamestate.stats.level;
-						gamestate.stats.xp += Math.ceil(BASE_MONSTER_XP * (1.17 ** diff));
+			//At range, we have the option of attempting to take a bow shot.
+			if (loc.ranged_status >= 0) {
+				const t = weighted_random(gamestate.traits);
+				const trait = t + (gamestate.traits[t] < 0 ? "N" : "P");
+				//Try to shoot with the bow, or close the distance to melee?
+				let choice = "shoot";
+				switch (trait) {
+					case "aggressiveP": choice = "close"; break; //Aggressive heroes will always close the distance.
+					case "aggressiveN": if (Math.random() < 0.5) choice = "close"; break; //Passive heroes don't really care which way they go
+					case "headstrongP": choice = "close"; break; //Headstrong heroes charge in and go for melee
+					case "headstrongN": break; //TODO: Prudent heroes judge based on stat vs level
+					case "braveP": choice = "close"; break; //Pain is not a concern!
+					case "braveN": break; //Cowards will flee anyway, so this is irrelevant
+				}
+				if (choice === "shoot") {
+					//The hero tries to take a bow shot. If he's smart, he will be able to do so without getting caught.
+					if (stat_check("INT", loc.level + loc.ranged_status)) {
+						//Take the shot!
+						loc.ranged_status++; //Every time you take a shot, it gets harder to stay at range.
+						//Bow shots are slower than melee attacks. With melee, you get a hit every second tick
+						//(alternating with the monster), but with ranged, only every third.
+						if (!(loc.ranged_status % 3)) monster_take_damage(loc, hero_ranged_damage());
+					} else {
+						//Monster drags us to melee range, getting a free hit. If you're savvy enough to
+						//take care, this would be a less-effective hit, otherwise you get beaten up.
+						if (stat_check("WIS", loc.level)) take_damage(enemy_melee_damage(loc.level / 2));
+						else monster_take_damage(loc, enemy_melee_damage(loc.level));
+						loc.ranged_status = -1;
 					}
 					return "hold";
 				}
-				loc.curhp -= dmg;
+				else loc.ranged_status = -1; //And carry on with melee
+			}
+			if (loc.state === "herohit") {
+				//Hero gets a melee attack on the enemy!
+				monster_take_damage(loc, hero_melee_damage());
 				loc.state = "enemyhit";
 			} else {
 				//Uh oh, here comes a blow in response!
@@ -691,9 +733,9 @@ function gametick() {
 					else t += "P";
 					const stat = {
 						aggressiveP: "STR",
-						aggressiveN: "INT",
+						aggressiveN: "WIS",
 						headstrongP: "CON",
-						headstrongN: "WIS",
+						headstrongN: "INT",
 						braveP: "CHA",
 						braveN: "DEX",
 					}[t] || "INT";

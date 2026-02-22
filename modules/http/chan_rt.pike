@@ -20,7 +20,7 @@ $$viewlink||$$
 > - DEX: Ranged damage dealt. Less efficient but less risky.
 > - CON: Health. More health means less respawning... hopefully.
 > - INT: Observation. Higher intelligence lets the hero evaluate enemies better.
-> - WIS: Mental fortitude. Reduces the negative effects of running from battle.
+> - WIS: Savviness. Reduces the negative effects of running from battle.
 > - CHA: Charisma. Has no effect whatsoever. (Maybe it can upgrade his sprite eventually??)
 >
 > Traits are your way to influence the battle. When you respawn the hero, you can select from all the myriad versions of this hero throughout
