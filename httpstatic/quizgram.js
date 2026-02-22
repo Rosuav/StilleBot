@@ -61,4 +61,4 @@ on("focusin", "h2 .ltr", e => {
 	if (linked) linked.focus();
 });
 
-//TODO: Save everything into localStorage, and have a button (with confirmation) to clear that
+//TODO: Have a button (with confirmation) to clear the localStorage saved state
