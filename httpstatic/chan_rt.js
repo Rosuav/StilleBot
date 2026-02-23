@@ -43,6 +43,18 @@ const bosses = [{
 	],
 	ondeath() {unlock_trait("headstrong");},
 }, {
+	minlevel: 10, level: 15, hpmul: 1.1,
+	name: "Smelly Goblin",
+	longname: "Goblin of Extreme Stenchiness",
+	lore: [
+		"The goblin itself isn't really all that special, but he must bathe in something quite .... .... unique.",
+		"Experiencing this odour was so eye-opening (and eye-watering) that the Hero learned several new things.",
+		"Mostly 'how to clean smells out of armor', but also some useful combat tricks.",
+	],
+	ondeath() {
+		gamestate.stats.xp += gamestate.stats.nextlevel - gamestate.stats.prevlevel; //Gain a free level for defeating this boss
+	},
+}, {
 	minlevel: 20, level: 30, hpmul: 1.2,
 	name: "Bow Tree",
 	longname: "Terrifyingly Tall Bow Tree",
