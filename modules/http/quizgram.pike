@@ -78,6 +78,10 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 1. What is Suited's void called? `_-17-__`
 2. Complete this quote: `_____-37-` ME, DEATH
 3. What does a six-month subscriber become? `_-19-____`
+
+### Blighted_Angel
+1. What is Angel's favourite colour? `-4-__`
+2. Who deserves treats? `________`, `_______-30-__`, and `______`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
