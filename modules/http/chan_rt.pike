@@ -40,6 +40,7 @@ $$viewlink||$$
 
 <style>
 details {border: 1px solid black; margin: 5px; padding: 5px;}
+#enemylore details {border: 1px solid black; background: aliceblue; padding: 1em;}
 $$styles$$
 </style>
 

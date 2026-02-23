@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, CAPTION, DIV, METER, SPAN, TABLE, TD, TH, TR} = lindt; //autoimport
+const {B, BUTTON, CAPTION, DETAILS, DIV, LI, METER, P, SPAN, SUMMARY, TABLE, TD, TH, TR} = lindt; //autoimport
 
 let gamestate = { };
 //Traits can be positive or negative. For the display (both status and control),
@@ -38,7 +38,7 @@ const bosses = [{
 	lore: [
 		"Your hero's first true challenge was a snowman, left behind by his arch-nemesis.",
 		"It is, of course, pure unadulterated evil, crafted into a frozen - and horrific - enemy.",
-		"Defeating this, without such tools as a flamethrower or even a shovel, required the utmost skill, great fortitude, and of course, a willingness to barge into danger without fear.",
+		"Defeating this, without such tools as a flamethrower or even a shovel, required the utmost skill, greatest fortitude, and of course, a willingness to barge into danger without fear.",
 		"Your hero is now able to be either Headstrong or Passive. As his Respawn Technician, it is your choice which he is.",
 	],
 	ondeath() {unlock_trait("headstrong");},
@@ -884,6 +884,15 @@ function repaint() {
 		)).reverse()),
 	]);
 	const msgs = DOM("#messages"); if (msgs) msgs.scroll(0, 9999); //Keep the messages showing the newest
+	const lore = DOM("#enemylore");
+	replace_content(lore, [
+		lore.firstElementChild, //The "basic enemies" entry
+		bosses.map(boss => gamestate.bosses[boss.name] && LI(DETAILS([
+			SUMMARY([B(boss.longname), " - Level " + boss.level + " boss fight!"]),
+			boss.lore.map(line => P(line)),
+		]))),
+		gamestate.bosses._next_level < gamestate.stats.level + 10 && LI(P([B(bosses[gamestate.bosses._next].longname), "... boss fight?"])),
+	]);
 }
 
 export function render(data) {
