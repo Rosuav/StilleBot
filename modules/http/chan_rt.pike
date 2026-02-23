@@ -35,11 +35,22 @@ $$viewlink||$$
 >
 {: tag=details}
 
-<div id=display></div>
 <style>
 details {border: 1px solid black; margin: 5px; padding: 5px;}
 $$styles$$
 </style>
+
+> ### Enemies
+> Your hero will encounter many enemies on his journey. Some of the more notable ones will show up here.
+>
+> * Regular enemies. These are irrelevant to someone as tremendously awesome as your hero, and exist only for XP and loot. *(This message has been brought to you by... the hero.)*
+> {:#enemylore}
+>
+> Further information will be added here as the hero encounters more enemies.
+>
+{: tag=details}
+
+<div id=display></div>
 #};
 
 constant dev_notes = #{

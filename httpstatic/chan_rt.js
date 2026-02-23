@@ -35,11 +35,24 @@ const bosses = [{
 	hpmul: 1.1, //Calculate normal hitpoints for a monster of the boss's level, then multiply by this.
 	name: "Snowman", //Short name, used in damage messages
 	longname: "Evil Snowman of Doom", //Name shown once upon encounter, and again on death
+	lore: [
+		"Your hero's first true challenge was a snowman, left behind by his arch-nemesis.",
+		"It is, of course, pure unadulterated evil, crafted into a frozen - and horrific - enemy.",
+		"Defeating this, without such tools as a flamethrower or even a shovel, required the utmost skill, great fortitude, and of course, a willingness to barge into danger without fear.",
+		"Your hero is now able to be either Headstrong or Passive. As his Respawn Technician, it is your choice which he is.",
+	],
 	ondeath() {unlock_trait("headstrong");},
 }, {
 	minlevel: 20, level: 30, hpmul: 1.2,
 	name: "Bow Tree",
 	longname: "Terrifyingly Tall Bow Tree",
+	lore: [
+		"As when Guybrush Threepwood needed a mop handle, your hero seeks out the fabled Bow Tree.",
+		"The tree is terrifyingly tall, or at least, it was before the hero found it. Now it is a sad stump, a shadow of its former self.",
+		"But on the plus side, your hero got himself a longbow! Now he is able to attack his enemies from some safety.",
+		"Not all heroes will prefer this option, however, and the more aggressive will go straight to melee.",
+		"Ranged combat is not entirely safe, and monsters may attempt to close the distance.",
+	],
 	ondeath() {
 		if (!gamestate.equipment.bow) {
 			msg("You hack the tree to bits... ");
