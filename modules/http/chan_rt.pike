@@ -2,6 +2,9 @@ inherit http_websocket;
 inherit annotated;
 inherit builtin_command;
 
+//NOTE: Game state is entirely managed by the client. Which means that someone could
+//easily cheat themselves equipment etc. Go ahead, it's not like you're hurting anyone else.
+
 constant markdown = #{# Respawn Technician
 
 A great hero roams the world, destroying evil, saving princesses, rescuing the needy, and becoming wealthy in the process. His story is told
