@@ -197,9 +197,8 @@ function take_damage(dmg) {
 	dmg *= incoming_damage_multiplier; //Note that damage MAY be fractional.
 	if (dmg >= gamestate.stats.curhp) {
 		//You died, Mr Reynolds.
-		//TODO: Reduce XP or add an XP gain penalty for a while
 		msg("THE HERO DIED");
-		//But hey, death isn't the end!
+		//But hey, death isn't the end! And there isn't even an XP penalty.
 		gamestate.world.delay = [0, 10, "::respawn", "DEAD"];
 		gamestate.stats.curhp = 0;
 		return;
@@ -226,7 +225,7 @@ const callbacks = {
 		let newloc = -1;
 		for (let l = 0; l < gamestate.world.pathway.length; ++l) {
 			const loc = gamestate.world.pathway[l];
-			if (loc.type === "respawn" && loc.state === "current") newloc = l; //TODO: There should only be one of these.
+			if (loc.type === "respawn" && loc.state === "current") newloc = l; //There should only be one of these.
 		}
 		if (newloc === -1) {msg("NO RESPAWN CHAMBER!"); newloc = 0;} //Shouldn't happen.
 		for (let l = newloc; l <= gamestate.world.location; ++l)
@@ -761,7 +760,6 @@ function gametick() {
 		} else if (gamestate.world.direction === "retreating") {
 			if (--location.progress <= 0) change_encounter(-1);
 		} //Otherwise something's holding us here.
-		//TODO: If advancing and the next location has an enemy, and you have a bow, chance to take a bow shot
 
 		//Finally, check state-based updates.
 		if (!gamestate.stats.prevlevel) gamestate.stats.prevlevel = tnl(gamestate.stats.level - 1);
@@ -790,7 +788,12 @@ function gametick() {
 					}[t] || "INT";
 					weights[stat] += w;
 				}
-				//TODO: If a stat is too high, exclude it (zero out its chance), unless all stats are high
+				//Cap stats at your current level. This means that, after levelling up, a maxxed
+				//stat can be increased by 1, but no more. It's highly unlikely that you'll max
+				//out more than one stat, but theoretically you could (MAYBE two).
+				for (let stat of stat_display_order)
+					if (gamestate.stats[stat] >= gamestate.stats.level)
+						weights[stat] = 0;
 				const stat = weighted_random(weights);
 				++gamestate.stats[stat];
 			}
@@ -848,9 +851,6 @@ function repaint() {
 		max: gamestate.stats.maxhp,
 	});
 	replace_content("#display", [
-		/*DIV({id: "controls", class: "buttonbox"}, [ //TODO: In debug mode, reenable this
-			BUTTON({type: "button", id: "save"}, "Save game now"), "Game saves automatically on level up and death",
-		]),*/
 		//In gameplay mode, show a massively reduced top section - intended for inside OBS
 		display_mode === "active" ? DIV([
 			current_action || DIV([SPAN({style: "display: inline-block; height: 1.25em"}), "\xA0"]), //Ensure consistent height
@@ -949,12 +949,8 @@ on("click", "[data-traitrequest]", e => {
 	ws_sync.send({cmd: "traitrequest", trait: e.match.dataset.traitrequest});
 });
 
-//TODO: Call this automatically periodically, not too often but often enough.
-//On levelup and on death may not be sufficient.
-function save_game() {
-	ws_sync.send({cmd: "save_game", gamestate});
-}
-on("click", "#save", save_game);
+//Called periodically, not too often but hopefully often enough.
+function save_game() {ws_sync.send({cmd: "save_game", gamestate});}
 
 on("dragstart", "#browsersource", e => {
 	const url = e.match.href + "&layer-name=Respawn%20Technician&layer-width=1920&layer-height=120";
