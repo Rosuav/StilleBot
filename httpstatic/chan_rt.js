@@ -48,6 +48,19 @@ const bosses = [{
 			msg("...and make yourself a longbow!");
 		}
 	},
+}, {
+	minlevel: 50, level: 75, hpmul: 1.25,
+	name: "Mirror",
+	longname: "Mirror of Truth",
+	lore: [
+		"Gazing into the Mirror of Truth reveals one's courage - or lack thereof.",
+		"Smart people will look into it and learn, recognizing their own limitations and seeking to overcome them.",
+		"Your hero, of course, attacks the mirror with his weapons.",
+		"Upon breaking the mirror, in addition to his seven years of bad luck, the hero learns exactly how courageous he is.",
+		"You are now able to guide him towards greater courage, or perhaps, cowardice.",
+		"Be warned however - the braver the hero, the greater his ego, and the more he will spend his valuable stat points on his own charisma.",
+	],
+	ondeath() {unlock_trait("brave");},
 }];
 
 //Weighted selection from a collection of options. Uses the absolute value of the weight, so -3.14 is equivalent to 3.14.
