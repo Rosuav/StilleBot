@@ -17,7 +17,7 @@ const trait_display_order = "aggressive headstrong brave".split(" ");
 const stat_display_order = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
 const BASE_MONSTER_XP = 100, BASE_BOSS_XP = 150; //Monster XP increases if it's above your level. Boss XP increases by its level regardless.
 const BASELEVEL_ADVANCEMENT_RATE = 30; //The base level will increase every this-many rooms.
-const TICK_LENGTH = 100; //Normal combat tick. It may be worth reducing this to 100ms and having intermediate ticks.
+const TICK_LENGTH = 1000; //Normal combat tick. It may be worth reducing this to 100ms and having intermediate ticks.
 const MAX_PATHWAY_LENGTH = 20; //Ideally this should be more than can be seen on any reasonable screen
 
 function unlock_trait(t) {if (!gamestate.traits[t]) gamestate.traits[t] = Math.random() / 2 - 0.25;}
