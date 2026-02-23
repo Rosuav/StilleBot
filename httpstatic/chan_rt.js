@@ -404,7 +404,7 @@ const encounter = {
 				}
 				//Alright, let's fight.
 				loc.maxhp = loc.curhp = enemy_max_hp(loc.level);
-				loc.state = Math.random() < 0.5 ? "herohit" : "enemyhit"; //TODO: Randomize this based on stats
+				loc.state = stat_check("INT", loc.level) ? "herohit" : "enemyhit"; //Smart heroes get the first strike by spotting an opening.
 			}
 			//If you have a bow, attempt ranged combat. Otherwise, straight to melee.
 			loc.ranged_status = gamestate.equipment.bow ? 0 : -1;

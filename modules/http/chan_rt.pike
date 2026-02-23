@@ -57,18 +57,15 @@ $$styles$$
 <div id=display></div>
 #};
 
-constant dev_notes = #{
-## Dev notes
+/* Dev notes
+Do we want 2D mode to be an option? It would require showing the pathway in a non-game page, currently not the case.
+- Linear mode is where gameplay happens; the branches are shown as doorways. He peeks into the door, and makes a choice. He moves exclusively left and right.
+- In 2D mode, the hero's path branches periodically. He looks down each path, and makes a choice. But he mostly still moves left/right, just a little up/down.
 
-Two modes: 2D and Linear
-- In 2D mode, the hero's path branches periodically. He looks down each path, and makes a choice. But he mostly still moves left to right.
-- In Linear mode, the branches are shown as doorways. He peeks into the door, and makes a choice. He moves exclusively left to right.
+Keep developing more bosses and silly lore
 
-Next steps:
-1. More bosses to unlock more content - Brave/Cowardly (easy), Bow (once implemented) - and then some more bosses just to be bosses
-2. More effects of stats. Borrow idea from Murkon and have better chance to get first strike based on DEX vs WIS?
-3. 2D mode maybe
-#};
+Quick way to make channel point redemptions? Link with /c/minigames.
+*/
 
 constant styles = #"
 #pathway {
