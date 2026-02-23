@@ -335,16 +335,33 @@ __async__ void warn(object channel, string voiceid, string msg, mapping tok) {
 	));
 }
 
+@"user:write:chat":
+@"Send a chat message using the API":
+Concurrent.Future chat(object channel, string voiceid, string msg, mapping tok) {
+	return twitch_api_request("https://api.twitch.tv/helix/chat/messages",
+		(["Authorization": "Bearer " + tok->token]), ([
+			"method": "POST",
+			"json": ([
+				"broadcaster_id": (string)channel->userid,
+				"sender_id": voiceid,
+				"message": msg,
+			]),
+		]),
+	);
+}
+
 //Process a slash command and return a promise when it will be done, or return any
 //non-command chat message for direct delivery. Note that the Future returned does
 //not have any useful data in it (it's probably just a status report from an API
 //call or something).
 string|Concurrent.Future send_chat_command(object channel, string voiceid, string msg) {
-	if (!has_prefix(msg, "/")) return msg;
-	sscanf(msg, "/%[^ ] %s", string cmd, string param);
-	//Special cases: You can "/me" in chat, without using the API
-	if (cmd == "me") return msg;
-	if (!need_scope[cmd]) return " " + msg; //Return "/asdf" as " /asdf" so it gets output correctly
+	string cmd = "chat";
+	if (has_prefix(msg, "/") && !has_prefix(msg, "/me ")) {
+		sscanf(msg, "/%[^ ] %s", string c, string param);
+		if (!need_scope[c]) msg = " " + msg; //Render "/asdf" as " /asdf" so it gets output correctly
+		else {cmd = c; msg = param || "";}
+	}
+	if (cmd == "chat") return msg; //Send via IRC, requires less credentials. Remove this to use the API instead.
 	mapping tok = G->G->user_credentials[(int)voiceid];
 	if (!voiceid || voiceid == "0") {
 		voiceid = (string)G->G->bot_uid;
@@ -355,7 +372,7 @@ string|Concurrent.Future send_chat_command(object channel, string voiceid, strin
 		channel->report_error("ERROR", "This command requires " + need_scope[cmd] + " permission", msg);
 		return Concurrent.resolve(1); //Note that this will still suppress the chat message.
 	}
-	return this[cmd](channel, voiceid, param || "", tok);
+	return this[cmd](channel, voiceid, msg, tok);
 }
 
 protected void create(string name) {
