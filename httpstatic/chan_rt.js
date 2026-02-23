@@ -44,7 +44,7 @@ const bosses = [{
 	ondeath() {unlock_trait("headstrong");},
 }, {
 	minlevel: 10, level: 15, hpmul: 1.1,
-	name: "Smelly Goblin",
+	name: "Goblin",
 	longname: "Goblin of Extreme Stenchiness",
 	lore: [
 		"The goblin itself isn't really all that special, but he must bathe in something quite .... .... unique.",
