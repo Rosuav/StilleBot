@@ -396,6 +396,23 @@ __async__ int subscription(object channel, string type, mapping person, string t
 	send_updates_all(channel, "control");
 }
 
+//Call this to hack in a subgift
+__async__ void fix() {
+	mapping person = await(get_user_info("mrcrazysailor", "login"));
+	await(G->G->DB->mutate_config(54212603, "subgiftstats") {mapping stats = __ARGS__[0];
+		stats->all += ({([
+			"giver": ([
+				"user_id": person->id,
+				"login": person->login,
+				"displayname": person->display_name,
+			]),
+			"tier": "1", "qty": 5,
+			"timestamp": time(),
+		])});
+		werror("%O\n", stats->all[-1]);
+	});
+}
+
 @hook_cheer:
 __async__ int cheer(object channel, mapping person, int bits, mapping extra) {
 	mapping stats = await(G->G->DB->load_config(channel->userid, "subgiftstats"));
