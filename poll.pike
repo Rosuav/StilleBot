@@ -556,7 +556,7 @@ __async__ void check_hooks() {
 		int userid = channel->userid;
 		if (!userid) continue; //Ignore the demo
 		//Seems unnecessary to do all this work every time.
-		multiset scopes = (multiset)(G->G->user_credentials[(int)userid]->scopes || ({ }));
+		multiset scopes = (multiset)(G->G->user_credentials[(int)userid]->?scopes || ({ }));
 		//TODO: Replace these with a call to establish_notifications(), ensuring that the conditions all work
 		//TODO: Check if the bot is actually a mod and use that permission
 		if (scopes["moderator:read:followers"]) //If we have the necessary permission, use the broadcaster's authentication.

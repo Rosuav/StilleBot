@@ -167,7 +167,7 @@ __async__ void populate_rewards_cache(string|int broadcaster_id, mapping|void cu
 	G->G->DB->load_all_configs("dynamic_rewards")->then() {
 		foreach (indices(G->G->irc->id), int userid)
 			if (userid && !pointsrewards[userid]) {
-				array scopes = G->G->user_credentials[(int)userid]->scopes || ({ });
+				array scopes = G->G->user_credentials[(int)userid]->?scopes || ({ });
 				if (has_value(scopes, "channel:manage:redemptions")
 					|| has_value(scopes, "channel:read:redemptions"))
 						populate_rewards_cache(userid, __ARGS__[0][userid] || ([]));
