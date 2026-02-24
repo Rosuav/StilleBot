@@ -513,6 +513,8 @@ void bitsused(object channel, mapping data) {
 
 __async__ void check_hooks() {
 	Concurrent.Promise completion;
+	//FIXME: If something crashes, this promise gets abandoned, and things get stuck. Replace
+	//it with another promise.
 	if (!G->G->eventhooks_ready) G->G->eventhooks_ready = completion = Concurrent.Promise();
 	array eventhooks = await(get_helix_paginated("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([]), (["authtype": "app"])));
 	multiset(string) have_conduitbroken = (<>);
