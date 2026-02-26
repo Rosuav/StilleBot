@@ -284,3 +284,21 @@
   and crown use this, but there's no general-purpose way to do it.
   - Consider changing format from "hitpoints" to "avatar", and then having a format_style
     to specify whether they get hitpoints.
+* It looks like IRC is not going to be the preferred way, soon. What will it take to move?
+  - Set up webhooks for incoming chat. Will require more perms. Might need to make a
+    fallback using IRC for when we don't have perms.
+  - EVERYTHING that currently goes through irc_message() will need to be fetched via
+    eventsub instead.
+    - Raids. Are they already getting caught? Do we even see them on IRC?
+    - unraid - is there value in reporting back to the raidfinder if you clicked Raid?
+      Can we even get that info via eventsub?
+    - Subscriptions of all kinds
+    - viewermilestone (eg watch streak) - not seen in eventsub
+    - cheerbadge
+    - announce? Might be less important. Also check if it shows up in chat messages.
+    - charity donation
+    - whispers
+    - purges/timeouts/clearchat - these definitely exist
+    - Some of this may be covered by channel.chat.notification, need to test
+  - Sending of messages will need to be done by API. What's the server load impact?
+    Do we get message IDs coming back? What more needs to happen?
