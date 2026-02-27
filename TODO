@@ -111,7 +111,7 @@
 * Identify whispers better
   - When a whisper comes in, be sure we know which voice received it
   - Allow whispers to trigger commands in some per-channel way
-    - Channel config->whispers_as_commands - no current way to set it
+    - Channel config->whispers_as_commands - no current way to set it, not active anywhere
     - What about secondary voices? For example, whispering CandiCat could execute commands
       in #devicat and then whisper the response from CandiCat.
 * Make the GUI command editor more accessible

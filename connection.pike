@@ -1304,6 +1304,8 @@ void autoreward(object channel, mapping data) {
 void chatmessage(object channel, mapping data) {
 	werror("CHAT MESSAGE %O %O\n", channel, data);
 }
+//TODO: Also hook channel.chat.notification=1 with all the same params. These between them will
+//handle most of what irc_message() currently receives.
 
 void session_cleanup() {
 	//Go through all HTTP sessions and dispose of old ones
