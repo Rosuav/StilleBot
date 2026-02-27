@@ -112,6 +112,9 @@ mapping predictionended(object channel, mapping info) {
 	return params;
 }
 
+//FIXME: According to https://dev.twitch.tv/docs/eventsub/eventsub-reference/#channel-ad-break-begin-condition
+//as of 20260227, this should have a condition of (["broadcaster_id": some_id]) rather than "broadcaster_user_id"
+//as is the case in all other subscriptions. Is this working? Maybe they accept either??
 @({"channel:read:ads", "channel.ad_break.begin", "1"}):
 mapping adbreak(object channel, mapping info) {
 	return ([
