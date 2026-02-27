@@ -18,8 +18,7 @@ constant badge_aliases = ([ //Fold a few badges together, and give shorthands fo
 //Go through a message's parameters/tags to get the info about the person
 //There may be some non-person info gathered into here too, just for
 //convenience; in fact, the name "person" here is kinda orphanned. (Tragic.)
-mapping(string:mixed) gather_person_info(mapping params, string msg)
-{
+mapping(string:mixed) gather_person_info_irc(mapping params, string msg) {
 	string user = params->login || params->user;
 	mapping ret = (["user": user]);
 	if (params->user_id && user) //Should always be the case
@@ -68,6 +67,31 @@ mapping(string:mixed) gather_person_info(mapping params, string msg)
 	}
 	if (int bits = (int)params->bits) ret->bits = bits;
 	//ret->raw = params; //For testing
+	return ret;
+}
+
+mapping(string:mixed) gather_person_info_eventsub(mapping data) {
+	mapping ret = (["user": data->chatter_user_login]);
+	ret->uid = (int)data->chatter_user_id;
+	notice_user_name(data->chatter_user_login, data->chatter_user_id);
+	ret->displayname = data->chatter_user_name;
+	ret->msgid = data->message_id;
+	ret->badges = ([]);
+	foreach (data->badges || ({ }), mapping badge) {
+		ret->badges[badge->set_id] = badge->id;
+		if (string flag = badge_aliases[badge->set_id]) ret->badges[flag] = badge->id;
+	}
+	if (0) {
+		//TODO: Handle data->message->fragments and probably rework everything that uses ret->emotes
+		ret->emotes = ({ });
+		foreach (data->message->fragments, mapping part) {
+			if (part->type == "emote") { //? check
+				ret->emotes += ({"??"});
+			}
+		}
+		//TODO: Check for cheer emotes, may need to get a sighting of them somehow
+	}
+	//ret->raw = data; //For testing
 	return ret;
 }
 
@@ -168,7 +192,7 @@ class channel(mapping identity) {
 	string color;
 	int userid; string login, display_name;
 	mapping raiders = ([]); //People who raided the channel this (or most recent) stream. Cleared on stream online.
-	mapping user_badges = ([]); //Latest-seen user badge status (see gather_person_info). Not guaranteed fresh.
+	mapping user_badges = ([]); //Latest-seen user badge status (see gather_person_info_*). Not guaranteed fresh.
 	//Command names are simple atoms (eg "foo" will handle the "!foo" command), or well-known
 	//bang-prefixed special triggers (eg "!resub" for a channel's resubscription trigger).
 	mapping(string:echoable_message) commands = ([]);
@@ -284,10 +308,21 @@ class channel(mapping identity) {
 		return ({0, ""});
 	}
 
-	//TODO: Figure out what this function's purpose is. I frankly have no idea why some
-	//code is in here, and other code is down in "case PRIVMSG" below. Whatever.
-	void handle_command(mapping person, string msg, mapping params)
-	{
+	void chat_message_received(mapping person, string msg, mapping params) {
+		request_rate_token(person->user, name);
+		if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
+		if (person->badges->?broadcaster && sscanf(msg, "fakecheer%d", int bits) && bits) {
+			//Allow the broadcaster to "fakecheer100" (start of message only) to
+			//test alerts etc. Note that "fakecheer-100" can also be done, if that
+			//is ever useful to your testing. It may confuse things though!
+			//Note that in shared chat, we only want to do this in the origin.
+			//TODO: Test this with eventsub chat.
+			if (!params->source_room_id || (int)params->source_room_id == userid) {
+				event_notify("cheer", this, person, bits, params, msg);
+				trigger_special("!cheer", person, (["{bits}": (string)bits, "{msg}": msg, "{msgid}": params->id || ""]));
+			}
+		}
+		chatlog("[" + name + "]", person, msg);
 		if (person->user) {
 			mapping p = G_G_("participants", name[1..], person->user);
 			p->lastnotice = time();
@@ -325,6 +360,8 @@ class channel(mapping identity) {
 		//(They still get other variable handling.) NOTE: This may change in the future.
 		//If a function specifically does not want %s handling, it should:
 		//m_delete(person->vars, "%s");
+		//CJA 20260227: I don't think we have such a thing as function commands any more?
+		//Confirm this, then drop support.
 		if (functionp(cmd)) send(person, cmd(this, person, param));
 		else send(person, cmd, person->vars);
 	}
@@ -955,7 +992,7 @@ class channel(mapping identity) {
 		//duplicate messages by excluding these from processing; however, all NOTICEs are still
 		//handled through here, pending full migration.
 		if (userid == 279141671 && type == "PRIVMSG") return;
-		mapping(string:mixed) person = gather_person_info(params, msg);
+		mapping(string:mixed) person = gather_person_info_irc(params, msg);
 		if (person->uid && person->badges) user_badges[person->uid] = person->badges;
 		lastmsg[(int)person->uid] = ({msg, params});
 		if (!is_active) return;
@@ -1123,32 +1160,11 @@ class channel(mapping identity) {
 			case "WHISPER": {
 				//For some reason, whispers show up with "/me" at the start, not "ACTION".
 				if (sscanf(msg, "/me %s", msg)) person->is_action_msg = 1;
-				//TODO maybe: If config->whispers_as_commands, call handle_command
+				//TODO maybe: If config->whispers_as_commands, call chat_message_received
 				chatlog("[WHISPER" + name + "]", person, msg);
 				break;
 			}
-			case "PRIVMSG": {
-				request_rate_token(person->user, name);
-				if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
-				if (person->badges->?broadcaster && sscanf(msg, "fakecheer%d", int bits) && bits) {
-					//Allow the broadcaster to "fakecheer100" (start of message only) to
-					//test alerts etc. Note that "fakecheer-100" can also be done, if that
-					//is ever useful to your testing. It may confuse things though!
-					params->bits = (string)bits;
-					person->bits = bits;
-					//Bits cheered during shared chat will be seen on both channels, but should only trigger
-					//specials in the origin channel. TODO: Should this check be done at a high level so we
-					//completely ignore everything from other rooms?
-					//Note that this now only handles fake cheers, but still, only process them in the origin.
-					if (!params->source_room_id || (int)params->source_room_id == userid) {
-						event_notify("cheer", this, person, bits, params, msg);
-						trigger_special("!cheer", person, (["{bits}": (string)bits, "{msg}": msg, "{msgid}": params->id || ""]));
-					}
-				}
-				handle_command(person, msg, params);
-				chatlog("[" + name + "]", person, msg);
-				break;
-			}
+			case "PRIVMSG": chat_message_received(person, msg, params); break;
 			//The delete-msg hook has person (the one who triggered it),
 			//target (the login who got purged), and msgid.
 			//The very similar delete-msgs hook has person (ditto) and
@@ -1292,6 +1308,10 @@ void autoreward(object channel, mapping data) {
 @EventNotify("channel.chat.message=1", ({"hack:channel:bot"}), "user_id"):
 void chatmessage(object channel, mapping data) {
 	werror("CHAT MESSAGE %O %O\n", channel, data);
+	mapping(string:mixed) person = gather_person_info_eventsub(data);
+	mapping params = (["color": data->color, "id": data->message_id]);
+	//TODO: custom_reward_id (need to get a sighting), emotes possibly
+	channel->chat_message_received(person, data->message->text, params);
 }
 //TODO: Also hook channel.chat.notification=1 with all the same params. These between them will
 //handle most of what irc_message() currently receives.
