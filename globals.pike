@@ -234,7 +234,22 @@ class hook {
 						array avail = (cred->?scopes || ({ })) & anno->scopes_required;
 						if (!sizeof(avail)) continue;
 					}
-					if (has_value(anno->event, '=')) G->G->establish_hook_notification(channelid, anno->event);
+					if (!has_value(anno->event, '=')) continue; //Not this sort of event
+					//All standard events have broadcaster_user_id, and this is what's used when checking if we
+					//have the hook. Some events require a "chatting user", for which we use the bot's intrinsic
+					//voice; so long as we have "channel:bot" permission from the broadcaster, all the specific
+					//permissions are granted by the chatting user, making things easy. However, some events
+					//require a nominated moderator. At some point it may be worth testing to see if we have an
+					//authenticated mod (probably mandating that it be MustardMine specifically), but for now,
+					//these events assume that it's the broadcaster who's given the permission, so the perms
+					//check will be done on the channelid.
+					//Note that I said "standard events". There are some events that have nothing to do with any
+					//channel; also, there are a few unusual ones, such as raiding, that need things to be done
+					//a bit differently. This function won't handle those events - they need to be done manually.
+					mapping cond = (["broadcaster_user_id": (string)channelid]);
+					if (anno->extra_cond == "user_id") cond->user_id = (string)G->G->bot_uid;
+					if (anno->extra_cond == "moderator_user_id") cond->moderator_user_id = (string)channelid;
+					G->G->establish_hook_notification(channelid, anno->event, cond);
 				}
 			}
 		}
@@ -243,7 +258,7 @@ class hook {
 
 //Usage: @EventNotify("channel.subscription.gift=1"): void subgift(mapping info) { }
 //Ties in with "inherit hook". (Or should it tie in with "inherit annotated" instead?)
-class EventNotify(string event, array|void scopes_required) {@constant; constant is_hook_annotation = 1;}
+class EventNotify(string event, array|void scopes_required, string|void extra_cond) {@constant; constant is_hook_annotation = 1;}
 
 //Old way of implementing hooks. Was buggy in a number of ways. Use "inherit hook" instead (see above).
 //Hook deregistration with register_hook("...event...", Program.defined(this_program)); is still permitted but useless.
