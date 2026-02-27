@@ -82,6 +82,10 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 ### Blighted_Angel
 1. What is Angel's favourite colour? `-4-__`
 2. Who deserves treats? `________`, `_______-30-__`, and `______`
+
+### Linvalin
+1. What's Lin's favourite Pokemon? `__-25-_____`
+2. What are community members called? `____` `___-12-___`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
