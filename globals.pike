@@ -232,6 +232,11 @@ class hook {
 						//or the hook will fail.
 						mapping cred = G->G->user_credentials[(int)channelid];
 						array avail = (cred->?scopes || ({ })) & anno->scopes_required;
+						//HACK: Until we're ready to finally migrate, only MustardMine uses the EventSub chat hook.
+						//All other channels continue to be driven exclusively by IRC. There is a corresponding hack
+						//in channels.pike irc_message() that excludes PRIVMSG for this channel, to avoid duplicate
+						//responses.
+						if (anno->scopes_required[0] == "hack:channel:bot" && (int)channelid == 279141671) avail = ({"ok"});
 						if (!sizeof(avail)) continue;
 					}
 					if (!has_value(anno->event, '=')) continue; //Not this sort of event

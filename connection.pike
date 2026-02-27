@@ -951,6 +951,10 @@ class channel(mapping identity) {
 
 	mapping subbomb_ids = ([]);
 	void irc_message(string type, string chan, string msg, mapping params) {
+		//HACK: MustardMine is being operated using test-mode EventSub chat notifications. Avoid
+		//duplicate messages by excluding these from processing; however, all NOTICEs are still
+		//handled through here, pending full migration.
+		if (userid == 279141671 && type == "PRIVMSG") return;
 		mapping(string:mixed) person = gather_person_info(params, msg);
 		if (person->uid && person->badges) user_badges[person->uid] = person->badges;
 		lastmsg[(int)person->uid] = ({msg, params});
@@ -1130,7 +1134,7 @@ class channel(mapping identity) {
 			case "WHISPER": responsedefaults = (["dest": "/w", "target": "$$"]); //fallthrough
 			case "PRIVMSG":
 			{
-				request_rate_token(person->user, name); //Do we need to lowercase it?
+				request_rate_token(person->user, name);
 				if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
 				//For some reason, whispers show up with "/me" at the start, not "ACTION".
 				else if (sscanf(msg, "/me %s", msg)) person->is_action_msg = 1;
@@ -1140,9 +1144,9 @@ class channel(mapping identity) {
 					//is ever useful to your testing. It may confuse things though!
 					params->bits = (string)bits;
 					person->bits = bits;
-					//1Bits cheered during shared chat will be seen on both channels, but should only trigger
-					//2specials in the origin channel. TODO: Should this check be done at a high level so we
-					//3completely ignore everything from other rooms?
+					//Bits cheered during shared chat will be seen on both channels, but should only trigger
+					//specials in the origin channel. TODO: Should this check be done at a high level so we
+					//completely ignore everything from other rooms?
 					//Note that this now only handles fake cheers, but still, only process them in the origin.
 					if (!params->source_room_id || (int)params->source_room_id == userid) {
 						event_notify("cheer", this, person, bits, params, msg);
@@ -1294,6 +1298,15 @@ void autoreward(object channel, mapping data) {
 	//cost bits. The ones that cost bits count as cheers and advance goal bars by also triggering
 	//the channel.bits.use event, so currently none of these actually need to do anything.
 	werror("AUTO REWARD %O %O\n", channel, data);
+}
+
+//HACK: This function is used only for MustardMine, as the EventSub chat handling is under test.
+//Thus the required permission is one that will never actually occur, but which triggers alternate
+//handling. When this goes live, replacing the permission with "channel:bot" will instantly activate
+//this for all managed channels.
+@EventNotify("channel.chat.message=1", ({"hack:channel:bot"}), "user_id"):
+void chatmessage(object channel, mapping data) {
+	werror("CHAT MESSAGE %O %O\n", channel, data);
 }
 
 void session_cleanup() {
