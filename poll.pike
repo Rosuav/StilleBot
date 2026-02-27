@@ -611,6 +611,7 @@ void poll()
 	array chan = indices(G->G->irc->?id || ([]));
 	chan = filter(chan) {return __ARGS__[0];}; //Exclude !demo which has a userid of 0
 	if (!sizeof(chan)) return; //Nothing to check.
+	chan += ({1314578532}); //HACK: Experiment with adding more channels to this check, even though they're not "tracked channels". Call them watched channels maybe?
 	//Prune any "channel online" statuses for channels we don't track any more
 	foreach (indices(stream_online_since) - chan, int id) m_delete(stream_online_since, id);
 	//Note: There's a slight TOCTOU here - the list of channel IDs will be
