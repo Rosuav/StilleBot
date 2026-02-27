@@ -21,7 +21,7 @@ constant badge_aliases = ([ //Fold a few badges together, and give shorthands fo
 mapping(string:mixed) gather_person_info(mapping params, string msg)
 {
 	string user = params->login || params->user;
-	mapping ret = (["nick": user, "user": user]); //TODO: Is nick used anywhere? If not, remove.
+	mapping ret = (["user": user]);
 	if (params->user_id && user) //Should always be the case
 	{
 		ret->uid = (int)params->user_id;
@@ -1130,7 +1130,7 @@ class channel(mapping identity) {
 			case "WHISPER": responsedefaults = (["dest": "/w", "target": "$$"]); //fallthrough
 			case "PRIVMSG":
 			{
-				request_rate_token(lower_case(person->nick), name); //Do we need to lowercase it?
+				request_rate_token(person->user, name); //Do we need to lowercase it?
 				if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
 				//For some reason, whispers show up with "/me" at the start, not "ACTION".
 				else if (sscanf(msg, "/me %s", msg)) person->is_action_msg = 1;
