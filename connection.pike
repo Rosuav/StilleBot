@@ -286,7 +286,7 @@ class channel(mapping identity) {
 
 	//TODO: Figure out what this function's purpose is. I frankly have no idea why some
 	//code is in here, and other code is down in "case PRIVMSG" below. Whatever.
-	void handle_command(mapping person, string msg, mapping defaults, mapping params)
+	void handle_command(mapping person, string msg, mapping params)
 	{
 		if (person->user) {
 			mapping p = G_G_("participants", name[1..], person->user);
@@ -959,7 +959,6 @@ class channel(mapping identity) {
 		if (person->uid && person->badges) user_badges[person->uid] = person->badges;
 		lastmsg[(int)person->uid] = ({msg, params});
 		if (!is_active) return;
-		mapping responsedefaults;
 		//For some unknown reason, certain types of notification come through
 		//as PRIVMSG when they would more logically be a NOTICE. They're usually
 		//suppressed from the default chat view, but are visible to bots.
@@ -1105,18 +1104,7 @@ class channel(mapping identity) {
 					]));
 					break;
 				}
-				case "announcement": //The /announce command
-					if (!config->chatlog) break;
-					//Has a msg_param_color that is either PRIMARY or a colour word eg "PURPLE"
-					string pfx = sprintf("** %s ** ", name);
-					#ifdef __NT__
-					int wid = 80 - sizeof(pfx);
-					#else
-					int wid = (Stdio.stdin->tcgetattr()->?columns || 1024) - sizeof(pfx);
-					#endif
-					msg = string_to_utf8(msg) + " "; //Trailing space improves wrapping with %= mode
-					write("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
-					break;
+				case "announcement": chatlog(sprintf("** %s ** ", name), person, msg); break; //The /announce command
 				case "charitydonation":
 					trigger_special("!charity", person, ([
 						"{amount}": params->msg_param_donation_amount + " " + params->msg_param_donation_currency,
@@ -1132,7 +1120,7 @@ class channel(mapping identity) {
 					Stdio.append_file("notice.log", sprintf("%sUnknown %s %s %s %O\n", ctime(time()), type, chan, msg, params));
 			}
 			break;
-			case "WHISPER": responsedefaults = (["dest": "/w", "target": "$$"]); //fallthrough
+			case "WHISPER":
 			case "PRIVMSG":
 			{
 				request_rate_token(person->user, name);
@@ -1155,18 +1143,9 @@ class channel(mapping identity) {
 					}
 				}
 				if (type != "WHISPER" || config->whispers_as_commands) //Whispers aren't normally counted as commands
-					handle_command(person, msg, responsedefaults, params);
-				if (!config->chatlog) break;
-				msg = person->displayname + (person->is_action_msg ? " " : ": ") + msg;
-				string pfx = sprintf("[%s%s] ", type == "PRIVMSG" ? "" : type, name);
-				#ifdef __NT__
-				int wid = 80 - sizeof(pfx);
-				#else
-				int wid = (Stdio.stdin->tcgetattr()->?columns || 1024) - sizeof(pfx);
-				#endif
-				if (person->badges->?_mod) msg = "\u2694 " + msg;
-				msg = string_to_utf8(msg) + " "; //Trailing space improves wrapping with %= mode
-				write("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
+					handle_command(person, msg, params);
+				if (type == "WHISPER") chatlog(sprintf("[WHISPER%s] ", name), person, msg);
+				else chatlog("[" + name + "]", person, msg);
 				break;
 			}
 			//The delete-msg hook has person (the one who triggered it),
@@ -1207,6 +1186,15 @@ class channel(mapping identity) {
 			}
 			default: werror("Unknown message type %O on channel %s\n", type, name);
 		}
+	}
+
+	void chatlog(string pfx, mapping person, string msg) {
+		if (!config->chatlog) return;
+		int wid = (Stdio.stdin->tcgetattr()->?columns || 1024) - sizeof(pfx);
+		msg = person->displayname + (person->is_action_msg ? " " : ": ") + msg;
+		if (person->badges->?_mod) msg = "\u2694 " + msg;
+		msg = string_to_utf8(msg) + " "; //Trailing space improves wrapping with %= mode
+		write("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
 	}
 
 	void trigger_special(string special, mapping person, mapping info) {
