@@ -1106,6 +1106,7 @@ class channel(mapping identity) {
 					break;
 				}
 				case "announcement": //The /announce command
+					if (!config->chatlog) break;
 					//Has a msg_param_color that is either PRIMARY or a colour word eg "PURPLE"
 					string pfx = sprintf("** %s ** ", name);
 					#ifdef __NT__
@@ -1114,7 +1115,7 @@ class channel(mapping identity) {
 					int wid = (Stdio.stdin->tcgetattr()->?columns || 1024) - sizeof(pfx);
 					#endif
 					msg = string_to_utf8(msg) + " "; //Trailing space improves wrapping with %= mode
-					log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
+					write("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
 					break;
 				case "charitydonation":
 					trigger_special("!charity", person, ([
@@ -1155,6 +1156,7 @@ class channel(mapping identity) {
 				}
 				if (type != "WHISPER" || config->whispers_as_commands) //Whispers aren't normally counted as commands
 					handle_command(person, msg, responsedefaults, params);
+				if (!config->chatlog) break;
 				msg = person->displayname + (person->is_action_msg ? " " : ": ") + msg;
 				string pfx = sprintf("[%s%s] ", type == "PRIVMSG" ? "" : type, name);
 				#ifdef __NT__
@@ -1164,7 +1166,7 @@ class channel(mapping identity) {
 				#endif
 				if (person->badges->?_mod) msg = "\u2694 " + msg;
 				msg = string_to_utf8(msg) + " "; //Trailing space improves wrapping with %= mode
-				log("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
+				write("%s%s\e[0m", color, sprintf("%*s%-=*s\n",sizeof(pfx),pfx,wid,msg));
 				break;
 			}
 			//The delete-msg hook has person (the one who triggered it),
@@ -1205,12 +1207,6 @@ class channel(mapping identity) {
 			}
 			default: werror("Unknown message type %O on channel %s\n", type, name);
 		}
-	}
-
-	//Requires a UTF-8 encoded byte string (not Unicode text). May contain colour codes.
-	void log(strict_sprintf_format fmt, sprintf_args ... args)
-	{
-		if (config->chatlog) write(fmt, @args);
 	}
 
 	void trigger_special(string special, mapping person, mapping info) {
