@@ -1120,13 +1120,16 @@ class channel(mapping identity) {
 					Stdio.append_file("notice.log", sprintf("%sUnknown %s %s %s %O\n", ctime(time()), type, chan, msg, params));
 			}
 			break;
-			case "WHISPER":
-			case "PRIVMSG":
-			{
+			case "WHISPER": {
+				//For some reason, whispers show up with "/me" at the start, not "ACTION".
+				if (sscanf(msg, "/me %s", msg)) person->is_action_msg = 1;
+				//TODO maybe: If config->whispers_as_commands, call handle_command
+				chatlog("[WHISPER" + name + "]", person, msg);
+				break;
+			}
+			case "PRIVMSG": {
 				request_rate_token(person->user, name);
 				if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
-				//For some reason, whispers show up with "/me" at the start, not "ACTION".
-				else if (sscanf(msg, "/me %s", msg)) person->is_action_msg = 1;
 				if (person->badges->?broadcaster && sscanf(msg, "fakecheer%d", int bits) && bits) {
 					//Allow the broadcaster to "fakecheer100" (start of message only) to
 					//test alerts etc. Note that "fakecheer-100" can also be done, if that
@@ -1142,10 +1145,8 @@ class channel(mapping identity) {
 						trigger_special("!cheer", person, (["{bits}": (string)bits, "{msg}": msg, "{msgid}": params->id || ""]));
 					}
 				}
-				if (type != "WHISPER" || config->whispers_as_commands) //Whispers aren't normally counted as commands
-					handle_command(person, msg, params);
-				if (type == "WHISPER") chatlog(sprintf("[WHISPER%s] ", name), person, msg);
-				else chatlog("[" + name + "]", person, msg);
+				handle_command(person, msg, params);
+				chatlog("[" + name + "]", person, msg);
 				break;
 			}
 			//The delete-msg hook has person (the one who triggered it),
