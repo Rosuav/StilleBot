@@ -86,6 +86,7 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 ### Linvalin
 1. What's Lin's favourite Pokemon? `__-25-_____`
 2. What are Lin's community members called? `____` `___-12-___`
+3. Name Lin's main OC: `_-2-___`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
