@@ -302,4 +302,3 @@
     - Some of this may be covered by channel.chat.notification, need to test
   - Sending of messages will need to be done by API. What's the server load impact?
     Do we get message IDs coming back? What more needs to happen?
-* /c/specials save-all button is broken

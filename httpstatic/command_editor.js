@@ -335,7 +335,7 @@ on("click", "#saveall", e => {
 		}
 		//Take a copy of the original command (we're going to JSON-encode it anyway, so this should
 		//be safe) and inject the new message text into it.
-		let response = JSON.parse(JSON.stringify(commands[tr.dataset.id]));
+		let response = JSON.parse(JSON.stringify(commands[tr.dataset.id] || ""));
 		if (typeof response === "string") response = msg;
 		else scan_message(response, {replacetext: msg});
 		ws_sync.send({cmd: "cmdedit_update", cmdname: tr.dataset.id, response});
