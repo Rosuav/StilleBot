@@ -1198,7 +1198,7 @@ class channel(mapping identity) {
 				break;
 			case "USERSTATE": { //Sent after our messages. The only ones we care about are those with nonces we sent.
 				array callback = m_delete(nonce_callbacks, params->client_nonce);
-				if (callback) callback[0](callback[1], params);
+				if (callback) callback[0](callback[1], (["message_id": params->id]));
 				break;
 			}
 			default: werror("Unknown message type %O on channel %s\n", type, name);

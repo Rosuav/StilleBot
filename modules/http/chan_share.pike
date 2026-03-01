@@ -108,11 +108,11 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		(["displayname": user->display_name]),
 		settings->msgformat || DEFAULT_MSG_FORMAT,
 		(["{URL}": file->metadata->url, "{sharerid}": user->id, "{fileid}": file->id]),
-	) {[mapping vars, mapping params] = __ARGS__;
+	) {[mapping vars, mapping result] = __ARGS__;
 		//Note that the channel ID isn't strictly necessary, as any deletion signal will
 		//itself be associated with that channel; but it's nice to have for debugging.
-		artshare_messageid[params->id] = ({(string)file->channel, vars["{sharerid}"], vars["{fileid}"]});
-		artshare_file_messageid[vars["{fileid}"]] = params->id;
+		artshare_messageid[result->message_id] = ({(string)file->channel, vars["{sharerid}"], vars["{fileid}"]});
+		artshare_file_messageid[vars["{fileid}"]] = result->message_id;
 	};
 }
 
