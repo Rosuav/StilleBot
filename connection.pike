@@ -1313,8 +1313,11 @@ void chatmessage(object channel, mapping data) {
 	//TODO: custom_reward_id (need to get a sighting), emotes possibly
 	channel->chat_message_received(person, data->message->text, params);
 }
-//TODO: Also hook channel.chat.notification=1 with all the same params. These between them will
-//handle most of what irc_message() currently receives.
+
+@EventNotify("channel.chat.notification=1", ({"hack:channel:bot"}), "user_id"): //Same hack as above for the same reason
+void chatnotification(object channel, mapping data) {
+	werror("CHAT NOTIFICATION %O %O\n", channel, data);
+}
 
 void session_cleanup() {
 	//Go through all HTTP sessions and dispose of old ones
