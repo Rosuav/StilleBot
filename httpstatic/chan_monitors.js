@@ -91,7 +91,7 @@ function set_values(info, elem) {
 
 const preset_defaults = {
 	format: "plain",
-	bit: "", tip: "", follow: "",
+	bit: "", tip: "", se_tip: "", follow: "",
 	sub_t1: "", sub_t2: "", sub_t3: "",
 	kofi_dono: "", kofi_member: "", kofi_renew: "", kofi_shop: "", kofi_commission: "",
 	fw_dono: "", fw_member: "", fw_shop: "", fw_gift: "",
@@ -110,7 +110,7 @@ const presets = {
 	},
 	"Financial support": {...preset_defaults,
 		format: "currency",
-		bit: 1, tip: 1,
+		bit: 1, tip: 1, se_tip: 1,
 		sub_t1: 500, sub_t2: 1000, sub_t3: 2500,
 		kofi_dono: 1, kofi_member: 1, kofi_shop: 1, kofi_commission: 1,
 		fw_dono: 1, fw_member: 1, fw_shop: 1, fw_gift: 1,
@@ -348,7 +348,8 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 				//TR(TH({colSpan: 2}, "Other")), //I detest calling this "Other", but what else is it??
 				[
 					["Cheers", "bit", bitsscopes],
-					["Streamlabs", "tip"],
+					["Streamlabs", "tip"], //For hysterical raisins, this is just called "tip", not "sl_tip"
+					["Streamelements", "se_tip"],
 					["Follows", "follow", followersscopes],
 				].map(([lbl, name, scopes]) => TR([
 					TD(LABEL({for: name}, lbl)),
