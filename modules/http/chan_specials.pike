@@ -39,7 +39,9 @@ constant ENABLEABLE_FEATURES = ([
 		])]),
 	]),
 	"raidshield": ([
-		"description": "Alert incoming raiders if they're still broadcasting",
+		//Not sure if I'm going to keep supporting this, but for now it will still work. I don't think
+		//it's as useful as I previously thought though.
+		"description": "Alert incoming raiders if they're still broadcasting (deprecated, not recommended)",
 		"special": "!raided",
 		"fragment": "#!raided/",
 		"response": ([
