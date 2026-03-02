@@ -252,7 +252,9 @@ const callbacks = {
 			const cur_dir = gamestate.traits[top_trait] > 0 ? "P" : "N";
 			if (cur_dir === top_dir) {
 				//Strengthen the current trait. For example, you're already Aggressive and the request was for more aggressiveness.
-				gamestate.traits[top_trait] += Math.random() / 2 + 0.25; //Empower it by 0.25-0.75
+				const delta = Math.random() / 2 + 0.25; //Empower it by 0.25-0.75
+				if (cur_dir === "N") gamestate.traits[top_trait] -= delta;
+				else gamestate.traits[top_trait] += delta;
 			} else {
 				//Weaken the current trait, which might flip it.
 				const effect = Math.random() + 0.5;
