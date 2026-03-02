@@ -489,12 +489,21 @@ void got_follower(object channel, mapping follower) {
 };
 
 @EventNotify("channel.raid=1"):
-void raidout(object _, mapping info) {
-	object channel = G->G->irc->id[(int)info->from_broadcaster_user_id]; if (!channel) return;
-	Stdio.append_file("outgoing_raids.log", sprintf("[%s] %s => %s with %d\n",
-		Calendar.now()->format_time(), string_to_utf8(info->from_broadcaster_user_name), string_to_utf8(info->to_broadcaster_user_name), (int)info->viewers));
-	channel->record_raid((int)info->from_broadcaster_user_id, info->from_broadcaster_user_name,
-		(int)info->to_broadcaster_user_id, info->to_broadcaster_user_name, 0, (int)info->viewers);
+void record_raid(object _, mapping info) {
+	//Note that record_raid could be called twice if one tracked channel raids another.
+	//If add_raid() is called twice within sixty seconds with the same from/to, it'll
+	//be suppressed.
+	G->G->DB->add_raid(info->from_broadcaster_user_id, info->to_broadcaster_user_id, ([
+		"time": time(),
+		"from": info->from_broadcaster_user_name, "to": info->to_broadcaster_user_name,
+		"viewers": undefinedp(info->viewers) ? -1 : (int)info->viewers,
+	]));
+	object from_channel = G->G->irc->id[(int)info->from_broadcaster_user_id];
+	object to_channel = G->G->irc->id[(int)info->to_broadcaster_user_id];
+	if (from_channel) Stdio.append_file("outgoing_raids.log", sprintf("[%s] %s => %s with %d\n",
+		Calendar.now()->format_time(), string_to_utf8(info->from_broadcaster_user_name),
+		string_to_utf8(info->to_broadcaster_user_name), (int)info->viewers));
+	if (to_channel) to_channel->incoming_raid(info);
 }
 
 @EventNotify("channel.bits.use=1", ({"bits:read"})):

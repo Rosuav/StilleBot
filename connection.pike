@@ -108,13 +108,6 @@ mapping(string:function(string:string)) text_filters = ([
 	},
 ]);
 
-__async__ void raidwatch(int channel, string raiddesc) {
-	await(task_sleep(30)); //It seems common for streamers to be offline after about 30 seconds
-	string status = "error";
-	mixed ex = catch {status = await(channel_still_broadcasting(channel));};
-	Stdio.append_file("raidwatch.log", sprintf("[%s] %s: %s\n", ctime(time())[..<1], raiddesc, status));
-}
-
 @create_hook:
 constant allmsgs = ({"object channel", "mapping person", "string msg"});
 @create_hook:
@@ -969,22 +962,11 @@ class channel(mapping identity) {
 		return _substitute_vars(text, vars, ([]), users || ([]));
 	}
 
-	__async__ void record_raid(int fromid, string fromname, int toid, string toname, int|void ts, int|void viewers)
-	{
-		write("Detected a raid: %O %O %O %O %O\n", fromid, fromname, toid, toname, ts);
-		if (!ts) ts = time();
-		//JavaScript timestamps seem to be borked (given in ms instead of seconds).
-		//Real timestamps won't hit this threshold until September 33658. At some
-		//point close to that date (!), adjust this threshold.
-		else if (ts > 1000000000000) ts /= 1000;
-		if (!fromid) fromid = await(get_user_id(fromname));
-		if (!toid) toid = await(get_user_id(toname));
-		raidwatch(fromid, sprintf("%s raided %s", fromname, toname));
-		await(G->G->DB->add_raid(fromid, toid, ([
-			"time": ts,
-			"from": fromname, "to": toname,
-			"viewers": undefinedp(viewers) ? -1 : (int)viewers,
-		])));
+	void incoming_raid(mapping info) {
+		raiders[(int)info->from_broadcaster_user_id] = time();
+		mapping person = (["displayname": info->from_broadcaster_user_name,
+			"name": info->from_broadcaster_user_login, "uid": info->from_broadcaster_user_id]);
+		trigger_special("!raided", person, (["{viewers}": (string)info->viewers]));
 	}
 
 	mapping subbomb_ids = ([]);
@@ -1020,20 +1002,8 @@ class channel(mapping identity) {
 					*/
 					break;
 				case "ban_success": break; //Just banned someone. Probably only a response to an autoban.
-				case "raid": //Incoming raids already get announced and we don't get any more info
-				{
-					//Stdio.append_file("incoming_raids.log", sprintf("%s Debug incoming raid: chan %s user %O params %O\n",
-					//	ctime(time())[..<1], name, person->displayname, params));
-					//NOTE: The destination "room ID" might not remain forever.
-					//If it doesn't, we'll need to get the channel's user id instead.
-					raiders[(int)params->user_id] = time();
-					record_raid((int)params->user_id, person->displayname,
-						(int)params->room_id, name[1..], (int)params->tmi_sent_ts,
-						(int)params->msg_param_viewerCount);
-					trigger_special("!raided", person, (["{viewers}": params->msg_param_viewerCount]));
-					break;
-				}
-				case "unraid": break; //Raid has been cancelled, nothing to see here.
+				case "raid": break; //Incoming raids get announced via EventSub
+				case "unraid": break; //Raid has been cancelled - might be worth notifying raidfinder if it caused the raid in the first place
 				case "rewardgift": //Used for special promo messages eg "so-and-so's cheer just gave X people a bonus emote"
 				{
 					//write("DEBUG REWARDGIFT: chan %s disp %O user %O params %O\n",
