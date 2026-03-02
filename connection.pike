@@ -81,16 +81,7 @@ mapping(string:mixed) gather_person_info_eventsub(mapping data) {
 		ret->badges[badge->set_id] = badge->id;
 		if (string flag = badge_aliases[badge->set_id]) ret->badges[flag] = badge->id;
 	}
-	if (0) {
-		//TODO: Handle data->message->fragments and probably rework everything that uses ret->emotes
-		ret->emotes = ({ });
-		foreach (data->message->fragments, mapping part) {
-			if (part->type == "emote") { //? check
-				ret->emotes += ({"??"});
-			}
-		}
-		//TODO: Check for cheer emotes, may need to get a sighting of them somehow
-	}
+	if (data->message->fragments) ret->fragments = data->message->fragments;
 	//ret->raw = data; //For testing
 	return ret;
 }

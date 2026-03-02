@@ -303,3 +303,5 @@
   - Sending of messages will need to be done by API. What's the server load impact?
     Do we get message IDs coming back? What more needs to happen?
 * Monitors, goal bar, variable drop down (see artsirenmj) - why list dot-star vars? Bug?
+* Find everything that refers to person->emotes or equivalent and have it also check for
+  person->fragments, which is what will be provided via EventSub chat
