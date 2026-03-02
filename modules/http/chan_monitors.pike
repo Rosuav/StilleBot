@@ -633,7 +633,6 @@ int message(object channel, mapping person, string msg)
 	if (person->user == "streamelements") {
 		//The format here depends on configuration. Hopefully this is sufficiently general.
 		sscanf(msg - ",", "%s just tipped $%d.%d", string user, int dollars, int cents);
-		Stdio.append_file("streamelements.log", sprintf("%sStreamElements tip: %O %O %O.%O\n%O\n%O\n", ctime(time()), channel, user, dollars, cents, msg, person));
 		autoadvance(channel, person | (["from_name": user]), "se_tip", 100 * dollars + cents);
 	}
 }
