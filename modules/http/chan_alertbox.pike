@@ -1356,7 +1356,7 @@ mapping parse_emotes(string text, mapping person) {
 	string noemotes = "";
 	array emoted = ({ });
 	int pos = 0;
-	if (person->emotes) foreach (person->emotes, [string id, int start, int end]) {
+	if (person->emotes) foreach (person->emotes, [string id, int start, int end]) { //IRC handling
 		string before = text[pos..start-1];
 		noemotes += before; emoted += ({before});
 		emoted += ({([
@@ -1367,6 +1367,15 @@ mapping parse_emotes(string text, mapping person) {
 			"title": text[start..end], //Emote name
 		])});
 		pos = end + 1;
+	}
+	else if (person->fragments) foreach (person->fragments, mapping f) { //EventSub handling
+		if (f->text) noemotes += f->text;
+		if (f->type == "text") emoted += ({f->text});
+		//TODO: Are cheer emotes detected properly here?
+		else if (f->type == "emote") emoted += ({([
+			"img": emote_url(f->emote->id, 3),
+			"title": f->text,
+		])});
 	}
 	return (["_noemotes": noemotes + text[pos..], "_emoted": emoted + ({text[pos..]})]);
 }

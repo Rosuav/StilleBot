@@ -336,13 +336,19 @@ class channel(mapping identity) {
 		if (msg[offset..offset+sizeof(param)] != param) offset = -1; //TODO: Strip whites from around param without breaking this
 		person->measurement_offset = offset;
 		string emoted = "", residue = param;
-		foreach (person->emotes || ({ }), [string id, int start, int end]) {
+		if (person->emotes) foreach (person->emotes, [string id, int start, int end]) { //IRC-style emotes
 			emoted += sprintf("%s\uFFFAe%s:%s\uFFFB",
 				residue[..start - offset - 1], //Text before the emote
 				id, residue[start-offset..end-offset], //Emote ID and name
 			);
 			residue = residue[end - offset + 1..];
 			offset = end + 1;
+		}
+		else if (person->fragments) foreach (person->fragments, mapping f) { //EventSub-style emotes
+			if (f->type == "text") emoted += f->text;
+			//TODO: Cheer emotes? Not sure, maybe just leave them like regular emotes.
+			else if (f->type == "emote") emoted += sprintf("\uFFFAe%s:%s\uFFFB", f->emote->id, f->text);
+			residue = "";
 		}
 		person->vars["%s"] = param;
 		person->vars["{@emoted}"] = emoted + residue;
@@ -1305,7 +1311,7 @@ void chatmessage(object channel, mapping data) {
 	werror("CHAT MESSAGE %O %O\n", channel, data);
 	mapping(string:mixed) person = gather_person_info_eventsub(data);
 	mapping params = (["color": data->color, "id": data->message_id]);
-	//TODO: custom_reward_id (need to get a sighting), emotes possibly
+	//TODO: custom_reward_id (need to get a sighting)
 	channel->chat_message_received(person, data->message->text, params);
 }
 
