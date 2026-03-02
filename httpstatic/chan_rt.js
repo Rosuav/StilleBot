@@ -270,7 +270,8 @@ const callbacks = {
 		save_game();
 	},
 	flashed(level) {
-		gamestate.stats.xp += Math.ceil(BASE_MONSTER_XP * 4 * (1.4 ** level));
+		//gamestate.stats.xp += Math.ceil(BASE_MONSTER_XP * 4 * (1.4 ** level));
+		gamestate.stats.xp += Math.floor(gamestate.stats.prevlevel / 2); //Give half a level's worth of XP, more or less
 		DOM("#pathway").classList.add("flashed");
 		setTimeout(() => DOM("#pathway").classList.remove("flashed"), 4000);
 	},
