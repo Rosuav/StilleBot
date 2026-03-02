@@ -74,7 +74,7 @@ const bosses = [{
 		}
 	},
 }, {
-	minlevel: 50, level: 75, hpmul: 1.25,
+	minlevel: 50, level: 65, hpmul: 1.25,
 	name: "Mirror",
 	longname: "Mirror of Truth",
 	lore: [
