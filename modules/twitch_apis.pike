@@ -355,13 +355,14 @@ Concurrent.Future chat(object channel, string voiceid, string msg, mapping tok) 
 //not have any useful data in it (it's probably just a status report from an API
 //call or something).
 string|Concurrent.Future send_chat_command(object channel, string voiceid, string msg) {
-	string cmd = "chat";
+	string cmd;
 	if (has_prefix(msg, "/") && !has_prefix(msg, "/me ")) {
 		sscanf(msg, "/%[^ ] %s", string c, string param);
 		if (!need_scope[c]) msg = " " + msg; //Render "/asdf" as " /asdf" so it gets output correctly
 		else {cmd = c; msg = param || "";}
 	}
-	if (cmd == "chat") return msg; //Send via IRC, requires less credentials. Remove this to use the API instead.
+	if (!cmd) return msg; //Send via IRC, requires less credentials.
+	//if (!cmd) cmd = "chat"; //Send all messages via API (as if the /chat command was used)
 	mapping tok = G->G->user_credentials[(int)voiceid];
 	if (!voiceid || voiceid == "0") {
 		voiceid = (string)G->G->bot_uid;

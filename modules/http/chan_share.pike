@@ -106,7 +106,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	mapping settings = await(G->G->DB->load_config(file->channel, "artshare"));
 	G->G->irc->id[file->channel]->send(
 		(["displayname": user->display_name]),
-		settings->msgformat || DEFAULT_MSG_FORMAT,
+		"/chat " + (settings->msgformat || DEFAULT_MSG_FORMAT),
 		(["{URL}": file->metadata->url, "{sharerid}": user->id, "{fileid}": file->id]),
 	) {[mapping vars, mapping result] = __ARGS__;
 		//Note that the channel ID isn't strictly necessary, as any deletion signal will

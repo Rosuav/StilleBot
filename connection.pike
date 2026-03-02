@@ -893,7 +893,11 @@ class channel(mapping identity) {
 			//Attempt to send the message(s) via the Twitch APIs if they have slash commands
 			//Any that can't be sent that way will be sent the usual way.
 			string|Concurrent.Future handled = G->G->send_chat_command(this, voice, prefix + msg);
-			if (objectp(handled) && handled->on_await) await(handled);
+			if (objectp(handled) && handled->on_await) handled = await(handled);
+			//Having a callback and slash commands may result in strange behaviour.
+			//To absolutely guarantee that user-provided commands won't trigger slash commands,
+			//prefix with "/chat ", which will force them to be sent via the API (not IRC).
+			if (cfg->callback && mappingp(handled) && arrayp(handled->data)) cfg->callback(vars, handled->data[0]);
 			if (!stringp(handled)) return; //Promises have no meaningful response, and null means there's nothing to do
 			msg = handled;
 		}
