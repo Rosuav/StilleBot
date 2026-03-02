@@ -115,9 +115,9 @@ constant subscription = ({"object channel", "string type", "mapping person", "st
 @create_hook:
 constant cheer = ({"object channel", "mapping person", "int bits", "mapping extra", "string msg"});
 @create_hook:
-constant deletemsg = ({"object channel", "object person", "string target", "string msgid"});
+constant deletemsg = ({"object channel", "string target", "string msgid"});
 @create_hook:
-constant deletemsgs = ({"object channel", "object person", "string target"});
+constant deletemsgs = ({"object channel", "string target"});
 
 __async__ void voice_enable(string voiceid, string chan, mapping|void tags) {
 	mapping tok = G->G->user_credentials[(int)voiceid];
@@ -1136,36 +1136,10 @@ class channel(mapping identity) {
 				break;
 			}
 			case "PRIVMSG": chat_message_received(person, msg, params); break;
-			//The delete-msg hook has person (the one who triggered it),
-			//target (the login who got purged), and msgid.
-			//The very similar delete-msgs hook has person (ditto) and
-			//target (the *user id* who got purged), which may be null.
-			//(If target is null, all chat got cleared ("/clear").)
-			//When anyone's chat gets deleted, that user gets removed from
-			//the participant list, so autobanned people won't ever get
-			//acknowledged accidentally.
-			case "CLEARMSG":
-				event_notify("deletemsg", this, person, params->login, params->target_msg_id);
-				G_G_("participants", name[1..], params->login)->lastnotice = 0;
-				break;
+			case "CLEARMSG": delete_single_message(params->login, params->target_msg_id); break;
 			case "CLEARCHAT":
-				G_G_("banned_list", (string)userid)->stale = 1; //When anyone's banned/timed out, drop the banned users cache
-				event_notify("deletemsgs", this, person, params->target_user_id);
-				if (params->target_user_id) get_user_info(params->target_user_id)->then() {
-					if (array m = lastmsg[(int)params->target_user_id]) {
-						//Log the last message of timed-out/banned users for reference.
-						//Might help with updating autoban.
-						Stdio.append_file("timeouts.log", sprintf("====== %sTimed out: %O\nLast message: %O\n", ctime(time()), params, m));
-					}
-					mapping user = __ARGS__[0];
-					G_G_("participants", name[1..], user->login)->lastnotice = 0;
-					trigger_special("!timeout", ([
-						"nick": user->login, "user": user->login,
-						"uid": (int)user->id,
-						"displayname": user->display_name,
-					]),
-					(["{ban_duration}": params->ban_duration]));
-				};
+				if (params->target_user_id) delete_user_messages(params->target_user_id, params->ban_duration);
+				else delete_all_messages();
 				break;
 			case "USERSTATE": { //Sent after our messages. The only ones we care about are those with nonces we sent.
 				array callback = m_delete(nonce_callbacks, params->client_nonce);
@@ -1174,6 +1148,39 @@ class channel(mapping identity) {
 			}
 			default: werror("Unknown message type %O on channel %s\n", type, name);
 		}
+	}
+
+	//The delete-msg hook has target (the user who got purged), and msgid.
+	//The very similar delete-msgs hook has person (ditto) and target, which may be null.
+	//(If target is null, all chat got cleared ("/clear").)
+	//NOTE: The target in deletemsg is the login, but in deletemsgs it's the userid.
+	//When anyone's chat gets deleted, that user gets removed from the participant list,
+	//so autobanned people won't ever get acknowledged accidentally.
+	void delete_single_message(string login, string msgid) {
+		event_notify("deletemsg", this, login, msgid);
+		G_G_("participants", name[1..], login)->lastnotice = 0;
+	}
+
+	__async__ void delete_user_messages(string|int target, string duration) {
+		G_G_("banned_list", (string)userid)->stale = 1; //When anyone's banned/timed out, drop the banned users cache
+		event_notify("deletemsgs", this, target);
+		mapping user = await(get_user_info(target));
+		if (array m = lastmsg[(int)target]) {
+			//Log the last message of timed-out/banned users for reference.
+			//Might help with updating autoban.
+			Stdio.append_file("timeouts.log", sprintf("====== %sTimed out: %O %O\nLast message: %O\n", ctime(time()), target, duration, m));
+		}
+		G_G_("participants", name[1..], user->login)->lastnotice = 0;
+		trigger_special("!timeout", ([
+			"nick": user->login, "user": user->login,
+			"uid": (int)user->id,
+			"displayname": user->display_name,
+		]),
+		(["{ban_duration}": duration]));
+	}
+
+	void delete_all_messages() {
+		event_notify("deletemsgs", this, 0); //All chat has been cleared
 	}
 
 	void chatlog(string pfx, mapping person, string msg) {

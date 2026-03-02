@@ -215,14 +215,14 @@ mapping message_params(object channel, mapping person, array param) {
 }
 
 @hook_deletemsg:
-int delmsg(object channel, object person, string target, string msgid) {
+int delmsg(object channel, string target, string msgid) {
 	//If a mod removes the bot's message reporting the link, delete the file.
 	array info = artshare_messageid[msgid];
 	if (info) delete_file(channel, info[1], info[2]);
 }
 
 @hook_deletemsgs:
-int delmsgs(object channel, object person, string target) {
+int delmsgs(object channel, string target) {
 	//If someone gets timed out or banned, delete all their files.
 	G->G->DB->purge_ephemeral_files(channel->userid, target);
 }
