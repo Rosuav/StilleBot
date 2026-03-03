@@ -1161,7 +1161,10 @@ class channel(mapping identity) {
 		G_G_("participants", name[1..], login)->lastnotice = 0;
 	}
 
-	__async__ void delete_user_messages(string|int target, string duration) {
+	//NOTE: The duration is not available on EventSub. We'd need to subscribe to channel.moderate which
+	//requires a bunch more permissions; currently we don't have those perms, and the only loss is the
+	//timeout duration.
+	__async__ void delete_user_messages(string|int target, string|void duration) {
 		G_G_("banned_list", (string)userid)->stale = 1; //When anyone's banned/timed out, drop the banned users cache
 		event_notify("deletemsgs", this, target);
 		mapping user = await(get_user_info(target));
@@ -1176,7 +1179,7 @@ class channel(mapping identity) {
 			"uid": (int)user->id,
 			"displayname": user->display_name,
 		]),
-		(["{ban_duration}": duration]));
+		(["{ban_duration}": duration || ""]));
 	}
 
 	void delete_all_messages() {
@@ -1295,7 +1298,17 @@ void chatmessage(object channel, mapping data) {
 @EventNotify("channel.chat.notification=1", ({"hack:channel:bot"}), "user_id"): //Same hack as above for the same reason
 void chatnotification(object channel, mapping data) {
 	werror("CHAT NOTIFICATION %O %O\n", channel, data);
+	//When a chat notification comes in, it has a notice_type that says what it is,
+	//plus other info in separate fields. The notice types aren't all the same as
+	//IRC notices are, but are often similar. So it's like Kraken to Helix again.
 }
+
+@EventNotify("channel.chat.clear=1", ({"hack:channel:bot"}), "user_id"):
+void delete_all_messages(object channel, mapping data) {channel->delete_all_messages();}
+@EventNotify("channel.chat.clear_user_messages=1", ({"hack:channel:bot"}), "user_id"):
+void clear_user_messages(object channel, mapping data) {channel->delete_user_messages(data->target_user_id);}
+@EventNotify("channel.chat.message_delete=1", ({"hack:channel:bot"}), "user_id"):
+void delete_single_message(object channel, mapping data) {channel->delete_single_message(data->target_user_login, data->message_id);}
 
 void session_cleanup() {
 	//Go through all HTTP sessions and dispose of old ones
