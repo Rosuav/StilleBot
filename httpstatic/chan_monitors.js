@@ -843,7 +843,7 @@ ws_sync.connect(ws_group, {
 ws_sync.connect(ws_group, {
 	ws_type: "chan_variables", ws_sendid: "chan_variables",
 	render_parent: DOM("select[name=varname]"),
-	render_item: (v, obj) => {variables[v.id] = v.curval; return obj || OPTION({"data-id": v.id}, v.id)},
+	render_item: (v, obj) => {variables[v.id] = v.curval; return obj || (!v.id.includes(":") && v.id[0] !== "*" && OPTION({"data-id": v.id}, v.id))},
 	render: function(data) { },
 	sockmsg_groupvars: function(msg) {
 		vargroups[msg.prefix] = Object.fromEntries(msg.vars.map(v => [v.suffix, v.value]));
