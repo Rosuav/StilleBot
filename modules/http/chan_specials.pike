@@ -105,7 +105,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		]) | req->misc->chaninfo);
 	}
 	mapping cred = G->G->user_credentials[req->misc->channel->userid];
-	multiset scopes = cred ? (multiset)cred->scopes : (<>);
+	multiset scopes = (multiset)(cred->?scopes || (<>));
 	int is_bcaster = req->misc->channel->userid == (int)req->misc->session->user->id;
 	array commands = ({ }), order = ({ });
 	mapping special_scopes_required = ([]);
