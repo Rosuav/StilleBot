@@ -987,29 +987,7 @@ class channel(mapping identity) {
 		{
 			case "NOTICE": case "USERNOTICE": switch (params->msg_id)
 			{
-				case "unrecognized_cmd": werror("NOTICE: %O\n", msg); break; //The message already says "Unrecognized command"
-				case "slow_on": case "slow_off": break; //Channel is now/no longer in slow mode
-				case "emote_only_on": case "emote_only_off": break; //Channel is now/no longer in emote-only mode
-				case "subs_on": case "subs_off": break; //Channel is now/no longer in sub-only mode
-				case "followers_on": case "followers_off": break; //Channel is now/no longer in follower-only mode (regardless of minimum time)
-				case "followers_on_zero": break; //Regardless? Not quite; if it's zero-second followers-only mode, it's separate.
-				case "msg_duplicate": case "msg_slowmode": case "msg_timedout": case "msg_banned": case "msg_requires_verified_phone_number":
-					/* Last message wasn't sent, for some reason. There seems to be no additional info in the tags.
-					- Your message was not sent because it is identical to the previous one you sent, less than 30 seconds ago.
-					- This room is in slow mode and you are sending messages too quickly. You will be able to talk again in %d seconds.
-					- You are banned from talking in %*s for %d more seconds.
-					All of these indicate that the most recent message wasn't sent. Is it worth trying to retrieve that message?
-					*/
-					break;
-				case "ban_success": break; //Just banned someone. Probably only a response to an autoban.
-				case "raid": break; //Incoming raids get announced via EventSub
 				case "unraid": break; //Raid has been cancelled - might be worth notifying raidfinder if it caused the raid in the first place
-				case "rewardgift": //Used for special promo messages eg "so-and-so's cheer just gave X people a bonus emote"
-				{
-					//write("DEBUG REWARDGIFT: chan %s disp %O user %O params %O\n",
-					//	name, person->displayname, person->user, params);
-					break;
-				}
 				case "sub": {
 					string tier = subtier(params->msg_param_sub_plan);
 					Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUB: chan %s person %O params %O\n", ctime(time()), name, person->user, params)); //Where is the multimonth info?
@@ -1034,11 +1012,6 @@ class channel(mapping identity) {
 					event_notify("subscription", this, "resub", person, tier, 1, params, msg);
 					break;
 				}
-				case "giftpaidupgrade": break; //Pledging to continue a subscription (first introduced for the Subtember special in 2018, and undocumented)
-				case "anongiftpaidupgrade": break; //Ditto but when the original gift was anonymous
-				case "primepaidupgrade": break; //Similar to the above - if you were on Prime but now pledge to continue, which could be done half price Subtember 2019.
-				case "standardpayforward": break; //X is paying forward the Gift they got from Y to Z!
-				case "communitypayforward": break; //X is paying forward the Gift they got from Y to the community!
 				case "viewermilestone": switch (params->msg_param_category) {
 					case "watch-streak": //"X sparked a watch streak!" params->msg_param_category == "watch-streak", also has a msg_param_value == months
 						trigger_special("!watchstreak", person, ([
@@ -1097,14 +1070,6 @@ class channel(mapping identity) {
 						(int)params->msg_param_mass_gift_count, params, "");
 					break;
 				}
-				case "extendsub":
-				{
-					//Person has pledged to continue a subscription? Not sure.
-					//"msg_param_cumulative_months": "7",
-					//"msg_param_sub_benefit_end_month": "5",
-					//"msg_param_sub_plan": "1000",
-					break;
-				}
 				case "bitsbadgetier":
 				{
 					trigger_special("!cheerbadge", person, ([
@@ -1119,13 +1084,6 @@ class channel(mapping identity) {
 						"{msgid}": params->id || "", //Does this happen? Is there a message at all?
 					]));
 					break;
-				case "sharedchatnotice":
-					//If you're participating in a shared chat, and a notification is sent to the other,
-					//you get a sharedchatnotice that has a source_msg_id in it.
-					break;
-				default: werror("Unrecognized %s with msg_id %O on channel %s\n%O\n%O\n",
-					type, params->msg_id, name, params, msg);
-					Stdio.append_file("notice.log", sprintf("%sUnknown %s %s %s %O\n", ctime(time()), type, chan, msg, params));
 			}
 			break;
 			case "WHISPER": {
