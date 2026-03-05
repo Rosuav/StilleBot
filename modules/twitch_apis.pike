@@ -361,9 +361,11 @@ string|Concurrent.Future send_chat_command(object channel, string voiceid, strin
 		if (!need_scope[c]) msg = " " + msg; //Render "/asdf" as " /asdf" so it gets output correctly
 		else {cmd = c; msg = param || "";}
 	}
-	if (!cmd) return msg; //Send via IRC, requires less credentials.
-	//if (!cmd) cmd = "chat"; //Send all messages via API (as if the /chat command was used)
 	mapping tok = G->G->user_credentials[(int)voiceid];
+	if (!cmd) {
+		if (has_value(tok->scopes, need_scope->chat)) cmd = "chat"; //Send all messages via API (as if the /chat command was used)
+		else return msg; //Send via IRC, requires less credentials.
+	}
 	if (!voiceid || voiceid == "0") {
 		voiceid = (string)G->G->bot_uid;
 		tok = (["token": G->G->dbsettings->credentials->token,
