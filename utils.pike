@@ -443,15 +443,17 @@ __async__ void delayed() {
 
 //Should this be triggered automatically upon API failures? If so, move it back into poll.pike.
 __async__ void validate_user_credentials() {
+	string tables = "stillebot.config";
 	string where = sizeof(G->G->args[Arg.REST]) ? " and twitchid = any(:ids)" : "";
 	//"pike stillebot --exec=validate_user_credentials --oldonly" to check those that are at least a year old.
 	//"pike stillebot --exec=validate_user_credentials 49497888" to just check one or more userids.
 	if (G->G->args->oldonly) where += " and (data->>'validated')::int < extract(epoch from now() - interval '1 year')::int";
-	array creds = await(G->G->DB->query_ro("select twitchid, data from stillebot.config where keyword = 'credentials' "
+	if (G->G->args->bot) tables += " join stillebot.botservice using (twitchid)";
+	array creds = await(G->G->DB->query_ro("select twitchid, data from " + tables + " where keyword = 'credentials' "
 		+ where + " order by twitchid", (["ids": G->G->args[Arg.REST]])));
 	foreach (creds; int i; mapping row) {
 		mapping cred = row->data;
-		werror("[%d/%d] Checking %d %s...\n", i + 1, sizeof(creds), row->twitchid, cred->login);
+		werror("[%d/%d] Checking %d %s...\n", i + 1, sizeof(creds), row->twitchid, cred->login || "(unknown)");
 		mixed resp = await(twitch_api_request("https://id.twitch.tv/oauth2/validate",
 			(["Authorization": "Bearer " + cred->token])));
 		//If the authentication has been completely revoked, we no longer have a valid token.
