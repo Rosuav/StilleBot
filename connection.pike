@@ -1140,6 +1140,10 @@ class channel(mapping identity) {
 					]),
 				]); break;
 			}
+			//TODO: When the EventSub migration happens, put a half second delay on this,
+			//kinda like how Happy Eyeballs penalizes IPv4. Then most notifications will
+			//be processed via EventSub, but if for any reason it isn't, it will still be
+			//caught this way. Notably, as of 20260306, this will include watch streaks.
 			chat_notification_received(event);
 			break;
 			case "WHISPER": {
