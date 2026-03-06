@@ -992,7 +992,7 @@ class channel(mapping identity) {
 					"{multimonth}": (string)(notif->resub->duration_months || 1),
 					"{msg}": notif->message->text, "{msgid}": notif->message_id || "",
 				]));
-				event_notify("subscription", this, "resub", person, notif->sub->sub_tier[0..0], 1, notif, notif->message->text);
+				event_notify("subscription", this, "resub", person, notif->resub->sub_tier[0..0], 1, notif, notif->message->text);
 				break;
 			case "sub_gift":
 				Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUBGIFT: chan %s raw %O\n", ctime(time()), name, notif));
@@ -1010,7 +1010,7 @@ class channel(mapping identity) {
 					"{multimonth}": (string)(notif->sub_gift->duration_months || 1),
 					"{from_subbomb}": notif->came_from_subbomb || "0",
 				]));
-				event_notify("subscription", this, "subgift", person, notif->sub->sub_tier[0..0], 1, notif, "");
+				event_notify("subscription", this, "subgift", person, notif->sub_gift->sub_tier[0..0], 1, notif, "");
 			case "community_sub_gift":
 				Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUBBOMB: chan %s raw %O\n", ctime(time()), name, notif));
 				subbomb_ids[notif->community_sub_gift->id] += (int)notif->community_sub_gift->total;
@@ -1019,7 +1019,7 @@ class channel(mapping identity) {
 					"{gifts}": (string)notif->community_sub_gift->total,
 					"{multimonth}": "1", //Not applicable to sub bombs
 				]));
-				event_notify("subscription", this, "subbomb", person, notif->sub->sub_tier[0..0], notif->community_sub_gift->total, notif, "");
+				event_notify("subscription", this, "subbomb", person, notif->community_sub_gift->sub_tier[0..0], notif->community_sub_gift->total, notif, "");
 				break;
 			//FIXME: How are watch streaks announced on eventsub? Maybe they just aren't?
 			/*case "viewermilestone": switch (params->msg_param_category) {
