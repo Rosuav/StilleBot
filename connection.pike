@@ -1025,7 +1025,7 @@ class channel(mapping identity) {
 				case "subgift":
 				{
 					string tier = subtier(params->msg_param_sub_plan);
-					Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUBGIFT: chan %s id %O origin %O bomb %d\n", ctime(time()), name, params->id, params->msg_param_origin_id, subbomb_ids[params->msg_param_origin_id]));
+					Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUBGIFT: chan %s id %O origin %O bomb %d params %O\n", ctime(time()), name, params->id, params->msg_param_origin_id, subbomb_ids[params->msg_param_origin_id], params));
 					//Note: Sub bombs get announced first, followed by their individual gifts.
 					//It may be that the msg_param_origin_id is guaranteed unique, but in case
 					//it can't, we count down the messages as we see them.
@@ -1253,9 +1253,10 @@ void chatmessage(object channel, mapping data) {
 	channel->chat_message_received(person, data->message->text, params);
 }
 
-@EventNotify("channel.chat.notification=1", ({"hack:channel:bot"}), "user_id"): //Same hack as above for the same reason
+@EventNotify("channel.chat.notification=1", ({"channel:bot"}), "user_id"):
 void chatnotification(object channel, mapping data) {
 	werror("CHAT NOTIFICATION %O %O\n", channel, data);
+	if (channel->userid != 279141671) return; //HACK: Only process events for MustardMine's channel
 	//When a chat notification comes in, it has a notice_type that says what it is,
 	//plus other info in separate fields. The notice types aren't all the same as
 	//IRC notices are, but are often similar. So it's like Kraken to Helix again.
