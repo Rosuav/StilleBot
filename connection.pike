@@ -136,10 +136,7 @@ __async__ void voice_enable(string voiceid, string chan, mapping|void tags) {
 	conn->enqueue(conn->no_reconnect); //Once everything's sent, it's okay to disconnect
 }
 
-string subtier(string plan) {
-	if (plan == "Prime") return "1";
-	return plan[0..0]; //Plans are usually 1000, 2000, 3000 - I don't know if they're ever anything else?
-}
+string subtier_irc_to_eventsub(string plan) {return plan == "Prime" ? "1000" : plan;}
 
 @create_hook:
 constant variable_changed = ({"object channel", "string varname", "string newval"});
@@ -969,6 +966,91 @@ class channel(mapping identity) {
 		trigger_special("!raided", person, (["{viewers}": (string)info->viewers]));
 	}
 
+	//Designed around the EventSub chat notification but can also handle IRC notifs
+	multiset notif_seen = (<>); //Not retained over code reload; duplicate handling should be very close in time.
+	void chat_notification_received(mapping notif) {
+		if (!stringp(notif->message_id)) werror("NON STRING MESSAGE ID IN NOTIF: %O\n", notif); //Shouldn't happen, probably a bug somewhere
+		if (notif_seen[notif->message_id]) return;
+		notif_seen[notif->message_id] = 1;
+		mapping(string:mixed) person = gather_person_info_eventsub(notif);
+		switch (notif->notice_type) {
+			case "unraid": break; //Raid has been cancelled - might be worth notifying raidfinder if it caused the raid in the first place
+			case "sub":
+				Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUB: chan %s raw %O\n", ctime(time()), name, notif));
+				trigger_special("!sub", person, ([
+					"{tier}": notif->sub->sub_tier[0..0],
+					"{multimonth}": (string)(notif->sub->duration_months || 1),
+				]));
+				event_notify("subscription", this, "sub", person, notif->sub->sub_tier[0..0], 1, notif, "");
+				break;
+			case "resub":
+				Stdio.append_file("subs.log", sprintf("\n%sDEBUG RESUB: chan %s raw %O\n", ctime(time()), name, notif));
+				trigger_special("!resub", person, ([
+					"{tier}": notif->resub->sub_tier[0..0],
+					"{months}": (string)notif->resub->cumulative_months,
+					"{streak}": (string)notif->resub->streak_months,
+					"{multimonth}": (string)(notif->resub->duration_months || 1),
+					"{msg}": notif->message->text, "{msgid}": notif->message_id || "",
+				]));
+				event_notify("subscription", this, "resub", person, notif->sub->sub_tier[0..0], 1, notif, notif->message->text);
+				break;
+			case "sub_gift":
+				Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUBGIFT: chan %s raw %O\n", ctime(time()), name, notif));
+				//Note: Sub bombs get announced first, followed by their individual gifts.
+				//It may be that the community_gift_id is guaranteed unique, but in case
+				//it can't, we count down the messages as we see them.
+				if (subbomb_ids[notif->sub_gift->community_gift_id] > 0) {
+					subbomb_ids[notif->sub_gift->community_gift_id]--;
+					notif->came_from_subbomb = "1"; //Hack in an extra parameter
+				}
+				trigger_special("!subgift", person, ([
+					"{tier}": notif->sub_gift->sub_tier[0..0],
+					"{months}": "1", "{streak}": "1", //Not available any more??
+					"{recipient}": notif->sub_gift->recipient_user_name,
+					"{multimonth}": (string)(notif->sub_gift->duration_months || 1),
+					"{from_subbomb}": notif->came_from_subbomb || "0",
+				]));
+				event_notify("subscription", this, "subgift", person, notif->sub->sub_tier[0..0], 1, notif, "");
+			case "community_sub_gift":
+				Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUBBOMB: chan %s raw %O\n", ctime(time()), name, notif));
+				subbomb_ids[notif->community_sub_gift->id] += (int)notif->community_sub_gift->total;
+				trigger_special("!subbomb", person, ([
+					"{tier}": notif->community_sub_gift->sub_tier[0..0],
+					"{gifts}": (string)notif->community_sub_gift->total,
+					"{multimonth}": "1", //Not applicable to sub bombs
+				]));
+				event_notify("subscription", this, "subbomb", person, notif->sub->sub_tier[0..0], notif->community_sub_gift->total, notif, "");
+				break;
+			//FIXME: How are watch streaks announced on eventsub? Maybe they just aren't?
+			/*case "viewermilestone": switch (params->msg_param_category) {
+				case "watch-streak": //"X sparked a watch streak!" params->msg_param_category == "watch-streak", also has a msg_param_value == months
+					trigger_special("!watchstreak", person, ([
+						"{months}": params->msg_param_value,
+						"{reward}": params->msg_param_copoReward,
+					]));
+					break;
+				default: break;
+			}
+			break;*/
+			case "bits_badge_tier": trigger_special("!cheerbadge", person, ([
+				"{level}": (string)notif->bits_badge_tier->tier,
+			])); break;
+			case "announcement": chatlog(sprintf("** %s ** ", name), person, notif->message->text); break; //The /announce command
+			case "charity_donation": {
+				//What would be the most useful info to give to the special trigger?
+				//We have the amount in cents (or equivalent), the number of decimal places to use
+				//(eg 2 for dollars), and the currency code.
+				mapping amt = notif->charity_donation->amount;
+				string value = (string)amt->value;
+				trigger_special("!charity", person, ([
+					"{amount}": value[..<amt->decimal_place] + "." + value[<amt->decimal_place+1..] + " " + amt->currency,
+					"{msgid}": notif->message_id || "", //Does this happen? Is there a message at all?
+				]));
+				break;
+			}
+		}
+	}
+
 	mapping subbomb_ids = ([]);
 	void irc_message(string type, string chan, string msg, mapping params) {
 		//HACK: MustardMine is being operated using test-mode EventSub chat notifications. Avoid
@@ -979,39 +1061,63 @@ class channel(mapping identity) {
 		if (person->uid && person->badges) user_badges[person->uid] = person->badges;
 		lastmsg[(int)person->uid] = ({msg, params});
 		if (!is_active) return;
+		mapping event = ([ //Applicable only to NOTICE/USERNOTICE messages
+			"notice_type": params->msg_id, "message_id": params->id,
+			"broadcaster_user_id": userid,
+			"broadcaster_user_login": login,
+			"broadcaster_user_name": display_name,
+			"chatter_is_anonymous": 0, //FIXME: How do anonymous sub gifts etc get reported in IRC?
+			"chatter_user_id": (string)person->uid,
+			"chatter_user_login": person->user,
+			"chatter_user_name": person->displayname,
+			"color": params->color,
+			//"badges": FIXME,
+			"system_message": params->system_msg,
+			"message": ([
+				"text": msg,
+				"fragments": ({(["type": "text", "text": msg])}), //NOTE: IRC-provided notices will not include emote details
+			]),
+		]);
 		//For some unknown reason, certain types of notification come through
 		//as PRIVMSG when they would more logically be a NOTICE. They're usually
 		//suppressed from the default chat view, but are visible to bots.
 		if (params->user == "jtv" && type == "PRIVMSG") type = "NOTICE";
-		switch (type)
-		{
-			case "NOTICE": case "USERNOTICE": switch (params->msg_id)
-			{
-				case "unraid": break; //Raid has been cancelled - might be worth notifying raidfinder if it caused the raid in the first place
-				case "sub": {
-					string tier = subtier(params->msg_param_sub_plan);
-					Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUB: chan %s person %O params %O\n", ctime(time()), name, person->user, params)); //Where is the multimonth info?
-					trigger_special("!sub", person, ([
-						"{tier}": tier,
-						"{multimonth}": params->msg_param_multimonth_duration || "1",
-						//There's also msg_param_multimonth_tenure - what happens when they get announced? Does duration remain and tenure count up?
-					]));
-					event_notify("subscription", this, "sub", person, tier, 1, params, "");
-					break;
-				}
-				case "resub": {
-					string tier = subtier(params->msg_param_sub_plan);
-					Stdio.append_file("subs.log", sprintf("\n%sDEBUG RESUB: chan %s person %O params %O\n", ctime(time()), name, person->user, params)); //Where is the multimonth info?
-					trigger_special("!resub", person, ([
-						"{tier}": tier,
-						"{months}": params->msg_param_cumulative_months,
-						"{streak}": params->msg_param_streak_months || "",
-						"{multimonth}": params->msg_param_multimonth_duration || "1", //Ditto re tenure
-						"{msg}": msg, "{msgid}": params->id || "",
-					]));
-					event_notify("subscription", this, "resub", person, tier, 1, params, msg);
-					break;
-				}
+		switch (type) {
+			//For notices, reformat as needed, then hand it to the EventSub notice handler.
+			case "NOTICE": case "USERNOTICE": switch (params->msg_id) { //CAUTION: This is the notification type, not to be confused with the message_id which is params->id.
+				case "sub": event->sub = ([
+					"sub_tier": subtier_irc_to_eventsub(params->msg_param_sub_plan),
+					"is_prime": params->msg_param_sub_plan == "Prime",
+					"duration_months": (int)params->msg_param_multimonth_duration,
+				]); break;
+				case "resub": event->resub = ([
+					"sub_tier": subtier_irc_to_eventsub(params->msg_param_sub_plan),
+					"is_prime": params->msg_param_sub_plan == "Prime",
+					"cumulative_months": (int)params->msg_param_cumulative_months,
+					"duration_months": (int)params->msg_param_multimonth_duration,
+					"streak_months": (int)params->msg_param_streak_months,
+					"is_gift": params->msg_param_was_gifted == "true",
+					"gifter_is_anonymous": 0, //FIXME: How are anonymously-given gift resubs reported? For now, they will be buggy if sighted on IRC.
+					"gifter_user_id": params->msg_param_gifter_id,
+					"gifter_user_login": params->msg_param_gifter_login,
+					"gifter_user_name": params->msg_param_gifter_name,
+				]); break;
+				case "subgift": event->notice_type = "sub_gift"; event->sub_gift = ([
+					"duration_months": (int)params->msg_param_multimonth_duration,
+					"cumulative_total": (int)params->msg_param_sender_count,
+					"recipient_user_id": params->msg_param_recipient_id,
+					"recipient_user_login": params->msg_param_recipient_login,
+					"recipient_user_name": params->msg_param_recipient_name,
+					"sub_tier": params->msg_param_sub_plan,
+					"community_gift_id": params->msg_param_origin_id,
+				]); break;
+				case "submysterygift": event->notice_type = "community_sub_gift"; event->community_sub_gift = ([
+					"id": params->msg_param_origin_id,
+					"total": (int)params->msg_param_mass_gift_count,
+					"sub_tier": params->msg_param_sub_plan,
+					"cumulative_total": (int)params->msg_param_sender_count,
+				]); break;
+				//HACK: Not currently handled by EventSub so these continue to happen here
 				case "viewermilestone": switch (params->msg_param_category) {
 					case "watch-streak": //"X sparked a watch streak!" params->msg_param_category == "watch-streak", also has a msg_param_value == months
 						trigger_special("!watchstreak", person, ([
@@ -1022,69 +1128,19 @@ class channel(mapping identity) {
 					default: break;
 				}
 				break;
-				case "subgift":
-				{
-					string tier = subtier(params->msg_param_sub_plan);
-					Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUBGIFT: chan %s id %O origin %O bomb %d params %O\n", ctime(time()), name, params->id, params->msg_param_origin_id, subbomb_ids[params->msg_param_origin_id], params));
-					//Note: Sub bombs get announced first, followed by their individual gifts.
-					//It may be that the msg_param_origin_id is guaranteed unique, but in case
-					//it can't, we count down the messages as we see them.
-					if (subbomb_ids[params->msg_param_origin_id] > 0) {
-						subbomb_ids[params->msg_param_origin_id]--;
-						params->came_from_subbomb = "1"; //Hack in an extra parameter
-					}
-					/*write("DEBUG SUBGIFT: chan %s disp %O user %O mon %O recip %O multi %O\n",
-						name, person->displayname, person->user,
-						params->msg_param_months, params->msg_param_recipient_display_name,
-						params->msg_param_gift_months);*/
-					trigger_special("!subgift", person, ([
-						"{tier}": tier,
-						"{months}": params->msg_param_cumulative_months || params->msg_param_months || "1",
-						"{streak}": params->msg_param_streak_months || "",
-						"{recipient}": params->msg_param_recipient_display_name,
-						"{multimonth}": params->msg_param_gift_months || "1",
-						"{from_subbomb}": params->came_from_subbomb || "0",
-					]));
-					//Other params: login, user_id, msg_param_recipient_user_name, msg_param_recipient_id,
-					//msg_param_sender_count (the total gifts this person has given in this channel)
-					//Remember that all params are strings, even those that look like numbers
-					event_notify("subscription", this, "subgift", person, tier, 1, params, "");
-					break;
-				}
-				case "submysterygift":
-				{
-					string tier = subtier(params->msg_param_sub_plan);
-					Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUBBOMB: chan %s person %O count %O id %O\n", ctime(time()), name, person, params->msg_param_mass_gift_count, params->msg_param_origin_id));
-					subbomb_ids[params->msg_param_origin_id] += (int)params->msg_param_mass_gift_count;
-					/*write("DEBUG SUBGIFT: chan %s disp %O user %O gifts %O multi %O\n",
-						name, person->displayname, person->user,
-						params->msg_param_mass_gift_count,
-						params->msg_param_gift_months);*/
-					trigger_special("!subbomb", person, ([
-						"{tier}": tier,
-						"{gifts}": params->msg_param_mass_gift_count,
-						//TODO: See if this can actually happen, and if not, drop it
-						"{multimonth}": params->msg_param_gift_months || "1",
-					]));
-					event_notify("subscription", this, "subbomb", person, tier,
-						(int)params->msg_param_mass_gift_count, params, "");
-					break;
-				}
-				case "bitsbadgetier":
-				{
-					trigger_special("!cheerbadge", person, ([
-						"{level}": params->msg_param_threshold,
-					]));
-					break;
-				}
-				case "announcement": chatlog(sprintf("** %s ** ", name), person, msg); break; //The /announce command
-				case "charitydonation":
-					trigger_special("!charity", person, ([
-						"{amount}": params->msg_param_donation_amount + " " + params->msg_param_donation_currency,
-						"{msgid}": params->id || "", //Does this happen? Is there a message at all?
-					]));
-					break;
+				case "bitsbadgetier": event->notice_type = "bits_badge_tier"; event->bits_badge_tier = ([
+					"tier": (int)params->msg_param_threshold,
+				]); break;
+				case "charitydonation": event->notice_type = "charity_donation"; event->charity_donation = ([
+					"amount": ([
+						//HACK: Assume dollars here
+						"value": (int)(params->msg_param_donation_amount - "."),
+						"decimal_place": 2,
+						"currency": params->msg_param_donation_currency,
+					]),
+				]); break;
 			}
+			chat_notification_received(event);
 			break;
 			case "WHISPER": {
 				//For some reason, whispers show up with "/me" at the start, not "ACTION".
@@ -1779,6 +1835,12 @@ __async__ void reconnect() {
 		sort(channels->login, channels); //Default to sorting affabeck by username
 		sort(-channels->data->connprio[*], channels);
 	}
+	//TODO: Consider connecting to fewer IRC channels.
+	//With EventSub providing chat and notifications, we may be able to reduce the number of channels
+	//that we connect to via IRC. Those we absolutely can't drop are:
+	//1) Any channel for which we lack "channel:bot" permission
+	//2) As of 20260306, any channel using the !watchstreak special trigger.
+	//Otherwise, we may be able to rely entirely on EventSub.
 	mapping irc = (["channels": ([]), "id": ([]), "loading": (<>)]);
 	mapping commands = await(G->G->DB->preload_commands(channels->userid));
 	foreach (channels, mapping cfg) {

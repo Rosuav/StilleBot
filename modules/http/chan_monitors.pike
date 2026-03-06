@@ -645,7 +645,7 @@ void cheer(object channel, mapping person, int bits, mapping extra, string msg) 
 @hook_subscription:
 int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
 	if (type == "subbomb") return 0; //Sometimes sub bombs come through AFTER their constituent parts :( Safer to count the parts and skip the bomb.
-	if (type == "subgift" || extra->msg_param_sub_plan == "Prime") extra->is_gift_or_prime = 1;
+	if (type == "subgift" || extra->sub->?is_prime) extra->is_gift_or_prime = 1;
 	autoadvance(channel, person, "sub_t" + tier, qty, extra);
 }
 
@@ -661,7 +661,7 @@ void advance_goalbar(object channel, mapping|string info, mapping person, int ad
 	//HACK: If it's bit boss mode, we may need to change the from_name, and we may need to
 	//negate the advancement. Massive breach of encapsulation.
 	string from_name = person->from_name || person->user || "Anonymous";
-	if (string recip = info->boss_giftrecipient && extra->msg_param_recipient_display_name) from_name = recip;
+	if (string recip = info->boss_giftrecipient && extra->sub_gift->?recipient_user_name) from_name = recip;
 	if (info->boss_selfheal && lower_case(from_name) == lower_case(channel->expand_variables("$bossname$")) && advance > 0) 
 		//Self-healing is the same as dealing a negative amount of damage.
 		advance = -advance;

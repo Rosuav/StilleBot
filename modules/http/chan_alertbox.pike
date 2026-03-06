@@ -1427,24 +1427,24 @@ mapping(string:array|int(0..1)) subbomb_ids = ([]);
 
 @hook_subscription:
 void subscription(object channel, string type, mapping person, string tier, int qty, mapping extra, string|void msg) {
-	int months = (int)extra->msg_param_cumulative_months || 1;
+	int months = extra->resub->?cumulative_months || 1; //Currently only available for resubs, not other types
 	mapping args = ([
 		"username": person->displayname,
 		"tier": tier, "months": months,
-		"streak": extra->msg_param_streak_months || "1",
+		"streak": (string)(extra->resub->?streak_months || "1"),
 		"msg": msg || "",
 	]);
 	if ((<"subgift", "subbomb">)[type]) {
 		args->gifted = "1";
 		args->giver = person->displayname;
-		args->username = extra->msg_param_recipient_display_name;
+		args->username = extra->sub_gift->?recipient_user_name;
 		if (type == "subbomb") {
 			args->username = channel->name;
-			args->subbomb = (string)extra->msg_param_mass_gift_count;
+			args->subbomb = (string)extra->community_sub_gift->total;
 		}
 	}
 	//If this channel has a subbomb alert variant, the follow-up sub messages will be skipped.
-	string id = extra->msg_param_origin_id;
+	string id = extra->community_sub_gift->?id || extra->sub_gift->?community_gift_id;
 	if (extra->came_from_subbomb) {
 		if (arrayp(subbomb_ids[id])) subbomb_ids[id] += ({args});
 		if (subbomb_ids[id]) return;

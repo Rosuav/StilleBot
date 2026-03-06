@@ -369,20 +369,19 @@ int message(object channel, mapping person, string msg)
 }
 
 @hook_subscription:
-int _subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {subscription(channel, type, person, tier, qty, extra);}
 __async__ int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
 	if (type != "subgift" && type != "subbomb") return 0; 
 	if (extra->came_from_subbomb) return 0;
 	mapping stats = await(G->G->DB->load_config(channel->userid, "subgiftstats"));
 	if (!stats->?active) return 0;
 
-	int months = (int)extra->msg_param_gift_months;
+	int months = extra->sub_gift->?duration_months;
 	if (months) qty *= months; //Currently, you can't subbomb multimonths.
 
 	stats->all += ({([
 		"giver": ([
-			"user_id": extra->user_id,
-			"login": extra->login,
+			"user_id": (string)person->uid,
+			"login": person->user,
 			"displayname": person->displayname,
 		]),
 		"tier": tier, "qty": qty,
