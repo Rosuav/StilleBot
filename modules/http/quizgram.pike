@@ -92,6 +92,11 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 1. What is the bestest cat on Twitch's name? `____-42-`
 2. What colour is OldDrum's shirt? `_-15-____`
 3. True or false: The leather working started as a New Year's resolution: `-1-` (T or F)
+
+### Rosuav
+1. Who is the profile pic? `_-21-___`
+2. The bot's motto is a quote from which character? `_____-36-_`
+3. What language is Mustard Mine written in? `-26-___`
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
