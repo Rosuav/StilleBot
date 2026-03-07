@@ -14,12 +14,12 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 ---
 
 ### DeviCat
-1. What is the channel mascot's name? `_-15-______`
+1. What is the channel mascot's name? `___-32-____`
 2. What is Devi's favorite color? `__-34-_`
 
 ### CamaeSoultamer
 1. What level of chaos is acceptable? `_-3-__`
-2. What is Camae's favourite colour? `_____-1-` `_____`
+2. What is Camae's favourite colour? `______` `__-8-__`
 3. Name the cat who hangs out on stream. `_____-40-`
 
 ### ABluSkittle
@@ -87,6 +87,11 @@ img[alt=\"Avatar\"] {max-height: 2em; vertical-align: middle;}
 1. What's Lin's favourite Pokemon? `__-25-_____`
 2. What are Lin's community members called? `____` `___-12-___`
 3. Name Lin's main OC: `_-2-___`
+
+### OldDrumLeatherWorks
+1. What is the bestest cat on Twitch's name? `____-42-`
+2. What colour is OldDrum's shirt? `_-15-____`
+3. True or false: The leather working started as a New Year's resolution: `-1-` (T or F)
 ";
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
