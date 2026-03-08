@@ -1152,19 +1152,9 @@ class channel(mapping identity) {
 					]),
 				]); break;
 			}
-			//TODO: When the EventSub migration happens, put a half second delay on this,
-			//kinda like how Happy Eyeballs penalizes IPv4. Then most notifications will
-			//be processed via EventSub, but if for any reason it isn't, it will still be
-			//caught this way. Notably, as of 20260306, this will include watch streaks.
 			chat_notification_received(event);
 			break;
-			case "WHISPER": {
-				//For some reason, whispers show up with "/me" at the start, not "ACTION".
-				if (sscanf(msg, "/me %s", msg)) person->is_action_msg = 1;
-				//TODO maybe: If config->whispers_as_commands, call chat_message_received
-				chatlog("[WHISPER" + name + "]", person, msg);
-				break;
-			}
+			case "WHISPER": break; //Not currently supported; will need to figure out proper authentication.
 			case "PRIVMSG": chat_message_received(([
 				"message_id": params->id,
 				"person": person, //HACK - For IRC-generated messages, we pass the person mapping in, for simplicity
