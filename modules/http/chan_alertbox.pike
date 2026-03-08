@@ -1473,7 +1473,7 @@ void cheer(object channel, mapping person, int bits, mapping extra, string msg) 
 	//TODO: Should there be a boolean to say is_powerup so they can be filtered
 	//out or given variant alerts? Note that some rewards may include emoted
 	//text, which is not going to be parsed correctly at the moment. Would be
-	//nice to parse out extra->message->emotes in that situation.
+	//nice to parse out extra->message->fragments in that situation.
 	send_alert(channel, "cheer", ([
 		"username": person->displayname,
 		"bits": (string)bits,

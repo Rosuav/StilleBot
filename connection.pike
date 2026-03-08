@@ -289,75 +289,6 @@ class channel(mapping identity) {
 		return ({0, ""});
 	}
 
-	multiset message_seen = (<>); //Not retained over code reload; duplicate handling should be very close in time.
-	void chat_message_received(mapping person, string msg, mapping params) {
-		//if (message_seen[notif->message_id]) return; //FIXME
-		//message_seen[notif->message_id] = 1;
-		if (message_seen[params->id]) return;
-		message_seen[params->id] = 1;
-		request_rate_token(person->user, name);
-		if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
-		if (person->badges->?broadcaster && sscanf(msg, "fakecheer%d", int bits) && bits) {
-			//Allow the broadcaster to "fakecheer100" (start of message only) to
-			//test alerts etc. Note that "fakecheer-100" can also be done, if that
-			//is ever useful to your testing. It may confuse things though!
-			//Note that in shared chat, we only want to do this in the origin.
-			//TODO: Test this with eventsub chat.
-			if (!params->source_room_id || (int)params->source_room_id == userid) {
-				event_notify("cheer", this, person, bits, params, msg);
-				trigger_special("!cheer", person, (["{bits}": (string)bits, "{msg}": msg, "{msgid}": params->id || ""]));
-			}
-		}
-		chatlog("[" + name + "]", person, msg);
-		if (person->user) {
-			mapping p = G_G_("participants", name[1..], person->user);
-			p->lastnotice = time();
-			p->userid = person->uid;
-		}
-		person->vars = ([
-			"%s": msg, "{@mod}": person->badges->?_mod ? "1" : "0", "{@sub}": person->badges->?_sub ? "1" : "0",
-			"{@vip}": person->badges->?vip ? "1" : "0",
-			//Even without broadcaster permissions, it's possible to see the UUID of a reward.
-			//You can't see the redemption ID, and definitely can't complete/reject it, but you
-			//would be able to craft a trigger that responds to it.
-			"{rewardid}": params->custom_reward_id || "",
-			"{msgid}": params->id || "",
-			"{usernamecolor}": params->color || "", //Undocumented, mainly here as a toy
-		]);
-		event_notify("allmsgs", this, person, msg);
-		trigger_special("!trigger", person, person->vars);
-		[mixed cmd, string param] = locate_command(person, msg);
-		int offset = sizeof(msg) - sizeof(param);
-		if (msg[offset..offset+sizeof(param)] != param) offset = -1; //TODO: Strip whites from around param without breaking this
-		person->measurement_offset = offset;
-		string emoted = "", residue = param;
-		if (person->emotes) foreach (person->emotes, [string id, int start, int end]) { //IRC-style emotes
-			emoted += sprintf("%s\uFFFAe%s:%s\uFFFB",
-				residue[..start - offset - 1], //Text before the emote
-				id, residue[start-offset..end-offset], //Emote ID and name
-			);
-			residue = residue[end - offset + 1..];
-			offset = end + 1;
-		}
-		else if (person->fragments) foreach (person->fragments, mapping f) { //EventSub-style emotes
-			if (f->type == "text") emoted += f->text;
-			//TODO: Cheer emotes? Not sure, maybe just leave them like regular emotes.
-			else if (f->type == "emote") emoted += sprintf("\uFFFAe%s:%s\uFFFB", f->emote->id, f->text);
-			residue = "";
-		}
-		person->vars["%s"] = param;
-		person->vars["{@emoted}"] = emoted + residue;
-		//Functions do not get %s handling. If they want it, they can do it themselves,
-		//and if they don't want it, it would mess things up badly to do it here.
-		//(They still get other variable handling.) NOTE: This may change in the future.
-		//If a function specifically does not want %s handling, it should:
-		//m_delete(person->vars, "%s");
-		//CJA 20260227: I don't think we have such a thing as function commands any more?
-		//Confirm this, then drop support.
-		if (functionp(cmd)) send(person, cmd(this, person, param));
-		else send(person, cmd, person->vars);
-	}
-
 	__async__ void delete_msg(string uid, string msgid) {
 		await(G->G->DB->mutate_config(userid, "private") {m_delete(__ARGS__[0][uid] || ([]), msgid);});
 		G->G->websocket_types->chan_messages->update_one(uid + "#" + userid, msgid);
@@ -971,6 +902,75 @@ class channel(mapping identity) {
 		trigger_special("!raided", person, (["{viewers}": (string)info->viewers]));
 	}
 
+	multiset message_seen = (<>); //Not retained over code reload; duplicate handling should be very close in time.
+	void chat_message_received(mapping data) {
+		if (message_seen[data->message_id]) return;
+		message_seen[data->message_id] = 1;
+		mapping(string:mixed) person = data->person || gather_person_info_eventsub(data);
+		//TODO: custom_reward_id (need to get a sighting)
+		request_rate_token(person->user, name);
+		string msg = data->message->text;
+		if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
+		if (person->uid == userid && sscanf(msg, "fakecheer%d", int bits) && bits) {
+			//Allow the broadcaster to "fakecheer100" (start of message only) to
+			//test alerts etc. Note that "fakecheer-100" can also be done, if that
+			//is ever useful to your testing. It may confuse things though!
+			//Note that in shared chat, we only want to do this in the origin;
+			//thus we check "is the chatter the channel?" rather than "does this
+			//person have the broadcaster badge?".
+			event_notify("cheer", this, person, bits, data, msg);
+			trigger_special("!cheer", person, (["{bits}": (string)bits, "{msg}": msg, "{msgid}": data->message_id || ""]));
+		}
+		chatlog("[" + name + "]", person, msg);
+		if (person->user) {
+			mapping p = G_G_("participants", name[1..], person->user);
+			p->lastnotice = time();
+			p->userid = person->uid;
+		}
+		person->vars = ([
+			"%s": msg, "{@mod}": person->badges->?_mod ? "1" : "0", "{@sub}": person->badges->?_sub ? "1" : "0",
+			"{@vip}": person->badges->?vip ? "1" : "0",
+			//Even without broadcaster permissions, it's possible to see the UUID of a reward.
+			//You can't see the redemption ID, and definitely can't complete/reject it, but you
+			//would be able to craft a trigger that responds to it.
+			"{rewardid}": data->channel_points_custom_reward_id || "",
+			"{msgid}": data->message_id || "",
+			"{usernamecolor}": data->color || "", //Undocumented, mainly here as a toy
+		]);
+		event_notify("allmsgs", this, person, msg);
+		trigger_special("!trigger", person, person->vars);
+		[mixed cmd, string param] = locate_command(person, msg);
+		int offset = sizeof(msg) - sizeof(param);
+		if (msg[offset..offset+sizeof(param)] != param) offset = -1; //TODO: Strip whites from around param without breaking this
+		person->measurement_offset = offset;
+		string emoted = "", residue = param;
+		if (person->emotes) foreach (person->emotes, [string id, int start, int end]) { //IRC-style emotes
+			emoted += sprintf("%s\uFFFAe%s:%s\uFFFB",
+				residue[..start - offset - 1], //Text before the emote
+				id, residue[start-offset..end-offset], //Emote ID and name
+			);
+			residue = residue[end - offset + 1..];
+			offset = end + 1;
+		}
+		else if (data->message->fragments) foreach (data->message->fragments, mapping f) { //EventSub-style emotes
+			if (f->type == "text") emoted += f->text;
+			//TODO: Cheer emotes? Not sure, maybe just leave them like regular emotes.
+			else if (f->type == "emote") emoted += sprintf("\uFFFAe%s:%s\uFFFB", f->emote->id, f->text);
+			residue = "";
+		}
+		person->vars["%s"] = param;
+		person->vars["{@emoted}"] = emoted + residue;
+		//Functions do not get %s handling. If they want it, they can do it themselves,
+		//and if they don't want it, it would mess things up badly to do it here.
+		//(They still get other variable handling.) NOTE: This may change in the future.
+		//If a function specifically does not want %s handling, it should:
+		//m_delete(person->vars, "%s");
+		//CJA 20260227: I don't think we have such a thing as function commands any more?
+		//Confirm this, then drop support.
+		if (functionp(cmd)) send(person, cmd(this, person, param));
+		else send(person, cmd, person->vars);
+	}
+
 	//Designed around the EventSub chat notification but can also handle IRC notifs
 	void chat_notification_received(mapping notif) {
 		if (!stringp(notif->message_id)) werror("NON STRING MESSAGE ID IN NOTIF: %O\n", notif); //Shouldn't happen, probably a bug somewhere
@@ -1165,7 +1165,13 @@ class channel(mapping identity) {
 				chatlog("[WHISPER" + name + "]", person, msg);
 				break;
 			}
-			case "PRIVMSG": chat_message_received(person, msg, params); break;
+			case "PRIVMSG": chat_message_received(([
+				"message_id": params->id,
+				"person": person, //HACK - For IRC-generated messages, we pass the person mapping in, for simplicity
+				"message": (["text": msg]),
+				"color": params->color,
+				"channel_points_custom_reward_id": params->custom_reward_id,
+			])); break;
 			case "CLEARMSG": case "CLEARCHAT": break; //Handled via EventSub instead. There's no message ID so we can't dedup like the others.
 			case "USERSTATE": { //Sent after our messages. The only ones we care about are those with nonces we sent.
 				array callback = m_delete(nonce_callbacks, params->client_nonce);
@@ -1314,10 +1320,7 @@ void autoreward(object channel, mapping data) {
 @EventNotify("channel.chat.message=1", ({"hack:channel:bot"}), "user_id"):
 void chatmessage(object channel, mapping data) {
 	werror("CHAT MESSAGE %O %O\n", channel, data);
-	mapping(string:mixed) person = gather_person_info_eventsub(data);
-	mapping params = (["color": data->color, "id": data->message_id]);
-	//TODO: custom_reward_id (need to get a sighting)
-	channel->chat_message_received(person, data->message->text, params);
+	channel->chat_message_received(data);
 }
 
 @EventNotify("channel.chat.notification=1", ({"channel:bot"}), "user_id"):
