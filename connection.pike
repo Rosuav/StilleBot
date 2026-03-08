@@ -1166,11 +1166,7 @@ class channel(mapping identity) {
 				break;
 			}
 			case "PRIVMSG": chat_message_received(person, msg, params); break;
-			case "CLEARMSG": delete_single_message(params->login, params->target_msg_id); break;
-			case "CLEARCHAT":
-				if (params->target_user_id) delete_user_messages(params->target_user_id, params->ban_duration);
-				else delete_all_messages();
-				break;
+			case "CLEARMSG": case "CLEARCHAT": break; //Handled via EventSub instead. There's no message ID so we can't dedup like the others.
 			case "USERSTATE": { //Sent after our messages. The only ones we care about are those with nonces we sent.
 				array callback = m_delete(nonce_callbacks, params->client_nonce);
 				if (callback) callback[0](callback[1], (["message_id": params->id]));
@@ -1334,11 +1330,11 @@ void chatnotification(object channel, mapping data) {
 	channel->chat_notification_received(data);
 }
 
-@EventNotify("channel.chat.clear=1", ({"hack:channel:bot"}), "user_id"):
+@EventNotify("channel.chat.clear=1", ({"channel:bot"}), "user_id"):
 void delete_all_messages(object channel, mapping data) {channel->delete_all_messages();}
-@EventNotify("channel.chat.clear_user_messages=1", ({"hack:channel:bot"}), "user_id"):
+@EventNotify("channel.chat.clear_user_messages=1", ({"channel:bot"}), "user_id"):
 void clear_user_messages(object channel, mapping data) {channel->delete_user_messages(data->target_user_id);}
-@EventNotify("channel.chat.message_delete=1", ({"hack:channel:bot"}), "user_id"):
+@EventNotify("channel.chat.message_delete=1", ({"channel:bot"}), "user_id"):
 void delete_single_message(object channel, mapping data) {channel->delete_single_message(data->target_user_login, data->message_id);}
 
 void session_cleanup() {
