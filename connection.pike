@@ -289,7 +289,12 @@ class channel(mapping identity) {
 		return ({0, ""});
 	}
 
+	multiset message_seen = (<>); //Not retained over code reload; duplicate handling should be very close in time.
 	void chat_message_received(mapping person, string msg, mapping params) {
+		//if (message_seen[notif->message_id]) return; //FIXME
+		//message_seen[notif->message_id] = 1;
+		if (message_seen[params->id]) return;
+		message_seen[params->id] = 1;
 		request_rate_token(person->user, name);
 		if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
 		if (person->badges->?broadcaster && sscanf(msg, "fakecheer%d", int bits) && bits) {
@@ -967,11 +972,10 @@ class channel(mapping identity) {
 	}
 
 	//Designed around the EventSub chat notification but can also handle IRC notifs
-	multiset notif_seen = (<>); //Not retained over code reload; duplicate handling should be very close in time.
 	void chat_notification_received(mapping notif) {
 		if (!stringp(notif->message_id)) werror("NON STRING MESSAGE ID IN NOTIF: %O\n", notif); //Shouldn't happen, probably a bug somewhere
-		if (notif_seen[notif->message_id]) return;
-		notif_seen[notif->message_id] = 1;
+		if (message_seen[notif->message_id]) return;
+		message_seen[notif->message_id] = 1;
 		mapping(string:mixed) person = gather_person_info_eventsub(notif);
 		switch (notif->notice_type) {
 			case "unraid": break; //Raid has been cancelled - might be worth notifying raidfinder if it caused the raid in the first place
@@ -1021,7 +1025,7 @@ class channel(mapping identity) {
 				]));
 				event_notify("subscription", this, "subbomb", person, notif->community_sub_gift->sub_tier[0..0], notif->community_sub_gift->total, notif, "");
 				break;
-			//FIXME: How are watch streaks announced on eventsub? Maybe they just aren't?
+			//Watch streaks aren't announced on eventsub. If they get added, put something like this here.
 			/*case "viewermilestone": switch (params->msg_param_category) {
 				case "watch-streak": //"X sparked a watch streak!" params->msg_param_category == "watch-streak", also has a msg_param_value == months
 					trigger_special("!watchstreak", person, ([
@@ -1051,12 +1055,20 @@ class channel(mapping identity) {
 		}
 	}
 
+	//Happy Eyeballs-inspired algorithm for handling the IRC and EventSub messaging.
+	//When something arrives on EventSub, it is immediately delivered to the functions above,
+	//which will record the message ID as having been seen. When one arrives on IRC, if it
+	//has already been seen, no need to do anything; but if it has not been seen, wait a bit,
+	//then process it, giving EventSub a chance to come in just behind it. This will mean that
+	//channels still using IRC will experience a small amount of additional lag, but most of
+	//the time, processing will happen via EventSub, and IRC exists as a backup.
 	mapping subbomb_ids = ([]);
 	void irc_message(string type, string chan, string msg, mapping params) {
-		//HACK: MustardMine is being operated using test-mode EventSub chat notifications. Avoid
-		//duplicate messages by excluding these from processing; however, all NOTICEs are still
-		//handled through here, pending full migration.
-		if (userid == 279141671 && type == "PRIVMSG") return;
+		if (message_seen[params->id]) return;
+		call_out(irc_message_delayed, 0.125, type, chan, msg, params);
+	}
+	void irc_message_delayed(string type, string chan, string msg, mapping params) {
+		if (message_seen[params->id]) return;
 		mapping(string:mixed) person = gather_person_info_irc(params, msg);
 		if (person->uid && person->badges) user_badges[person->uid] = person->badges;
 		lastmsg[(int)person->uid] = ({msg, params});
@@ -1316,10 +1328,10 @@ void chatmessage(object channel, mapping data) {
 @EventNotify("channel.chat.notification=1", ({"channel:bot"}), "user_id"):
 void chatnotification(object channel, mapping data) {
 	werror("CHAT NOTIFICATION %O %O\n", channel, data);
-	if (channel->userid != 279141671) return; //HACK: Only process events for MustardMine's channel
 	//When a chat notification comes in, it has a notice_type that says what it is,
 	//plus other info in separate fields. The notice types aren't all the same as
 	//IRC notices are, but are often similar. So it's like Kraken to Helix again.
+	channel->chat_notification_received(data);
 }
 
 @EventNotify("channel.chat.clear=1", ({"hack:channel:bot"}), "user_id"):
