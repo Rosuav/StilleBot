@@ -150,7 +150,7 @@ constant trig_cheer = special_trigger("!cheer", "Any bits are cheered", "The che
 constant cheerbadge = special_trigger("!cheerbadge", "A viewer attains a new cheer badge", "The cheerer", "level", "Stream support");
 constant charity = special_trigger("!charity", "Someone donates to the charity you're supporting", "The donor", "amount, msgid", "Stream support");
 constant watchstreak = special_trigger("!watchstreak", "Someone achieved a new watch streak!", "The viewer", "months, reward", "Stream support");
-constant timeout = special_trigger("!timeout", "A user got timed out or banned", "The victim", "ban_duration", "Status");
+constant timeout = special_trigger("!timeout", "A user got timed out or banned", "The victim", "", "Status");
 constant combostarted = special_trigger("!combostarted", "A hype combo started", "Broadcaster", ([
 	"{time_remaining}": "Time remaining (ms)",
 	"{gift_id}": "Type of icon shown??",
@@ -1190,22 +1190,21 @@ class channel(mapping identity) {
 	//NOTE: The duration is not available on EventSub. We'd need to subscribe to channel.moderate which
 	//requires a bunch more permissions; currently we don't have those perms, and the only loss is the
 	//timeout duration.
-	__async__ void delete_user_messages(string|int target, string|void duration) {
+	__async__ void delete_user_messages(string|int target) {
 		G_G_("banned_list", (string)userid)->stale = 1; //When anyone's banned/timed out, drop the banned users cache
 		event_notify("deletemsgs", this, target);
 		mapping user = await(get_user_info(target));
 		if (array m = lastmsg[(int)target]) {
 			//Log the last message of timed-out/banned users for reference.
 			//Might help with updating autoban.
-			Stdio.append_file("timeouts.log", sprintf("====== %sTimed out: %O %O\nLast message: %O\n", ctime(time()), target, duration, m));
+			Stdio.append_file("timeouts.log", sprintf("====== %sTimed out: %O\nLast message: %O\n", ctime(time()), target, m));
 		}
 		G_G_("participants", name[1..], user->login)->lastnotice = 0;
 		trigger_special("!timeout", ([
 			"nick": user->login, "user": user->login,
 			"uid": (int)user->id,
 			"displayname": user->display_name,
-		]),
-		(["{ban_duration}": duration || ""]));
+		]), ([]));
 	}
 
 	void delete_all_messages() {

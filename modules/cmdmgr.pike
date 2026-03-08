@@ -55,7 +55,6 @@ constant _SPECIAL_PARAMS = ({
 	({"choice_N_top_M_points_won", "Number of points the Mth user for the Nth choice won (0 if lost)"}),
 	({"winner_*", "Same as choice_N_* for N == {winner}"}),
 	({"loser_*", "Same as choice_N_* for N != {winner} if there were precisely two options"}),
-	({"ban_duration", "Number of seconds the person got timed out for, or 0 for ban"}),
 	({"length", "How many seconds it will last for"}),
 	({"is_automatic", "Whether it was triggered automatically rather than manually"}),
 	({"levelup", "Level number the hype train just reached, or blank if it didn't"}),
