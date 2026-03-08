@@ -8,7 +8,6 @@ constant messagetypes = ({"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMS
 mapping irc_connections = ([]); //Not persisted across code reloads, but will be repopulated (after checks) from the connection_cache.
 @retain: mapping channelcolor = ([]);
 @retain: mapping cooldown_timeout = ([]);
-@retain: mapping nonce_callbacks = ([]);
 int(1bit) is_active; //Cache of is_active_bot() since we need to check it freuqently.
 
 constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
@@ -826,6 +825,7 @@ class channel(mapping identity) {
 		}
 
 		//Wrap to 500 characters to fit inside the Twitch limit
+		//TODO: Copy this to /chat handling as well?
 		array msgs = ({ });
 		while (sizeof(msg) > 500)
 		{
@@ -840,15 +840,8 @@ class channel(mapping identity) {
 
 		mapping tags = ([]);
 		if (dest == "/reply") tags->reply_parent_msg_id = target;
-		if (cfg->callback) {
-			//Provide a nonce for the messages, so we call the callback later.
-			//Note that the vars could be mutated between here and the callback,
-			//so we copy them. Note also that we'll use the same nonce for them
-			//all, and only call the callback once.
-			string nonce = sprintf("stillebot-%d", ++G->G->nonce_counter);
-			tags->client_nonce = nonce;
-			nonce_callbacks[nonce] = ({cfg->callback, vars | ([])});
-		}
+		//NOTE: cfg->callback is not checked here; to reliably have the callback called, put
+		//a /chat prefix on the message, ensuring that it will be sent via the API.
 		if (voice == (string)G->G->bot_uid) voice = 0; //Use the intrinsic connection if possible.
 		if (objectp(irc_connections[voice]) && !irc_connections[voice]->options->outdated) irc_connections[voice]->send(name, msgs[*], tags);
 		else {
@@ -1163,11 +1156,7 @@ class channel(mapping identity) {
 				"channel_points_custom_reward_id": params->custom_reward_id,
 			])); break;
 			case "CLEARMSG": case "CLEARCHAT": break; //Handled via EventSub instead. There's no message ID so we can't dedup like the others.
-			case "USERSTATE": { //Sent after our messages. The only ones we care about are those with nonces we sent.
-				array callback = m_delete(nonce_callbacks, params->client_nonce);
-				if (callback) callback[0](callback[1], (["message_id": params->id]));
-				break;
-			}
+			case "USERSTATE": break;
 			default: werror("Unknown message type %O on channel %s\n", type, name);
 		}
 	}
