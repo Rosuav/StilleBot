@@ -800,12 +800,6 @@ class channel(mapping identity) {
 			return; //Nothing more to send here.
 		}
 
-		//Whispers are currently handled with a command prefix. The actual sending
-		//is done via twitch_apis.pike which hooks the slash commands.
-		if (dest == "/w") msg = sprintf("%s %s %s", dest, target, msg);
-		//Any other destination, just send it to open chat (there used to be a facility
-		//for sending to other channels, but this is no longer the case).
-
 		//Simulation of commands (for bulk testing etc) will capture all text sent, including
 		//slash commands. TODO: Include the voice at the beginning of the message?
 		if (cfg->simulate) {cfg->simulate(msg); return;}
@@ -813,17 +807,22 @@ class channel(mapping identity) {
 		if (G->G->send_chat_command) {
 			//Attempt to send the message(s) via the Twitch APIs if they have slash commands
 			//Any that can't be sent that way will be sent the usual way.
-			string|Concurrent.Future handled = G->G->send_chat_command(this, voice, msg);
+			string|Concurrent.Future handled = G->G->send_chat_command(this, voice, msg, dest, target);
 			if (objectp(handled) && handled->on_await) handled = await(handled);
 			//Having a callback and slash commands may result in strange behaviour.
 			//To absolutely guarantee that user-provided commands won't trigger slash commands,
 			//prefix with "/chat ", which will force them to be sent via the API (not IRC).
+			//NOTE: Some things here won't work with multiple messages, so there's no wordbreak
+			//happening here. Reconsider this at some point; it would be nice if messages could
+			//get sent in multiple pieces instead of being dropped silently. Alternatively, have
+			//a builtin to wrap a message??? That would allow a prefix to be provided again.
 			if (cfg->callback && mappingp(handled) && arrayp(handled->data)) cfg->callback(vars, handled->data[0]);
 			if (!stringp(handled)) return; //Promises have no meaningful response, and null means there's nothing to do
 			msg = handled;
 		}
 
 		mapping tags = ([]);
+		if (dest == "/w") msg = sprintf("%s %s %s", dest, target, msg); //Probably won't work.
 		if (dest == "/reply") tags->reply_parent_msg_id = target;
 		//NOTE: cfg->callback is not checked here; to reliably have the callback called, put
 		//a /chat prefix on the message, ensuring that it will be sent via the API.

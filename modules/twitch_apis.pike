@@ -172,22 +172,21 @@ Concurrent.Future qshoutout(object c, string v, string m, mapping t) {return sho
 
 @"user:manage:whispers":
 @"Whisper a message to a user -> username message":
-Concurrent.Future whisper(object channel, string voiceid, string msg, mapping tok) {
-	sscanf(String.trim(msg), "%s %s", string user, string message);
-	if (!message) return Concurrent.resolve(1);
+Concurrent.Future whisper(object channel, string voiceid, string msg, mapping tok, string dest, string user) {
+	if (dest != "/w") sscanf(String.trim(msg), "%s %s", user, msg);
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/whispers?from_user_id=%s&to_user_id={{USER}}",
 			voiceid),
 		(["Authorization": "Bearer " + tok->token]), ([
 			"method": "POST",
 			"username": replace(user, ({"@", " "}), ""),
-			"json": (["message": message]),
+			"json": (["message": msg]),
 		]),
 	);
 }
 @"user:manage:whispers":
 @"Whisper a message to a user -> username message":
-Concurrent.Future w(object c, string v, string m, mapping t) {return whisper(c, v, m, t);}
+Concurrent.Future w(object c, string v, string m, mapping t) {return whisper(c, v, m, t, "", "");}
 
 @"channel:edit:commercial":
 @"Start an ad break -> [length]":
@@ -337,7 +336,7 @@ __async__ void warn(object channel, string voiceid, string msg, mapping tok) {
 
 @"user:write:chat":
 @"Send a chat message using the API":
-Concurrent.Future chat(object channel, string voiceid, string msg, mapping tok) {
+Concurrent.Future chat(object channel, string voiceid, string msg, mapping tok, string dest, string target) {
 	return twitch_api_request("https://api.twitch.tv/helix/chat/messages",
 		(["Authorization": "Bearer " + tok->token]), ([
 			"method": "POST",
@@ -345,6 +344,7 @@ Concurrent.Future chat(object channel, string voiceid, string msg, mapping tok) 
 				"broadcaster_id": (string)channel->userid,
 				"sender_id": voiceid,
 				"message": msg,
+				"reply_parent_message_id": dest == "/reply" && target,
 			]),
 		]),
 	);
@@ -354,7 +354,7 @@ Concurrent.Future chat(object channel, string voiceid, string msg, mapping tok) 
 //non-command chat message for direct delivery. Note that the Future returned does
 //not have any useful data in it (it's probably just a status report from an API
 //call or something).
-string|Concurrent.Future send_chat_command(object channel, string voiceid, string msg) {
+string|Concurrent.Future send_chat_command(object channel, string voiceid, string msg, string dest, string target) {
 	string cmd;
 	if (has_prefix(msg, "/") && !has_prefix(msg, "/me ")) {
 		sscanf(msg, "/%[^ ] %s", string c, string param);
@@ -363,8 +363,8 @@ string|Concurrent.Future send_chat_command(object channel, string voiceid, strin
 	}
 	mapping tok = G->G->user_credentials[(int)voiceid];
 	if (!cmd) {
-		if (has_value(tok->scopes, need_scope->chat)) cmd = "chat"; //Send all messages via API (as if the /chat command was used)
-		else return msg; //Send via IRC, requires less credentials.
+		if (dest == "/w") cmd = "whisper"; else cmd = "chat";
+		if (!has_value(tok->scopes, need_scope[cmd])) return msg; //Send via IRC if we don't have the necessary credentials
 	}
 	if (!voiceid || voiceid == "0") {
 		voiceid = (string)G->G->bot_uid;
@@ -375,7 +375,7 @@ string|Concurrent.Future send_chat_command(object channel, string voiceid, strin
 		channel->report_error("ERROR", "This command requires " + need_scope[cmd] + " permission", msg);
 		return Concurrent.resolve(1); //Note that this will still suppress the chat message.
 	}
-	return this[cmd](channel, voiceid, msg, tok);
+	return this[cmd](channel, voiceid, msg, tok, dest, target);
 }
 
 protected void create(string name) {
