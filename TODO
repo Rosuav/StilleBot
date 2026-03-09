@@ -301,3 +301,7 @@
   - Sending of messages will need to be done by API. What's the server load impact?
     Do we get message IDs coming back? What more needs to happen?
 * https://mustardmine.com/checklist says "Enable" even if showcase already enabled?
+* Attempting any kind of IRC chat-send during the reconnection process breaks.
+  - This only affects voices for which we don't have modern perms
+  - Can we put a guard around the reconnection procedure and delay IRC sends until
+    it is complete?
