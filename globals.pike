@@ -1687,3 +1687,18 @@ string|zero get_active_bot() {
 	string active = G->G->dbsettings->?active_bot;
 	return active != "" && active;
 }
+
+//Wrap to 500 characters to fit inside the Twitch limit
+array(string) wordbreak(string msg) {
+	array msgs = ({ });
+	while (sizeof(msg) > 500)
+	{
+		int pos = 500;
+		while (msg[pos] != ' ' && pos--) ;
+		if (!pos) pos = 500;
+		msgs += ({String.trim(msg[..pos-1])});
+		msg = String.trim(msg[pos+1..]);
+		if (has_prefix(msg, "/")) msg = " " + msg; //Prevent slash commands from being treated as commands
+	}
+	return msgs + ({msg});
+}

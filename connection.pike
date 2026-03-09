@@ -761,7 +761,6 @@ class channel(mapping identity) {
 		}
 
 		//And now we have just a single string to send.
-		string prefix = _substitute_vars(message->prefix || "", vars, person, cfg->users);
 		msg = _substitute_vars(msg, vars, person, cfg->users);
 		string dest = cfg->dest || "", target = cfg->target || "", destcfg = cfg->destcfg || "";
 
@@ -803,18 +802,18 @@ class channel(mapping identity) {
 
 		//Whispers are currently handled with a command prefix. The actual sending
 		//is done via twitch_apis.pike which hooks the slash commands.
-		if (dest == "/w") prefix = sprintf("%s %s %s", dest, target, prefix);
+		if (dest == "/w") msg = sprintf("%s %s %s", dest, target, msg);
 		//Any other destination, just send it to open chat (there used to be a facility
 		//for sending to other channels, but this is no longer the case).
 
 		//Simulation of commands (for bulk testing etc) will capture all text sent, including
 		//slash commands. TODO: Include the voice at the beginning of the message?
-		if (cfg->simulate) {cfg->simulate(prefix + msg); return;}
+		if (cfg->simulate) {cfg->simulate(msg); return;}
 
 		if (G->G->send_chat_command) {
 			//Attempt to send the message(s) via the Twitch APIs if they have slash commands
 			//Any that can't be sent that way will be sent the usual way.
-			string|Concurrent.Future handled = G->G->send_chat_command(this, voice, prefix + msg);
+			string|Concurrent.Future handled = G->G->send_chat_command(this, voice, msg);
 			if (objectp(handled) && handled->on_await) handled = await(handled);
 			//Having a callback and slash commands may result in strange behaviour.
 			//To absolutely guarantee that user-provided commands won't trigger slash commands,
@@ -824,25 +823,12 @@ class channel(mapping identity) {
 			msg = handled;
 		}
 
-		//Wrap to 500 characters to fit inside the Twitch limit
-		//TODO: Copy this to /chat handling as well?
-		array msgs = ({ });
-		while (sizeof(msg) > 500)
-		{
-			int pos = 500 - sizeof(prefix);
-			while (msg[pos] != ' ' && pos--) ;
-			if (!pos) pos = 500 - sizeof(prefix);
-			msgs += ({prefix + String.trim(msg[..pos-1])});
-			msg = String.trim(msg[pos+1..]);
-			if (has_prefix(msg, "/")) msg = " " + msg; //Prevent slash commands from being treated as commands
-		}
-		msgs += ({prefix + msg});
-
 		mapping tags = ([]);
 		if (dest == "/reply") tags->reply_parent_msg_id = target;
 		//NOTE: cfg->callback is not checked here; to reliably have the callback called, put
 		//a /chat prefix on the message, ensuring that it will be sent via the API.
 		if (voice == (string)G->G->bot_uid) voice = 0; //Use the intrinsic connection if possible.
+		array msgs = wordbreak(msg);
 		if (objectp(irc_connections[voice]) && !irc_connections[voice]->options->outdated) irc_connections[voice]->send(name, msgs[*], tags);
 		else {
 			if (!arrayp(irc_connections[voice])) spawn_task(voice_enable(voice, name, tags));
