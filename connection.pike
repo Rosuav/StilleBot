@@ -1681,7 +1681,6 @@ __async__ void conduit_message(Protocols.WebSocket.Frame frm, mapping conn) {
 				call_out(m_delete, 30, recent_raids, key);
 			}
 			object channel = G->G->irc->id[(int)event->broadcaster_user_id]; //Some events (eg raid) won't have a single channel, so this will be null
-			werror("Hook %O channel %O\n", type, channel->?login);
 			foreach (G->G->eventhooks[type] || ([]); string name; function func)
 				if (mixed ex = name != "" && catch (func(channel, event)))
 					werror("Error in hook %s %O\n%s", name, event, describe_backtrace(ex));
