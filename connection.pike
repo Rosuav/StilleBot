@@ -992,6 +992,7 @@ class channel(mapping identity) {
 					"{from_subbomb}": notif->came_from_subbomb || "0",
 				]));
 				event_notify("subscription", this, "subgift", person, notif->sub_gift->sub_tier[0..0], 1, notif, "");
+				break;
 			case "community_sub_gift":
 				Stdio.append_file("subs.log", sprintf("\n%sDEBUG SUBBOMB: chan %s raw %O\n", ctime(time()), name, notif));
 				subbomb_ids[notif->community_sub_gift->id] += (int)notif->community_sub_gift->total;
