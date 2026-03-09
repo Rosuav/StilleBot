@@ -351,7 +351,7 @@ Concurrent.Future chat(object channel, string voiceid, string msg, mapping tok, 
 }
 
 //Process a slash command and return a promise when it will be done, or return any
-//non-command chat message for direct delivery. Note that the Future returned does
+//non-command chat message for direct delivery. Note that the Future returned might
 //not have any useful data in it (it's probably just a status report from an API
 //call or something).
 string|Concurrent.Future send_chat_command(object channel, string voiceid, string msg, string dest, string target) {
