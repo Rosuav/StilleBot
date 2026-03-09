@@ -968,9 +968,9 @@ class channel(mapping identity) {
 				Stdio.append_file("subs.log", sprintf("\n%sDEBUG RESUB: chan %s raw %O\n", ctime(time()), name, notif));
 				trigger_special("!resub", person, ([
 					"{tier}": notif->resub->sub_tier[0..0],
-					"{months}": (string)notif->resub->cumulative_months,
-					"{streak}": (string)notif->resub->streak_months,
-					"{multimonth}": (string)(notif->resub->duration_months || 1),
+					"{months}": (string)(notif->resub->cumulative_months || "0"),
+					"{streak}": (string)(notif->resub->streak_months || "0"),
+					"{multimonth}": (string)(notif->resub->duration_months || "1"),
 					"{msg}": notif->message->text, "{msgid}": notif->message_id || "",
 				]));
 				event_notify("subscription", this, "resub", person, notif->resub->sub_tier[0..0], 1, notif, notif->message->text);
