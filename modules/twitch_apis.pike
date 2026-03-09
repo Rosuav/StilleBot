@@ -344,7 +344,7 @@ Concurrent.Future chat(object channel, string voiceid, string msg, mapping tok, 
 				"broadcaster_id": (string)channel->userid,
 				"sender_id": voiceid,
 				"message": msg,
-				"reply_parent_message_id": dest == "/reply" && target,
+				"reply_parent_message_id": dest == "/reply" ? target : Val.null,
 			]),
 		]),
 	);
