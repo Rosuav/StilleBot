@@ -71,7 +71,7 @@ mapping(string:mixed) gather_person_info_irc(mapping params, string msg) {
 
 mapping(string:mixed) gather_person_info_eventsub(mapping data) {
 	mapping ret = (["user": data->chatter_user_login]);
-	ret->uid = (int)data->chatter_user_id;
+	ret->uid = (int)(data->chatter_user_id || 0);
 	notice_user_name(data->chatter_user_login, data->chatter_user_id);
 	ret->displayname = data->chatter_user_name;
 	ret->msgid = data->message_id;
