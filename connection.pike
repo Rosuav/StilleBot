@@ -885,7 +885,6 @@ class channel(mapping identity) {
 		if (message_seen[data->message_id]) return;
 		message_seen[data->message_id] = 1;
 		mapping(string:mixed) person = data->person || gather_person_info_eventsub(data);
-		//TODO: custom_reward_id (need to get a sighting)
 		request_rate_token(person->user, name);
 		string msg = data->message->text;
 		if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
@@ -1277,25 +1276,10 @@ void autoreward(object channel, mapping data) {
 	werror("AUTO REWARD %O %O\n", channel, data);
 }
 
-//HACK: This function is used only for MustardMine, as the EventSub chat handling is under test.
-//Thus the required permission is one that will never actually occur, but which triggers alternate
-//handling. When this goes live, replacing the permission with "channel:bot" will instantly activate
-//this for all managed channels.
-@EventNotify("channel.chat.message=1", ({"hack:channel:bot"}), "user_id"):
-void chatmessage(object channel, mapping data) {
-	werror("CHAT MESSAGE %O %O\n", channel, data);
-	channel->chat_message_received(data);
-}
-
+@EventNotify("channel.chat.message=1", ({"channel:bot"}), "user_id"):
+void chatmessage(object channel, mapping data) {channel->chat_message_received(data);}
 @EventNotify("channel.chat.notification=1", ({"channel:bot"}), "user_id"):
-void chatnotification(object channel, mapping data) {
-	werror("CHAT NOTIFICATION %O %O\n", channel, data);
-	//When a chat notification comes in, it has a notice_type that says what it is,
-	//plus other info in separate fields. The notice types aren't all the same as
-	//IRC notices are, but are often similar. So it's like Kraken to Helix again.
-	channel->chat_notification_received(data);
-}
-
+void chatnotification(object channel, mapping data) {channel->chat_notification_received(data);}
 @EventNotify("channel.chat.clear=1", ({"channel:bot"}), "user_id"):
 void delete_all_messages(object channel, mapping data) {channel->delete_all_messages();}
 @EventNotify("channel.chat.clear_user_messages=1", ({"channel:bot"}), "user_id"):
