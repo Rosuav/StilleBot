@@ -10,32 +10,33 @@
 */
 mapping need_scope = ([]); //Filled in by create()
 
-@"moderator:manage:announcements":
-@"Send an announcement (add suffix for color) -> message":
-Concurrent.Future announce(object channel, string voiceid, string msg, mapping tok, string|void color) {
+Concurrent.Future _low_announce(object channel, string voiceid, string msg, mapping tok, string color) {
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/announcements?broadcaster_id=%d&moderator_id=%s",
 		channel->userid, voiceid),
 		(["Authorization": "Bearer " + tok->token]),
 		(["json": ([
 			"message": msg,
-			"color": color || "primary",
+			"color": color,
 		])]),
 	);
 }
 
 @"moderator:manage:announcements":
+@"Send an announcement (add suffix for color) -> message":
+Concurrent.Future announce(object c, string v, string m, mapping t) {return _low_announce(c, v, m, t, "primary");}
+@"moderator:manage:announcements":
 @"Announce in blue -> message":
-Concurrent.Future announceblue(object c, string v, string m, mapping t) {return announce(c, v, m, t, "blue");}
+Concurrent.Future announceblue(object c, string v, string m, mapping t) {return _low_announce(c, v, m, t, "blue");}
 @"moderator:manage:announcements":
 @"Announce in green -> message":
-Concurrent.Future announcegreen(object c, string v, string m, mapping t) {return announce(c, v, m, t, "green");}
+Concurrent.Future announcegreen(object c, string v, string m, mapping t) {return _low_announce(c, v, m, t, "green");}
 @"moderator:manage:announcements":
 @"Announce in orange -> message":
-Concurrent.Future announceorange(object c, string v, string m, mapping t) {return announce(c, v, m, t, "orange");}
+Concurrent.Future announceorange(object c, string v, string m, mapping t) {return _low_announce(c, v, m, t, "orange");}
 @"moderator:manage:announcements":
 @"Announce in purple -> message":
-Concurrent.Future announcepurple(object c, string v, string m, mapping t) {return announce(c, v, m, t, "purple");}
+Concurrent.Future announcepurple(object c, string v, string m, mapping t) {return _low_announce(c, v, m, t, "purple");}
 
 Concurrent.Future chat_settings(object channel, string voiceid, string msg, mapping tok, string field, mixed val, string|void duration) {
 	mapping cfg = ([field: val]);
@@ -80,9 +81,7 @@ Concurrent.Future uniquechat(object c, string v, string m, mapping t) {return ch
 @"End unique-chat mode ->":
 Concurrent.Future uniquechatoff(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "unique_chat_mode", Val.false);}
 
-@"moderator:manage:chat_messages":
-@"Clear all chat (not commonly necessary) ->":
-Concurrent.Future clear(object channel, string voiceid, string msg, mapping tok, string|void msgid) {
+Concurrent.Future delete_chat(object channel, string voiceid, string msg, mapping tok, string|void msgid) {
 	//Pass a msgid to delete an individual message, else clears all chat
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/chat?broadcaster_id=%d&moderator_id=%s%s",
@@ -92,12 +91,13 @@ Concurrent.Future clear(object channel, string voiceid, string msg, mapping tok,
 	);
 }
 @"moderator:manage:chat_messages":
+@"Clear all chat (not commonly necessary) ->":
+Concurrent.Future clear(object c, string v, string m, mapping t) {return delete_chat(c, v, "", t);}
+@"moderator:manage:chat_messages":
 @"Delete a single message -> message-id":
-Concurrent.Future deletemsg(object c, string v, string m, mapping t) {return clear(c, v, "", t, m);}
+Concurrent.Future deletemsg(object c, string v, string m, mapping t) {return delete_chat(c, v, "", t, m);}
 
-@"moderator:manage:banned_users":
-@"Ban a user -> username [reason]":
-__async__ void ban(object channel, string voiceid, string msg, mapping tok, int|void timeout) {
+__async__ void whack(object channel, string voiceid, string msg, mapping tok, int|void timeout) {
 	sscanf(msg, "%s %s", string username, string reason);
 	int uid = await(get_user_id(username || msg));
 	mapping params = (["user_id": uid]);
@@ -116,11 +116,14 @@ __async__ void ban(object channel, string voiceid, string msg, mapping tok, int|
 	));
 }
 @"moderator:manage:banned_users":
-@"Time out a user -> username time [reason]":
-Concurrent.Future timeout(object c, string v, string m, mapping t) {return ban(c, v, m, t, 1);}
+@"Ban a user -> username [reason]":
+Concurrent.Future ban(object c, string v, string m, mapping t) {return whack(c, v, m, t, 0);}
 @"moderator:manage:banned_users":
 @"Time out a user -> username time [reason]":
-Concurrent.Future t(object c, string v, string m, mapping t) {return ban(c, v, m, t, 1);}
+Concurrent.Future timeout(object c, string v, string m, mapping t) {return whack(c, v, m, t, 1);}
+@"moderator:manage:banned_users":
+@"Time out a user -> username time [reason]":
+Concurrent.Future t(object c, string v, string m, mapping t) {return whack(c, v, m, t, 1);}
 
 @"moderator:manage:banned_users":
 @"Cancel a ban/timeout -> username":
@@ -139,8 +142,8 @@ Concurrent.Future untimeout(object c, string v, string m, mapping t) {return unb
 mapping(int:int) qso = ([]); //Not retained, will be purged on code reload
 @"moderator:manage:shoutouts":
 @"Send an on-platform shoutout immediately, or fail if it can't be done -> streamername":
-__async__ void shoutout(object channel, string voiceid, string msg, mapping tok, int|void queue) {
-	if (queue) {
+__async__ void shoutout(object channel, string voiceid, string msg, mapping tok, string|void queue) {
+	if (queue == "QUEUE") {
 		int delay = qso[channel->userid] - time();
 		qso[channel->userid] = max(qso[channel->userid], time()) + 121; //Update the queue time before sleeping
 		if (delay > 0) await(task_sleep(delay));
@@ -160,7 +163,7 @@ __async__ void shoutout(object channel, string voiceid, string msg, mapping tok,
 		//400 - no self-shoutouts, no offline shoutouts
 		//429 - either too quick on the shoutouts, or you just shouted that streamer out
 		//TODO: Log this somewhere for the broadcaster to see
-		if (ret->status == 429 && queue && !has_value(ret->message, "the specified streamer")) {
+		if (ret->status == 429 && queue == "QUEUE" && !has_value(ret->message, "the specified streamer")) {
 			werror("** qshoutout failure: Got 429 error, qso %O time %O\n", qso[channel->userid], time());
 		}
 		else channel->report_error("WARN", ret->message, "/shoutout " + msg);
@@ -168,7 +171,7 @@ __async__ void shoutout(object channel, string voiceid, string msg, mapping tok,
 }
 @"moderator:manage:shoutouts":
 @"Send an on-platform shoutout, delaying it until the previous /qshoutout is done -> streamername":
-Concurrent.Future qshoutout(object c, string v, string m, mapping t) {return shoutout(c, v, m, t, 1);}
+Concurrent.Future qshoutout(object c, string v, string m, mapping t) {return shoutout(c, v, m, t, "QUEUE");}
 
 @"user:manage:whispers":
 @"Whisper a message to a user -> username message":
@@ -252,35 +255,35 @@ Concurrent.Future unraid(object channel, string voiceid, string msg, mapping tok
 
 @"channel:manage:vips":
 @"Give someone a VIP badge -> username":
-Concurrent.Future vip(object channel, string voiceid, string msg, mapping tok, int|void remove) {
+Concurrent.Future vip(object channel, string voiceid, string msg, mapping tok, string|void remove) {
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/channels/vips?broadcaster_id=%d&user_id={{USER}}",
 			channel->userid),
 		(["Authorization": "Bearer " + tok->token]), ([
-			"method": remove ? "DELETE" : "POST",
+			"method": remove == "REMOVE" ? "DELETE" : "POST",
 			"username": replace(msg, ({"@", " "}), ""),
 		]),
 	);
 }
 @"channel:manage:vips":
 @"Remove someone's VIP badge -> username":
-Concurrent.Future unvip(object c, string v, string m, mapping t) {return vip(c, v, m, t, 1);}
+Concurrent.Future unvip(object c, string v, string m, mapping t) {return vip(c, v, m, t, "REMOVE");}
 
 @"channel:manage:moderators":
 @"Give someone a mod sword -> username":
-Concurrent.Future mod(object channel, string voiceid, string msg, mapping tok, int|void remove) {
+Concurrent.Future mod(object channel, string voiceid, string msg, mapping tok, string|void remove) {
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=%d&user_id={{USER}}",
 			channel->userid),
 		(["Authorization": "Bearer " + tok->token]), ([
-			"method": remove ? "DELETE" : "POST",
+			"method": remove == "REMOVE" ? "DELETE" : "POST",
 			"username": replace(msg, ({"@", " "}), ""),
 		]),
 	);
 }
 @"channel:manage:moderators":
 @"Remove a mod sword -> username":
-Concurrent.Future unmod(object c, string v, string m, mapping t) {return mod(c, v, m, t, 1);}
+Concurrent.Future unmod(object c, string v, string m, mapping t) {return mod(c, v, m, t, "REMOVE");}
 
 Regexp.SimpleRegexp bicap = Regexp.SimpleRegexp("[a-z][A-Z]");
 string bicap_to_snake(string pair) {return pair / 1 * "_";}
@@ -303,19 +306,19 @@ Concurrent.Future color(object channel, string voiceid, string msg, mapping tok)
 
 @"moderator:manage:shield_mode":
 @"Engage shield mode immediately ->":
-Concurrent.Future shield(object channel, string voiceid, string msg, mapping tok, int|void remove) {
+Concurrent.Future shield(object channel, string voiceid, string msg, mapping tok, string|void remove) {
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/shield_mode?broadcaster_id=%d&moderator_id=%s",
 			channel->userid, voiceid),
 		(["Authorization": "Bearer " + tok->token]), ([
 			"method": "PUT",
-			"json": (["is_active": remove ? Val.false : Val.true]),
+			"json": (["is_active": remove == "REMOVE" ? Val.false : Val.true]),
 		]),
 	);
 }
 @"moderator:manage:shield_mode":
 @"Disengage shield mode ->":
-Concurrent.Future shieldoff(object c, string v, string m, mapping t) {return shield(c, v, m, t, 1);}
+Concurrent.Future shieldoff(object c, string v, string m, mapping t) {return shield(c, v, m, t, "REMOVE");}
 
 //TODO: Should there be a corresponding special trigger when the user acknowledges it?
 @"moderator:manage:warnings":
