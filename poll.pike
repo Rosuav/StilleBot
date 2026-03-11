@@ -341,6 +341,15 @@ void streaminfo(array data)
 	//This helps us ensure that we look up those we care about, and no others.
 	mapping channels = ([]);
 	foreach (data, mapping chan) channels[(int)chan->user_id] = chan;
+	if (channels[1314578532] && !stream_online_since[1314578532]) { //Hack. Can I do a proper "monitored channels" thing somehow?
+		werror("HACK TEST ONLINE: MorbidMiscellarium\n");
+		event_notify("channel_online", "morbidmiscellarium", 1, 1314578532);
+		stream_online_since[1314578532] = 1;
+	} else if (!channels[1314578532] && stream_online_since[1314578532]) {
+		werror("HACK TEST OFFLINE: MorbidMiscellarium\n");
+		event_notify("channel_offline", "morbidmiscellarium", 1, 1314578532);
+		m_delete(stream_online_since, 1314578532);
+	}
 	//Now we check over our own list of channels. Anything absent is assumed offline.
 	foreach (values(G->G->irc->id), object channel) if (channel->userid) {
 		if (mapping info = channels[channel->userid]) {
