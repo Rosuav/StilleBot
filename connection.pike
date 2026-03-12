@@ -1773,6 +1773,10 @@ __async__ void establish_hook_notification(string|int channelid, string hook, ma
 //be coded in properly (to allow !demo to still have some example voices).
 array(mapping) shard_voices = ({0}); //For now, see what it's like if we don't shard.
 __async__ void reconnect() {
+	//Where is the big time delay in here? At what point are we able to once again
+	//send chat via IRC? It ought to be waiting on irc_connect(); what's state
+	//during that time?
+	System.Timer reconnect_time = System.Timer();
 	if (!shard_voices) {
 		//Fetch up the list of bot shard voices from the demo's available voices
 		mapping demo_voices;
@@ -1829,13 +1833,14 @@ __async__ void reconnect() {
 			"shard_id": i && shard_voices[i]->id,
 		]))->then() {
 			mapping opt = __ARGS__[0]->options;
-			werror("IRC now connected: %O --> %O\n", opt->user, opt->join);
+			werror("[%.2fs] IRC now connected: %O --> %O\n", reconnect_time->peek(), opt->user, opt->join);
 			irc_connections[opt->shard_id] = __ARGS__[0];
 		}
 		->thencatch() {werror("Unable to connect to Twitch:\n%s\n", describe_backtrace(__ARGS__[0]));};
 	}
 	werror("Now connecting: %O queue %O\n", connection_cache->rosuav, connection_cache->rosuav->queue);
 	if (is_active && !G->G->args["no-conduit"]) setup_conduit(); //Asynchronously establish event hooks too
+	werror("Reconnection begun in %.2fs\n", reconnect_time->peek());
 }
 
 @hook_credentials_changed: void kick_voice_on_auth_change(mapping cred) {
