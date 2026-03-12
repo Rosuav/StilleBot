@@ -1274,7 +1274,7 @@ void autoreward(object channel, mapping data) {
 	//Some automatic rewards (eg "unlock emote") cost channel points. Others (eg "gigantify")
 	//cost bits. The ones that cost bits count as cheers and advance goal bars by also triggering
 	//the channel.bits.use event, so currently none of these actually need to do anything.
-	werror("AUTO REWARD %O %O\n", channel, data);
+	//werror("AUTO REWARD %O %O\n", channel, data);
 }
 
 @EventNotify("channel.chat.message=1", ({"channel:bot"}), "user_id"):
