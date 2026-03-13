@@ -338,7 +338,7 @@ __async__ void warn(object channel, string voiceid, string msg, mapping tok) {
 }
 
 @"user:write:chat":
-@"Send a chat message using the API":
+@"Send a chat message using the API ->":
 Concurrent.Future chat(object channel, string voiceid, string msg, mapping tok, string dest, string target) {
 	return twitch_api_request("https://api.twitch.tv/helix/chat/messages",
 		(["Authorization": "Bearer " + tok->token]), ([
