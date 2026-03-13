@@ -9,6 +9,7 @@ mapping irc_connections = ([]); //Not persisted across code reloads, but will be
 @retain: mapping channelcolor = ([]);
 @retain: mapping cooldown_timeout = ([]);
 int(1bit) is_active; //Cache of is_active_bot() since we need to check it freuqently.
+Concurrent.Promise|zero reconnection_in_progress; //If non-null, we're reconnecting
 
 constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
 	"broadcaster": "_mod", "moderator": "_mod", "staff": "_mod", "lead_moderator": "_mod",
@@ -119,6 +120,21 @@ constant deletemsg = ({"object channel", "string target", "string msgid"});
 constant deletemsgs = ({"object channel", "string target"});
 
 __async__ void voice_enable(string voiceid, string chan, mapping|void tags) {
+	if (reconnection_in_progress) {
+		//During reconnection, attempting to establish an IRC connection for a voice
+		//results in stuff getting stuck. Waiting for reconnection plus another 11
+		//seconds seems to get around it, suggesting that this is related to the
+		//rate limiting that is imposed on IRC; however, simply making the rate limit
+		//apply across all users (instead of being per-user as is documented) doesn't
+		//solve it. For now, this will do, since things aren't getting stuck and the
+		//delay is at most a minute or two; ultimately, IRC connections are going to
+		//be less and less relevant, and when the primary connection no longer needs
+		//to join every single channel, the delay will max out at maybe 20s.
+		werror("Waiting to enable voice %O...\n", voiceid);
+		await(reconnection_in_progress->future());
+		werror("Success signalled, waiting another 11s...\n");
+		sleep(11);
+	}
 	mapping tok = G->G->user_credentials[(int)voiceid];
 	werror("Connecting to voice %O...\n", voiceid);
 	object conn = await(irc_connect(([
@@ -1786,10 +1802,7 @@ __async__ void establish_hook_notification(string|int channelid, string hook, ma
 //be coded in properly (to allow !demo to still have some example voices).
 array(mapping) shard_voices = ({0}); //For now, see what it's like if we don't shard.
 __async__ void reconnect() {
-	//Where is the big time delay in here? At what point are we able to once again
-	//send chat via IRC? It ought to be waiting on irc_connect(); what's state
-	//during that time?
-	System.Timer reconnect_time = System.Timer();
+	reconnection_in_progress = Concurrent.Promise();
 	if (!shard_voices) {
 		//Fetch up the list of bot shard voices from the demo's available voices
 		mapping demo_voices;
@@ -1837,7 +1850,9 @@ __async__ void reconnect() {
 	array shards = Array.transpose(channels / sizeof(shard_voices));
 	if (!sizeof(shards)) shards = ({channels}); //If we have fewer channels than voices, connect to them all on the intrinsic voice.
 	else shards[0] += channels % sizeof(shard_voices);
+	int still_reconnecting = 0;
 	foreach (shards; int i; array chan) {
+		++still_reconnecting;
 		irc_connect(([
 			"user": i && shard_voices[i]->name,
 			"join": chan,
@@ -1846,14 +1861,14 @@ __async__ void reconnect() {
 			"shard_id": i && shard_voices[i]->id,
 		]))->then() {
 			mapping opt = __ARGS__[0]->options;
-			werror("[%.2fs] IRC now connected: %O --> %O\n", reconnect_time->peek(), opt->user, opt->join);
+			werror("IRC now connected: %O --> %O\n", opt->user, opt->join);
 			irc_connections[opt->shard_id] = __ARGS__[0];
+			if (!--still_reconnecting) {reconnection_in_progress->success(1); reconnection_in_progress = 0;}
 		}
 		->thencatch() {werror("Unable to connect to Twitch:\n%s\n", describe_backtrace(__ARGS__[0]));};
 	}
 	werror("Now connecting: %O queue %O\n", connection_cache->rosuav, connection_cache->rosuav->queue);
 	if (is_active && !G->G->args["no-conduit"]) setup_conduit(); //Asynchronously establish event hooks too
-	werror("Reconnection begun in %.2fs\n", reconnect_time->peek());
 }
 
 @hook_credentials_changed: void kick_voice_on_auth_change(mapping cred) {
