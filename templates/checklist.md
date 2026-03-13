@@ -1,7 +1,6 @@
 # $$title||Emote checklist$$
 
 <style>
-* {box-sizing: border-box;}
 p {max-width: 80em; padding: 0.25em;}
 figure {
 	display: inline-block;
@@ -37,6 +36,11 @@ img {
 }
 img:hover {filter: saturate(1);}
 body.greyscale {filter: saturate(0);}
+#showcaselink.disabled {
+	pointer-events: none;
+	opacity: 0.6;
+	filter: greyscale(0.25);
+}
 </style>
 
 <style id=haveemotes>

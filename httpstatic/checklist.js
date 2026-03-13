@@ -8,8 +8,15 @@ export function render(data) {
 			data.emotes.map(e => "img[title=\"" + e.replace("\\", "\\\\") + "\"]").join(", ") +
 			"{filter: saturate(1); border-color: green;}"
 		);
+	}
+	if (data.enable_showcase) {
 		const showcase = DOM("#toggleshowcase");
-		if (showcase) set_content(showcase, data.emotes.includes("_allow_showcase") ? "Disable showcase" : "Enable showcase");
+		if (showcase) set_content(showcase, data.enable_showcase === "yes" ? "Disable showcase" : "Enable showcase");
+		const link = DOM("#showcaselink");
+		if (link) {
+			link.classList.toggle("disabled", data.enable_showcase !== "yes");
+			link.tabIndex = data.enable_showcase === "yes" ? 0 : -1;
+		}
 	}
 	if (data.all_emotes) replace_content("#all_emotes", [
 		data.loading && DIV("Loading..."),

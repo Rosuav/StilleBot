@@ -8,9 +8,7 @@ inherit annotated;
 constant hypetrain = replace(#"
 ## Hype Train set nine
 ### Unlockable Apr 2025 to current
-### The fourth column unlocked in Jul 2025
-### The fifth column unlocked in Sep 2025
-### The sixth column unlocked in Dec 2025
+### Additional columns unlocked Jul 2025, Sep 2025, Dec 2025
 SpillTheTea ThatsAServe WhosThisDiva ConfettiHype FrogWow OhWow<br>
 RespectfullyNo ThatsIconique HerMind ImSpiraling LuvLuvLUV EpicClip<br>
 NoComment DownBad UghMood ShyGhost MeSweat SoCinema<br>
@@ -307,7 +305,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	else if (scopes["user:read:emotes"]) {
 		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>\n\n"
 			"[Enable showcase](:#toggleshowcase)\n\n"
-			"[Show off your emotes here](checklist?showcase=" + req->misc->session->?user->?id + ")";
+			"[Show off your emotes here](checklist?showcase=" + req->misc->session->?user->?id + " :#showcaselink)";
 	}
 	else login_link += "\n\n<input type=checkbox id=showall style=\"display:none\" checked>"; //Hack: Show all if not logged in
 	mapping botemotes = await(G->G->DB->load_config(G->G->bot_uid, "bot_emotes"));
@@ -334,12 +332,16 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (scopes["user:read:emotes"]) update_user_emotes(conn->session->user->id, conn->session->token);
 }
 __async__ mapping get_state(string group) {
-	return (["emotes": (array)(user_emotes[group] || ({ }))]);
+	mapping en = valid_showcase_groups[group] > time()
+		? (["showcase": 1])
+		: await(G->G->DB->load_config(group, "is_enabled"));
+	return (["emotes": (array)(user_emotes[group] || ({ })), "enable_showcase": en->showcase ? "yes" : "no"]);
 }
 
 __async__ void websocket_cmd_toggleshowcase(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	await(G->G->DB->mutate_config(conn->session->?user->?id, "is_enabled") {mapping en = __ARGS__[0];
 		if (!m_delete(en, "showcase")) en->showcase = 1;
+		else m_delete(valid_showcase_groups, (string)conn->session->?user->?id);
 	});
 	send_updates_all(conn->group);
 }
