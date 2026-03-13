@@ -911,7 +911,7 @@ class channel(mapping identity) {
 			event_notify("cheer", this, person, bits, data, msg);
 			trigger_special("!cheer", person, (["{bits}": (string)bits, "{msg}": msg, "{msgid}": data->message_id || ""]));
 		}
-		chatlog("[" + name + "]", person, msg);
+		chatlog("[" + name + "] ", person, msg);
 		if (person->user) {
 			mapping p = G_G_("participants", name[1..], person->user);
 			p->lastnotice = time();
