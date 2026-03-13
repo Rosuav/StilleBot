@@ -885,6 +885,7 @@ class channel(mapping identity) {
 		if (message_seen[data->message_id]) return;
 		message_seen[data->message_id] = 1;
 		mapping(string:mixed) person = data->person || gather_person_info_eventsub(data);
+		if (person->uid && person->badges) user_badges[person->uid] = person->badges;
 		request_rate_token(person->user, name);
 		string msg = data->message->text;
 		if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
