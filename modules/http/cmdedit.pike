@@ -106,12 +106,12 @@ void update_command(object channel, string command) {
 }
 
 void wscmd_cmdedit_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	echoable_message valid = G->G->cmdmgr->update_command(channel, (conn->group / "#")[0], msg->cmdname, msg->response, ([
+	echoable_message valid = G->G->cmdmgr->update_command(channel, (conn->subscription_group / "#")[0], msg->cmdname, msg->response, ([
 		"original": msg->original,
 		"language": msg->language == "mustard" ? "mustard" : "",
 	]));
 	if (!valid) return;
-	if (msg->cmdname == "" && has_prefix(conn->group, "!!trigger#")) {
+	if (msg->cmdname == "" && has_prefix(conn->subscription_group, "!!trigger#")) {
 		//Newly added command. The client needs to know the ID so it can pop it up.
 		//FIXME: Should this be cmdedit_newtrigger? Is it even being used?
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "newtrigger", "response": valid[1][-1]])));
@@ -159,7 +159,7 @@ void wscmd_cmdedit_deletereward(object channel, mapping(string:mixed) conn, mapp
 }
 
 void websocket_cmd_cmdedit_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string mode] = split_channel(conn->group);
+	[object channel, string mode] = split_channel(conn->subscription_group);
 	if (!channel) return 0; //Fake-mod mode is okay here (this handles tab switching inside the editor)
 	array valid = G->G->cmdmgr->validate_command(channel, mode, msg->cmdname || "validateme", msg->response, ([
 		"original": msg->original,
@@ -180,7 +180,7 @@ void websocket_cmd_cmdedit_validate(mapping(string:mixed) conn, mapping(string:m
 }
 
 __async__ void websocket_cmd_cmdedit_list_emotes(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	[object channel, string mode] = split_channel(conn->group);
+	[object channel, string mode] = split_channel(conn->subscription_group);
 	if (!channel) return 0; //Fake-mod mode is okay here too for the same reason (emote picker)
 	mapping voices = G->G->DB->load_cached_config(channel->userid, "voices");
 	string voice = msg->voice;
