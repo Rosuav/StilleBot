@@ -201,13 +201,7 @@ class channel(mapping identity) {
 		user_badges = G_G_("channel_user_badges", (string)userid);
 		if (!user_badges[userid]) user_badges[userid] = (["_mod": 1, "broadcaster": 1]);
 		if (name == "#!demo") user_badges[3141592653589793] = (["_mod": 1, "moderator": 1]); //Fake mod status for the fake mod
-		/* TODO:
-		if (have the right permission) twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=49497888")->then() {
-			foreach (__ARGS__[0]->data || ({ }), mapping mod)
-				if (!user_badges[(int)mod->user_id]) user_badges[(int)mod->user_id] = (["_mod": 1, "moderator": 1]);
-		};
-		This won't quite work due to timing and the way credentials get loaded asynchronously.
-		*/
+		moderator_lookup();
 		//Note that !demo has no userid and can't re-fetch login/display name.
 		if (userid) {
 			G->G->recent_user_sightings[userid] = login;
@@ -225,6 +219,24 @@ class channel(mapping identity) {
 		}
 		load_commands(loading, commands);
 		establish_notifications(userid);
+	}
+
+	__async__ void moderator_lookup() {
+		//If we have the necessary permissions, look up the full list of moderators,
+		//and grant them immediate permission to use the web site. This won't be
+		//perfect, but it is likely to *mostly-work*, as new moderators are fairly
+		//rare and will usually speak up in chat anyway.
+		while (!G->G->user_credentials_loaded) sleep(0.125);
+		mapping creds = G->G->user_credentials[userid];
+		if (!sizeof(creds->scopes & ({"moderation:read", "channel:manage:moderators"}))) return;
+		array mods = await(get_helix_paginated("https://api.twitch.tv/helix/moderation/moderators",
+			(["broadcaster_id": (string)userid]),
+			(["Authorization": userid])));
+		foreach (mods, mapping mod)
+			//Note that if you previously showed other badges but not moderator, this will
+			//replace your badges. The only other badge likely to be relevant is VIP, and
+			//in most contexts, moderator trumps VIP anyway.
+			if (!user_badges[(int)mod->user_id]->?_mod) user_badges[(int)mod->user_id] = (["_mod": 1, "moderator": 1]);
 	}
 
 	__async__ void load_commands(multiset|void loading, array|void cmds) {
