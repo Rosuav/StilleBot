@@ -228,7 +228,7 @@ class channel(mapping identity) {
 		//rare and will usually speak up in chat anyway.
 		while (!G->G->user_credentials_loaded) sleep(0.125);
 		mapping creds = G->G->user_credentials[userid];
-		if (!sizeof(creds->scopes & ({"moderation:read", "channel:manage:moderators"}))) return;
+		if (!creds || !creds->scopes || !sizeof(creds->scopes & ({"moderation:read", "channel:manage:moderators"}))) return;
 		array mods = await(get_helix_paginated("https://api.twitch.tv/helix/moderation/moderators",
 			(["broadcaster_id": (string)userid]),
 			(["Authorization": userid])));
