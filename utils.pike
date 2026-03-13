@@ -553,6 +553,23 @@ __async__ void channel_scopes() {
 	}
 }
 
+__async__ void voice_scopes() {
+	//Check what permissions we have for channel voices
+	mapping voices = await(G->G->DB->load_all_configs("voices"));
+	multiset seen = (<>);
+	foreach (voices; string|int channel; mapping vox) {
+		foreach (values(vox), mapping voice) {
+			if (seen[voice->id]) continue; seen[voice->id] = 1;
+			mapping creds = G->G->user_credentials[(int)voice->id];
+			string mode = "Unknown";
+			array scopes = creds->?scopes || ({ });
+			if (has_value(scopes, "user:write:chat")) mode = "EventSub/API";
+			else if (has_value(scopes, "chat_login")) mode = "IRC";
+			write("%d: %s: %s\n", channel, creds->?user_info->?display_name || creds->?login || voice->name, mode);
+		}
+	}
+}
+
 __async__ void clean_notif_perms() {
 	//TODO: Also check the currently-available scopes, and remove any notif perms now granted
 	//TODO: Check with each module to see if it still wants this need (eg if a command is gone,
