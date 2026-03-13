@@ -729,7 +729,7 @@ class _TwitchIRC(mapping options) {
 
 	void sockwrite() {
 		//Send the next thing from the queue
-		if (!sizeof(queue) || !sock) {writing = 0; return;}
+		if (!sizeof(queue) || !sock || !sock->is_open()) {writing = 0; return;}
 		[mixed next, queue] = Array.shift(queue);
 		if (stringp(next)) {
 			//Automatic rate limiting
