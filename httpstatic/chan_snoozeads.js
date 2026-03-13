@@ -87,7 +87,7 @@ export function render(data) {
 		UL([
 			LI("Time markers above the tape show stream uptime; times shown here are your local time."),
 			LI(SPAN({style: "background: " + colors.no_prerolls}, ["No prerolls until ", TIME_T(data.time_captured + data.preroll_free_time)])),
-			LI(["Last ad: ", TIME_T(data.last_ad_at)]),
+			LI(["Last ad: ", data.last_ad_at ? TIME_T(data.last_ad_at) : "(none)"]),
 			LI(["Next ad: ", TIME_T(data.next_ad_at), " - ", data.duration, " seconds long"]),
 			LI(SPAN({style: "background: " + colors.snoozable}, [
 				"Snoozes: ", data.snooze_count || "None",
