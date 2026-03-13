@@ -305,3 +305,4 @@
   - This only affects voices for which we don't have modern perms
   - Can we put a guard around the reconnection procedure and delay IRC sends until
     it is complete?
+* FIXME: The !!adsoon special trigger on /c/snoozeads might be being saved as !adsoon
