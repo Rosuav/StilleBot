@@ -302,9 +302,9 @@ function render_stream_tiles(streams) {
 			className: outgoing ? "raid-outgoing" : "raid-incoming",
 			onclick: () => show_raids(raids),
 		}, [
-			!outgoing && IMG({className: "emote", src: "https://static-cdn.jtvnw.net/emoticons/v2/62836/default/light/2.0"}), //twitchRaid
+			!outgoing && IMG({className: "emote", src: "https://static-cdn.jtvnw.net/emoticons/v2/62836/default/light/1.0"}), //twitchRaid
 			/^[-0-9]+/.exec(raiddesc.slice(1))[0], //Just the date
-			outgoing && IMG({className: "emote", src: "https://static-cdn.jtvnw.net/emoticons/v2/62836/default/light/2.0"}),
+			outgoing && IMG({className: "emote", src: "https://static-cdn.jtvnw.net/emoticons/v2/62836/default/light/1.0"}),
 		]);
 	}
 	function describe_notes(stream) {
@@ -352,7 +352,7 @@ function render_stream_tiles(streams) {
 	function raidbtn(stream) {
 		return BUTTON({class: "raidbtn", "data-target": stream.user_name, "data-targetid": stream.user_id,
 			title: "Raid " + stream.user_name + "!"},
-				IMG({class: "emote", src: "https://static-cdn.jtvnw.net/emoticons/v2/62836/default/light/2.0"}));
+				IMG({class: "emote", src: "https://static-cdn.jtvnw.net/emoticons/v2/62836/default/light/1.0"}));
 	}
 	let strongest_ccl;
 	return streams.map(stream => stream.element = DIV({
