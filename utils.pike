@@ -252,6 +252,17 @@ __async__ void credentials() {
 	}
 }
 
+__async__ void scope_search() {
+	array(string) scopes = G->G->args[Arg.REST];
+	if (!sizeof(scopes)) write("Usage: pike stillebot --exec=scope-search scope [scope] [scope]\n");
+	while (!G->G->user_credentials_loaded) sleep(0.125);
+	foreach (G->G->user_credentials; int|string user; mapping creds) {
+		if (intp(user)) continue; //Ignore the ones keyed by UID and just check by username
+		array have = creds->scopes & scopes;
+		if (sizeof(have)) write("%s:%{ %s%}\n", user, have);
+	}
+}
+
 __async__ void hullcrop() {
 	int channel = 1234679646;
 	//list_channel_files but with the actual content
