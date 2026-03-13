@@ -10,6 +10,8 @@ Loading...
 
 $$controls||$$
 
+Whenever a scheduled ad break starts, the [!!adbreak](:.advview data-id=!adbreak) [special trigger](specials) will happen.
+
 Ad-vance warning: <input type=number id=advance_warning> seconds. Enables the [!!adsoon](:.advview data-id=!adsoon) [special trigger](specials).
 
 <style>
@@ -75,7 +77,6 @@ void ad_fired(object channel, mapping info) {
 @hook_channel_online: int channel_online(string chan, int uptime, int chanid) {
 	werror("snoozeads hook channel_online: %O %O %O %O\n", chan, uptime, chanid, G->G->irc->id[chanid]);
 	object channel = G->G->irc->id[chanid]; if (!channel) return 0;
-	werror("advance_warning: %O\n", channel->config->advance_warning);
 	if (channel->config->advance_warning) call_out(check_stats, 120, channel); //Twitch doesn't have the "next ad" immediately, so we'll check for it in two minutes.
 }
 

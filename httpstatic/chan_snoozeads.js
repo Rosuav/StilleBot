@@ -3,7 +3,7 @@ const {DIV, LI, SPAN, TIME, UL} = lindt; //autoimport
 import {cmd_configure} from "$$static||command_editor.js$$";
 
 cmd_configure({
-	subscribe: "!!adsoon",
+	subscribe: "!!", //Need both !!adsoon and !!adbreak, no way to get just two w/o getting all specials
 });
 
 const colors = {
