@@ -84,11 +84,13 @@ let perms_voiceid = null;
 on("click", ".perms", e => {
 	perms_voiceid = e.match.id !== "addvoice" && e.match.closest("tr").dataset.id;
 	const scopes = (e.match.dataset.scopes || "").split("/");
-	//Hack: Include chat login in "additional" scopes
-	additional_scopes["chat:edit"] = "Regular messages and /me";
+	//Hack: Include chat login in "additional" scopes. If you've already granted this permission,
+	//it should continue to show up, but we'll more generally prefer to see API access as that's
+	//the direction Twitch is moving.
+	additional_scopes["chat:edit"] = "Legacy access to chat";
 	set_content("#scopelist", [
 		Object.entries(additional_scopes).sort().map(([scope, desc]) => LI(LABEL([
-			scopes.includes(scope) ? "[Available] " : INPUT({type: "checkbox", name: scope, checked: scope === "chat_login"}),
+			scopes.includes(scope) ? "[Available] " : INPUT({type: "checkbox", name: scope, checked: scope === "user:write:chat"}),
 			desc[0] === '*' && SPAN({class: "warningicon"}, "⚠️"),
 			" ", desc.replace("*", ""), //should really just be a prefix removal
 		]))),

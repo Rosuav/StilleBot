@@ -1581,7 +1581,7 @@ mapping all_twitch_scopes = ([
 	"channel_check_subscription": "*Deprecated - check if someone's subbed to your channel",
 	//New as of 20231021:
 	"channel:read:ads": "View ad schedule and status", "channel:manage:ads": "Snooze ads", //Been asking for these for ages!
-	"user:read:chat": "Read chat using webhooks", "user:write:chat": "Send chat via the API",
+	"user:read:chat": "Read and react to chat", "user:write:chat": "Regular messages and /me",
 	"channel:bot": "Use app access for a channel", "user:bot": "Use app access for a user",
 	//New as of 20240111:
 	"user:read:moderated_channels": "See which channels you're a mod for",
