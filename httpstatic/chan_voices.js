@@ -85,7 +85,7 @@ on("click", ".perms", e => {
 	perms_voiceid = e.match.id !== "addvoice" && e.match.closest("tr").dataset.id;
 	const scopes = (e.match.dataset.scopes || "").split("/");
 	//Hack: Include chat login in "additional" scopes. If you've already granted this permission,
-	//it should continue to show up, but we'll more generally prefer to see API access as that's
+	//it should continue to show up, but we'll more generally prefer to seek API access as that's
 	//the direction Twitch is moving.
 	additional_scopes["chat:edit"] = "Legacy access to chat";
 	set_content("#scopelist", [
