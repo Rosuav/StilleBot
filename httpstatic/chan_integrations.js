@@ -25,8 +25,6 @@ on("submit", ".token", e => {
 	ws_sync.send(msg);
 });
 
-on("change", "#fwcountry", e => ws_sync.send({cmd: "settoken", country: e.match.value, platform: "fourthwall"})); //deprecated in favour of oauth
-
 on("click", "#fwlogin", e => ws_sync.send({cmd: "fwlogin"}));
 
 on("click", "#patreonlogin", e => {

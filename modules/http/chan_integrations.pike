@@ -355,7 +355,6 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		"fwtoken": stringp(fw->verification_token) && "..." + fw->verification_token[<3..], //Deprecated
 		"fwshopname": fw->refresh_token && fw->shopname, //This one's the flag - if absent, the front end assumes no FW config
 		"fwurl": fw->url, "fwusername": fw->username,
-		"fwcountry": fw->country || "",
 		"paturl": pat->campaign_url, //May be null
 	]);
 }
