@@ -314,6 +314,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			return (["error": 418, "data": "My teapot thinks your signature is wrong."]);
 		mapping body = Standards.JSON.decode_utf8(req->body_raw);
 		werror("Got a Patreon %O notification: %O\n", req->request_headers["x-patreon-event"], body);
+		Stdio.append_file("patreon.log", sprintf("GOT PATREON NOTIFICATION %O %O\n", req->misc->channel->name, body));
 		return "Thanks!";
 	}
 	if (req->misc->is_mod) {
