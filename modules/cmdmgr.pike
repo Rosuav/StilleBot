@@ -39,6 +39,7 @@ constant _SPECIAL_PARAMS = ({
 	({"giveaway_cancelled", "1 if the giveaway was cancelled (refunding all tickets), 0 if not (normal ending)"}),
 	({"amount", "Total amount given (with currency eg '3 USD')"}),
 	({"from_name", "Name (possibly username) of the supporter. Not (necessarily) a Twitch username."}),
+	({"origin", "If you have multiple Ko-fi accounts linked, this is the label indicating which it came from"}),
 	({"shop_item_ids", "Blank-separated list of ten-digit hexadecimal item IDs bought."}),
 	({"shop_item_count", "Total number of items bought."}),
 	({"tiername", "Ko-fi subscription tier (if applicable)"}),

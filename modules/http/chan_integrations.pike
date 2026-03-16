@@ -39,16 +39,20 @@ this value into the Webhook URL: <input readonly value=\"$$webhook_url$$\" size=
 <form class=token data-platform=kofi autocomplete=off>Then take the Verification Token from that page and paste it here:
 <input name=token id=kofitoken size=40><input type=submit value=\"Save token\"></form>
 
+Once authenticated, Ko-fi events will begin showing up in [Special Triggers](specials),
+[Alerts](alertbox#kofi), and [Goal Bars](monitors).
+
 > ### For additional Ko-fi pages, add their tokens here
 >
 > Label | Token |
 > ------|-------|-
 > loading... |
 >
+> Use the `{origin}` placeholder in special triggers, or the `origin` alert field, to
+> differentiate. Goal bars will by default respond to all Ko-fi accounts identically;
+> to react to one and not another, advance it using the special trigger instead.
+>
 {:tag=details id=kofitokens}
-
-Once authenticated, Ko-fi events will begin showing up in [Special Triggers](specials),
-[Alerts](alertbox#kofi), and [Goal Bars](monitors).
 
 ## Fourth Wall
 
@@ -93,9 +97,9 @@ constant platform_config_fields = ([
 //level module, which would break encapsulation.
 @create_hook: constant kofi_support = ({"object channel", "string type", "mapping params", "mapping raw"});
 
-constant kofi_dono = special_trigger("!kofi_dono", "Donation received on Ko-fi.", "The broadcaster", "amount, msg, from_name", "Ko-fi");
-constant kofi_member = special_trigger("!kofi_member", "New monthly membership on Ko-fi.", "The broadcaster", "amount, msg, from_name, tiername", "Ko-fi");
-constant kofi_shop = special_trigger("!kofi_shop", "Shop sale on Ko-fi.", "The broadcaster", "amount, msg, from_name, shop_item_ids, shop_item_count", "Ko-fi");
+constant kofi_dono = special_trigger("!kofi_dono", "Donation received on Ko-fi.", "The broadcaster", "amount, msg, from_name, origin", "Ko-fi");
+constant kofi_member = special_trigger("!kofi_member", "New monthly membership on Ko-fi.", "The broadcaster", "amount, msg, from_name, tiername, origin", "Ko-fi");
+constant kofi_shop = special_trigger("!kofi_shop", "Shop sale on Ko-fi.", "The broadcaster", "amount, msg, from_name, shop_item_ids, shop_item_count, origin", "Ko-fi");
 constant fw_dono = special_trigger("!fw_dono", "Donation received on Fourth Wall.", "The broadcaster", "amount, msg, from_name", "Fourth Wall");
 constant fw_member = special_trigger("!fw_member", "New monthly membership on Fourth Wall.", "The broadcaster", "amount, msg, from_name", "Fourth Wall");
 constant fw_shop = special_trigger("!fw_shop", "Shop sale on Fourth Wall.", "The broadcaster", "is_test, amount, msg, from_name, shop_item_ids", "Fourth Wall");
@@ -136,18 +140,18 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		mapping data = Standards.JSON.decode(req->variables->data); //If malformed, will bomb and send back a 500. (Note: Don't use decode_utf8 here, it's already Unicode text.)
 		if (!mappingp(data)) return (["error": 400, "type": "text/plain", "data": "No data mapping given"]);
 		mapping cfg = await(G->G->DB->load_config(req->misc->channel->userid, "kofi"));
-		string|zero label = 0;
+		string|zero origin = 0;
 		if (stringp(data->verification_token)) {
 			//The primary Ko-fi token has a blank label (implicitly). For many users, this is
 			//the ONLY token.
-			if (data->verification_token == cfg->?verification_token) label = "";
+			if (data->verification_token == cfg->?verification_token) origin = "";
 			else foreach (cfg->additional_tokens || ({ }), mapping tok)
-				if (data->verification_token == tok->token) label = tok->label;
+				if (data->verification_token == tok->token) origin = tok->label;
 			//Note that, if we don't have any tokens on file, it's guaranteed to be a bad
 			//token. This means that any mis-sent POST requests that happen to have a
 			//data mapping somehow will just come back "bad token".
 		}
-		if (!label) return (["error": 404, "type": "text/plain", "data": "Bad verification token"]);
+		if (!origin) return (["error": 404, "type": "text/plain", "data": "Bad verification token"]);
 		//ENSURE: If the message is not public (data->is_public is Val.false), the text
 		//should not be shown anywhere (blank it? replace with "Private note"?). The
 		//financial value should still be visible though. I think. Check with Ko-fi
@@ -190,12 +194,14 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			"{cents}": (string)cents,
 			"{msg}": data->message,
 			"{from_name}": data->from_name,
+			"{origin}": origin,
 		]);
 		mapping alertparams = ([
 			"amount": amount,
 			"cents": cents,
 			"msg": data->message,
 			"username": data->from_name,
+			"origin": origin,
 		]);
 		if (data->is_subscription_payment) {
 			if (data->is_first_subscription_payment) special = "!kofi_member"; //Renewals aren't currently interesting.

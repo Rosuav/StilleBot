@@ -375,6 +375,7 @@ constant ALERTTYPES = ({([
 	"heading": "Ko-Fi donation, new membership, sale, or commission",
 	"description": "When someone supports your channel using your Ko-Fi page",
 	"placeholders": ([
+		"origin": "Differentiates multiple Ko-fi accounts",
 		"username": "Display name of the supporter",
 		"amount": "Amount donated or total sale value (includes currency)",
 		"msg": "Message text (if not flagged private)",
@@ -385,7 +386,7 @@ constant ALERTTYPES = ({([
 	]),
 	"testpholders": (["amount": "5 USD"]),
 	"builtin": "integrations",
-	"condition_vars": ({"amount", "is_membership", "is_shopsale", "is_commission", "tiername"}),
+	"condition_vars": ({"amount", "is_membership", "is_shopsale", "is_commission", "tiername", "'origin"}),
 ]), ([
 	"id": "fourthwall",
 	"label": "4th Wall",
