@@ -376,7 +376,7 @@ class SSLDatabase(string|mapping connect_to, mapping|void cfg) {
 		out->output_to(sock);
 		if (!sizeof(out)) writable = 1;
 	}
-	void sockclosed() {werror("Closed.\n"); destruct();}
+	void sockclosed() {werror("PGSSL connection closed.\n"); destruct();}
 	void write() {
 		if (!writable) return;
 		out->output_to(sock);
