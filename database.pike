@@ -247,7 +247,7 @@ void notify_readonly(int pid, string cond, string extra, string host) {
 		db->readonly = 1;
 		//If this one was the live (read-write) DB, we no longer have a read-write DB.
 		//However, it's still allowed to continue serving as the fast DB.
-		if (livedb == host) {livedb = 0; spawn_task(reconnect(0));}
+		if (livedb == host) {livedb = 0; reconnect(0);}
 		if (G->G->database_status_changed) G->G->database_status_changed();
 	} else if (extra == "off" && db->readonly) {
 		werror("SWITCHING TO READ-WRITE MODE: %O\n", host);
@@ -938,7 +938,7 @@ protected void create(string name) {
 	//For testing, allow inversion of the natural connection order
 	if (G->G->args->swapdb) database_ips = ({database_ips[1], database_ips[0]});
 	G->G->DB = this;
-	spawn_task(reconnect(1));
+	reconnect(1);
 	if (!G->G->http_sessions_deleted) G->G->http_sessions_deleted = ([]);
 	if (!G->G->user_credentials_loading && !G->G->user_credentials_loaded) preload_user_credentials();
 	remove_call_out(G->G->repl_wdog_call_out);
