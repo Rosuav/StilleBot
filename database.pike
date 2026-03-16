@@ -539,7 +539,7 @@ __async__ array(mapping) load_commands(string|int twitchid, string|void cmdname,
 
 __async__ mapping(int:array(mapping)) preload_commands(array(int) twitchids) {
 	array rows = await(query_ro("select * from stillebot.commands where twitchid = any(:twitchids) and active", (["twitchids": twitchids])));
-	mapping ret = mkmapping(twitchids, allocate(sizeof(twitchids), ({ }))); //Ensure that there's an array for every ID checked, even if no actual commands are found
+	mapping ret = ([]);
 	foreach (rows, mapping row) ret[row->twitchid] += ({row});
 	return ret;
 }

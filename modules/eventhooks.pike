@@ -211,15 +211,6 @@ void specials_check_hooks(object channel) {
 	}
 }
 
-void specials_check_hooks_all_channels(int warn) {
-	if (sizeof(G->G->irc->loading)) {
-		//We're still loading some or all channels. Give 'em a few seconds.
-		if (warn) werror("WARNING: Unable to check for special hooks - still loading: %O\n", G->G->irc->loading);
-		call_out(specials_check_hooks_all_channels, 5, 1);
-	}
-	else specials_check_hooks(values(G->G->irc->id)[*]);
-}
-
 function make_eventhook_handler(string hookname) {
 	return lambda(object channel, mapping info) {
 		mapping params = channel && this[hookname](channel, info);
@@ -258,6 +249,6 @@ protected void create(string name) {
 			}
 		}
 	}
-	specials_check_hooks_all_channels(0);
+	specials_check_hooks(values(G->G->irc->id)[*]);
 	G->G->specials_check_hooks = specials_check_hooks;
 }

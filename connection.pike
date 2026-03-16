@@ -197,7 +197,7 @@ class channel(mapping identity) {
 	mapping botconfig, config;
 	mapping(int:array) lastmsg = ([]); //The single most recent message from any particular user
 
-	protected void create(multiset|void loading, array|void commands) {
+	protected void create(array commands) {
 		botconfig = m_delete(identity, "data") || ([]);
 		config = identity | botconfig;
 		name = "#" + config->login; userid = config->userid;
@@ -233,7 +233,7 @@ class channel(mapping identity) {
 				}
 			};
 		}
-		load_commands(loading, commands);
+		load_commands(commands);
 		establish_notifications(userid);
 	}
 
@@ -255,11 +255,10 @@ class channel(mapping identity) {
 			if (!user_badges[(int)mod->user_id]->?_mod) user_badges[(int)mod->user_id] = (["_mod": 1, "moderator": 1]);
 	}
 
-	__async__ void load_commands(multiset|void loading, array|void cmds) {
+	void load_commands(array cmds) { //Could be inlined into create() if desired
 		//Load up the channel's commands. Note that aliases are not stored in the database,
 		//but are individually available here in the lookup mapping.
 		commands = ([]);
-		if (!cmds) cmds = await(G->G->DB->load_commands(userid));
 		foreach (cmds, mapping cmd) {
 			echoable_message response = commands[cmd->cmdname] = cmd->content;
 			if (!mappingp(response)) continue; //No top-level flags, nothing to handle specially.
@@ -272,9 +271,6 @@ class channel(mapping identity) {
 			}
 			if (response->redemption) redemption_commands[response->redemption] += ({cmd->cmdname});
 		}
-		//Indicate that we're now done loading. If other things than commands are done
-		//asynchronously but in parallel, don't remove from loading till ALL are done.
-		if (loading) loading[userid] = 0;
 	}
 
 	void botconfig_save() {
@@ -1833,11 +1829,13 @@ __async__ void reconnect() {
 	//1) Any channel for which we lack "channel:bot" permission
 	//2) As of 20260306, any channel using the !watchstreak special trigger.
 	//Otherwise, we may be able to rely entirely on EventSub.
-	mapping irc = (["channels": ([]), "id": ([]), "loading": (<>)]);
+	//Note that, for convenience, we still use G->G->irc as our method of channel lookups.
+	//It's just that some of them won't actually have literal IRC connections feeding data
+	//to these objects.
+	mapping irc = (["channels": ([]), "id": ([])]);
 	mapping commands = await(G->G->DB->preload_commands(channels->userid));
 	foreach (channels, mapping cfg) {
-		irc->loading[cfg->userid] = 1;
-		object c = channel(cfg, irc->loading, commands[cfg->userid]);
+		object c = channel(cfg, commands[cfg->userid] || ({ }));
 		irc->channels[c->name] = c;
 		irc->id[c->userid] = c;
 	}
@@ -1901,7 +1899,7 @@ protected void create(string name)
 	add_constant("send_message", send_message);
 	G->G->establish_hook_notification = establish_hook_notification;
 	G->G->setup_conduit = setup_conduit; //Reestablish after disconnect.
-	if (!G->G->irc) G->G->irc = (["channels": ([]), "id": ([]), "loading": (<>)]);
+	if (!G->G->irc) G->G->irc = (["channels": ([]), "id": ([])]);
 	#if constant(INTERACTIVE)
 	return;
 	#endif
