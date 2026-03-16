@@ -1,9 +1,27 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BUTTON, IMG, LI, STRONG} = choc; //autoimport
+const {A, BUTTON, FORM, IMG, INPUT, LI, STRONG, TD, TR} = choc; //autoimport
 
 export function render(data) {
 	//Note that the entire token will never be shown, only the last few characters
 	if (data.kofitoken) DOM("#kofitoken").value = data.kofitoken;
+	if (data.kofitokens) set_content("#kofitokens table tbody", [
+		data.kofitokens.map(tok => TR([
+			TD(FORM({class: "token", id: "kofitokform" + tok.label, "data-platform": "kofi"}, [
+				INPUT({type: "hidden", name: "prevlabel", value: tok.label}),
+				INPUT({size: 8, readonly: true, disabled: true, value: tok.label}),
+			])),
+			TD(INPUT({form: "kofitokform" + tok.label, name: "token", size: 40, value: tok.token})),
+			TD(BUTTON({form: "kofitokform" + tok.label, type: "submit"}, "Save")),
+		])),
+		TR([
+			TD(FORM({class: "token", id: "kofitokform", "data-platform": "kofi"}, [
+				INPUT({type: "hidden", name: "prevlabel", value: ""}),
+				INPUT({name: "label", size: 8, required: true}),
+			])),
+			TD(INPUT({form: "kofitokform", name: "token", size: 40})),
+			TD(BUTTON({form: "kofitokform", type: "submit"}, "Add")),
+		]),
+	]);
 	if (data.fwshopname) set_content("#fwstatus", [
 		"Your Fourth Wall shop is: ",
 		A({href: "https://" + data.fwurl}, data.fwshopname),

@@ -39,6 +39,14 @@ this value into the Webhook URL: <input readonly value=\"$$webhook_url$$\" size=
 <form class=token data-platform=kofi autocomplete=off>Then take the Verification Token from that page and paste it here:
 <input name=token id=kofitoken size=40><input type=submit value=\"Save token\"></form>
 
+> ### For additional Ko-fi pages, add their tokens here
+>
+> Label | Token |
+> ------|-------|-
+> loading... |
+>
+{:tag=details id=kofitokens}
+
 Once authenticated, Ko-fi events will begin showing up in [Special Triggers](specials),
 [Alerts](alertbox#kofi), and [Goal Bars](monitors).
 
@@ -71,7 +79,7 @@ $$loginprompt||$$
 
 <style>
 .avatar {max-width: 1.5em;}
-vertical-align: middle;
+#kofitokens {border: 1px solid rebeccapurple; margin: 8px; padding: 5px;}
 </style>
 ";
 
@@ -128,11 +136,18 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		mapping data = Standards.JSON.decode(req->variables->data); //If malformed, will bomb and send back a 500. (Note: Don't use decode_utf8 here, it's already Unicode text.)
 		if (!mappingp(data)) return (["error": 400, "type": "text/plain", "data": "No data mapping given"]);
 		mapping cfg = await(G->G->DB->load_config(req->misc->channel->userid, "kofi"));
-		if (!stringp(data->verification_token) || cfg->?verification_token != data->verification_token)
-			//Note that, if we don't have a token on file, it's guaranteed to be a bad
+		string|zero label = 0;
+		if (stringp(data->verification_token)) {
+			//The primary Ko-fi token has a blank label (implicitly). For many users, this is
+			//the ONLY token.
+			if (data->verification_token == cfg->?verification_token) label = "";
+			else foreach (cfg->additional_tokens || ({ }), mapping tok)
+				if (data->verification_token == tok->token) label = tok->label;
+			//Note that, if we don't have any tokens on file, it's guaranteed to be a bad
 			//token. This means that any mis-sent POST requests that happen to have a
 			//data mapping somehow will just come back "bad token".
-			return (["error": 404, "type": "text/plain", "data": "Bad verification token"]);
+		}
+		if (!label) return (["error": 404, "type": "text/plain", "data": "Bad verification token"]);
 		//ENSURE: If the message is not public (data->is_public is Val.false), the text
 		//should not be shown anywhere (blank it? replace with "Private note"?). The
 		//financial value should still be visible though. I think. Check with Ko-fi
@@ -335,6 +350,25 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 @"is_mod": __async__ void wscmd_settoken(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!(<"kofi", "fourthwall">)[msg->platform]) return;
 	await(G->G->DB->mutate_config(channel->userid, msg->platform) {mapping cfg = __ARGS__[0];
+		//Special case: Ko-fi tokens can be saved to an array of additional tokens. This excludes
+		//all other configuration in that message.
+		if (msg->platform == "kofi" && msg->prevlabel) {
+			if (msg->prevlabel == "") { //Add new token
+				if (!stringp(msg->label) || msg->label == "" || !stringp(msg->token) || msg->token == "") return; //Deleting doesn't make sense while adding
+				cfg->additional_tokens += ({(["label": msg->label, "token": msg->token])});
+				return;
+			}
+			int idx; mapping tok = (["label": ""]);
+			foreach (cfg->additional_tokens || ({ }); idx; tok) if (tok->label == msg->prevlabel) break;
+			if (tok->label != msg->prevlabel) return; //Not found
+			if (!stringp(msg->token) || msg->token == "") //Delete existing token
+				cfg->additional_tokens = cfg->additional_tokens[..idx-1] + cfg->additional_tokens[idx+1..];
+			else if (has_prefix(msg->token, "...")) //Probably an accidental click
+				return;
+			else //Update the token while leaving the label unchanged
+				tok->token = msg->token;
+			return;
+		}
 		foreach (platform_config_fields[msg->platform]; string field;) {
 			//Special case: "token" is stored as "verification_token" for hysterical raisins
 			string fld = field == "token" ? "verification_token" : field;
@@ -352,6 +386,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	mapping pat = await(G->G->DB->load_config(channel->userid, "patreon"));
 	return ([
 		"kofitoken": stringp(kofi->verification_token) && "..." + kofi->verification_token[<3..],
+		"kofitokens": map(kofi->additional_tokens || ({ })) {return (["label": __ARGS__[0]->label, "token": "..." + __ARGS__[0]->token[<3..]]);},
 		"fwtoken": stringp(fw->verification_token) && "..." + fw->verification_token[<3..], //Deprecated
 		"fwshopname": fw->refresh_token && fw->shopname, //This one's the flag - if absent, the front end assumes no FW config
 		"fwurl": fw->url, "fwusername": fw->username,
