@@ -11,15 +11,15 @@ export function render(data) {
 				INPUT({size: 8, readonly: true, disabled: true, value: tok.label}),
 			])),
 			TD(INPUT({form: "kofitokform" + tok.label, name: "token", size: 40, value: tok.token})),
-			TD(BUTTON({form: "kofitokform" + tok.label, type: "submit"}, "Save")),
+			TD(BUTTON({form: "kofitokform" + tok.label, type: "submit", name: "save"}, "Save")),
 		])),
 		TR([
 			TD(FORM({class: "token", id: "kofitokform", "data-platform": "kofi"}, [
 				INPUT({type: "hidden", name: "prevlabel", value: ""}),
 				INPUT({name: "label", size: 8, required: true}),
 			])),
-			TD(INPUT({form: "kofitokform", name: "token", size: 40})),
-			TD(BUTTON({form: "kofitokform", type: "submit"}, "Add")),
+			TD(INPUT({form: "kofitokform", name: "token", size: 40, required: true})),
+			TD(BUTTON({form: "kofitokform", type: "submit", name: "save"}, "Add")),
 		]),
 	]);
 	if (data.fwshopname) set_content("#fwstatus", [
@@ -41,6 +41,12 @@ on("submit", ".token", e => {
 	const msg = {cmd: "settoken", platform: e.match.dataset.platform};
 	for (const el of e.match.elements) if (el.name) {msg[el.name] = el.value; el.value = "";}
 	ws_sync.send(msg);
+});
+
+on("input", "input[name=token]", e => {
+	const form = e.match.form.id, save = e.match.form.elements.save, blank = e.match.value === "";
+	if (form === "kofitokform") save.disabled = blank;
+	else if (form.startsWith("kofitokform")) set_content(save, blank ? "Delete" : "Save");
 });
 
 on("click", "#fwlogin", e => ws_sync.send({cmd: "fwlogin"}));
