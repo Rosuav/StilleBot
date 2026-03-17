@@ -175,7 +175,7 @@ string normalize_cooldown_name(string|int(0..0) cdname, mapping state) {
 	if (name != "" && state->retain_internal_names) return cdname;
 	//Anonymous cooldowns get named for the back end, but the front end will blank this.
 	//If the front end happens to return something with a dot name in it, ignore it.
-	if (name == "" || name[0] == '.') name = sprintf(".%s:%d", state->cmd, ++state->cdanon);
+	if (name == "" || name[0] == '.') name = sprintf(".%s:%d", state->cmd || "trigger", ++state->cdanon);
 	return per_user + name;
 }
 
