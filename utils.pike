@@ -453,6 +453,7 @@ __async__ void delayed() {
 }
 
 //Should this be triggered automatically upon API failures? If so, move it back into poll.pike.
+@"Validate one user's credentials, or all users, or --bot for bot channels":
 __async__ void validate_user_credentials() {
 	string tables = "stillebot.config";
 	string where = sizeof(G->G->args[Arg.REST]) ? " and twitchid = any(:ids)" : "";
