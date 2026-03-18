@@ -195,7 +195,7 @@ Concurrent.Future w(object c, string v, string m, mapping t) {return whisper(c, 
 @"Start an ad break -> [length]":
 Concurrent.Future commercial(object channel, string voiceid, string msg, mapping tok) {
 	return twitch_api_request("https://api.twitch.tv/helix/channels/commercial",
-		(["Authorization": "Bearer " + tok->token]), ([
+		(["Authorization": channel->userid]), ([
 			"method": "POST",
 			"json": ([
 				"broadcaster_id": (string)channel->userid,
