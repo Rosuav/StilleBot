@@ -17,10 +17,10 @@ PostgreSQL is used with the following configuration options:
 * Create a publication on Sikorsky:
   stillebot=# create publication multihome for all tables;
 * Create a subscription on Gideon:
-  stillebot=# create subscription multihome connection 'dbname=stillebot host=sikorsky.rosuav.com user=rosuav sslmode=require sslcert=/etc/postgresql/16/main/certificate.pem sslkey=/etc/postgresql/16/main/privkey.pem sslrootcert=/etc/ssl/certs/ISRG_Root_X1.pem application_name=multihome' publication multihome with (origin = none);
+  stillebot=# create subscription multihome connection 'dbname=stillebot host=sikorsky.rosuav.com user=rosuav sslmode=require sslcert=/etc/postgresql/16/main/certificate.pem sslkey=/etc/postgresql/16/main/privkey.pem sslrootcert=/usr/local/share/ca-certificates/root-ca.rosuav.com application_name=multihome' publication multihome with (origin = none);
   - Note that the user 'rosuav' must have the Replication attribute (confirm with `\du+`).
 * Create the corresponding publication on Gideon, and subscription on Sikorsky:
-  stillebot=# create subscription multihome connection 'dbname=stillebot host=ipv4.rosuav.com user=rosuav sslmode=require sslcert=/etc/postgresql/16/main/certificate.pem sslkey=/etc/postgresql/16/main/privkey.pem sslrootcert=/etc/ssl/certs/ISRG_Root_X1.pem application_name=multihome' publication multihome with (origin = none, copy_data = false);
+  stillebot=# create subscription multihome connection 'dbname=stillebot host=ipv4.rosuav.com user=rosuav sslmode=require sslcert=/etc/postgresql/16/main/certificate.pem sslkey=/etc/postgresql/16/main/privkey.pem sslrootcert=/usr/local/share/ca-certificates/root-ca.rosuav.com application_name=multihome' publication multihome with (origin = none, copy_data = false);
   - Note: Do not copy_data both directions.
 
 cp /etc/letsencrypt/live/sikorsky.rosuav.com/fullchain.pem /etc/postgresql/16/main/certificate.pem
