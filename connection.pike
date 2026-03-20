@@ -196,6 +196,7 @@ class channel(mapping identity) {
 	mapping(string:array(string)) redemption_commands = ([]);
 	mapping botconfig, config;
 	mapping(int:array) lastmsg = ([]); //The single most recent message from any particular user
+	int(1bit) need_irc = 0; //Set to 1 if we definitely need an IRC connection
 
 	protected void create(array commands) {
 		botconfig = m_delete(identity, "data") || ([]);
@@ -217,10 +218,12 @@ class channel(mapping identity) {
 		user_badges = G_G_("channel_user_badges", (string)userid);
 		if (!user_badges[userid]) user_badges[userid] = (["_mod": 1, "broadcaster": 1]);
 		if (name == "#!demo") user_badges[3141592653589793] = (["_mod": 1, "moderator": 1]); //Fake mod status for the fake mod
-		moderator_lookup();
 		//Note that !demo has no userid and can't re-fetch login/display name.
 		if (userid) {
+			moderator_lookup();
 			G->G->recent_user_sightings[userid] = login;
+			if (!G->G->user_credentials_loaded) {werror("CREDENTIALS NOT LOADED, assume need IRC %O\n", display_name); need_irc = 1;} //Shouldn't happen - queries are serialized
+			else if (!has_value(G->G->user_credentials[userid]->?scopes || ({ }), "channel:bot")) need_irc = 1;
 			get_user_info(userid)->then() {
 				if (config->login != __ARGS__[0]->login || config->display_name != __ARGS__[0]->display_name) {
 					//Note: This is asynchronous, but we'll be triggering a reconnect shortly.
@@ -242,7 +245,7 @@ class channel(mapping identity) {
 		//and grant them immediate permission to use the web site. This won't be
 		//perfect, but it is likely to *mostly-work*, as new moderators are fairly
 		//rare and will usually speak up in chat anyway.
-		while (!G->G->user_credentials_loaded) sleep(0.125);
+		while (!G->G->user_credentials_loaded) sleep(0.125); //Shouldn't happen since we have serialized queries
 		mapping creds = G->G->user_credentials[userid];
 		if (!creds || !creds->scopes || !sizeof(creds->scopes & ({"moderation:read", "channel:manage:moderators"}))) return;
 		array mods = await(get_helix_paginated("https://api.twitch.tv/helix/moderation/moderators",
@@ -271,6 +274,7 @@ class channel(mapping identity) {
 			}
 			if (response->redemption) redemption_commands[response->redemption] += ({cmd->cmdname});
 		}
+		if (commands["!watchstreak"]) need_irc = 1;
 	}
 
 	void botconfig_save() {
@@ -1841,13 +1845,21 @@ __async__ void reconnect() {
 	}
 	G->G->irc = irc;
 	if (array waiting = m_delete(G->G, "awaiting_irc_loaded")) waiting(); //Notify everyone who's waiting for the channel list.
-	channels = filter("#" + channels->login[*]) {return __ARGS__[0][1] != '!';};
+	array channel_names = ({ });
+	int need = 0, noneed = 0;
+	foreach (irc->id;; object channel) {
+		if (channel->login[1] != '!') channel_names += ({"#" + channel->login});
+		if (channel->need_irc) need++; else noneed++;
+	}
+	//As of 20260320, we need IRC for 60% of channels. That's not a good ratio. We gain
+	//very little by dropping support.
+	werror("Need IRC for %d channels, can skip for %d\n", need, noneed);
 	//Deal the channels out into N piles based on available users. Any spares
 	//go onto the primary channel. This speeds up initial connection when there
 	//are more than 20 channels to connect to, but isn't necessary.
-	array shards = Array.transpose(channels / sizeof(shard_voices));
-	if (!sizeof(shards)) shards = ({channels}); //If we have fewer channels than voices, connect to them all on the intrinsic voice.
-	else shards[0] += channels % sizeof(shard_voices);
+	array shards = Array.transpose(channel_names / sizeof(shard_voices));
+	if (!sizeof(shards)) shards = ({channel_names}); //If we have fewer channels than voices, connect to them all on the intrinsic voice.
+	else shards[0] += channel_names % sizeof(shard_voices);
 	int still_reconnecting = 0;
 	foreach (shards; int i; array chan) {
 		++still_reconnecting;
