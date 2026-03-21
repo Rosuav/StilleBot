@@ -87,6 +87,7 @@ int(1bit) contains_link(string msg) {
 		//This may need to be reviewed in the future, but for now I will only block ASCII links.
 		if (sscanf(tail, "%s.%[A-Za-z]", string alpha1, string alpha2) && alpha1 && alpha2 && alpha1 != "" && alpha2 != "") return 1; //eg www.example.com or kepl.com.au, but not 11.5.2025
 		if (common_tlds[tail]) return 1;
+		if (sscanf(tail, "%[0-9.]/%s", string digits, string rest) && digits != "" && rest) return 0; //Looks more like a dollar amount than a link, possibly "$1.23/kg"
 		if (has_value(tail, "/")) return 1; //eg instagram.com/something
 	}
 }
