@@ -12,7 +12,7 @@ in the same subtree will reveal what $foo$ would have been if not for the setvar
 inherit builtin_command;
 constant builtin_name = "Variables";
 constant builtin_description = "Manipulate variables with dynamic names";
-constant builtin_param = ({"Variable name", "/Action/get/set/add/spend/clear/leaders", "New value"});
+constant builtin_param = ({"Variable name", "/Action/get/set/add/spend/clear/leaders/lowleaders", "New value"});
 //Experimenting with a branching parameter set
 constant MOCKUP_builtin_param = ({
 	"Variable name",
@@ -21,7 +21,7 @@ constant MOCKUP_builtin_param = ({
 		"get": ({ }), //This one needs no more args
 		({"set", "add", "spend"}): ({"New value"}), //One more arg for any of these values
 		"clear": ({ }), //Can have this separately, or combine it with get, whichever makes more sense logically
-		"leaders": ({"Top N"}), //This one gets a different arg, which would display a different label in the front end
+		({"leaders", "lowleaders"}): ({"Top N"}), //This one gets a different arg, which would display a different label in the front end
 	]),
 	//If any more args were listed here, they would happen after the additionals given above.
 });
@@ -69,14 +69,16 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 			G->G->websocket_types->chan_variables->send_updates_all("#" + channel->userid);
 			return (["{value}": ""]); //Nothing useful to report.
 		}
-		case "leaders": {
+		case "leaders": case "lowleaders": {
 			//Hack: The provided value is the number of top people to return
 			mapping vars = G->G->DB->load_cached_config(channel->userid, "variables")["*"] || ([]);
 			array values = ({ }), users = ({ });
 			varname = "$" + replace(varname, "$", "") + "$";
 			foreach (vars; string uid; mapping v) if (v[varname]) {
 				users += ({uid});
-				values += ({-(int)v[varname]}); //Descending sort
+				int val = (int)v[varname];
+				if (action == "leaders") val = -val; //Descending sort
+				values += ({val});
 			}
 			sort(values, users);
 			mapping ret = (["{value}": (string)sizeof(users)]); //The base return value won't have anything much, just the (total) count of users
