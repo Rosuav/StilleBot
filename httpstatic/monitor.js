@@ -144,7 +144,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		const thresholds = t.t;
 		const m = /^([0-9]+):(.*)$/.exec(data.display);
 		if (!m) {console.error("Something's misconfigured (see monitor.js goalbar regex) -- display", data.display); return;}
-		let pos = m[1], text, mark, goal;
+		let pos = m[1], text = null, mark, goal;
 		for (let which = 0; which < thresholds.length; ++which) {
 			if (pos < thresholds[which]) {
 				//Found the point to work at.
@@ -164,7 +164,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 				else if (thresholds[which] > 0) thresholds.push(thresholds[which]);
 			}
 		}
-		if (!text) {
+		if (text === null) {
 			//We're beyond the last threshold!
 			text = m[2].replace("#", thresholds.length);
 			mark = 100;
