@@ -291,3 +291,6 @@
     eventsub instead.
     - viewermilestone (eg watch streak) - not seen in eventsub
     - charity donation
+* Goal bars: Can we make it so the text is inverted in colour, meaning that the gradient
+  behind it flips colour for the text? Make it a checkbox in place of a text colour, but
+  it'll probably need some handcrafting in the JS and CSS.
