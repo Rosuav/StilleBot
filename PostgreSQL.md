@@ -23,6 +23,11 @@ PostgreSQL is used with the following configuration options:
   - Note: Do not copy_data both directions.
 * If the connection strings need to be changed, update them without recreating:
   - alter subscription multihome connection '...';
+  - WARNING WARNING WARNING. When altering these subscriptions, be sure not to
+    accidentally have a server replicate from itself. Getting the connection
+    strings backwards utterly breaks replication, and (20260323) I had to wipe
+    the subscriptions and publications, empty all tables, and fully restart the
+    entire replication system. Learn from past-me's mistake.
 
 To make things work, tables must exist on both ends. New tables must be created
 by the bot on both ends, and then properly populated. TODO: Automatically run
