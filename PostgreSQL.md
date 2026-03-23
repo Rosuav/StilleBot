@@ -11,24 +11,18 @@ PostgreSQL is used with the following configuration options:
   wal_level = logical
 * Copy the necessary certificates into the Postgres data directory and
   chown/chmod them as needed
-* Need to know which SSL root cert ultimately signs the required certs.
-  Currently this is /etc/ssl/certs/ISRG_Root_X1.pem but may need to change.
-* Connect: PGSSLROOTCERT=/etc/ssl/certs/ISRG_Root_X1.pem PGSSLCERT=certificate.pem PGSSLKEY=privkey.pem psql -h sikorsky.rosuav.com stillebot
+* Need the SSL root cert that signs the required certs.
+* Connect: PGSSLROOTCERT=/usr/local/share/ca-certificates/sugarmill.rosuav.com.pem PGSSLCERT=db.rosuav.com.pem PGSSLKEY=db.rosuav.com.key psql -h sikorsky.rosuav.com stillebot
 * Create a publication on Sikorsky:
   stillebot=# create publication multihome for all tables;
 * Create a subscription on Gideon:
-  stillebot=# create subscription multihome connection 'dbname=stillebot host=sikorsky.rosuav.com user=rosuav sslmode=require sslcert=/etc/postgresql/16/main/certificate.pem sslkey=/etc/postgresql/16/main/privkey.pem sslrootcert=/usr/local/share/ca-certificates/root-ca.rosuav.com application_name=multihome' publication multihome with (origin = none);
+  stillebot=# create subscription multihome connection 'dbname=stillebot host=sikorsky.rosuav.com user=rosuav sslmode=require sslcert=/etc/postgresql/16/main/db.rosuav.com.pem sslkey=/etc/postgresql/16/main/db.rosuav.com.key sslrootcert=/usr/local/share/ca-certificates/sugarmill.rosuav.com application_name=multihome' publication multihome with (origin = none);
   - Note that the user 'rosuav' must have the Replication attribute (confirm with `\du+`).
 * Create the corresponding publication on Gideon, and subscription on Sikorsky:
-  stillebot=# create subscription multihome connection 'dbname=stillebot host=ipv4.rosuav.com user=rosuav sslmode=require sslcert=/etc/postgresql/16/main/certificate.pem sslkey=/etc/postgresql/16/main/privkey.pem sslrootcert=/usr/local/share/ca-certificates/root-ca.rosuav.com application_name=multihome' publication multihome with (origin = none, copy_data = false);
+  stillebot=# create subscription multihome connection 'dbname=stillebot host=ipv4.rosuav.com user=rosuav sslmode=require sslcert=/etc/postgresql/16/main/db.rosuav.com.pem sslkey=/etc/postgresql/16/main/db.rosuav.com.key sslrootcert=/usr/local/share/ca-certificates/sugarmill.rosuav.com application_name=multihome' publication multihome with (origin = none, copy_data = false);
   - Note: Do not copy_data both directions.
-
-cp /etc/letsencrypt/live/sikorsky.rosuav.com/fullchain.pem /etc/postgresql/16/main/certificate.pem
-cp /etc/letsencrypt/live/sikorsky.rosuav.com/privkey.pem /etc/postgresql/16/main/
-chown postgres: *.pem
-chmod 600 *.pem
--- This is done on both Gideon and Sikorsky, as part of their renewal-hooks
-
+* If the connection strings need to be changed, update them without recreating:
+  - alter subscription multihome connection '...';
 
 To make things work, tables must exist on both ends. New tables must be created
 by the bot on both ends, and then properly populated. TODO: Automatically run
