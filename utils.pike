@@ -43,15 +43,15 @@ __async__ void resolve_command_collision(int twitchid, string cmdname) {
 
 //Collision form: Two reports of the same user id / login sighting
 int(1bit) handle_sighting_collision(array(string) errors) {
-	int twitchid; string login;
+	int twitchid; string login, bot;
 	foreach (errors, string line)
-		if (sscanf(line, "DETAIL:  Key (twitchid, login)=(%d, %[^)]) already exists.", twitchid, login)) break;
+		if (sscanf(line, "DETAIL:  Key (twitchid, login, bot)=(%d, %[^,], %[^)]) already exists.", twitchid, login, bot)) break;
 	if (!twitchid) return 0;
-	werror("RESOLVING %O %O\n", twitchid, login);
+	werror("RESOLVING %O %O %O\n", twitchid, login, bot);
 	//We resolve this on the fast DB, but read-write. Maybe this should go inside database.pike?
 	G->G->DB->pg_connections[G->G->DB->fastdb]->conn->transaction(__async__ lambda(function query) {
-		await(query("delete from stillebot.user_login_sightings where twitchid = :id and login = :login",
-			(["id": twitchid, "login": login])));
+		await(query("delete from stillebot.user_login_sightings where twitchid = :id and login = :login and bot = :bot",
+			(["id": twitchid, "login": login, "bot": bot])));
 	});
 }
 
