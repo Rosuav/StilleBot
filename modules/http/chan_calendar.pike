@@ -247,7 +247,9 @@ __async__ void synchronize(int userid, int(-1..1)|void force) {
 			"title": ev->summary,
 		]);
 		//The description is HTML. We do a VERY rudimentary HTML-to-text conversion.
-		foreach ((ev->description || "") / "<br>", string line) {
+		//CJA 20260326: The description seems to be coming through as text, not HTML.
+		//Not sure whether there are situations for both. Try to be compatible.
+		foreach (replace(ev->description || "", "<br>", "\n") / "\n", string line) {
 			while (sscanf(line, "%s<%*s>%s", string a, string b)) line = a + b;
 			line = replace(Parser.parse_html_entities(line), "\xA0", " "); //Replace non-breaking spaces with regular ones
 			if (sscanf(line, "%s:%s", string kw, string val) && val && has_index(params, lower_case(kw)))
