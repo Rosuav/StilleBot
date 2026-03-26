@@ -23,7 +23,7 @@ function make_list(arr, fmt, empty, eligible, which) {
 	if (arr.length > board_count) arr.length = board_count; //We display a limited number, but the back end tracks more
 	return OL(arr.map(p => {
 		let className = "", title = "Not eligible for a badge in this month";
-		if (p.user_id === "274598607") {className = "anonymous"; title = "Anonymous - ineligible for badge";}
+		if (p.user_id === "274598607" || p.user_id === "0") {className = "anonymous"; title = "Anonymous - ineligible for badge";}
 		else if ("" + +p.user_id !== "" + p.user_id) {className = ""; title = "Not a Twitch user - no badge awarded";}
 		else if (mods[p.user_id]) {className = "is_mod"; title = "Moderator - already has a badge, won't take a VIP slot";}
 		else if (eligible-- > 0) {

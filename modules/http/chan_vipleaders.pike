@@ -251,7 +251,7 @@ array(array(string)|array(array(string))) collect_leaders(mapping stats, string 
 		limit = stats->badge_count || 10; people = ({ });
 		foreach (subs, mapping person) {
 			if (stats->mods[person->user_id]) continue;
-			if ((string)person->user_id == "274598607") continue; //AnAnonymousGifter
+			if ((string)person->user_id == "274598607" || (string)person->user_id == "0") continue; //AnAnonymousGifter
 			if ((string)(int)person->user_id != (string)person->user_id) continue; //Non-numeric user "ids" are for truly-anonymous donations
 			if (!has_value(userids, person->user_id)) {
 				//If that person has already received a VIP badge for cheering, don't re-add.
