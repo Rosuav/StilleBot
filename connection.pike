@@ -55,7 +55,7 @@ mapping(string:mixed) gather_person_info_irc(mapping params, string msg) {
 			sscanf(word, "%[4]%[A-Za-z]%[0-9]%s", string four, string letters, string digits, string blank);
 			mapping cheerinfo = G->G->cheeremotes[lower_case(four + letters)];
 			if (cheerinfo && digits != "" && digits != "0" && blank == "") {
-				//Synthesize an emote ID with a leading space so we know that
+				//Synthesize an emote ID with a leading slash so we know that
 				//it can't be a normal emote. This may cause some broken images,
 				//but it should at least allow cheeremotes to be suppressed with
 				//other emotes.
@@ -956,8 +956,8 @@ class channel(mapping identity) {
 		//not contain spaces, which would be weird.
 		string emoted = "";
 		if (data->message->fragments) foreach (data->message->fragments, mapping f) { //EventSub-style emotes
-			//TODO: Cheer emotes? Not sure, maybe just leave them like regular emotes.
 			if (f->type == "emote") emoted += sprintf("\uFFFAe%s:%s\uFFFB", f->emote->id, f->text);
+			else if (f->type == "cheermote") emoted += sprintf("\uFFFAe/%s/%s:%s\uFFFB", f->cheermote->prefix, f->cheermote->bits, f->text);
 			else if (f->text) emoted += f->text;
 		} else if (person->emotes) { //IRC-style emotes
 			string residue = msg; int offset = 0;

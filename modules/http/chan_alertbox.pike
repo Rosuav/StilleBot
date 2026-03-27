@@ -1370,13 +1370,15 @@ mapping parse_emotes(string text, mapping person) {
 		pos = end + 1;
 	}
 	else if (person->fragments) foreach (person->fragments, mapping f) { //EventSub handling
-		if (f->text) noemotes += f->text;
-		if (f->type == "text") emoted += ({f->text});
-		//TODO: Are cheer emotes detected properly here?
-		else if (f->type == "emote") emoted += ({([
+		if (f->type == "emote") emoted += ({([
 			"img": emote_url(f->emote->id, 3),
 			"title": f->text,
 		])});
+		else if (f->type == "cheermote") emoted += ({([
+			"img": emote_url("/" + f->cheermote->prefix + "/" + f->cheermote->bits, 3),
+			"title": f->text,
+		])});
+		else if (f->text) {emoted += ({f->text}); noemotes += f->text;}
 	}
 	return (["_noemotes": noemotes + text[pos..], "_emoted": emoted + ({text[pos..]})]);
 }
