@@ -308,14 +308,6 @@ class channel(mapping identity) {
 		raiders = filter(raiders) {return __ARGS__[0] >= went_online;};
 	}
 
-	array(echoable_message|function|string) locate_command(mapping person, string msg)
-	{
-		if (mixed f = sscanf(msg, "!%[^# ] %s", string cmd, string param)
-			&& find_command(this, cmd, person->badges->?_mod, person->badges->?vip))
-				return ({f, param||""});
-		return ({0, ""});
-	}
-
 	__async__ void delete_msg(string uid, string msgid) {
 		await(G->G->DB->mutate_config(userid, "private") {m_delete(__ARGS__[0][uid] || ([]), msgid);});
 		G->G->websocket_types->chan_messages->update_one(uid + "#" + userid, msgid);
@@ -945,7 +937,10 @@ class channel(mapping identity) {
 		]);
 		event_notify("allmsgs", this, person, msg);
 		trigger_special("!trigger", person, person->vars);
-		[mixed cmd, string param] = locate_command(person, msg);
+		mixed cmd = 0; string param = "";
+		if (mixed f = sscanf(msg, "!%[^# ] %s", string c, string p)
+			&& find_command(this, c, person->badges->?_mod, person->badges->?vip))
+				{cmd = f; param = p||"";}
 		int offset = sizeof(msg) - sizeof(param);
 		if (msg[offset..offset+sizeof(param)] != param) offset = -1; //TODO: Strip whites from around param without breaking this
 		string emoted = "", residue = param;
