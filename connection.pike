@@ -956,9 +956,9 @@ class channel(mapping identity) {
 		//not contain spaces, which would be weird.
 		string emoted = "";
 		if (data->message->fragments) foreach (data->message->fragments, mapping f) { //EventSub-style emotes
-			if (f->type == "text") emoted += f->text;
 			//TODO: Cheer emotes? Not sure, maybe just leave them like regular emotes.
-			else if (f->type == "emote") emoted += sprintf("\uFFFAe%s:%s\uFFFB", f->emote->id, f->text);
+			if (f->type == "emote") emoted += sprintf("\uFFFAe%s:%s\uFFFB", f->emote->id, f->text);
+			else if (f->text) emoted += f->text;
 		} else if (person->emotes) { //IRC-style emotes
 			string residue = msg; int offset = 0;
 			foreach (person->emotes, [string id, int start, int end]) {
