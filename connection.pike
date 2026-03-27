@@ -948,7 +948,6 @@ class channel(mapping identity) {
 		[mixed cmd, string param] = locate_command(person, msg);
 		int offset = sizeof(msg) - sizeof(param);
 		if (msg[offset..offset+sizeof(param)] != param) offset = -1; //TODO: Strip whites from around param without breaking this
-		person->measurement_offset = offset;
 		string emoted = "", residue = param;
 		if (person->emotes) foreach (person->emotes, [string id, int start, int end]) { //IRC-style emotes
 			emoted += sprintf("%s\uFFFAe%s:%s\uFFFB",
