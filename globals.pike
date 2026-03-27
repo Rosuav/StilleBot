@@ -31,26 +31,6 @@ typedef echoable_message|function(object,object,string:echoable_message) command
 //this out for a proper Unicode casefold.
 string command_casefold(string cmd) {return lower_case(cmd);}
 
-//Attempt to find a "likely command" for a given channel.
-//If it returns 0, there's no such command. It may return a function
-//that eventually fails, but it will attempt to do so as rarely as
-//possible; returning nonzero will NORMALLY mean that the command is
-//fully active.
-echoable_message|function find_command(object channel, string cmdname, int is_mod, int|void is_vip)
-{
-	//Prevent commands from containing a hash, as that was formerly used for
-	//per-channel commands. This can be relaxed in the future if needed.
-	if (has_value(cmdname, '#')) return 0;
-	if (has_value(cmdname, '!')) return 0; //Pseudo-commands can't be run as normal commands
-	mixed cmd = channel->commands[command_casefold(cmdname)];
-	if (!mappingp(cmd)) return cmd; //This includes if it's not found
-	if (cmd->access == "mod" && !is_mod) return 0;
-	if (cmd->access == "vip" && !is_mod && !is_vip) return 0;
-	if (cmd->access == "none") return 0;
-	//If we get here, the command is acceptable.
-	return cmd;
-}
-
 //Return a Second or a Fraction representing the given ISO time, or 0 if unparseable
 Calendar.ISO.Second time_from_iso(string time) {
 	if (object ts = Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", time)) return ts;

@@ -937,12 +937,17 @@ class channel(mapping identity) {
 		]);
 		event_notify("allmsgs", this, person, msg);
 		trigger_special("!trigger", person, person->vars);
-		mixed cmd = 0; string param = "";
-		if (mixed f = sscanf(msg, "!%[^# ] %s", string c, string p)
-			&& find_command(this, c, person->badges->?_mod, person->badges->?vip))
-				{cmd = f; param = p||"";}
+		//Check for a command, eg "!so streamername" or "!hello"
+		sscanf(msg, "!%[^! ] %s", string cmdname, string param);
+		echoable_message cmd = commands[command_casefold(cmdname || "")];
+		if (!cmd) return;
+		switch (mappingp(cmd) && cmd->access) {
+			case "vip": if (person->badges->?vip) break; //Else fall through; mods can execute VIP commands
+			case "mod": if (person->badges->?_mod) break;
+			case "none": return;
+		}
+		if (!param) param = "";
 		int offset = sizeof(msg) - sizeof(param);
-		if (msg[offset..offset+sizeof(param)] != param) offset = -1; //TODO: Strip whites from around param without breaking this
 		string emoted = "", residue = param;
 		if (person->emotes) foreach (person->emotes, [string id, int start, int end]) { //IRC-style emotes
 			emoted += sprintf("%s\uFFFAe%s:%s\uFFFB",
@@ -960,15 +965,7 @@ class channel(mapping identity) {
 		}
 		person->vars["%s"] = param;
 		person->vars["{@emoted}"] = emoted + residue;
-		//Functions do not get %s handling. If they want it, they can do it themselves,
-		//and if they don't want it, it would mess things up badly to do it here.
-		//(They still get other variable handling.) NOTE: This may change in the future.
-		//If a function specifically does not want %s handling, it should:
-		//m_delete(person->vars, "%s");
-		//CJA 20260227: I don't think we have such a thing as function commands any more?
-		//Confirm this, then drop support.
-		if (functionp(cmd)) send(person, cmd(this, person, param));
-		else send(person, cmd, person->vars);
+		send(person, cmd, person->vars);
 	}
 
 	//Designed around the EventSub chat notification but can also handle IRC notifs
