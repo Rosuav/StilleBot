@@ -296,6 +296,3 @@
   it'll probably need some handcrafting in the JS and CSS.
 * Quotes are broken
   - If there are no quotes, mods can't enable quote commands
-  - The quote is getting !addquote in it, this is probably a broader issue
-  - Check on MorbidMiscellarium's channel in case something's different from mine
-  - This is likely related to @emoted

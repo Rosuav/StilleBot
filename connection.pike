@@ -938,33 +938,41 @@ class channel(mapping identity) {
 		event_notify("allmsgs", this, person, msg);
 		trigger_special("!trigger", person, person->vars);
 		//Check for a command, eg "!so streamername" or "!hello"
-		sscanf(msg, "!%[^! ] %s", string cmdname, string param);
+		sscanf(msg, "!%[^! ]%s", string cmdname, string param);
 		echoable_message cmd = commands[command_casefold(cmdname || "")];
-		if (!cmd) return;
+		if (!cmd) return; //Including if cmdname is blank or null
 		switch (mappingp(cmd) && cmd->access) {
 			case "vip": if (person->badges->?vip) break; //Else fall through; mods can execute VIP commands
 			case "mod": if (person->badges->?_mod) break;
 			case "none": return;
 		}
 		if (!param) param = "";
-		int offset = sizeof(msg) - sizeof(param);
-		string emoted = "", residue = param;
-		if (person->emotes) foreach (person->emotes, [string id, int start, int end]) { //IRC-style emotes
-			emoted += sprintf("%s\uFFFAe%s:%s\uFFFB",
-				residue[..start - offset - 1], //Text before the emote
-				id, residue[start-offset..end-offset], //Emote ID and name
-			);
-			residue = residue[end - offset + 1..];
-			offset = end + 1;
-		}
-		else if (data->message->fragments) foreach (data->message->fragments, mapping f) { //EventSub-style emotes
+		//NOTE: Even though (as of 20260327) command_casefold is length-preserving, we can
+		//use cmdname (which hasn't been case-folded) to do our measurements. First, parse
+		//the entire message and find all emotes in it; then strip off as many characters
+		//as the cmdname has, plus one for the bang; and then clean up spaces. This assumes
+		//that the command name does not contain any emotes (which currently won't happen;
+		//Twitch won't send emote IDs for text beginning with a bang), and that emotes do
+		//not contain spaces, which would be weird.
+		string emoted = "";
+		if (data->message->fragments) foreach (data->message->fragments, mapping f) { //EventSub-style emotes
 			if (f->type == "text") emoted += f->text;
 			//TODO: Cheer emotes? Not sure, maybe just leave them like regular emotes.
 			else if (f->type == "emote") emoted += sprintf("\uFFFAe%s:%s\uFFFB", f->emote->id, f->text);
-			residue = "";
+		} else if (person->emotes) { //IRC-style emotes
+			string residue = msg; int offset = 0;
+			foreach (person->emotes, [string id, int start, int end]) {
+				emoted += sprintf("%s\uFFFAe%s:%s\uFFFB",
+					residue[..start - offset - 1], //Text before the emote
+					id, residue[start-offset..end-offset], //Emote ID and name
+				);
+				residue = residue[end - offset + 1..];
+				offset = end + 1;
+			}
+			emoted += residue;
 		}
-		person->vars["%s"] = param;
-		person->vars["{@emoted}"] = emoted + residue;
+		person->vars["%s"] = String.trim(param);
+		person->vars["{@emoted}"] = String.trim(emoted[sizeof(cmdname)+1..]);
 		send(person, cmd, person->vars);
 	}
 
