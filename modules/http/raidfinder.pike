@@ -402,8 +402,10 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		if (string n = notes[(string)otheruid]) strm->notes = n;
 		if (has_value(highlightids, otheruid)) strm->highlight = 1;
 		if (!strm->url) strm->url = "https://twitch.tv/" + strm->user_login; //Is this always correct?
-		//Would be nice to optimize this. Currently it's a separate database query for each streamer.
-		array raids = await(G->G->DB->load_raids(userid, otheruid, 1));
+		//If you're not logged in (which is valid with eg category search), there are no raids to find,
+		//so don't bother querying.
+		//TODO: Optimize this. Currently it's a separate database query for each streamer.
+		array raids = userid ? await(G->G->DB->load_raids(userid, otheruid, 1)) : ({ });
 		int recent = time() - 86400 * 30;
 		int ancient = time() - 86400 * 365;
 		float raidscore = 0.0;
