@@ -375,6 +375,9 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	mapping(string:int) tag_prefs = notes->tags || ([]);
 	mapping(string:int) lc_tag_prefs = mkmapping(lower_case(indices(tag_prefs)[*]), values(tag_prefs));
 	multiset seen = (<>);
+	//If you're not logged in (which is valid with eg category search), there are no raids to find,
+	//so don't bother querying.
+	array raids = userid ? await(G->G->DB->load_all_raids(userid, follows_helix->user_id)) : ({ });
 	foreach (follows_helix; int i; mapping strm)
 	{
 		//Optional filter: Only those that include a stream title hashtag
@@ -402,16 +405,12 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		if (string n = notes[(string)otheruid]) strm->notes = n;
 		if (has_value(highlightids, otheruid)) strm->highlight = 1;
 		if (!strm->url) strm->url = "https://twitch.tv/" + strm->user_login; //Is this always correct?
-		//If you're not logged in (which is valid with eg category search), there are no raids to find,
-		//so don't bother querying.
-		//TODO: Optimize this. Currently it's a separate database query for each streamer.
-		array raids = userid ? await(G->G->DB->load_raids(userid, otheruid, 1)) : ({ });
 		int recent = time() - 86400 * 30;
 		int ancient = time() - 86400 * 365;
 		float raidscore = 0.0;
 		int have_recent_outgoing = 0, have_old_incoming = 0;
 		strm->raids = ({ });
-		foreach (raids, mapping raidset) foreach (raidset->data, mapping raid)
+		foreach (raids, mapping raidset) if (raidset->fromid == otheruid || raidset->toid == otheruid) foreach (raidset->data, mapping raid)
 		{
 			//write("DEBUG RAID LOG: %O\n", raid);
 			//TODO: Translate these by timezone (if available)

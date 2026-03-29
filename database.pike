@@ -511,6 +511,24 @@ __async__ array load_raids(string|int fromid, string|int toid, int|void bidi) {
 	return rows; //TODO upon switching back to Sql.Sql: JSONDECODE the data fields
 }
 
+//Like calling load_raids(fromid, toid[*], 1);
+//Will always do two queries (load_raids() only does one), but will be more efficient
+//when large numbers of target IDs are needed.
+//NOTE: The "where fromid=" query may be reasonably fast as that's indexed, but the
+//"where toid=" query will definitely require a tablescan. Is there any way to improve
+//this? Might not be worth the hassle.
+__async__ array load_all_raids(string|int fromid, array(string|int) toid) {
+	if (!(int)fromid) return ({ });
+	switch (sizeof(toid)) {
+		case 0: return ({ });
+		case 1: return await(load_raids(fromid, toid[0], 1));
+		default: return
+			await(query_ro(({"select * from stillebot.raids where fromid = :fromid and toid = any(:toid)",
+					"select * from stillebot.raids where toid = :fromid and fromid = any(:toid)"}),
+				(["fromid": (int)fromid, "toid": (array(int))toid]))) * ({ });
+	}
+}
+
 //NOTE: Automatically appends to the raids, does not replace.
 __async__ void add_raid(string|int fromid, string|int toid, mapping raid) {
 	array raids = await(load_raids(fromid, toid));
