@@ -265,15 +265,6 @@
   - Make chan_integrations a builtin
   - Subcommands for different APIs
   - https://docs.fourthwall.com/open-api/#tag/Giveaway-links/operation/createGiveawayLinks
-* UNTRACKED BUG: Sometimes, if replication ceases, it doesn't resume.
-  - It may help to use `./dbctl refreshrepl` to force it to restart. Not sure if it makes
-    any difference but it can cause an error message. See if we get that error any other
-    way (check the logs).
-  - If it reports "certificate verify failed", it's probably that certificate rollover has
-    happened and the other end isn't using the new cert. Go to the other end and run
-    `sudo systemctl reload postgres` which shouldn't otherwise break anything. I hope.
-  - Cert rollover should no longer be an issue - check it in a few months to make sure.
-    Monitor to see if there are any other causes of replication failure.
 * /serverstatus during hop from Gideon to Sikorsky might be losing the Gideon socket?? It's
   staying with the Gideon database reporting that it's read/write but it isn't actually RW.
 * Add something to /serverstatus to do updates incl pulling changes
