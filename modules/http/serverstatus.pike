@@ -206,7 +206,7 @@ constant LOAD_DEFINITIONS = ([
 	"WS": (["color": ({0x66, 0x33, 0x99}), "unit": "concurrent users", "unscaled": 1, "desc": "WebSocket users"]),
 	"HTTP": (["color": ({0x80, 0x10, 0x10}), "unit": "req/sec", "desc": "Web pages sent"]),
 	"API": (["color": ({0x10, 0x80, 0x10}), "unit": "req/sec", "desc": "Twitch API calls"]),
-	"IRC": (["color": ({0x10, 0x10, 0x80}), "unit": "msgs/sec", "desc": "Chat messages sent"]),
+	"IRC": (["color": ({0x10, 0x10, 0x80}), "unit": "msgs/sec", "desc": "Legacy chat"]),
 	"DB": (["color": ({0x10, 0x80, 0x80}), "unit": "req/sec", "desc": "Database requests"]),
 ]);
 
