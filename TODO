@@ -251,16 +251,6 @@
 * Now that file ownership is being recorded, it would be of value to differentiate in the
   front end, keeping unlocks from cluttering up the alert box and vice versa. Be aware that
   legacy uploads have no ownership and are most likely (but not certainly) alertbox files.
-* Pile of Pics hype mode
-  - When two things collide, they merge.
-    - If the new size exceeds the base size of a different thing type, switch to that
-      type. Either way, report back to the server, so that refreshing the page will
-      respawn the exact same set of items. This will be VERY messed-up if there are
-      multiple instances, including the preview, so have the preview not do this.
-  - The server currently cannot record anything other than the thing quantities.
-    This might be the excuse needed to change that, and thus allow refreshing when a
-    person's avatar is texturing a thing. In effect, we'd need to record not just the
-    quantity, but an array of vital statistics: size, texture, label
 * Fourth Wall integrations enhancements
   - Make chan_integrations a builtin
   - Subcommands for different APIs
