@@ -45,7 +45,10 @@ string deduce_emoted_text(string msg, mapping botemotes) {
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	array quotes = await(G->G->DB->load_config(req->misc->channel->userid, "quotes", ({ })));
-	if (!sizeof(quotes)) return render(req, (["quotes": "(none)"]) | req->misc->chaninfo);
+	if (!sizeof(quotes)) {
+		if (!req->misc->is_mod) return render(req, (["quotes": "There are no quotes recorded for this channel."]) | req->misc->chaninfo);
+		return render(req, (["quotes": "loading...", "vars": (["ws_group": ""])]) | req->misc->chaninfo);
+	}
 	array q = ({ });
 	string tz = req->misc->channel->config->timezone;
 	object user = user_text();

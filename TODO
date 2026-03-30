@@ -294,5 +294,3 @@
 * Goal bars: Can we make it so the text is inverted in colour, meaning that the gradient
   behind it flips colour for the text? Make it a checkbox in place of a text colour, but
   it'll probably need some handcrafting in the JS and CSS.
-* Quotes are broken
-  - If there are no quotes, mods can't enable quote commands
