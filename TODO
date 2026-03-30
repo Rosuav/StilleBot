@@ -275,3 +275,8 @@
 * Goal bars: Can we make it so the text is inverted in colour, meaning that the gradient
   behind it flips colour for the text? Make it a checkbox in place of a text colour, but
   it'll probably need some handcrafting in the JS and CSS.
+* Consider the StreamElements API for hooking donations
+  - https://dev.streamelements.com/docs/api-docs/cd02cda5171ea-o-auth2
+  - Do they have a way to trigger a test dono? Otherwise it's going to be either expensive
+    or slow to figure anything out.
+  - Are there any other (preferably free and easy) webhooks that we can test?
