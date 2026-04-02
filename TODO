@@ -279,4 +279,4 @@
   - https://dev.streamelements.com/docs/api-docs/cd02cda5171ea-o-auth2
   - Do they have a way to trigger a test dono? Otherwise it's going to be either expensive
     or slow to figure anything out.
-  - Are there any other (preferably free and easy) webhooks that we can test?
+  - Are there any other (preferably free and easily testable) webhooks that we can test?
