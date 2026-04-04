@@ -274,7 +274,6 @@ class channel(mapping identity) {
 			}
 			if (response->redemption) redemption_commands[response->redemption] += ({cmd->cmdname});
 		}
-		if (commands["!watchstreak"]) need_irc = 1;
 	}
 
 	void botconfig_save() {
@@ -1031,17 +1030,11 @@ class channel(mapping identity) {
 				]));
 				event_notify("subscription", this, "subbomb", person, notif->community_sub_gift->sub_tier[0..0], notif->community_sub_gift->total, notif, "");
 				break;
-			//Watch streaks aren't announced on eventsub. If they get added, put something like this here.
-			/*case "viewermilestone": switch (params->msg_param_category) {
-				case "watch-streak": //"X sparked a watch streak!" params->msg_param_category == "watch-streak", also has a msg_param_value == months
-					trigger_special("!watchstreak", person, ([
-						"{months}": params->msg_param_value,
-						"{reward}": params->msg_param_copoReward,
-					]));
-					break;
-				default: break;
-			}
-			break;*/
+			case "watch_streak": trigger_special("!watchstreak", person, ([
+				"{months}": (string)notif->watch_streak->streak_count,
+				"{reward}": (string)notif->watch_streak->channel_points_awarded,
+			]));
+			break;
 			case "bits_badge_tier": trigger_special("!cheerbadge", person, ([
 				"{level}": (string)notif->bits_badge_tier->tier,
 			])); break;
@@ -1135,13 +1128,14 @@ class channel(mapping identity) {
 					"sub_tier": params->msg_param_sub_plan,
 					"cumulative_total": (int)params->msg_param_sender_count,
 				]); break;
-				//HACK: Not currently handled by EventSub so these continue to happen here
+				//To my knowledge, the only viewermilestone that ever got implemented is watch-streak
 				case "viewermilestone": switch (params->msg_param_category) {
 					case "watch-streak": //"X sparked a watch streak!" params->msg_param_category == "watch-streak", also has a msg_param_value == months
-						trigger_special("!watchstreak", person, ([
-							"{months}": params->msg_param_value,
-							"{reward}": params->msg_param_copoReward,
-						]));
+						event->notice_type = "watch_streak";
+						event->watch_streak = ([
+							"channel_points_awarded": (int)params->msg_param_copoReward,
+							"streak_count": (int)params->msg_param_value,
+						]);
 						break;
 					default: break;
 				}
