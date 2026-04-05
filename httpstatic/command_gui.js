@@ -310,6 +310,14 @@ function format_time_delay(sec) {
 	return sec + "-second";
 }
 
+function format_duration(sec) {
+	//Should 5400 seconds be shown as "1.5 hours" rather than "90 minutes"?
+	//With that example it could go either way. What if it's 10.5 hours?
+	if (sec >= 3600 && sec % 3600 === 0) return sec / 3600 + " hours";
+	if (sec > 60 && sec % 60 === 0) return sec / 60 + " minutes";
+	return sec + " seconds";
+}
+
 //If you don't have the full type, the stub type might provide partial information.
 const stubtypes = {
 	builtin: {
@@ -513,7 +521,7 @@ const main_types = {
 	//If the value is editable (ie not a fixed string), also provide a label for editing.
 	//These will be detected in the order they are iterated over.
 	delay: {
-		color: "#77ee77", children: ["message"], label: el => `Delay ${el.delay} seconds`,
+		color: "#77ee77", children: ["message"], label: el => `Delay ${format_duration(el.delay)}`,
 		params: [{attr: "delay", label: "Delay (seconds)", values: [1, 86400, 1]}],
 		typedesc: "Delay message(s) by a certain length of time",
 	},
