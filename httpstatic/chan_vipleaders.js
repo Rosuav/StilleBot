@@ -161,8 +161,9 @@ export function render(data) {
 		]));
 		DOM("#activate").disabled = !!data.active;
 		DOM("#deactivate").disabled = !data.active;
+		const format = data.embed_format || { };
 		for (let el of DOM("#configform").elements) {
-			const val = el.name && (data.embed_format[el.name] || data[el.name]);
+			const val = el.name && (format[el.name] || data[el.name]);
 			if (val) el[el.type === "checkbox" ? "checked" : "value"] = val;
 		}
 		if (data.displayformat) DOM("#formattext").value = data.displayformat;
