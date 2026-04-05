@@ -280,3 +280,10 @@
   - Do they have a way to trigger a test dono? Otherwise it's going to be either expensive
     or slow to figure anything out.
   - Are there any other (preferably free and easily testable) webhooks that we can test?
+* Make a proper way to have a command do something the next time stream goes offline.
+  - Example: "VIP for this stream". Do /vip {name}, wait for offline, then /unvip {name}.
+  - Needs to be resilient against short bounces. Do the whole "cookie, wait, check" thing.
+  - Which means "when stream goes offline" really means "once stream has been offline for
+    15 minutes" or something.
+  - Still not guaranteed reliable if there's a bot outage or hop though, same as other
+    delayed triggers
