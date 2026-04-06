@@ -9,6 +9,7 @@
 /monitor, /unmonitor, /restrict, /unrestrict
 */
 mapping need_scope = ([]); //Filled in by create()
+multiset uses_bcaster_auth = (<>); //Commands that will use channel auth rather than voice
 
 Concurrent.Future _low_announce(object channel, string voiceid, string msg, mapping tok, string color) {
 	return twitch_api_request(sprintf(
@@ -191,7 +192,7 @@ Concurrent.Future whisper(object channel, string voiceid, string msg, mapping to
 @"Whisper a message to a user -> username message":
 Concurrent.Future w(object c, string v, string m, mapping t) {return whisper(c, v, m, t, "", "");}
 
-@"channel:edit:commercial":
+@"*channel:edit:commercial":
 @"Start an ad break -> [length]":
 Concurrent.Future commercial(object channel, string voiceid, string msg, mapping tok) {
 	return twitch_api_request("https://api.twitch.tv/helix/channels/commercial",
@@ -205,7 +206,7 @@ Concurrent.Future commercial(object channel, string voiceid, string msg, mapping
 	);
 }
 
-@"channel:manage:ads":
+@"*channel:manage:ads":
 @"Delay the next scheduled ad break by 5 minutes ->":
 __async__ void snooze(object channel, string voiceid, string msg, mapping tok) {
 	await(twitch_api_request("https://api.twitch.tv/helix/channels/ads/schedule/snooze?broadcaster_id=" + channel->userid,
@@ -214,7 +215,7 @@ __async__ void snooze(object channel, string voiceid, string msg, mapping tok) {
 	G->G->recheck_ad_status(channel);
 }
 
-@"channel:manage:broadcast":
+@"channel:manage:broadcast": //TODO: bcaster_auth?
 @"Add a VOD marker so you can find back this point for highlighting -> label":
 Concurrent.Future marker(object channel, string voiceid, string msg, mapping tok) {
 	return twitch_api_request("https://api.twitch.tv/helix/streams/markers",
@@ -228,7 +229,7 @@ Concurrent.Future marker(object channel, string voiceid, string msg, mapping tok
 	);
 }
 
-@"channel:manage:raids":
+@"channel:manage:raids": //TODO: bcaster_auth?
 @"Raid someone! -> target-streamer":
 Concurrent.Future raid(object channel, string voiceid, string msg, mapping tok) {
 	return twitch_api_request(sprintf(
@@ -241,7 +242,7 @@ Concurrent.Future raid(object channel, string voiceid, string msg, mapping tok) 
 	);
 }
 
-@"channel:manage:raids":
+@"channel:manage:raids": //TODO: bcaster_auth?
 @"Cancel a raid that's been started but hasn't gone through yet ->":
 Concurrent.Future unraid(object channel, string voiceid, string msg, mapping tok) {
 	return twitch_api_request(sprintf(
@@ -253,23 +254,23 @@ Concurrent.Future unraid(object channel, string voiceid, string msg, mapping tok
 	);
 }
 
-@"channel:manage:vips":
+@"*channel:manage:vips":
 @"Give someone a VIP badge -> username":
 Concurrent.Future vip(object channel, string voiceid, string msg, mapping tok, string|void remove) {
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/channels/vips?broadcaster_id=%d&user_id={{USER}}",
 			channel->userid),
-		(["Authorization": "Bearer " + tok->token]), ([
+		(["Authorization": channel->userid]), ([
 			"method": remove == "REMOVE" ? "DELETE" : "POST",
 			"username": replace(msg, ({"@", " "}), ""),
 		]),
 	);
 }
-@"channel:manage:vips":
+@"*channel:manage:vips":
 @"Remove someone's VIP badge -> username":
 Concurrent.Future unvip(object c, string v, string m, mapping t) {return vip(c, v, m, t, "REMOVE");}
 
-@"channel:manage:moderators":
+@"channel:manage:moderators": //TODO: bcaster_auth?
 @"Give someone a mod sword -> username":
 Concurrent.Future mod(object channel, string voiceid, string msg, mapping tok, string|void remove) {
 	return twitch_api_request(sprintf(
@@ -281,7 +282,7 @@ Concurrent.Future mod(object channel, string voiceid, string msg, mapping tok, s
 		]),
 	);
 }
-@"channel:manage:moderators":
+@"channel:manage:moderators": //TODO: bcaster_auth?
 @"Remove a mod sword -> username":
 Concurrent.Future unmod(object c, string v, string m, mapping t) {return mod(c, v, m, t, "REMOVE");}
 
@@ -369,6 +370,11 @@ string|Concurrent.Future send_chat_command(object channel, string voiceid, strin
 		if (dest == "/w") cmd = "whisper"; else cmd = "chat";
 		if (!has_value(tok->scopes, need_scope[cmd])) return msg; //Send via IRC if we don't have the necessary credentials
 	}
+	//Some API calls require broadcaster auth, so we ignore the voice selection and use the broadcaster.
+	if (uses_bcaster_auth[cmd]) {
+		voiceid = (string)channel->userid;
+		tok = G->G->user_credentials[channel->userid];
+	}
 	if (!voiceid || voiceid == "0") {
 		voiceid = (string)G->G->bot_uid;
 		tok = (["token": G->G->dbsettings->credentials->token,
@@ -389,6 +395,7 @@ protected void create(string name) {
 		if (ann) foreach (indices(ann), mixed anno) {
 			if (has_value(anno, " ->")) slashcommands[key] = anno;
 			else {
+				if (sscanf(anno, "*%s", anno)) uses_bcaster_auth[key] = 1;
 				need_scope[key] = anno;
 				voice_scopes[anno] = all_twitch_scopes[anno] || anno; //If there's a function that uses it, the voices subsystem can grant it.
 				scope_commands[anno] += ({"/" + key});
