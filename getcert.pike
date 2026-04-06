@@ -1,3 +1,12 @@
+/* Key request client
+
+Connects to keyfob.py from sugar-mill to access certs and private keys
+
+TODO: String.secure the keys after loading them
+TODO: Switch to an actual secret instead of Hello World (save it into instance-config)
+TODO: Failure modes?
+*/
+
 string twofa(string secret) {
 	object hmac = Crypto.SHA1.HMAC(MIME.decode_base32(secret));
 	int input = time() / 30;
