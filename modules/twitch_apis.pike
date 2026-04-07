@@ -210,7 +210,7 @@ Concurrent.Future commercial(object channel, string voiceid, string msg, mapping
 @"Delay the next scheduled ad break by 5 minutes ->":
 __async__ void snooze(object channel, string voiceid, string msg, mapping tok) {
 	await(twitch_api_request("https://api.twitch.tv/helix/channels/ads/schedule/snooze?broadcaster_id=" + channel->userid,
-		(["authtype": "app"]), (["method": "POST"]),
+		([]), (["authtype": "app", "method": "POST"]),
 	));
 	G->G->recheck_ad_status(channel);
 }
