@@ -18,13 +18,26 @@ string twofa(string secret) {
 }
 
 string buf = "";
+array|zero file_receive = 0;
 void readable(object sock, string data) {
 	buf += data;
 	while (sscanf(buf, "%s\n%s", string line, buf) == 2) {
+		if (file_receive) {
+			if (line == ".") {
+				//File complete!
+				write("Have file %O\n%O\n", file_receive[0], String.string2hex(Crypto.SHA1.hash(file_receive[1])));
+				file_receive = 0;
+				continue;
+			}
+			file_receive[1] += line + "\n";
+			continue;
+		}
 		[string cmd, array args] = Array.shift(line / " ");
 		switch (cmd) {
 			case "hello": write("Attempting auth...\n"); sock->write("auth %s\n", twofa("JBSWY3DPEHPK3PXP")); break;
-			case "login": write("Login OK\n"); break;
+			case "login": write("Login OK\n"); sock->write("fetch db.rosuav.com\n"); break;
+			case "privkey": file_receive = ({args[0] + ".key", ""}); break;
+			case "certificate": file_receive = ({args[0] + ".pem", ""}); break;
 			default: break;
 		}
 	}
