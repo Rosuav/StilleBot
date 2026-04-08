@@ -319,11 +319,9 @@ __async__ void connect(string host) {
 	object tm = System.Timer();
 	werror("[%.3f] Connecting to Postgres on %O...\n", tm->peek(), host);
 	mapping db = pg_connections[host] = (["host": host]); //Not a floop, strings are just strings :)
-	string key = Stdio.read_file("db.rosuav.com.key");
-	string cert = Stdio.read_file("db.rosuav.com.pem");
 	object ctx = SSLContext();
-	array(string) root = Standards.PEM.Messages(Stdio.read_file("/usr/local/share/ca-certificates/sugarmill.rosuav.com.pem"))->get_certificates();
-	ctx->add_cert(Standards.PEM.simple_decode(key), Standards.PEM.Messages(cert)->get_certificates() + root);
+	object pem = Standards.PEM.Messages(Stdio.read_file("db.rosuav.com.key") + Stdio.read_file("db.rosuav.com.pem"));
+	ctx->add_cert(pem->get_private_key(), pem->get_certificates());
 	#if constant(SSLDatabase)
 	db->conn = SSLDatabase((["host": host, "user": "rosuav", "application_name": "stillebot", "database": "stillebot"]),
 		(["ctx": ctx, "host": host, "notify_callback": notify_callback]));
