@@ -130,6 +130,16 @@ string livedb, fastdb; //Host name for the current read-write database, and poss
 array(string) database_ips = ({"sikorsky.mustardmine.com", "gideon.mustardmine.com"});
 mapping notify_channels = ([]);
 
+//Credentials management
+//NOTE: This may be expanded in the future to include the HTTPS server certificate.
+//NOTE: This may in the future be able to signal a certificate change, which would
+//negate any need for cache validity checks here. Simply ensure that we have a
+//connection to the key fob, and then depend on it for validity. (Given that a cert
+//is replaced when it still has weeks of life on it, even a failure of checking is
+//unlikely to cause actual issues.)
+@retain: mapping(string:string) sugarmill = ([]);
+
+
 #if constant(SSLDatabase)
 //SSLDatabase automatically parses and encodes JSON.
 #define JSONDECODE(x) (x)
