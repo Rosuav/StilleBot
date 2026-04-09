@@ -7,7 +7,7 @@ TODO: Switch to an actual secret instead of Hello World (save it into instance-c
 TODO: Failure modes?
 */
 
-string twofa(string secret) {
+string totp(string secret) {
 	object hmac = Crypto.SHA1.HMAC(MIME.decode_base32(secret));
 	int input = time() / 30;
 	string hash = hmac(sprintf("%8c", input));
@@ -15,6 +15,11 @@ string twofa(string secret) {
 	sscanf(hash[offset..offset+3], "%4c", int code);
 	code &= 0x7fffffff; //It's a 31-bit code, mask off the high bit
 	return ("00000000" + (string)code)[<7..]; //Assumes eight-digit codes
+}
+
+string authcode() {
+	mapping instance_config = Standards.JSON.decode_utf8(Stdio.read_file("instance-config.json"));
+	return totp(instance_config->sugar || "JBSWY3DPEHPK3PXP");
 }
 
 string buf = "";
@@ -35,7 +40,7 @@ void readable(object sock, string data) {
 		}
 		[string cmd, array args] = Array.shift(line / " ");
 		switch (cmd) {
-			case "hello": write("Attempting auth...\n"); sock->write("auth %s\n", twofa("JBSWY3DPEHPK3PXP")); break;
+			case "hello": write("Attempting auth...\n"); sock->write("auth %s\n", authcode()); break;
 			case "login": write("Login OK\n"); sock->write("fetch db.rosuav.com\n"); break;
 			case "certificate": file_receive = ({args[0], ""}); break;
 			default: break;
