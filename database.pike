@@ -230,6 +230,8 @@ __async__ array query_rw(string|array sql, mapping|void bindings) {
 	return await(query(pg_connections[livedb], sql, bindings));
 }
 
+//CJA 20260410: This doesn't seem to be necessary any more. (See connect() where previously this
+//was used instead of SSL.Context() itself.) What problem was it solving?
 class SSLContext {
 	inherit SSL.Context;
 	array|zero find_cert_issuer(array(string) ders) {
@@ -319,7 +321,7 @@ __async__ void connect(string host) {
 	object tm = System.Timer();
 	werror("[%.3f] Connecting to Postgres on %O...\n", tm->peek(), host);
 	mapping db = pg_connections[host] = (["host": host]); //Not a floop, strings are just strings :)
-	object ctx = SSLContext();
+	object ctx = SSL.Context();
 	object pem = Standards.PEM.Messages(Stdio.read_file("db.rosuav.com.key") + Stdio.read_file("db.rosuav.com.pem"));
 	ctx->add_cert(pem->get_private_key(), pem->get_certificates());
 	#if constant(SSLDatabase)
