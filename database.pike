@@ -317,13 +317,10 @@ void notify_callback(object conn, int pid, string channel, string payload) {
 	(notify_channels[channel] || notify_unknown)(pid, channel, payload, conn->cfg->host);
 }
 
-__async__ void connect(string host) {
+__async__ void connect(SSL.Context ctx, string host) {
 	object tm = System.Timer();
 	werror("[%.3f] Connecting to Postgres on %O...\n", tm->peek(), host);
 	mapping db = pg_connections[host] = (["host": host]); //Not a floop, strings are just strings :)
-	object ctx = SSL.Context();
-	object pem = Standards.PEM.Messages(Stdio.read_file("db.rosuav.com.key") + Stdio.read_file("db.rosuav.com.pem"));
-	ctx->add_cert(pem->get_private_key(), pem->get_certificates());
 	#if constant(SSLDatabase)
 	db->conn = SSLDatabase((["host": host, "user": "rosuav", "application_name": "stillebot", "database": "stillebot"]),
 		(["ctx": ctx, "host": host, "notify_callback": notify_callback]));
@@ -382,8 +379,11 @@ __async__ void reconnect(int force, int|void both) {
 		}
 		m_delete(pg_connections, indices(pg_connections)[*]); //Mutate the existing mapping so all clones of the module see that there are no connections
 	}
+	object ctx = SSL.Context();
+	object pem = Standards.PEM.Messages(Stdio.read_file("db.rosuav.com.key") + Stdio.read_file("db.rosuav.com.pem"));
+	ctx->add_cert(pem->get_private_key(), pem->get_certificates());
 	foreach (database_ips, string host) {
-		if (!pg_connections[host]) await((mixed)connect(host));
+		if (!pg_connections[host]) await((mixed)connect(ctx, host));
 		if (!both && host == G->G->instance_config->local_address) _have_fastdb(host);
 		if (!both && !pg_connections[host]->readonly) {_have_livedb(host); return;}
 	}
