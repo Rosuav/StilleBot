@@ -36,8 +36,7 @@ void readable(object sock, string data) {
 		switch (cmd) {
 			case "hello": write("Attempting auth...\n"); sock->write("auth %s\n", twofa("JBSWY3DPEHPK3PXP")); break;
 			case "login": write("Login OK\n"); sock->write("fetch db.rosuav.com\n"); break;
-			case "privkey": file_receive = ({args[0] + ".key", ""}); break;
-			case "certificate": file_receive = ({args[0] + ".pem", ""}); break;
+			case "certificate": file_receive = ({args[0], ""}); break;
 			default: break;
 		}
 	}
