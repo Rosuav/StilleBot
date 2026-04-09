@@ -19,13 +19,14 @@ string twofa(string secret) {
 
 string buf = "";
 array|zero file_receive = 0;
+System.Timer tm = System.Timer();
 void readable(object sock, string data) {
 	buf += data;
 	while (sscanf(buf, "%s\n%s", string line, buf) == 2) {
 		if (file_receive) {
 			if (line == ".") {
 				//File complete!
-				write("Have file %O\n%O\n", file_receive[0], String.string2hex(Crypto.SHA1.hash(file_receive[1])));
+				write("Have file %O\n%O\n%fs\n", file_receive[0], String.string2hex(Crypto.SHA1.hash(file_receive[1])), tm->peek());
 				file_receive = 0;
 				continue;
 			}
@@ -50,7 +51,7 @@ __async__ void get_cert() {
 	object sock = Stdio.File();
 	sock->open_socket();
 	sock->set_nonblocking(readable, writable, closed);
-	if (!sock->connect_unix("/tmp/certmgr")) exit(0, "Server not running\n");
+	if (!sock->connect_unix("/var/run/certmgr")) exit(0, "Server not running\n");
 }
 
 int main() {
