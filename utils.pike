@@ -455,14 +455,27 @@ __async__ void delayed() {
 //Should this be triggered automatically upon API failures? If so, move it back into poll.pike.
 @"Validate one user's credentials, or all users, or --bot for bot channels":
 __async__ void validate_user_credentials() {
-	string tables = "stillebot.config";
-	string where = sizeof(G->G->args[Arg.REST]) ? " and twitchid = any(:ids)" : "";
+	string tables = "stillebot.config", where = "";
+	array ids = G->G->args[Arg.REST];
+	if (sizeof(ids)) {
+		where = " and twitchid = any(:ids)";
+		array names = filter(ids) {return !(int)__ARGS__[0];};
+		if (sizeof(names)) {
+			array users = await(get_users_info(names, "login"));
+			mapping lookup = mkmapping(users->login, users->id);
+			ids = map(ids, lambda(string n) {
+				if ((int)n) return n;
+				if (string id = lookup[lower_case(n)]) return id;
+				error("Unknown user name %O\n", n); //Should normally happen at an earlier step
+			});
+		}
+	}
 	//"pike stillebot --exec=validate_user_credentials --oldonly" to check those that are at least a year old.
 	//"pike stillebot --exec=validate_user_credentials 49497888" to just check one or more userids.
 	if (G->G->args->oldonly) where += " and (data->>'validated')::int < extract(epoch from now() - interval '1 year')::int";
 	if (G->G->args->bot) tables += " join stillebot.botservice using (twitchid)";
 	array creds = await(G->G->DB->query_ro("select twitchid, data from " + tables + " where keyword = 'credentials' "
-		+ where + " order by twitchid", (["ids": G->G->args[Arg.REST]])));
+		+ where + " order by twitchid", (["ids": ids])));
 	foreach (creds; int i; mapping row) {
 		mapping cred = row->data;
 		werror("[%d/%d] Checking %d %s...\n", i + 1, sizeof(creds), row->twitchid, cred->login || "(unknown)");
