@@ -1858,8 +1858,8 @@ __async__ void reconnect() {
 		if (channel->login[1] != '!') channel_names += ({"#" + channel->login});
 		if (channel->need_irc) need++; else noneed++;
 	}
-	//As of 20260320, we need IRC for 60% of channels. That's not a good ratio. We gain
-	//very little by dropping support.
+	//As of 20260320, we need IRC for ~27% of channels. It would be worth now dropping
+	//the connections.
 	werror("Need IRC for %d channels, can skip for %d\n", need, noneed);
 	//Deal the channels out into N piles based on available users. Any spares
 	//go onto the primary channel. This speeds up initial connection when there
