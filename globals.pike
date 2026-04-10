@@ -207,7 +207,11 @@ class hook {
 		foreach (Array.transpose(({indices(this), annotations(this)})), [string key, mixed ann]) {
 			if (ann) foreach (indices(ann), mixed anno) {
 				if (objectp(anno) && anno->is_hook_annotation) {
-					if (anno->scopes_required) {
+					//HACK: The eventsubs that use the bot's UID in the condition also
+					//permit regardless of scopes if the bot is a moderator.
+					array|zero sc = anno->scopes_required;
+					if (anno->extra_cond == "user_id" && G->G->bot_carries_sword[(int)channelid]) sc = 0;
+					if (sc) {
 						//If we have an array of required scopes, at least one of them must be available
 						//or the hook will fail.
 						mapping cred = G->G->user_credentials[(int)channelid];

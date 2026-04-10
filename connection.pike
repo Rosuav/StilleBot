@@ -223,7 +223,14 @@ class channel(mapping identity) {
 			moderator_lookup();
 			G->G->recent_user_sightings[userid] = login;
 			if (!G->G->user_credentials_loaded) {werror("CREDENTIALS NOT LOADED, assume need IRC %O\n", display_name); need_irc = 1;} //Shouldn't happen - queries are serialized
-			else if (!has_value(G->G->user_credentials[userid]->?scopes || ({ }), "channel:bot")) need_irc = 1;
+			else if (!has_value(G->G->user_credentials[userid]->?scopes || ({ }), "channel:bot")) {
+				//We may be able to use eventsub based on being a mod. Currently, this is
+				//only checked for the bot's own user ID; in theory, we could use any user
+				//for which we have user:read:chat and user:bot scopes that is also a
+				//moderator of the channel, but this would require further changes inside
+				//globals::establish_notifications() to change the selected user ID.
+				if (!G->G->bot_carries_sword[userid]) {werror("No channel:bot permission and not mod for %O\n", display_name); need_irc = 1;}
+			}
 			get_user_info(userid)->then() {
 				if (config->login != __ARGS__[0]->login || config->display_name != __ARGS__[0]->display_name) {
 					//Note: This is asynchronous, but we'll be triggering a reconnect shortly.
@@ -1739,6 +1746,8 @@ __async__ void establish_hook_notification(string|int channelid, string hook, ma
 	await(G->G->eventhooks_ready);
 	if (G->G->eventhooks[hook][?""][?(string)channelid]) return; //Already got the subscription.
 	sscanf(hook, "%s=%s", string type, string version);
+	//Note that, even if the eventsub claims that non-app auth is valid, that isn't true on
+	//conduits, and so we will *always* use app auth here.
 	mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
 		"authtype": "app",
 		"json": ([
@@ -1822,13 +1831,17 @@ __async__ void reconnect() {
 	}
 	//TODO: Consider connecting to fewer IRC channels.
 	//With EventSub providing chat and notifications, we may be able to reduce the number of channels
-	//that we connect to via IRC. Those we absolutely can't drop are:
-	//1) Any channel for which we lack "channel:bot" permission
-	//2) As of 20260306, any channel using the !watchstreak special trigger.
+	//that we connect to via IRC. Those we currently can't drop are those which
+	//1) we lack "channel:bot" permission; and
+	//2) the bot's user is not a moderator.
+	//In theory, other moderators could be used, if we have the right permissions, but
+	//currently only the bot's primary user is checked for this.
 	//Otherwise, we may be able to rely entirely on EventSub.
 	//Note that, for convenience, we still use G->G->irc as our method of channel lookups.
 	//It's just that some of them won't actually have literal IRC connections feeding data
 	//to these objects.
+	array swords = await(get_helix_paginated("https://api.twitch.tv/helix/moderation/channels", (["user_id": (string)G->G->bot_uid])));
+	G->G->bot_carries_sword = (multiset)(array(int))swords->broadcaster_id;
 	mapping irc = (["channels": ([]), "id": ([])]);
 	mapping commands = await(G->G->DB->preload_commands(channels->userid));
 	foreach (channels, mapping cfg) {
