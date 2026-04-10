@@ -152,9 +152,9 @@ object sugarbuyer = class {
 					//Note that this has a very small race condition. I would like an atomic
 					//"replace mapping value and return the previous value" but we're single
 					//threaded so it shouldn't happen.
-					array pending = sugarmill[file_receive[0]];
+					string|array pending = sugarmill[file_receive[0]];
 					sugarmill[file_receive[0]] = file_receive[1];
-					if (pending) pending->success(file_receive[1]);
+					if (arrayp(pending)) pending->success(file_receive[1]);
 					file_receive = 0;
 					continue;
 				}
