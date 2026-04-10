@@ -223,13 +223,14 @@ class channel(mapping identity) {
 			moderator_lookup();
 			G->G->recent_user_sightings[userid] = login;
 			if (!G->G->user_credentials_loaded) {werror("CREDENTIALS NOT LOADED, assume need IRC %O\n", display_name); need_irc = 1;} //Shouldn't happen - queries are serialized
-			else if (!has_value(G->G->user_credentials[userid]->?scopes || ({ }), "channel:bot")) {
+			else if (!has_value(G->G->user_credentials[userid]->?scopes || ({ }), "channel:bot") && !G->G->bot_carries_sword[userid]) {
 				//We may be able to use eventsub based on being a mod. Currently, this is
 				//only checked for the bot's own user ID; in theory, we could use any user
 				//for which we have user:read:chat and user:bot scopes that is also a
 				//moderator of the channel, but this would require further changes inside
 				//globals::establish_notifications() to change the selected user ID.
-				if (!G->G->bot_carries_sword[userid]) {werror("No channel:bot permission and not mod for %O\n", display_name); need_irc = 1;}
+				werror("No channel:bot permission and not mod for %O\n", display_name);
+				need_irc = 1;
 			}
 			get_user_info(userid)->then() {
 				if (config->login != __ARGS__[0]->login || config->display_name != __ARGS__[0]->display_name) {
