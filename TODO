@@ -299,3 +299,9 @@
     many clips each year has within that filter.
   - Show thumbnails for each clip, don't bother with embeds but just link to the actual page.
   - Borrow layout from raid finder?
+* When IRC goes down, some channels will no longer be accessible.
+  - Most of them either don't need the bot, or haven't been active on Twitch in ages
+  - Put some sort of notification in chat inviting the broadcaster to go to the site and
+    reauthenticate (maybe on next channel-online)
+  - If the broadcaster sees this and doesn't do anything, don't continue to spam, just flag
+    the channel as inactive and probably delete most of the data at some point.

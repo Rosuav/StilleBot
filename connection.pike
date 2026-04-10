@@ -229,7 +229,7 @@ class channel(mapping identity) {
 				//for which we have user:read:chat and user:bot scopes that is also a
 				//moderator of the channel, but this would require further changes inside
 				//globals::establish_notifications() to change the selected user ID.
-				werror("No channel:bot permission and not mod for %O\n", display_name);
+				//werror("No channel:bot permission and not mod for %O\n", display_name);
 				need_irc = 1;
 			}
 			get_user_info(userid)->then() {
