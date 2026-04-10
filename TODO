@@ -287,3 +287,15 @@
     15 minutes" or something.
   - Still not guaranteed reliable if there's a bot outage or hop though, same as other
     delayed triggers
+* Clips browser
+  - Select a channel to load all its clips - get_helix_paginated so you don't have to
+    scroll through them all
+  - Filters at the top (details/summary):
+    - Clipper
+    - Year?
+    - Category
+  - For each filter, show the available options and how many clips in the category; ideally,
+    also show how many are currently visible, so if you select a clipper, it will show how
+    many clips each year has within that filter.
+  - Show thumbnails for each clip, don't bother with embeds but just link to the actual page.
+  - Borrow layout from raid finder?
