@@ -248,7 +248,10 @@ __async__ void credentials() {
 	foreach (users, string user) {
 		mapping creds = G->G->user_credentials[user];
 		if (!creds) write("%s: No credentials stored\n", user);
-		else write("%s: Validated %ds ago, scopes %s\n", user, time() - creds->validated, creds->scopes * ", ");
+		else {
+			write("%s: Validated %ds ago, scopes %s\n", user, time() - creds->validated, creds->scopes * ", ");
+			if (creds->missing) write("%s: MISSING SCOPES %s\n", user, creds->missing * ", ");
+		}
 	}
 }
 
