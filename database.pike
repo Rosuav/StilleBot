@@ -138,6 +138,7 @@ mapping notify_channels = ([]);
 //is replaced when it still has weeks of life on it, even a failure of checking is
 //unlikely to cause actual issues.)
 @retain: mapping(string:string|array) sugarmill = ([]);
+@retain: Stdio.File|zero sugarsock = 0;
 
 //FIXME FIXME FIXME: Disconnect when no longer the active one, or perhaps better,
 //stop being a class and slide the callbacks to the new code instead.
@@ -182,7 +183,8 @@ object sugarbuyer = class {
 	}
 
 	__async__ void connect() {
-		object sock = Stdio.File();
+		if (G->G->sugarmill_sock) G->G->sugarmill_sock->close();
+		object sock = G->G->sugarmill_sock = Stdio.File();
 		sock->open_socket();
 		sock->set_nonblocking(readable, 0, closed);
 		if (!sock->connect_unix("/var/run/certmgr")) werror("SUGARMILL NOT RUNNING\n"); //Autoretry?
