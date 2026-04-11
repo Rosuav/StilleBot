@@ -139,6 +139,8 @@ mapping notify_channels = ([]);
 //unlikely to cause actual issues.)
 @retain: mapping(string:string|array) sugarmill = ([]);
 
+//FIXME FIXME FIXME: Disconnect when no longer the active one, or perhaps better,
+//stop being a class and slide the callbacks to the new code instead.
 object sugarbuyer = class {
 	string buf = "";
 	array|zero file_receive = 0;
