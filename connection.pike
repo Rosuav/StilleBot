@@ -1855,7 +1855,7 @@ __async__ void reconnect() {
 	array channel_names = ({ });
 	int need = 0, noneed = 0;
 	foreach (irc->id;; object channel) {
-		if (channel->login[1] != '!') channel_names += ({"#" + channel->login});
+		if (channel->login[0] != '!') channel_names += ({"#" + channel->login});
 		if (channel->need_irc) need++; else noneed++;
 	}
 	//As of 20260320, we need IRC for ~27% of channels. It would be worth now dropping
