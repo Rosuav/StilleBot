@@ -593,7 +593,7 @@ class _TwitchIRC(mapping options) {
 	>);
 
 	protected void create() {
-		array ips = gethostbyname(server); //TODO: Support IPv6
+		array ips = gethostbyname(server); //Note: Doesn't support IPv6
 		if (!ips || !sizeof(ips[1])) error("Unable to gethostbyname for %O\n", server);
 		ip = random(ips[1]);
 		connect();
