@@ -349,6 +349,11 @@ Concurrent.Future chat(object channel, string voiceid, string msg, mapping tok, 
 				"sender_id": voiceid,
 				"message": msg,
 				"reply_parent_message_id": dest == "/reply" ? target : Val.null,
+				//TODO: Switch to app auth if available. (Requires user:bot permission.)
+				//Then we have the option of specifying source-only or across shared chat.
+				//NOTE: The default is source-only, so changing to app auth is a breaking
+				//change and should only be done with this parameter specified.
+				//"for_source_only": Val.false,
 			]),
 		]),
 	);
