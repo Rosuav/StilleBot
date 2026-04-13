@@ -1809,16 +1809,14 @@ __async__ void reconnect() {
 		sort(channels->login, channels); //Default to sorting affabeck by username
 		sort(-channels->data->connprio[*], channels);
 	}
-	//TODO: Consider connecting to fewer IRC channels.
-	//With EventSub providing chat and notifications, we may be able to reduce the number of channels
-	//that we connect to via IRC. Those we currently can't drop are those which
+	//EventSub provides chat and notifications for most channels; in order to support
+	//legacy channels, we connect via IRC. A legacy channel is one for which:
 	//1) we lack "channel:bot" permission; and
 	//2) the bot's user is not a moderator.
 	//In theory, other moderators could be used, if we have the right permissions, but
 	//currently only the bot's primary user is checked for this.
-	//Otherwise, we may be able to rely entirely on EventSub.
 	//Note that, for convenience, we still use G->G->irc as our method of channel lookups.
-	//It's just that some of them won't actually have literal IRC connections feeding data
+	//It's just that some of them don't actually have literal IRC connections feeding data
 	//to these objects.
 	array swords = await(get_helix_paginated("https://api.twitch.tv/helix/moderation/channels", (["user_id": (string)G->G->bot_uid])));
 	G->G->bot_carries_sword = (multiset)(array(int))swords->broadcaster_id;
