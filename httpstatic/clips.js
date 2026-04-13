@@ -2,6 +2,14 @@ import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {A, B, DATE, DIV, IMG, LI, UL} = choc; //autoimport
 
 //TODO: Sorting
+/* Filters at the top (details/summary):
+- Clipper
+- Year?
+- Category
+For each filter, show the available options and how many clips in the category; ideally,
+also show how many are currently visible, so if you select a clipper, it will show how
+many clips each year has within that filter.
+*/
 
 function GAMETILE(gameid) {
 	const game = games[gameid];
