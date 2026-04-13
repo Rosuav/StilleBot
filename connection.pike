@@ -1836,9 +1836,6 @@ __async__ void reconnect() {
 		if (channel->need_irc) channel_names += ({"#" + channel->login});
 	//As of 20260320, we need IRC for ~27% of channels.
 	werror("Need IRC for %d channels, can skip for %d\n", sizeof(channel_names), sizeof(channels) - sizeof(channel_names));
-	//Deal the channels out into N piles based on available users. Any spares
-	//go onto the primary channel. This speeds up initial connection when there
-	//are more than 20 channels to connect to, but isn't necessary.
 	object connected = irc_connect(([
 		"join": channel_names,
 		"capabilities": "membership tags commands" / " ",
