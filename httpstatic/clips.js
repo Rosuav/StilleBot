@@ -27,10 +27,10 @@ function render_clip_tiles(clips) {
 		DIV({className: "inforow"}, [
 			//TODO: Put a marker if clip.is_featured
 			UL([
+				LI({className: "cliptitle"}, clip.title),
 				LI(B(games[clip.game_id]?.name)),
 				LI([clip.creator_name, " on ", DATE({datetime: clip.created_at}, new Date(clip.created_at).toLocaleDateString())]),
 				LI(clip.view_count + " views"),
-				LI({className: "cliptitle"}, clip.title),
 			]),
 			GAMETILE(clip.game_id),
 		]),
