@@ -1832,14 +1832,10 @@ __async__ void reconnect() {
 	G->G->irc = irc;
 	if (array waiting = m_delete(G->G, "awaiting_irc_loaded")) waiting(); //Notify everyone who's waiting for the channel list.
 	array channel_names = ({ });
-	int need = 0, noneed = 0;
-	foreach (irc->id;; object channel) {
-		if (channel->userid) channel_names += ({"#" + channel->login});
-		if (channel->need_irc) need++; else noneed++;
-	}
-	//As of 20260320, we need IRC for ~27% of channels. It would be worth now dropping
-	//the connections.
-	werror("Need IRC for %d channels, can skip for %d\n", need, noneed);
+	foreach (irc->id;; object channel)
+		if (channel->need_irc) channel_names += ({"#" + channel->login});
+	//As of 20260320, we need IRC for ~27% of channels.
+	werror("Need IRC for %d channels, can skip for %d\n", sizeof(channel_names), sizeof(channels) - sizeof(channel_names));
 	//Deal the channels out into N piles based on available users. Any spares
 	//go onto the primary channel. This speeds up initial connection when there
 	//are more than 20 channels to connect to, but isn't necessary.
