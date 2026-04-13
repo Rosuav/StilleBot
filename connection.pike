@@ -1798,29 +1798,8 @@ __async__ void establish_hook_notification(string|int channelid, string hook, ma
 	}
 }
 
-//If desired, sharding of the primary connection can be done using the !demo channel's
-//assigned voices. This is unnecessary if there are fewer than 20 channels in use, and
-//barely necessary for fewer than about 60, but beyond that, becomes more valuable. It
-//is also completely unnecessary if the bot has Verified status, but this would need to
-//be coded in properly (to allow !demo to still have some example voices).
-array(mapping) shard_voices = ({0}); //For now, see what it's like if we don't shard.
 __async__ void reconnect() {
 	reconnection_in_progress = Concurrent.Promise();
-	if (!shard_voices) {
-		//Fetch up the list of bot shard voices from the demo's available voices
-		mapping demo_voices;
-		while (1) {
-			catch (demo_voices = G->G->DB->load_cached_config(0, "voices"));
-			if (demo_voices) break;
-			//If there's an exception, most likely the voices haven't been loaded yet.
-			//Delay a bit and try again.
-			sleep(0.25);
-		}
-		array voices = values(demo_voices);
-		sort((array(int))voices->id, voices);
-		foreach (voices; int i; mapping v) if (v->id == (string)G->G->bot_uid) voices[i] = 0;
-		shard_voices = ({0}) + (voices - ({0})); //Move the null entry (for intrinsic voice) to the start
-	}
 	array channels = await(G->G->DB->query_ro(#"
 		select stillebot.botservice.twitchid as userid, login, display_name, coalesce(data, '{}') as data
 		from stillebot.botservice left join stillebot.config
@@ -1864,28 +1843,18 @@ __async__ void reconnect() {
 	//Deal the channels out into N piles based on available users. Any spares
 	//go onto the primary channel. This speeds up initial connection when there
 	//are more than 20 channels to connect to, but isn't necessary.
-	array shards = Array.transpose(channel_names / sizeof(shard_voices));
-	if (!sizeof(shards)) shards = ({channel_names}); //If we have fewer channels than voices, connect to them all on the intrinsic voice.
-	else shards[0] += channel_names % sizeof(shard_voices);
-	int still_reconnecting = 0;
-	foreach (shards; int i; array chan) {
-		++still_reconnecting;
-		irc_connect(([
-			"user": i && shard_voices[i]->name,
-			"join": chan,
-			"capabilities": "membership tags commands" / " ",
-			//"verbose": 1, "force_reconnect": 1,
-			"shard_id": i && shard_voices[i]->id,
-		]))->then() {
-			mapping opt = __ARGS__[0]->options;
-			werror("IRC now connected: %O --> %O\n", opt->user, opt->join);
-			irc_connections[opt->shard_id] = __ARGS__[0];
-			if (!--still_reconnecting) {reconnection_in_progress->success(1); reconnection_in_progress = 0;}
-		}
-		->thencatch() {werror("Unable to connect to Twitch:\n%s\n", describe_backtrace(__ARGS__[0]));};
-	}
+	object connected = irc_connect(([
+		"join": channel_names,
+		"capabilities": "membership tags commands" / " ",
+		//"verbose": 1, "force_reconnect": 1,
+	]));
 	werror("Now connecting: %O queue %O\n", connection_cache->rosuav, connection_cache->rosuav->queue);
 	if (is_active && !G->G->args["no-conduit"]) setup_conduit(); //Asynchronously establish event hooks too
+	irc_connections[0] = await(connected);
+	mapping opt = irc_connections[0]->options;
+	werror("IRC now connected: %O --> %O\n", opt->user, opt->join);
+	reconnection_in_progress->success(1);
+	reconnection_in_progress = 0;
 }
 
 @hook_credentials_changed: void kick_voice_on_auth_change(mapping cred) {
@@ -1893,7 +1862,7 @@ __async__ void reconnect() {
 	//Note that this comes in two forms depending on whether it's a shard voice
 	//or an alternate voice.
 	werror("Got credentials for %O/%O\n", cred->userid, cred->login);
-	if (cred->userid == G->G->bot_uid || has_value((shard_voices - ({0}))->id, (string)cred->userid)) {
+	if (cred->userid == G->G->bot_uid) {
 		//If the bot's primary auth has changed, or any of the voices used for sharding, do a full
 		//reconnect and reestablish them all.
 		werror("Reconnecting due to credentials change for %O/%O\n", cred->userid, cred->login);
