@@ -164,6 +164,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			]),
 			"sortorders": ({"Channel Creation", "Follow Date", "Name"}) * "\n* ",
 			"title": "All follows (" + sizeof(follows_helix) + ")",
+			"css": "tiledstreams.css",
 		]));
 	}
 	string login, disp, raidbtn = logged_in ? "[Suggest](:#suggestraid)" : "";
@@ -517,6 +518,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		"raidbtn": raidbtn,
 		"backlink": "<a href=\"raidfinder?menu\">Other raid finder modes</a>",
 		"ccl_options": G->G->ccl_options_table,
+		"css": "tiledstreams.css",
 	]));
 }
 
