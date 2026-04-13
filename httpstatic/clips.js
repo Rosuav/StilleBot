@@ -1,0 +1,32 @@
+import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
+const {A, B, DATE, DIV, IMG, LI, UL} = choc; //autoimport
+
+//TODO: Sorting
+
+function GAMETILE(gameid) {
+	const game = games[gameid];
+	if (!game) return null; //Or should it get a placeholder?
+	return DIV({class: "img"}, A({href: "raidfinder?categories=" + encodeURIComponent(game.name)},
+		IMG({src: game.box_art_url.replace("{width}", "40").replace("{height}", "54")}),
+	));
+}
+function render_clip_tiles(clips) {
+	set_content("#clips", clips.map(clip => DIV([
+		A({href: clip.url}, IMG({
+			src: clip.thumbnail_url,
+			style: "width: 320px", //Clip thumbnails are larger than we need
+		})),
+		DIV({className: "inforow"}, [
+			//TODO: Put a marker if clip.is_featured
+			UL([
+				LI(B(games[clip.game_id]?.name)),
+				LI([clip.creator_name, " on ", DATE({datetime: clip.created_at}, new Date(clip.created_at).toLocaleDateString())]),
+				LI(clip.view_count + " views"),
+				LI({className: "cliptitle"}, clip.title),
+			]),
+			GAMETILE(clip.game_id),
+		]),
+	])));
+}
+
+render_clip_tiles(clips);
