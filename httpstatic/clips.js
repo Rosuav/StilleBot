@@ -9,6 +9,8 @@ const {A, B, DATE, DIV, IMG, LI, UL} = choc; //autoimport
 For each filter, show the available options and how many clips in the category; ideally,
 also show how many are currently visible, so if you select a clipper, it will show how
 many clips each year has within that filter.
+
+Let CathyCat_TV know when it's done-ish, she's excited for it!
 */
 
 function GAMETILE(gameid) {
