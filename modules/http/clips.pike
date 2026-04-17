@@ -1,4 +1,4 @@
-inherit http_endpoint;
+inherit http_websocket;
 
 constant menu = #"# Twitch clips browser
 
@@ -17,24 +17,45 @@ fieldset {display: inline;}
 </style>
 ";
 
-void partial_clips(string url, mapping query, mapping options, array data) {
-	werror("Clips for %O, got %O so far...\n", query->broadcaster_id, sizeof(data));
+//Map a broadcaster_id to (["ts": time(), "clips": ({...})])
+@retain: mapping(string:mapping(string:mixed)) clips_cache = ([]);
+mapping(string:mapping) games_cache = (["0": (["name": "Unknown"]), "": (["name": "Uncategorized"])]); //Not retained; just reduces query spam during loading
+
+__async__ void partial_clips(string url, mapping query, mapping options, array clips) {
+	werror("Clips for %O, got %O so far...\n", query->broadcaster_id, sizeof(clips));
+	clips_cache[query->broadcaster_id]->clips = clips;
+	array gameids = indices(mkmapping(clips->game_id, clips->game_id)); //Distinct game IDs
+	array needed = gameids - indices(games_cache);
+	werror("Need gameids %{%O %}\n", needed);
+	if (sizeof(needed)) {
+		array games = await(get_helix_paginated("https://api.twitch.tv/helix/games", (["id": gameids])));
+		foreach (games, mapping g) games_cache[g->id] = g;
+	}
+	clips_cache[query->broadcaster_id]->games = mkmapping(gameids, games_cache[gameids[*]]);
+	send_updates_all(query->broadcaster_id);
 }
 
-__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
-{
+__async__ void load_clips(string broadcaster_id) {
+	werror("Clips for %O\n", broadcaster_id);
+	clips_cache[broadcaster_id] = (["ts": time(), "clips": ({ }), "loading": 1]);
+	array clips = await(get_helix_paginated("https://api.twitch.tv/helix/clips", (["broadcaster_id": broadcaster_id]), ([]), (["partial_results": partial_clips])));
+	clips_cache[broadcaster_id]->loading = 0;
+	send_updates_all(broadcaster_id, (["loading": 0]));
+	werror("Done, got %O clips\n", sizeof(clips));
+}
+
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	string chan = req->variables["for"];
 	if (!chan) return render_template(menu, ([]));
-	werror("Clips for %O\n", chan);
 	mapping info = await(get_user_info(chan, "login"));
-	array clips = await(get_helix_paginated("https://api.twitch.tv/helix/clips", (["broadcaster_id": (string)info->id]), ([]), (["partial_results": partial_clips])));
-	array gameids = indices(mkmapping(clips->game_id, clips->game_id)); //Distinct game IDs
-	array games = await(get_helix_paginated("https://api.twitch.tv/helix/games", (["id": gameids])));
-	werror("Done, got %O clips\n", sizeof(clips));
-	return render_template(markdown, ([
-		"vars": (["clips": clips, "games": mkmapping(games->id, games)]),
+	load_clips((string)info->id);
+	return render(req, ([
+		"vars": (["ws_group": (string)info->id]),
 		"chan": info->display_name,
 		"css": "tiledstreams.css",
-		"js": "clips.js", //No websocket, just get the JS directly
 	]));
 }
+
+//NOTE: We don't validate the cache on socket validation; if the cache is old,
+//refresh the page itself rather than simply reconnecting the socket.
+mapping get_state(string group) {return clips_cache[group];}

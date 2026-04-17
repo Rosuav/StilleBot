@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, B, DATE, DIV, FIELDSET, IMG, LEGEND, LI, OPTION, P, SELECT, STYLE, UL} = lindt; //autoimport
+const {A, B, DATE, DIV, FIELDSET, IMG, LEGEND, LI, OPTION, P, SELECT, SPAN, STYLE, UL} = lindt; //autoimport
 
 //TODO: Sorting
 /* Filters at the top (details/summary):
@@ -13,6 +13,8 @@ many clips each year has within that filter.
 Let CathyCat_TV know when it's done-ish, she's excited for it!
 */
 
+const state = {games: { }};
+
 //Identify all the things that are relevant to filtering and sorting.
 //Each one has an internal ID, a display name, and a fetcher function that gets ID and name for
 //a particular clip. Note that the ID may require slugification or similar to ensure it can be
@@ -21,14 +23,14 @@ Let CathyCat_TV know when it's done-ish, she's excited for it!
 const filterable = [
 	["clipper", "Clipper", clip => [clip.creator_id, clip.creator_name]],
 	["year", "Year", clip => [clip.created_at.slice(0, 4), clip.created_at.slice(0, 4)]],
-	["category", "Category", clip => [clip.game_id, games[clip.game_id]?.name || "Unknown"]],
+	["category", "Category", clip => [clip.game_id, state.games[clip.game_id]?.name || "Unknown"]],
 ];
 
 const filters = Object.fromEntries(filterable.map(fil => [fil[0], ""]));
 
 function GAMETILE(gameid) {
-	const game = games[gameid];
-	if (!game) return null; //Or should it get a placeholder?
+	const game = state.games[gameid];
+	if (!game || !game.box_art_url) return null; //Or should it get a placeholder?
 	return DIV({class: "img"}, A({href: "raidfinder?categories=" + encodeURIComponent(game.name)},
 		IMG({src: game.box_art_url.replace("{width}", "40").replace("{height}", "54")}),
 	));
@@ -42,9 +44,9 @@ function filterclasses(clip) {
 	return filterable.map(([fil]) => fil + " " + fil + "-" + clip[fil]).join(" ");
 }
 
-function render() {
+function render_clips() {
 	const counts = { }, allcounts = { };
-	for (let clip of clips) {
+	for (let clip of state.clips) {
 		const visible = { }; //Is this clip visible, based on each filter's rule?
 		let exclusions = 0;
 		for (let fil of filterable) {
@@ -72,16 +74,19 @@ function render() {
 	}
 	replace_content("#display", [
 		STYLE(Object.entries(filters).map(([fil, val]) => val === "" ? "" : `.${fil}:not(.${fil}-${val}){display:none}`).join(" ")),
-		P(clips.length && filterable.map(([id, name]) => FIELDSET([
-			LEGEND("Filter by " + name),
-			SELECT({name: id, class: "filter", value: filters[id]}, [
-				OPTION({value: ""}, "All (" + allcounts[id] + ")"), //FIXME: Get the count (all that would be visible if this filter were removed)
-				Object.entries(counts[id])
-					.sort((a, b) => b[1][1] - a[1][1]) //Sort the most common ones to the top. TODO: Should this be skipped for Year?
-					.map(([key, [countvis, counttot, lbl]]) => OPTION({value: key, disabled: countvis === 0}, `${lbl} (${countvis}/${counttot})`))
-			]),
-		]))),
-		DIV({class: "streamtiles"}, clips.map(clip => DIV({key: clip.id, class: filterclasses(clip)}, [
+		P([
+			state.clips.length && filterable.map(([id, name]) => FIELDSET([
+				LEGEND("Filter by " + name),
+				SELECT({name: id, class: "filter", value: filters[id]}, [
+					OPTION({value: ""}, "All (" + allcounts[id] + ")"), //FIXME: Get the count (all that would be visible if this filter were removed)
+					Object.entries(counts[id])
+						.sort((a, b) => b[1][1] - a[1][1]) //Sort the most common ones to the top. TODO: Should this be skipped for Year?
+						.map(([key, [countvis, counttot, lbl]]) => OPTION({value: key, disabled: countvis === 0}, `${lbl} (${countvis}/${counttot})`))
+				]),
+			])),
+			state.loading && SPAN({style: "border: 1px solid rebeccapurple; background: aliceblue; display: inline-block; margin-left: 2em; padding: 4px 8px;"}, "Loading..."),
+		]),
+		DIV({class: "streamtiles"}, state.clips.map(clip => DIV({key: clip.id, class: filterclasses(clip)}, [
 			A({href: clip.url, target: "_blank"}, IMG({
 				src: clip.thumbnail_url,
 				style: "width: 320px", //Clip thumbnails are larger than we need
@@ -91,7 +96,7 @@ function render() {
 				//TODO: Clip duration somewhere
 				UL([
 					LI({className: "cliptitle"}, clip.title),
-					LI(B(games[clip.game_id]?.name)),
+					LI(B(state.games[clip.game_id]?.name)),
 					LI([clip.creator_name, " on ", DATE({datetime: clip.created_at}, new Date(clip.created_at).toLocaleDateString())]),
 					LI(clip.view_count + " views"),
 				]),
@@ -101,9 +106,12 @@ function render() {
 	]);
 }
 
+export function render(data) {
+	Object.assign(state, data);
+	render_clips();
+}
+
 on("change", "select.filter", e => {
 	filters[e.match.name] = e.match.value;
 	render();
 });
-
-render();
