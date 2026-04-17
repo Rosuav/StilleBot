@@ -82,7 +82,7 @@ function render() {
 			]),
 		]))),
 		DIV({class: "streamtiles"}, clips.map(clip => DIV({key: clip.id, class: filterclasses(clip)}, [
-			A({href: clip.url}, IMG({
+			A({href: clip.url, target: "_blank"}, IMG({
 				src: clip.thumbnail_url,
 				style: "width: 320px", //Clip thumbnails are larger than we need
 			})),
