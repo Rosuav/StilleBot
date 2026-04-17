@@ -16,7 +16,8 @@ Let CathyCat_TV know when it's done-ish, she's excited for it!
 //Identify all the things that are relevant to filtering and sorting.
 //Each one has an internal ID, a display name, and a fetcher function that gets ID and name for
 //a particular clip. Note that the ID may require slugification or similar to ensure it can be
-//used in a CSS class.
+//used in a CSS class. NOTE: Always return strings; others will be coerced to string in some
+//contexts, but will be assumed to already be strings.
 const filterable = [
 	["clipper", "Clipper", clip => [clip.creator_id, clip.creator_name]],
 	["year", "Year", clip => [clip.created_at.slice(0, 4), clip.created_at.slice(0, 4)]],
@@ -42,14 +43,31 @@ function filterclasses(clip) {
 }
 
 function render() {
-	const counts = { };
+	const counts = { }, allcounts = { };
 	for (let clip of clips) {
+		const visible = { }; //Is this clip visible, based on each filter's rule?
+		let exclusions = 0;
 		for (let fil of filterable) {
 			const key = fil[0], attr = fil[2](clip);
 			clip[key] = attr[0];
 			if (!counts[key]) counts[key] = { };
-			if (!counts[key][attr[0]]) counts[key][attr[0]] = [1, attr[1]];
-			else counts[key][attr[0]][0] += 1;
+			if (!counts[key][attr[0]]) counts[key][attr[0]] = [0, 0, attr[1]];
+			counts[key][attr[0]][1] += 1;
+			visible[key] = filters[key] === "" || filters[key] === attr[0];
+			if (!visible[key]) ++exclusions;
+		}
+		//Second pass: Check if this clip would be visible based on *all but* that filter.
+		for (let fil of filterable) {
+			const key = fil[0], attr = clip[key];
+			switch (exclusions) {
+				case 1: //Only one filter excludes this. If it's THIS filter, count it.
+					if (visible[key]) break;
+				case 0: //Nothing's filtering this out, so it definitely is visible.
+					counts[key][attr][0] += 1;
+					if (!allcounts[key]) allcounts[key] = 1;
+					else allcounts[key] += 1;
+				default: break; //Two or more? It's not visible even if you change this one.
+			}
 		}
 	}
 	replace_content("#display", [
@@ -57,10 +75,10 @@ function render() {
 		P(clips.length && filterable.map(([id, name]) => FIELDSET([
 			LEGEND("Filter by " + name),
 			SELECT({name: id, class: "filter", value: filters[id]}, [
-				OPTION({value: ""}, "All (??)"), //FIXME: Get the count (all that would be visible if this filter were removed)
+				OPTION({value: ""}, "All (" + allcounts[id] + ")"), //FIXME: Get the count (all that would be visible if this filter were removed)
 				Object.entries(counts[id])
-					.sort((a, b) => b[1][0] - a[1][0]) //Sort the most common ones to the top. TODO: Should this be skipped for Year?
-					.map(([key, [count, lbl]]) => OPTION({value: key}, lbl + " (" + count + ")"))
+					.sort((a, b) => b[1][1] - a[1][1]) //Sort the most common ones to the top. TODO: Should this be skipped for Year?
+					.map(([key, [countvis, counttot, lbl]]) => OPTION({value: key, disabled: countvis === 0}, `${lbl} (${countvis}/${counttot})`))
 			]),
 		]))),
 		DIV({class: "streamtiles"}, clips.map(clip => DIV({key: clip.id, class: filterclasses(clip)}, [
