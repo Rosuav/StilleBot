@@ -137,7 +137,7 @@ __async__ void get_credentials() {
 	//Any non-overflowing parameters will be correctly replicated on all requests.
 	//(If 100 isn't the limit, specify the pagination_limit in options.)
 	mapping overflow = ([]);
-	int pagination_limit = (options||([]))->pagination_limit || 100;
+	int pagination_limit = options->?pagination_limit || 100;
 	foreach (query; string key; mixed val)
 		if (arrayp(val) && sizeof(val) > pagination_limit)
 			[query[key], overflow[key]] = Array.shift(val / (float)pagination_limit);
@@ -169,6 +169,10 @@ __async__ void get_credentials() {
 			werror("Next page: %d data, pg %s\n", sizeof(raw->data), pg);
 		}
 		data += raw->data;
+		//If you want partial results, pass a callback. It will be called each time a page
+		//becomes available, with all data received so far. It will be called immediately
+		//prior to returning.
+		if (function cb = options->?partial_results) cb(url, query, options, data);
 		//Normal completion: No pagination marker
 		if (!raw->pagination || !raw->pagination->cursor
 				//Possible Twitch API bug: If the returned cursor is precisely "IA",
