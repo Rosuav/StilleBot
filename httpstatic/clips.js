@@ -1,5 +1,5 @@
-import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, B, DATE, DIV, IMG, LI, UL} = choc; //autoimport
+import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
+const {A, B, DATE, DIV, IMG, LI, UL} = lindt; //autoimport
 
 //TODO: Sorting
 /* Filters at the top (details/summary):
@@ -21,7 +21,7 @@ function GAMETILE(gameid) {
 	));
 }
 function render_clip_tiles(clips) {
-	set_content("#clips", clips.map(clip => DIV([
+	replace_content("#clips", clips.map(clip => DIV([
 		A({href: clip.url}, IMG({
 			src: clip.thumbnail_url,
 			style: "width: 320px", //Clip thumbnails are larger than we need
