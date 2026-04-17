@@ -21,7 +21,7 @@ function GAMETILE(gameid) {
 	));
 }
 function render_clip_tiles(clips) {
-	replace_content("#clips", clips.map(clip => DIV([
+	replace_content("#clips", clips.map(clip => DIV({key: clip.id}, [
 		A({href: clip.url}, IMG({
 			src: clip.thumbnail_url,
 			style: "width: 320px", //Clip thumbnails are larger than we need
