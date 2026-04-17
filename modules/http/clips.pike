@@ -41,6 +41,8 @@ __async__ void load_clips(string broadcaster_id) {
 	array clips = await(get_helix_paginated("https://api.twitch.tv/helix/clips", (["broadcaster_id": broadcaster_id]), ([]), (["partial_results": partial_clips])));
 	clips_cache[broadcaster_id]->loading = 0;
 	send_updates_all(broadcaster_id, (["loading": 0]));
+	//Kick all the sockets so they don't suddenly refresh when someone else loads this page
+	kick_socket_group(broadcaster_id);
 	werror("Done, got %O clips\n", sizeof(clips));
 }
 

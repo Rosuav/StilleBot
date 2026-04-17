@@ -425,6 +425,12 @@ class websocket_handler
 		if (conn->sock && conn->sock->state == 1) conn->sock->send_text(Standards.JSON.encode(msg, 4));
 	}
 
+	//Signal all members of a group that they can disconnect and don't need to reconnect
+	void kick_socket_group(string|int group) {
+		string text = Standards.JSON.encode((["cmd": "*DC*", "complete": 1]), 4);
+		foreach (websocket_groups[group] || ({ }), object sock) if (sock && sock->state == 1) sock->send_text(text);
+	}
+
 	//Update all connections in a given group.
 	//Generates just one state object and sends it everywhere.
 	void send_updates_all(string|int group, mapping|void data) {

@@ -142,6 +142,7 @@ export function connect(group, handler)
 			//The server's kicking us. If we're VERY fortunate, we'll be told of an alternative
 			//place to connect. Otherwise, well, I guess it's back to the retry loop.
 			if (data.error && !data.xfr) reconnect_delay = 30000; //TODO: Stick something in the DOM too
+			if (data.complete) socket.explicit_close = true; //Server's telling us we don't need to stick around.
 			socket.close();
 			//If these are non-null, they can be used, otherwise we'll return to default.
 			//A simple packet of {"cmd": "*DC*"} will cause us to revert to normal.
