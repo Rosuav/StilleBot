@@ -22,11 +22,9 @@ fieldset {display: inline;}
 mapping(string:mapping) games_cache = (["0": (["name": "Unknown"]), "": (["name": "Uncategorized"])]); //Not retained; just reduces query spam during loading
 
 __async__ void partial_clips(string url, mapping query, mapping options, array clips) {
-	werror("Clips for %O, got %O so far...\n", query->broadcaster_id, sizeof(clips));
 	clips_cache[query->broadcaster_id]->clips = clips;
 	array gameids = indices(mkmapping(clips->game_id, clips->game_id)); //Distinct game IDs
 	array needed = gameids - indices(games_cache);
-	werror("Need gameids %{%O %}\n", needed);
 	if (sizeof(needed)) {
 		array games = await(get_helix_paginated("https://api.twitch.tv/helix/games", (["id": gameids])));
 		foreach (games, mapping g) games_cache[g->id] = g;
@@ -36,14 +34,12 @@ __async__ void partial_clips(string url, mapping query, mapping options, array c
 }
 
 __async__ void load_clips(string broadcaster_id) {
-	werror("Clips for %O\n", broadcaster_id);
 	clips_cache[broadcaster_id] = (["ts": time(), "clips": ({ }), "loading": 1]);
 	array clips = await(get_helix_paginated("https://api.twitch.tv/helix/clips", (["broadcaster_id": broadcaster_id]), ([]), (["partial_results": partial_clips])));
 	clips_cache[broadcaster_id]->loading = 0;
 	send_updates_all(broadcaster_id, (["loading": 0]));
 	//Kick all the sockets so they don't suddenly refresh when someone else loads this page
 	kick_socket_group(broadcaster_id);
-	werror("Done, got %O clips\n", sizeof(clips));
 }
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
