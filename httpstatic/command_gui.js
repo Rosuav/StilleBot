@@ -313,6 +313,9 @@ function format_time_delay(sec) {
 function format_duration(sec) {
 	//Should 5400 seconds be shown as "1.5 hours" rather than "90 minutes"?
 	//With that example it could go either way. What if it's 10.5 hours?
+	if (+sec === 3600) return "1 hour"; //Special case the singulars
+	if (+sec === 60) return "1 minute";
+	if (+sec === 1) return "1 second";
 	if (sec >= 3600 && sec % 3600 === 0) return sec / 3600 + " hours";
 	if (sec > 60 && sec % 60 === 0) return sec / 60 + " minutes";
 	return sec + " seconds";
@@ -836,7 +839,7 @@ const tray_tabs = [
 		]},
 		{type: "set_variable", target: "deaths", message: "0"},
 		{type: "incr_variable", target: "deaths", message: "1"},
-		{type: "delay", delay: "2"},
+		{type: "delay", delay: "1"},
 	]},
 	{name: "Control Flow", color: "#bbbbf7", items: [
 		{type: "conditional_spend", expr1: "*points", expr2: "5"},
