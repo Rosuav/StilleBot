@@ -309,8 +309,8 @@ class channel(mapping identity) {
 
 	void stream_reset() {
 		raiders = ([]);
-		foreach (m_delete(stream_reset_messages, userid) || ({ }), array msg)
-			_send_with_catch(@msg);
+		array|zero msgs = m_delete(stream_reset_messages, userid);
+		if (msgs) foreach (msgs, array msg) _send_with_catch(@msg);
 	}
 
 	__async__ void delete_msg(string uid, string msgid) {
@@ -493,11 +493,12 @@ class channel(mapping identity) {
 			//And note that delayed messages do not hop to the other bot. This may need to change
 			//in the future; if it does, all stream-reset handling will also need to hop correctly
 			//(in case the bot hops during the half hour delay).
-			if (delay < 0)
+			if (delay < 0) {
 				//A delay of -1 (shouldn't be other negative values) means "at stream reset".
-				stream_reset_messages[userid] += ({({delay, person, message | (["delay": 0, "_changevars": 1]), vars, cfg})});
-			else
-				call_out(_send_with_catch, delay, person, message | (["delay": 0, "_changevars": 1]), vars, cfg);
+				stream_reset_messages[userid] += ({({person, message | (["delay": 0, "_changevars": 1]), vars, cfg})});
+				//FIXME: Disallow if stream is offline.
+			}
+			else call_out(_send_with_catch, delay, person, message | (["delay": 0, "_changevars": 1]), vars, cfg);
 			return;
 		}
 		if (message->_changevars)
