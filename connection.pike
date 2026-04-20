@@ -306,13 +306,8 @@ class channel(mapping identity) {
 		G->G->DB->save_sql("update stillebot.botservice set deactivated = now() where twitchid = :userid and deactivated is null", (["userid": userid]));
 	}
 
-	void channel_online(int uptime) {
-		//Purge the raider list of anyone who didn't raid since the stream went online.
-		//This signal comes through a minute or six after the channel actually goes
-		//online, so we use the current uptime as a signal to know who raided THIS stream
-		//as opposed to LAST stream. TODO: Do this 30 mins after stream offline instead.
-		int went_online = time() - uptime;
-		raiders = filter(raiders) {return __ARGS__[0] >= went_online;};
+	void stream_reset() {
+		raiders = ([]);
 	}
 
 	__async__ void delete_msg(string uid, string msgid) {
@@ -1293,10 +1288,10 @@ void irc_closed(mapping options) {
 	};
 }
 
-@hook_channel_online: int connected(string chan, int uptime, int chanid) {
-	object channel = G->G->irc->id[chanid];
-	if (channel) channel->channel_online(uptime);
-}
+//CJA 20260420: Don't hook streams going online any more - delete when not needed
+@hook_channel_online: int connected(string chan, int uptime, int chanid) { }
+
+@hook_stream_reset: int stream_reset(object channel) {channel->stream_reset();}
 
 @EventNotify("channel.channel_points_automatic_reward_redemption.add=1",
 	({"channel:read:redemptions", "channel:manage:redemptions"})):

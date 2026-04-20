@@ -100,8 +100,10 @@ definition should be published as "stream counts as offline when...".
 
 * The !!streamoffline special trigger happens immediately when Twitch signals
   that you have gone offline.
-* Goal bar autoreset waits 30 minutes before resetting, cancelling if you go
-  online again within that time.
+* The internal stream-reset signal waits 30 minutes before resetting,
+  cancelling if you go online again within that time.
+* Goal bar autoreset imitates the stream-reset semantics and should be switched
+  to use it directly
 * Cooldowns reset if you have gone online again since the last usage (with a
   TODO to have it more consistent with the others)
 * Twitch watch streaks only count two separate streams if there's 30 minutes
@@ -111,8 +113,5 @@ definition should be published as "stream counts as offline when...".
   if you go online again [unimpl]
 * Dynamic channel point costs reset every time the stream goes on/offline,
   without delay
-* The definition of "raided this stream" for art share permission resets when
-  the stream goes ONline and will be retained until then (so if you raid now,
-  you have raider perms so long as the stream is down). TODO: Use the 30-min
-  delay semantics; there's no documented definition here, just a loose "this
-  stream" description.
+* The definition of "raided this stream" for art share permission uses the
+  stream-reset signal.

@@ -339,8 +339,21 @@ constant channelsetup = special_trigger("!channelsetup", "The channel has change
 ]), "Status");
 constant channeloffline = special_trigger("!channeloffline", "The channel has recently gone offline (stopped streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english", "Status");
 
-void streaminfo(array data)
-{
+
+//When you go offline, reset things. However, in case the stream glitched (either
+//due to network issues, or because you briefly went offline to fix something),
+//the stream shouldn't be counted as having started over. Matching Twitch's own
+//definition as affects watch streaks, we wait 30 minutes, and only reset if the
+//stream does not go online again within that time. TODO: Have a !!reset special
+//trigger that happens at this same time, allowing any custom actions to go here.
+@retain: mapping(int:mixed) stream_reset_callout = ([]); //Map channel ID to call_out
+void delayed_stream_reset(int chanid) {
+	m_delete(stream_reset_callout, chanid);
+	object channel = G->G->irc->id[chanid]; if (!channel) return;
+	event_notify("stream_reset", channel);
+}
+
+void streaminfo(array data) {
 	//First, quickly remap the array into a lookup mapping
 	//This helps us ensure that we look up those we care about, and no others.
 	mapping channels = ([]);
@@ -365,6 +378,7 @@ void streaminfo(array data)
 					"{uptime_hms}": describe_time_short(uptime),
 					"{uptime_english}": describe_time(uptime),
 				]));
+				remove_call_out(m_delete(stream_reset_callout, channel->userid));
 			}
 			stream_online_since[channel->userid] = started;
 		} else { //If the channel's offline, we have no status info (since it returns data only for those online).
@@ -382,6 +396,7 @@ void streaminfo(array data)
 					"{uptime_hms}": describe_time_short(uptime),
 					"{uptime_english}": describe_time(uptime),
 				]));
+				stream_reset_callout[channel->userid] = call_out(delayed_stream_reset, 1800, channel->userid);
 			}
 		}
 	}
@@ -411,6 +426,7 @@ void streaminfo(array data)
 //NOTE: These hooks may be called on a non-active bot. Check for this if it matters to you.
 @create_hook: constant channel_online = ({"string channelname", "int uptime", "int channelid"});
 @create_hook: constant channel_offline = ({"string channelname", "int uptime", "int channelid"});
+@create_hook: constant stream_reset = ({"object channel"});
 
 //Basically only used after a follow hook; use the same authentication when that switches over.
 //Returns an ISO 8601 string, or 0 if not following.
