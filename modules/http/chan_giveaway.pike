@@ -518,7 +518,7 @@ __async__ mapping|zero websocket_cmd_master(mapping(string:mixed) conn, mapping(
 }
 
 //TODO: Migrate the dynamic reward management to pointsrewards, keeping the giveaway management here
-__async__ void channel_on_off(string channel, int just_went_online, int broadcaster_id) {
+__async__ void channel_on_off(string channel, int online, int broadcaster_id) {
 	if (!is_active_bot()) return 0;
 	object chan = G->G->irc->id[broadcaster_id]; if (!chan) return;
 	mapping dyn = await(G->G->DB->load_config(broadcaster_id, "dynamic_rewards"));
@@ -529,7 +529,7 @@ __async__ void channel_on_off(string channel, int just_went_online, int broadcas
 	mapping args = ([
 		//Is "1" or "0" based on whether you are probably online. It's possible for this to be wrong
 		//if you just went live or shut down.
-		"{online}": (string)(just_went_online == -1 ? !!G->G->stream_online_since[broadcaster_id] : just_went_online),
+		"{online}": (string)online,
 		//Date/time info is in your timezone or UTC if not set, and is the time the stream went online
 		//or (approximately) offline.
 		"{year}": (string)ts->year_no(), "{month}": (string)ts->month_no(), "{day}": (string)ts->month_day(),
@@ -543,8 +543,8 @@ __async__ void channel_on_off(string channel, int just_went_online, int broadcas
 	if (token != "") foreach (dyn; string reward_id; mapping info) {
 		int active = 0;
 		mapping params = ([]);
-		//If we just went online/offline, reset to base cost (if there is one).
-		if (just_went_online != -1 && info->basecost) params->cost = info->basecost;
+		//Whenever we go online/offline, reset to base cost (if there is one).
+		if (info->basecost) params->cost = info->basecost;
 		if (mixed ex = info->availability && catch {
 			//write("Evaluating: %O\n", info->availability);
 			active = (int)G->G->evaluate_expr(chan->expand_variables(info->availability, args), ({channel, ([])}));
