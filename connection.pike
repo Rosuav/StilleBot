@@ -1323,6 +1323,22 @@ void clear_user_messages(object channel, mapping data) {channel->delete_user_mes
 @EventNotify("channel.chat.message_delete=1", ({"channel:bot"}), "user_id"):
 void delete_single_message(object channel, mapping data) {channel->delete_single_message(data->target_user_login, data->message_id);}
 
+//TODO: Consider migrating the stream on/offline checks from poll.pike into here.
+//Yes, that will mean depriving poll.pike of its poll() function and its polling
+//functionality, making it actually the repository for all Twitch API calls, but
+//not the twitch_apis... yeah the names here are a bit weird. For now, check to
+//see if the notifications come through in a timely manner, comparing to the
+//existing messages getting logged as the channels are spotted online/offline.
+@EventNotify("stream.online=1"):
+void stream_online(object channel, mapping data) {
+	werror("%sStream now online! %O %O\n", ctime(time()), channel, data);
+}
+
+@EventNotify("stream.offline=1"):
+void stream_offline(object channel, mapping data) {
+	werror("%sStream now offline! %O %O\n", ctime(time()), channel, data);
+}
+
 void session_cleanup() {
 	//Go through all HTTP sessions and dispose of old ones
 	G->G->http_session_cleanup = call_out(session_cleanup, 86400);
