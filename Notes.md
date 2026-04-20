@@ -90,3 +90,29 @@ unless everything had in fact been cleanly replicated before the outage, this
 may result in a conflict when the two databases reconnect. There's no easy fix
 for such a conflict, so it has to be done manually. Use of `./dbctl log` may
 help with the detection and diagnosis here.
+
+
+What Counts As Stream Ending?
+-----------------------------
+
+Ideally, all of these definitions should be unified, and then this single
+definition should be published as "stream counts as offline when...".
+
+* The !!streamoffline special trigger happens immediately when Twitch signals
+  that you have gone offline.
+* Goal bar autoreset waits 30 minutes before resetting, cancelling if you go
+  online again within that time.
+* Cooldowns reset if you have gone online again since the last usage (with a
+  TODO to have it more consistent with the others)
+* Twitch watch streaks only count two separate streams if there's 30 minutes
+  between them
+* ?? Twitch channel point redemptions on one-per-stream?? Find out.
+* Delaying an echoable_message until end of stream waits 30 minutes and resets
+  if you go online again [unimpl]
+* Dynamic channel point costs reset every time the stream goes on/offline,
+  without delay
+* The definition of "raided this stream" for art share permission resets when
+  the stream goes ONline and will be retained until then (so if you raid now,
+  you have raider perms so long as the stream is down). TODO: Use the 30-min
+  delay semantics; there's no documented definition here, just a loose "this
+  stream" description.

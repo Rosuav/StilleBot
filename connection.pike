@@ -310,7 +310,7 @@ class channel(mapping identity) {
 		//Purge the raider list of anyone who didn't raid since the stream went online.
 		//This signal comes through a minute or six after the channel actually goes
 		//online, so we use the current uptime as a signal to know who raided THIS stream
-		//as opposed to LAST stream.
+		//as opposed to LAST stream. TODO: Do this 30 mins after stream offline instead.
 		int went_online = time() - uptime;
 		raiders = filter(raiders) {return __ARGS__[0] >= went_online;};
 	}
