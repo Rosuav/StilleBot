@@ -10,6 +10,7 @@ mapping irc_connections = ([]); //Not persisted across code reloads, but will be
 @retain: mapping cooldown_timeout = ([]);
 int(1bit) is_active; //Cache of is_active_bot() since we need to check it freuqently.
 Concurrent.Promise|zero reconnection_in_progress; //If non-null, we're reconnecting
+@retain: mapping(int:array) stream_reset_messages = ([]); //Map channel ID to array of echoable_messages and their contexts
 
 constant badge_aliases = ([ //Fold a few badges together, and give shorthands for others
 	"broadcaster": "_mod", "moderator": "_mod", "staff": "_mod", "lead_moderator": "_mod",
@@ -308,6 +309,8 @@ class channel(mapping identity) {
 
 	void stream_reset() {
 		raiders = ([]);
+		foreach (m_delete(stream_reset_messages, userid) || ({ }), array msg)
+			_send_with_catch(@msg);
 	}
 
 	__async__ void delete_msg(string uid, string msgid) {
@@ -487,7 +490,14 @@ class channel(mapping identity) {
 			//reference that falls to blank - this will call_out zero, which should work fine.
 			//Note also that a delayed message does NOT block the promise; it is still a deferred
 			//operation rather than a sleep inside the message-send operation.
-			call_out(_send_with_catch, delay, person, message | (["delay": 0, "_changevars": 1]), vars, cfg);
+			//And note that delayed messages do not hop to the other bot. This may need to change
+			//in the future; if it does, all stream-reset handling will also need to hop correctly
+			//(in case the bot hops during the half hour delay).
+			if (delay < 0)
+				//A delay of -1 (shouldn't be other negative values) means "at stream reset".
+				stream_reset_messages[userid] += ({({delay, person, message | (["delay": 0, "_changevars": 1]), vars, cfg})});
+			else
+				call_out(_send_with_catch, delay, person, message | (["delay": 0, "_changevars": 1]), vars, cfg);
 			return;
 		}
 		if (message->_changevars)
@@ -1771,7 +1781,19 @@ __async__ void establish_hook_notification(string|int channelid, string hook, ma
 	int now_active = is_active_bot();
 	werror("kick_when_inactive: was %O now %O\n", is_active, now_active);
 	if (now_active && !is_active) call_out(reconnect, 0); //Just become active? Make sure we're connected.
-	if (!now_active) remove_call_out(G->G->conduit_fallen_over);
+	if (!now_active) {
+		remove_call_out(G->G->conduit_fallen_over);
+		//QUIRK: If the bot hops while there are "until reset" messages waiting, they
+		//are not sent to the other bot, but it would be *extremely* confusing if the
+		//messages got deferred until a LATER stream goes online and offline. So to
+		//ensure that the very weirdest behaviour doesn't happen, we clear this out
+		//when we become inactive.
+		//Note that it's possible for the stream reset message to simply not happen,
+		//mainly if the bot hops during the half-hour delay. This will likely have
+		//other problems than just lost messages, and should eventually be properly
+		//solved.
+		m_clear(stream_reset_messages);
+	}
 	is_active = now_active;
 	string other = !is_active && get_active_bot();
 	if (!other) return; //We're active (or uncertain), don't kick clients.

@@ -151,7 +151,7 @@ const text_message = {...default_handlers,
 };
 //Special case: The cooldown length is a number, but is shown to the user as a series of number+unit options.
 const cdlength_selections = { //Common selections available in the drop-down
-	"-1": "One per stream",
+	"-1": "Till stream reset",
 	1: "1 second",
 	30: "30 seconds",
 	60: "1 minute",
@@ -160,7 +160,7 @@ const cdlength_selections = { //Common selections available in the drop-down
 	86400: "1 day",
 };
 const cooldown_length = {...default_handlers,
-	validate: val => typeof val === "number" && (val === -1 || val > 0),
+	validate: val => +val === -1 || +val > 0,
 	make_control: (id, val, el) => {
 		let num = +val, unit = "1";
 		if (num >= 3600 && (num % 3600) === 0) {num /= 3600; unit = "3600";}
@@ -316,6 +316,7 @@ function format_duration(sec) {
 	if (+sec === 3600) return "1 hour"; //Special case the singulars
 	if (+sec === 60) return "1 minute";
 	if (+sec === 1) return "1 second";
+	if (+sec === -1) return "till stream reset"; //Where applicable, -1 means "once per stream" or "until the stream resets"
 	if (sec >= 3600 && sec % 3600 === 0) return sec / 3600 + " hours";
 	if (sec > 60 && sec % 60 === 0) return sec / 60 + " minutes";
 	return sec + " seconds";
@@ -525,7 +526,7 @@ const main_types = {
 	//These will be detected in the order they are iterated over.
 	delay: {
 		color: "#77ee77", children: ["message"], label: el => `Delay ${format_duration(el.delay)}`,
-		params: [{attr: "delay", label: "Delay (seconds)", values: [1, 86400, 1]}],
+		params: [{attr: "delay", label: "Delay", values: cooldown_length}],
 		typedesc: "Delay message(s) by a certain length of time",
 	},
 	delay_custom: {
