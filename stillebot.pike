@@ -7,16 +7,10 @@ Requires OAuth authentication, which is by default handled by the GUI.
 
 array(string) bootstrap_files = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike", "connection.pike", "window.pike", "modules", "modules/http", "zz_local"});
 array(string) restricted_update;
-mapping G = (["consolecmd": ([]), "dbsettings": ([]), "instance_config": ([])]);
+mapping G = (["dbsettings": ([]), "instance_config": ([])]);
 
 void console(object stdin, string buf) {
-	while (has_value(buf, "\n")) {
-		sscanf(buf, "%s\n%s", string line, buf);
-		if (line == "update") bootstrap_all();
-		else if (function f = G->consolecmd[line]) f(line); //TODO: Allow word splitting, look up based on first word, provide others
-	}
-	if (buf == "update") bootstrap_all(); //TODO: Dedup with the above
-	else if (function f = G->consolecmd[buf]) f(buf);
+	if (has_value(buf / "\n", "update")) bootstrap_all();
 }
 
 void report(strict_sprintf_format format, sprintf_args ... args) {
