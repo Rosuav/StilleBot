@@ -9,8 +9,8 @@ Core files
 **stillebot.pike** is the main entrypoint. All invocations start here (with a
 few unusual exceptions, not usually relevant, and never supported for long).
 This file is the only one that cannot be live-updated, and its job is to
-manage bootstrapping of other files. (TODO: Remove the console and Hilfe code
-from there, maybe put the Hilfe stuff into utils?)
+manage bootstrapping of other files (including triggering rebootstrapping
+via signal or console). (TODO: Move the Hilfe stuff into utils?)
 
 **globals.pike** autoexports all non-private symbols, so anything in that file
 can be accessed anywhere. It provides all the core inheritables, myriad minor
