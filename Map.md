@@ -85,10 +85,5 @@ command and is simply a helper for that.
 **install.pike** creates a systemd service file. TODO: Move this into utils,
 and support other types of installation, maybe autodetecting.
 
-**sslport.pike** is a debug file, not sure if I need it, maybe it should go
-into shed instead.
-
-**timings.pike** was for some performance testing I did at some point.
-
 **utils.pike** handles `pike stillebot --exec=X` invocations. For any value
 of X, it will run X() inside utils. Used for all manner of CLI tools.
