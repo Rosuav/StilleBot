@@ -109,8 +109,7 @@ definition should be published as "stream counts as offline when...".
 * Twitch watch streaks only count two separate streams if there's 30 minutes
   between them
 * ?? Twitch channel point redemptions on one-per-stream?? Find out.
-* Delaying an echoable_message until end of stream waits 30 minutes and resets
-  if you go online again [unimpl]
+* Delaying an echoable_message until end of stream uses the stream-reset signal.
 * Dynamic channel point costs reset every time the stream goes on/offline,
   without delay
 * The definition of "raided this stream" for art share permission uses the
