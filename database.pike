@@ -948,6 +948,7 @@ __async__ void replication_watchdog() {
 }
 
 //Attempt to create all tables and alter them as needed to have all columns
+//Invoke with pike stillebot --exec=dbupdate
 __async__ void create_tables() {
 	await(reconnect(1, 1)); //Ensure that we have at least one connection, both if possible
 	array(mapping) dbs;
