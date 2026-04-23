@@ -332,7 +332,7 @@ __async__ void add_tip(object channel, string type, mapping params, mapping raw,
 	//their donations will be credited to the same user as long as the name used
 	//in the donation matched the name *as of that time*.
 	mapping user = ([]);
-	catch {user = await(get_user_info(params->username, "login"));}; //Any error, leave it as "anonymous"
+	catch {user = await(get_user_info(String.trim(params->username), "login"));}; //Any error, leave it as "anonymous"
 	//TODO: If we have a user (and thus an ID), scan through allkofi to find any
 	//with the same email address and update them. If that is done, do a full recalc.
 	stats->allkofi += ({([
