@@ -331,6 +331,8 @@ __async__ void add_tip(object channel, string type, mapping params, mapping raw,
 	//lookup fails, the gift is considered anonymous. Note that, if a user renames,
 	//their donations will be credited to the same user as long as the name used
 	//in the donation matched the name *as of that time*.
+	//TODO: Make a way for a mod to directly edit a name. More useful than the "claim"
+	//idea. Retain the original login and displayname, or even a full history of edits.
 	mapping user = ([]);
 	catch {user = await(get_user_info(String.trim(params->username), "login"));}; //Any error, leave it as "anonymous"
 	//TODO: If we have a user (and thus an ID), scan through allkofi to find any
