@@ -282,10 +282,3 @@
     reauthenticate (maybe on next channel-online)
   - If the broadcaster sees this and doesn't do anything, don't continue to spam, just flag
     the channel as inactive and probably delete most of the data at some point.
-* get_helix_paginated partials callback
-  - call repeatedly with each page
-  - call last time just before returning, so return value optionally ignorable
-  - use for large requests via websocket
-  - use for clips
-  - cache clips for up to a week, return the cached data immediately and refresh in bg
-    - is started_at/ended_at based on creation date?
