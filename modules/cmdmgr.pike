@@ -136,7 +136,9 @@ void autospam(string|int chanid, string cmd) {
 	if (!is_active_bot()) return 0;
 	object channel = G->G->irc->id[chanid]; if (!channel) return 0;
 	foreach (channel->commands || ([]); string cmd; echoable_message response) {
-		if (!mappingp(response) || !response->automate) continue;
+		//NOTE: This will eyeball everything, including aliases. If this is an alias of
+		//something else, don't double-automate it.
+		if (!mappingp(response) || !response->automate || response->alias_of) continue;
 		mixed id = autocommands[chanid + "!" + cmd];
 		int next = id && find_call_out(id);
 		if (undefinedp(next) || next > seconds(response->automate, channel->config->timezone)) {

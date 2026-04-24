@@ -289,4 +289,3 @@
   - use for clips
   - cache clips for up to a week, return the cached data immediately and refresh in bg
     - is started_at/ended_at based on creation date?
-* Check automations and aliases. Does an aliased command get automated as well?
