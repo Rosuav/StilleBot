@@ -299,6 +299,8 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 	transition: opacity .5s 0s;
 }
 
+.avatar {max-width: 40px;}
+
 nav#sidebar {
 	display: none;
 }

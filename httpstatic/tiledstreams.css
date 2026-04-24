@@ -12,7 +12,6 @@
 	padding-left: 2em;
 	text-indent: -2em;
 }
-.avatar {max-width: 40px;}
 .inforow {display: flex; overflow-x: clip;}
 .inforow .img {flex-grow: 0; padding: 0.25em;}
 .hoverexpand .expanded {
