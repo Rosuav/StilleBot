@@ -214,10 +214,11 @@ export function sockmsg_formattext(msg) {
 }
 
 on("click", ".detailsbtn", e => {
-	const user_id = e.match.closest_data("uid");
-	const user = monthly[e.match.closest_data("origin")]?.[user_id];
+	const user_id = e.match.closest_data("uid"), origin = e.match.closest_data("origin");
+	const user = monthly[origin]?.[user_id];
 	if (!user) return; //Shouldn't happen
 	DOM("#user_id").value = DOM("#orig_user_id").value = user_id;
+	DOM("#month").value = origin;
 	DOM("#user_profile").src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
 	if (+user_id) ws_sync.send({cmd: "get_user_profile", id: user.user_id})
 	DOM("#user_name").value = user.user_name;
@@ -242,3 +243,10 @@ export function sockmsg_lookup_user(msg) {
 	DOM("#user_id").value = msg.user.id;
 	DOM("#user_profile").src = msg.user.profile_image_url;
 }
+
+on("click", "#saveuserdetails", e => {
+	const msg = {cmd: "replace_user"};
+	["month", "orig_user_id", "user_id", "user_name"].forEach(el => msg[el] = document.getElementById(el).value);
+	ws_sync.send(msg);
+	DOM("#userdetailsdlg").close();
+});

@@ -52,7 +52,7 @@ $$buttons$$
 > User ID | <input id=user_id readonly> <img id=user_profile class=avatar>
 > Amount  | <span id=score></span>
 >
-> <input type=hidden id=orig_user_id>
+> <input type=hidden id=orig_user_id><input type=hidden id=month>
 > <div id=lookup_status></div>
 >
 > [Save](:#saveuserdetails) [Close](:.dialog_close)
@@ -260,6 +260,43 @@ void websocket_cmd_recalculate(mapping(string:mixed) conn, mapping(string:mixed)
 	//If user is not found, send back the same message but with a null user
 	mapping user; catch {user = await(get_user_info(msg->id, "id"));};
 	return (["cmd": "user_profile", "id": msg->id, "user": user]);
+}
+
+@"is_mod": __async__ void wscmd_replace_user(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//Within a specific monthly key (eg "kofi202510"), replace one user ID with another.
+	//If the target user ID exists, they will be merged. This is irreversible but will be tracked.
+	//If it does not, the user details will be replaced.
+	//Either way, a full recalculation is then done.
+	werror("REPLACE USER %O\n", msg); //User error, replace user and hit any key to continue.
+	await(G->G->DB->mutate_config(channel->userid, "subgiftstats") {mapping stats = __ARGS__[0];
+		mapping tippers = stats->monthly[msg->month];
+		if (!mappingp(tippers)) return; //NOTE: Assumes that the key given is for kofiNNNNNN, not bitsNNNNNN, which carries an array instead of a mapping
+		mapping cur = m_delete(tippers, msg->orig_user_id); if (!cur) return; //Maybe already edited??
+		mapping merge = tippers[msg->user_id];
+		if (merge) {
+			//The user ID given already exists. Delete the old data, merge with the existing one,
+			//and retain the full edit history.
+			merge->changelog += ({sprintf("Merged %O %O %O with %O %O %O",
+				cur->user_id, cur->user_name, cur->score,
+				merge->user_id, merge->user_name, merge->score,
+			)});
+			merge->user_name = msg->user_name;
+			merge->score += cur->score;
+		} else {
+			//Nothing to merge, so move this to the new ID and make updates as needed.
+			cur->changelog += ({sprintf("Renamed from %O (%O) to %O (%O)",
+				cur->user_name, cur->user_id,
+				msg->user_name, msg->user_id,
+			)});
+			cur->user_id = msg->user_id;
+			cur->user_name = msg->user_name;
+			tippers[msg->user_id] = cur;
+		}
+		werror("Resulting tipper data: %O\n", tippers[msg->user_id]);
+	});
+	//Errr, whoops. The recalc overwrites monthly[]. I need instead to be editing allkofi, and
+	//designing lookup IDs accordingly. This isn't going to work.
+	force_recalc(channel);
 }
 
 array(array(string)|array(array(string))) collect_leaders(mapping stats, string yearmonth, int include_dups) {
