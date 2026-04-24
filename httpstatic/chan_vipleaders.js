@@ -218,6 +218,7 @@ on("click", ".detailsbtn", e => {
 	const user = monthly[origin]?.[user_id];
 	if (!user) return; //Shouldn't happen
 	DOM("#user_id").value = DOM("#orig_user_id").value = user_id;
+	DOM("#month").value = origin;
 	DOM("#user_profile").src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
 	if (+user_id) ws_sync.send({cmd: "get_user_profile", id: user.user_id})
 	DOM("#user_name").value = user.user_name;
