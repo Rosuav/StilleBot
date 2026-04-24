@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, DETAILS, DIV, FORM, H3, INPUT, LABEL, LI, OL, P, SPAN, STYLE, SUMMARY, TABLE, TD, TH, TR} = choc; //autoimport
+const {A, BR, BUTTON, DETAILS, DIV, FORM, H3, INPUT, LABEL, LI, OL, P, SPAN, STYLE, SUMMARY, TABLE, TD, TH, TR, UL} = choc; //autoimport
 import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
 
 //TODO: Exclude anyone who's been banned, just in case
@@ -218,11 +218,11 @@ on("click", ".detailsbtn", e => {
 	const user = monthly[origin]?.[user_id];
 	if (!user) return; //Shouldn't happen
 	DOM("#user_id").value = DOM("#orig_user_id").value = user_id;
-	DOM("#month").value = origin;
 	DOM("#user_profile").src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
 	if (+user_id) ws_sync.send({cmd: "get_user_profile", id: user.user_id})
 	DOM("#user_name").value = user.user_name;
 	set_content("#score", cents_formatter(user.score));
+	set_content("#lookup_status", user.changelog && UL(user.changelog.map(c => LI(c))));
 	DOM("#userdetailsdlg").showModal();
 });
 

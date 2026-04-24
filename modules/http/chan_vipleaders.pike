@@ -128,6 +128,7 @@ void add_score(mapping monthly, string board, mapping sub) {
 	user->user_login = sub->giver->login;
 	user->user_name = sub->giver->displayname;
 	user->score += sub->qty * (tierval[sub->tier] || 1);
+	if (sub->changelog) user->changelog += sub->changelog;
 }
 
 __async__ void force_recalc(object channel, int|void fast) {
@@ -251,7 +252,7 @@ void websocket_cmd_recalculate(mapping(string:mixed) conn, mapping(string:mixed)
 
 @"is_mod": __async__ mapping wscmd_lookup_user(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//If user is not found, send back the same message but with a null user
-	mapping user; catch {user = await(get_user_info(msg->login, "login"));};
+	mapping user; catch {user = await(get_user_info(msg->login - " ", "login"));};
 	return (["cmd": "lookup_user", "login": msg->login, "user": user]);
 }
 
@@ -262,40 +263,37 @@ void websocket_cmd_recalculate(mapping(string:mixed) conn, mapping(string:mixed)
 	return (["cmd": "user_profile", "id": msg->id, "user": user]);
 }
 
+//User error, replace user and hit any key to continue.
 @"is_mod": __async__ void wscmd_replace_user(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	//Within a specific monthly key (eg "kofi202510"), replace one user ID with another.
-	//If the target user ID exists, they will be merged. This is irreversible but will be tracked.
-	//If it does not, the user details will be replaced.
-	//Either way, a full recalculation is then done.
-	werror("REPLACE USER %O\n", msg); //User error, replace user and hit any key to continue.
+	//Within a specific month (eg "202510"), replace one user ID with another.
+	//Only for the kofi stats; there's no facility for merging subgifts or cheers currently.
+	int uid = (int)msg->user_id;
+	if (!uid) return; //Currently, you can't make edits without successfully looking up a user ID.
+	mapping user = await(get_user_info(uid, "id")); //Will usually come from cache, since the user will have already been looked up
 	await(G->G->DB->mutate_config(channel->userid, "subgiftstats") {mapping stats = __ARGS__[0];
-		mapping tippers = stats->monthly[msg->month];
-		if (!mappingp(tippers)) return; //NOTE: Assumes that the key given is for kofiNNNNNN, not bitsNNNNNN, which carries an array instead of a mapping
-		mapping cur = m_delete(tippers, msg->orig_user_id); if (!cur) return; //Maybe already edited??
-		mapping merge = tippers[msg->user_id];
-		if (merge) {
-			//The user ID given already exists. Delete the old data, merge with the existing one,
-			//and retain the full edit history.
-			merge->changelog += ({sprintf("Merged %O %O %O with %O %O %O",
-				cur->user_id, cur->user_name, cur->score,
-				merge->user_id, merge->user_name, merge->score,
-			)});
-			merge->user_name = msg->user_name;
-			merge->score += cur->score;
-		} else {
-			//Nothing to merge, so move this to the new ID and make updates as needed.
-			cur->changelog += ({sprintf("Renamed from %O (%O) to %O (%O)",
-				cur->user_name, cur->user_id,
-				msg->user_name, msg->user_id,
-			)});
-			cur->user_id = msg->user_id;
-			cur->user_name = msg->user_name;
-			tippers[msg->user_id] = cur;
+		//NOTE: We assume here that most edits will happen to recent tips. There's no
+		//searching of the array, it simply scans from the back and filters. It could
+		//search forwards, but it'll be faster to start at the back and stop once we're
+		//too early.
+		array tips = stats->allkofi; if (!arrayp(tips)) return;
+		for (int i = sizeof(tips) - 1; i >= 0; --i) {
+			mapping tip = tips[i];
+			//Matches the add_score definition
+			object cal = Calendar.ISO.Second("unix", tip->timestamp)->set_timezone("UTC");
+			string month = sprintf("kofi%04d%02d", cal->year_no(), cal->month_no());
+			if (month < msg->month) break;
+			if (month == msg->month && tip->giver->user_id == msg->orig_user_id) {
+				tip->changelog += ({sprintf("$%d.%02d tip renamed from %O (%O) by %s on %s",
+					tip->qty / 100, tip->qty % 100,
+					tip->giver->displayname, tip->giver->user_id,
+					conn->session->user->display_name, ctime(time())[..<1])});
+				tip->giver->displayname = user->display_name;
+				tip->giver->login = user->login;
+				tip->giver->user_id = user->id;
+			}
 		}
-		werror("Resulting tipper data: %O\n", tippers[msg->user_id]);
 	});
-	//Errr, whoops. The recalc overwrites monthly[]. I need instead to be editing allkofi, and
-	//designing lookup IDs accordingly. This isn't going to work.
+	//Critical user error, replace any key and.....
 	force_recalc(channel);
 }
 
@@ -398,12 +396,8 @@ __async__ void add_tip(object channel, string type, mapping params, mapping raw,
 	//lookup fails, the gift is considered anonymous. Note that, if a user renames,
 	//their donations will be credited to the same user as long as the name used
 	//in the donation matched the name *as of that time*.
-	//TODO: Make a way for a mod to directly edit a name. More useful than the "claim"
-	//idea. Retain the original login and displayname, or even a full history of edits.
 	mapping user = ([]);
-	catch {user = await(get_user_info(String.trim(params->username), "login"));}; //Any error, leave it as "anonymous"
-	//TODO: If we have a user (and thus an ID), scan through allkofi to find any
-	//with the same email address and update them. If that is done, do a full recalc.
+	catch {user = await(get_user_info(params->username - " ", "login"));}; //Any error, leave it as "anonymous"
 	stats->allkofi += ({([
 		"giver": ([
 			//If we don't have a recognized user, use the name and email as the identity. Close enough
