@@ -49,7 +49,7 @@ $$buttons$$
 > &nbsp;  | &nbsp;
 > --------|-------
 > Name    | <input id=user_name> [Lookup](:#lookup_user)
-> User ID | <input id=user_id readonly> <img id=user_profile class=avatar>
+> User ID | <input id=user_id readonly size=16> <img id=user_profile class=avatar> [Anon](:#anonymous)
 > Amount  | <span id=score></span>
 >
 > <input type=hidden id=orig_user_id><input type=hidden id=month>
@@ -268,8 +268,9 @@ void websocket_cmd_recalculate(mapping(string:mixed) conn, mapping(string:mixed)
 	//Within a specific month (eg "202510"), replace one user ID with another.
 	//Only for the kofi stats; there's no facility for merging subgifts or cheers currently.
 	int uid = (int)msg->user_id;
-	if (!uid) return; //Currently, you can't make edits without successfully looking up a user ID.
-	mapping user = await(get_user_info(uid, "id")); //Will usually come from cache, since the user will have already been looked up
+	if (!uid && msg->user_id != "0") return; //Currently, you can't make edits without successfully looking up a user ID.
+	mapping user = uid ? await(get_user_info(uid, "id")) //Will usually come from cache, since the user will have already been looked up
+		: (["display_name": msg->user_name, "login": msg->user_name, "id": "0"]); //Set someone to be anonymous with a uid of zero
 	await(G->G->DB->mutate_config(channel->userid, "subgiftstats") {mapping stats = __ARGS__[0];
 		//NOTE: We assume here that most edits will happen to recent tips. There's no
 		//searching of the array, it simply scans from the back and filters. It could

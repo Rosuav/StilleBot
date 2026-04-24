@@ -213,13 +213,14 @@ export function sockmsg_formattext(msg) {
 	DOM("#displaydlg").showModal();
 }
 
+const TRANSPARENT = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
 on("click", ".detailsbtn", e => {
 	const user_id = e.match.closest_data("uid"), origin = e.match.closest_data("origin");
 	const user = monthly[origin]?.[user_id];
 	if (!user) return; //Shouldn't happen
 	DOM("#user_id").value = DOM("#orig_user_id").value = user_id;
 	DOM("#month").value = origin;
-	DOM("#user_profile").src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
+	DOM("#user_profile").src = TRANSPARENT;
 	if (+user_id) ws_sync.send({cmd: "get_user_profile", id: user.user_id})
 	DOM("#user_name").value = user.user_name;
 	set_content("#score", cents_formatter(user.score));
@@ -230,10 +231,13 @@ on("click", ".detailsbtn", e => {
 on("click", "#lookup_user", e => ws_sync.send({cmd: "lookup_user", login: DOM("#user_name").value}));
 export function sockmsg_user_profile(msg) {
 	//Similar to lookup_user but not triggered by explicit user action
-	if (!msg.user)
-		DOM("#user_profile").src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
+	if (!msg.user) DOM("#user_profile").src = TRANSPARENT;
 	else DOM("#user_profile").src = msg.user.profile_image_url;
 }
+on("click", "#anonymous", e => {
+	DOM("#user_id").value = "0";
+	DOM("#user_profile").src = TRANSPARENT;
+});
 export function sockmsg_lookup_user(msg) {
 	if (!msg.user) {
 		set_content("#lookup_status", "User not found: " + msg.login);
