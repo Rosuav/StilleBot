@@ -18,7 +18,7 @@ function remap_to_array(stats) {
 }
 
 let badge_count = {}, badge_streak = {};
-function make_list(arr, fmt, empty, eligible, which) {
+function make_list(arr, fmt, empty, eligible, which, editable) {
 	if (!arr || !arr.length) return DIV(empty);
 	if (arr.length > board_count) arr.length = board_count; //We display a limited number, but the back end tracks more
 	return OL(arr.map(p => {
@@ -38,9 +38,12 @@ function make_list(arr, fmt, empty, eligible, which) {
 				}
 			}
 		}
-		return LI({className, title, "data-uid": p.user_id, "data-which": which, "data-streak": badge_streak[p.user_id]},
-			[SPAN({className: "username"}, p.user_name), " with ", fmt(p.score)]
-		);
+		return LI({className, title, "data-uid": p.user_id, "data-which": which, "data-streak": badge_streak[p.user_id]}, [
+			SPAN({className: "username"}, p.user_name), " with ", fmt(p.score), " ",
+			//TODO maybe: If not editable, put a Magnifying Glass button, with similar
+			//functionality but no way to make changes? 🔍
+			editable && BUTTON({class: "detailsbtn", type: "button"}, "\u{1F589}"),
+		]);
 	}));
 }
 
@@ -52,6 +55,7 @@ function cents_formatter(cents) {
 
 //If non-null, we're on the embedded view.
 const embed = new URLSearchParams(location.search).get("embed");
+let monthly = { };
 
 const monthnames = ["???", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 export function render(data) {
@@ -60,6 +64,7 @@ export function render(data) {
 	const mod = ws_group.startsWith("control#"); //Hide the buttons if the server would reject the signals anyway
 	if (data.board_count) board_count = data.board_count;
 	if (data.monthly) {
+		monthly = data.monthly; //Retain for editability
 		const rows = [];
 		const now = new Date();
 		let year = now.getUTCFullYear(), mon = now.getUTCMonth() + 1;
@@ -83,9 +88,9 @@ export function render(data) {
 				mod && data.displayformat && BUTTON({className: "fmtvip", title: "Show summary"}, "📃"),
 			])));
 			rows.push(TR([
-				TD(make_list(subs, s => [s, " subs"], "(no subgifting data)", data.badge_count || 10, which_month)),
-				TD(make_list(bits, s => [s, " bits"], "(no cheering data)", data.badge_count || 10, which_month)),
-				(data.use_kofi || data.use_streamlabs) && TD(make_list(kofi, cents_formatter, "(no tipping data)", data.badge_count || 10, which_month)),
+				TD({"data-origin": "subs" + ym}, make_list(subs, s => [s, " subs"], "(no subgifting data)", data.badge_count || 10, which_month)),
+				TD({"data-origin": "bits" + ym}, make_list(bits, s => [s, " bits"], "(no cheering data)", data.badge_count || 10, which_month)),
+				(data.use_kofi || data.use_streamlabs) && TD({"data-origin": "kofi" + ym}, make_list(kofi, cents_formatter, "(no tipping data)", data.badge_count || 10, which_month, mod)),
 			]));
 			if (!--mon) {--year; mon = 12;}
 			++which_month;
@@ -206,4 +211,34 @@ on("click", ".fmtvip", e => {
 export function sockmsg_formattext(msg) {
 	DOM("#displaytext").value = msg.text;
 	DOM("#displaydlg").showModal();
+}
+
+on("click", ".detailsbtn", e => {
+	const user_id = e.match.closest_data("uid");
+	const user = monthly[e.match.closest_data("origin")]?.[user_id];
+	if (!user) return; //Shouldn't happen
+	DOM("#user_id").value = DOM("#orig_user_id").value = user_id;
+	DOM("#user_profile").src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
+	if (+user_id) ws_sync.send({cmd: "get_user_profile", id: user.user_id})
+	DOM("#user_name").value = user.user_name;
+	set_content("#score", cents_formatter(user.score));
+	DOM("#userdetailsdlg").showModal();
+});
+
+on("click", "#lookup_user", e => ws_sync.send({cmd: "lookup_user", login: DOM("#user_name").value}));
+export function sockmsg_user_profile(msg) {
+	//Similar to lookup_user but not triggered by explicit user action
+	if (!msg.user)
+		DOM("#user_profile").src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
+	else DOM("#user_profile").src = msg.user.profile_image_url;
+}
+export function sockmsg_lookup_user(msg) {
+	if (!msg.user) {
+		set_content("#lookup_status", "User not found: " + msg.login);
+		return;
+	}
+	set_content("#lookup_status", "User found: " + msg.user.display_name + " Click Save if correct");
+	DOM("#user_name").value = msg.user.display_name;
+	DOM("#user_id").value = msg.user.id;
+	DOM("#user_profile").src = msg.user.profile_image_url;
 }

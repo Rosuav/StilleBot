@@ -42,6 +42,22 @@ $$buttons$$
 > [Close](:.dialog_close)
 {: tag=dialog #displaydlg}
 
+<!-- -->
+
+> ### User details
+>
+> &nbsp;  | &nbsp;
+> --------|-------
+> Name    | <input id=user_name> [Lookup](:#lookup_user)
+> User ID | <input id=user_id readonly> <img id=user_profile class=avatar>
+> Amount  | <span id=score></span>
+>
+> <input type=hidden id=orig_user_id>
+> <div id=lookup_status></div>
+>
+> [Save](:#saveuserdetails) [Close](:.dialog_close)
+{: tag=formdialog #userdetailsdlg}
+
 <style>
 .addvip,.remvip,.fmtvip {
 	margin-left: 0.5em;
@@ -62,6 +78,7 @@ $$styles$$
 #embedcfg::details-content {
 	background-color: aliceblue;
 }
+.avatar {vertical-align: middle;}
 </style>
 ";
 constant styles = #"
@@ -230,6 +247,19 @@ void websocket_cmd_recalculate(mapping(string:mixed) conn, mapping(string:mixed)
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
 	spawn_task(force_recalc(channel));
+}
+
+@"is_mod": __async__ mapping wscmd_lookup_user(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//If user is not found, send back the same message but with a null user
+	mapping user; catch {user = await(get_user_info(msg->login, "login"));};
+	return (["cmd": "lookup_user", "login": msg->login, "user": user]);
+}
+
+//Same as lookup_user but receives a UID instead of a name
+@"is_mod": __async__ mapping wscmd_get_user_profile(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//If user is not found, send back the same message but with a null user
+	mapping user; catch {user = await(get_user_info(msg->id, "id"));};
+	return (["cmd": "user_profile", "id": msg->id, "user": user]);
 }
 
 array(array(string)|array(array(string))) collect_leaders(mapping stats, string yearmonth, int include_dups) {
