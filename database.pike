@@ -168,7 +168,7 @@ object sugarbuyer = class {
 			switch (cmd) {
 				case "hello":
 					write("Sugarmill: Attempting auth...\n");
-					sock->write("auth %s\n", totp(G->G->instance_config->sugar));
+					sock->write("auth sugar %s\n", totp(G->G->instance_config->sugar));
 					break;
 				case "login": write("Sugarmill: Login OK\n"); sock->write("fetch db.rosuav.com\n"); break;
 				case "certificate": file_receive = ({args[0], ""}); break;
