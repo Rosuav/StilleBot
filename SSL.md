@@ -11,7 +11,8 @@ to reformat the private key:
 
     openssl rsa -in ....../privkey.pem >..../privkey.pem
 
-(With openssl 3, add the -traditional parameter.)
+(With openssl 3, add the -traditional parameter.) This is not required when
+using Pike 9.0.12 or newer (Apr 2026).
 
 The "fullchain" certificate from LetsEncrypt is directly usable. If you obtain
 a certificate that comes with a separate authority chain (GoDaddy is known to
@@ -20,6 +21,9 @@ do this), simply concatenate the two files.
 Store the private key in `privkey.pem` and the cert(s) in `certificate.pem`.
 Note that protecting your private key is important. StilleBot is entirely okay
 with these files being symlinks or named pipes or other non-normal files.
+NOTE: The production bot uses a dedicated Sugar Mill key management service;
+using files in this way is simpler, but will require you to manually update the
+bot any time the key/cert changes.
 
 Configure the server's externally-accessible address and port in "Authenticate
 Manually", specifying `https://` to enable encryption. To have StilleBot listen

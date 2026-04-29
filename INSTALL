@@ -5,7 +5,13 @@ StilleBot, being fully open source, is entirely capable of being run on your own
 computer as your own personal bot. You will need:
 
 * Pike version 9.0 or better, with GTK support unless `--headless` is used
+  (NOTE: The exact version requirement has not been thoroughly tested and may
+  change without warning, often by accident. It's also possible that a newer
+  version of Pike could fail, due to incompatible changes. I try to avoid this
+  where possible, but this isn't something I test for.)
 * A PostgreSQL server for configuration
+  - If you don't have my Sugar Mill certificate system, you may need to hack
+    out that part and instead put in some other way of authenticating with PG
 * A Twitch developer account and the appropriate keys
 * Optionally an [SSL certificate](SSL)
 
@@ -18,5 +24,8 @@ to authenticate it with Twitch. At very least, you will need an OAuth token for
 chat connection, and for full functionality, you will need a client ID/secret,
 obtained from the [Twitch Developer Console](https://dev.twitch.tv/console).
 
-Enabling the web configuration interface is strongly recommended, but basic
-features can be managed through Twitch chat itself.
+Enabling the web configuration interface is strongly recommended, as there are
+many features that cannot easily be set up without it. If this is for your own
+personal use, no SSL certificate is required. TODO: Check that the bot runs
+happily with a web server and no SSL cert. Is Twitch okay with OAuth going to
+http://localhost:6789/ ? Or would this require running the bot as root?
