@@ -355,7 +355,8 @@ __async__ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, 
 	//that say what would happen, but don't actually make changes.
 	string addrem = add ? "Adding" : "Removing", tofrom = add ? "to" : "from";
 	string|zero method = add ? "POST" : "DELETE";
-	if (conn->session->user->login != chan) {addrem = "Fake-" + lower_case(addrem); method = 0;}
+	//Do I need to have this protection available but overridable? Removing it for now - mods can add and remove VIP status.
+	//if (conn->session->user->login != chan) {addrem = "Fake-" + lower_case(addrem); method = 0;}
 	mapping stats = await(G->G->DB->load_config(channel->userid, "subgiftstats"));
 	[array(string) userids, [array(string) cheerers, array(string) subbers, array(string) tippers]] = collect_leaders(stats, msg->yearmonth, 1);
 	if (sizeof(cheerers)) send_message(channel->name, addrem + " VIP status " + tofrom + " cheerers: " + cheerers * ", ");
