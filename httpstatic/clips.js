@@ -62,7 +62,13 @@ function render_clips() {
 				default: break; //Two or more? It's not visible even if you change this one.
 			}
 		}
+		clip.visible = exclusions === 0;
 	}
+	//If there are a Mercurial thundering lot of clips, do our own filtering (in addition to the CSS, which
+	//should then do nothing), and cap it at 500 displayed clips. The filter drop-downs will show accurate
+	//clip counts, and the total number (and number matching filters) will be shown at the bottom too.
+	let clips = state.clips;
+	if (clips.length > 500) clips = clips.filter(c => c.visible);
 	replace_content("#display", [
 		STYLE(Object.entries(filters).map(([fil, val]) => val === "" ? "" : `.${fil}:not(.${fil}-${val}){display:none}`).join(" ")),
 		P([
@@ -77,7 +83,7 @@ function render_clips() {
 			])),
 			state.loading && SPAN({style: "border: 1px solid rebeccapurple; background: aliceblue; display: inline-block; margin-left: 2em; padding: 4px 8px;"}, "Loading..."),
 		]),
-		DIV({class: "streamtiles"}, state.clips.map(clip => DIV({key: clip.id, class: filterclasses(clip)}, [
+		DIV({class: "streamtiles"}, clips.slice(0, 500).map(clip => DIV({key: clip.id, class: filterclasses(clip)}, [
 			A({href: clip.url, target: "_blank"}, IMG({
 				src: clip.thumbnail_url,
 				style: "width: 320px", //Clip thumbnails are larger than we need
@@ -94,6 +100,9 @@ function render_clips() {
 				GAMETILE(clip.game_id),
 			]),
 		]))),
+		state.clips.length > 500 && P({class: "clips-truncated"}, [
+			"Not all clips shown - out of " + state.clips.length + " clips, " + clips.length + " match filters, max 500 shown",
+		]),
 	]);
 }
 
@@ -104,5 +113,5 @@ export function render(data) {
 
 on("change", "select.filter", e => {
 	filters[e.match.name] = e.match.value;
-	render();
+	render_clips();
 });

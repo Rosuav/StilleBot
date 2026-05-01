@@ -14,6 +14,14 @@ constant markdown = #"# Twitch clips for $$chan$$
 
 <style>
 fieldset {display: inline;}
+.clips-truncated {
+	background: aliceblue;
+	border: 1px solid rebeccapurple;
+	margin: 1em;
+	padding: 0.25em;
+	font-weight: bold;
+	font-size: larger;
+}
 </style>
 ";
 
