@@ -90,7 +90,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	string chan = req->variables["for"];
 	if (!chan) return render_template(menu, ([]));
 	mapping info = await(get_user_info(chan, "login"));
-	if (is_active_bot()) load_clips((string)info->id); //Start loading the clips if we're the active bot, to avoid waiting
+	if (is_active_bot() && !clips_cache[(string)info->id]->?loading) load_clips((string)info->id); //Start loading the clips if we're the active bot, to avoid waiting
 	return render(req, ([
 		"vars": (["ws_group": (string)info->id]),
 		"chan": info->display_name,
