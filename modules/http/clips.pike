@@ -69,8 +69,8 @@ __async__ void list_clips_for_range(string broadcaster_id, int starttime, int en
 		//clips before the older ones (since they're more likely to be interesting), with a bit
 		//of overlap to try to ensure that we don't lose any clips in the gap.
 		int midpoint = (endtime + starttime) / 2;
-		await(list_clips_for_range(broadcaster_id, midpoint - 3600, endtime));
-		await(list_clips_for_range(broadcaster_id, starttime, midpoint + 3600));
+		await(list_clips_for_range(broadcaster_id, midpoint - 60, endtime));
+		await(list_clips_for_range(broadcaster_id, starttime, midpoint + 60));
 	}
 }
 
