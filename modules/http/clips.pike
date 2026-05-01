@@ -21,9 +21,12 @@ fieldset {display: inline;}
 @retain: mapping(string:mapping(string:mixed)) clips_cache = ([]);
 mapping(string:mapping) games_cache = (["0": (["name": "Unknown"]), "": (["name": "Uncategorized"])]); //Not retained; just reduces query spam during loading
 
-__async__ void partial_clips(string url, mapping query, mapping options, array clips) {
-	werror("Clips for %O, got %O so far...\n", query->broadcaster_id, sizeof(clips));
-	clips_cache[query->broadcaster_id]->clips = clips;
+__async__ void push_clips(string broadcaster_id, array clips) {
+	werror("Clips for %O, got %O so far...\n", broadcaster_id, sizeof(clips));
+	clips = values(mkmapping(clips->id, clips)); //Uniquify clips - sometimes we get the same one twice
+	sort(clips->id, clips); //Sort by slug (id) for complete consistency
+	sort(-clips->view_count[*], clips); //Sort by view count to be similar to Twitch's usual view
+	clips_cache[broadcaster_id]->clips = clips;
 	array gameids = indices(mkmapping(clips->game_id, clips->game_id)); //Distinct game IDs
 	array needed = gameids - indices(games_cache);
 	werror("Need gameids %{%O %}\n", needed);
@@ -31,19 +34,26 @@ __async__ void partial_clips(string url, mapping query, mapping options, array c
 		array games = await(get_helix_paginated("https://api.twitch.tv/helix/games", (["id": gameids])));
 		foreach (games, mapping g) games_cache[g->id] = g;
 	}
-	clips_cache[query->broadcaster_id]->games = mkmapping(gameids, games_cache[gameids[*]]);
-	send_updates_all(query->broadcaster_id);
+	clips_cache[broadcaster_id]->games = mkmapping(gameids, games_cache[gameids[*]]);
+	send_updates_all(broadcaster_id);
+	//Once we're done loading, kick all the sockets so they don't suddenly refresh when someone else loads this page
+	if (!clips_cache[broadcaster_id]->loading) kick_socket_group(broadcaster_id);
 }
+
+void partial_clips(string url, mapping query, mapping options, array clips) {push_clips(query->broadcaster_id, clips);}
 
 __async__ void load_clips(string broadcaster_id) {
 	werror("Clips for %O\n", broadcaster_id);
 	clips_cache[broadcaster_id] = (["ts": time(), "clips": ({ }), "loading": 1]);
-	array clips = await(get_helix_paginated("https://api.twitch.tv/helix/clips", (["broadcaster_id": broadcaster_id]), ([]), (["partial_results": partial_clips])));
+	//NOTE: Clips became a thing in 2016 (about May-ish?), so there won't be any clips before that.
+	array clips = await(get_helix_paginated("https://api.twitch.tv/helix/clips",
+		(["broadcaster_id": broadcaster_id, /*"started_at": "2016-01-01T00:00:00Z", "ended_at": "2020-01-01T00:00:00Z"*/]),
+		([]), (["partial_results": partial_clips])));
 	clips_cache[broadcaster_id]->loading = 0;
-	send_updates_all(broadcaster_id, (["loading": 0]));
-	//Kick all the sockets so they don't suddenly refresh when someone else loads this page
-	kick_socket_group(broadcaster_id);
-	werror("Done, got %O clips\n", sizeof(clips));
+	//Note that push_clips will be called by partial_clips too, which may result in two
+	//concurrent queries loading games. Shouldn't be too much load, and frankly, I can't
+	//be bothered trying to get the perfect optimization here.
+	push_clips(broadcaster_id, clips);
 }
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
