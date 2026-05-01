@@ -22,7 +22,6 @@ fieldset {display: inline;}
 mapping(string:mapping) games_cache = (["0": (["name": "Unknown"]), "": (["name": "Uncategorized"])]); //Not retained; just reduces query spam during loading
 
 __async__ void push_clips(string broadcaster_id, array clips) {
-	werror("Clips for %O, got %O more...\n", broadcaster_id, sizeof(clips));
 	mapping cache = clips_cache[broadcaster_id];
 	//Uniquify clips - sometimes we get the same one twice even within a query, and when the
 	//time range needs to be fractured, we will definitely see many of the same clips again
@@ -33,8 +32,8 @@ __async__ void push_clips(string broadcaster_id, array clips) {
 	cache->clips = clips;
 	array gameids = indices(mkmapping(clips->game_id, clips->game_id)); //Distinct game IDs
 	array needed = gameids - indices(games_cache);
-	werror("Need gameids %{%O %}\n", needed);
 	if (sizeof(needed)) {
+		werror("Need gameids %{%O %}\n", needed);
 		//Prevent looping reloads of broken game IDs (probably categories that no longer exist, eg "Creative")
 		foreach (needed, string gameid) games_cache[gameid] = (["name": "Game #" + gameid]);
 		array games = await(get_helix_paginated("https://api.twitch.tv/helix/games", (["id": gameids])));
@@ -83,8 +82,8 @@ __async__ void load_clips(string broadcaster_id) {
 	System.Timer tm = System.Timer();
 	await(list_clips_for_range(broadcaster_id, starttime, endtime));
 	clips_cache[broadcaster_id]->loading = 0;
-	werror("Loaded in %.3fs\n", tm->peek());
 	push_clips(broadcaster_id, ({ }));
+	werror("Loaded %d total clips in %.3fs\n", sizeof(clips_cache[broadcaster_id]->clips), tm->peek());
 }
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
