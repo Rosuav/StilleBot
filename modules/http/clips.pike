@@ -1,4 +1,5 @@
 inherit http_websocket;
+inherit annotated;
 
 constant menu = #"# Twitch clips browser
 
@@ -28,12 +29,15 @@ fieldset {display: inline;}
 //Map a broadcaster_id to (["ts": time(), "clips": ({...})])
 @retain: mapping(string:mapping(string:mixed)) clips_cache = ([]);
 mapping(string:mapping) games_cache = (["0": (["name": "Unknown"]), "": (["name": "Uncategorized"])]); //Not retained; just reduces query spam during loading
+constant CLIPS_EARLIEST = 1451606400; //Clips became a thing in 2016 (about May-ish?), so there won't be any clips before that.
 
-__async__ void push_clips(string broadcaster_id, array clips) {
+__async__ void push_clips(string broadcaster_id, array clips, int|void force) {
 	mapping cache = clips_cache[broadcaster_id];
 	//Uniquify clips - sometimes we get the same one twice even within a query, and when the
 	//time range needs to be fractured, we will definitely see many of the same clips again
+	int have_clips = !force && sizeof(cache->clips_by_id);
 	cache->clips_by_id |= mkmapping(clips->id, clips);
+	if (have_clips == sizeof(cache->clips_by_id)) return; //No new clips, no need to push anything out
 	clips = values(cache->clips_by_id);
 	sort(clips->id, clips); //Sort by slug (id) for complete consistency
 	sort(-clips->view_count[*], clips); //Sort by view count to be similar to Twitch's usual view
@@ -63,7 +67,12 @@ __async__ void list_clips_for_range(string broadcaster_id, int starttime, int en
 		"started_at": strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(starttime)),
 		"ended_at": strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(endtime)),
 	]), ([]), (["partial_results": partial_clips])));
-	werror("Got %d clips from %s to %s\n", sizeof(clips), strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(starttime)), strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(endtime)));
+	werror("Got %d clips from %s to %s - total %d\n",
+		sizeof(clips),
+		strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(starttime)),
+		strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(endtime)),
+		sizeof(clips_cache[broadcaster_id]->clips),
+	);
 	if (sizeof(clips) > 900) {
 		//Twitch has a limit of "approximately 1,000" clips returned. In my testing, it usually
 		//exceeds this number rather than undersupplying, but to be safe, if you get above 900,
@@ -84,13 +93,16 @@ __async__ void list_clips_for_range(string broadcaster_id, int starttime, int en
 
 __async__ void load_clips(string broadcaster_id) {
 	werror("Clips for %O\n", broadcaster_id);
-	clips_cache[broadcaster_id] = (["ts": time(), "clips": ({ }), "clips_by_id": ([]), "loading": 1]);
-	int starttime = 1451606400; //Clips became a thing in 2016 (about May-ish?), so there won't be any clips before that.
+	mapping cache = clips_cache[broadcaster_id];
+	if (!cache) clips_cache[broadcaster_id] = cache = (["ts": CLIPS_EARLIEST + 86400, "clips": ({ }), "clips_by_id": ([])]);
+	cache->loading = 1;
+	int starttime = cache->ts - 86400; //If we already have cached clips, use them, and start the fetch from there
 	int endtime = time() + 604800; //Add a week in case of rounding errors or weird offsetting
+	cache->ts = time();
 	System.Timer tm = System.Timer();
 	await(list_clips_for_range(broadcaster_id, starttime, endtime));
 	clips_cache[broadcaster_id]->loading = 0;
-	push_clips(broadcaster_id, ({ }));
+	push_clips(broadcaster_id, ({ }), 1);
 	werror("Loaded %d total clips in %.3fs\n", sizeof(clips_cache[broadcaster_id]->clips), tm->peek());
 }
 
@@ -111,3 +123,5 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (!clips_cache[msg->group]->?loading) load_clips(msg->group);
 }
 mapping get_state(string group) {return clips_cache[group] - (<"clips_by_id">);}
+
+protected void create(string name) {::create(name);}
