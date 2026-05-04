@@ -1856,7 +1856,12 @@ __async__ void reconnect() {
 	array swords = await(get_helix_paginated("https://api.twitch.tv/helix/moderation/channels", (["user_id": (string)G->G->bot_uid])));
 	G->G->bot_carries_sword = (multiset)(array(int))swords->broadcaster_id;
 	mapping irc = (["channels": ([]), "id": ([])]);
+	//CJA 20260504: For some reason, a lot of CPU time is spent around here, but only if the
+	//most recently-awaited promise returned a large amount of data. (Internally, this makes a
+	//function call with a very large parameter, slowing down backtrace generation.) Adding a
+	//dummy await of a simple integer drastically speeds up everything that follows.
 	mapping commands = await(G->G->DB->preload_commands(channels->userid));
+	werror("Speeding up connections, this should be a one: %O\n", await(Concurrent.resolve(1)));
 	foreach (channels, mapping cfg) {
 		object c = channel(cfg, commands[cfg->userid] || ({ }));
 		irc->channels[c->name] = c;
