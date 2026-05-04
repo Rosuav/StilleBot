@@ -12,5 +12,5 @@ __async__ void pingkickstarter() {
 
 protected void create(string name) {
 	remove_call_out(G->G->kickstarter_call_out);
-	if (is_active_bot()) G->G->kickstarter_call_out = call_out(pingkickstarter, 60);
+	//if (is_active_bot()) G->G->kickstarter_call_out = call_out(pingkickstarter, 60);
 }
