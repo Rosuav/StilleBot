@@ -367,6 +367,7 @@ void streaminfo(array data) {
 				object started_here = started->set_timezone(Calendar.now()->timezone());
 				write("** Channel %s went online at %s **\n", channel->login, started_here->format_nice());
 				int uptime = time() - started->unix_time();
+				Stdio.append_file("onlinedelay.log", sprintf("Poll %d %s\n", uptime, channel->login));
 				event_notify("channel_online", channel->login, uptime, channel->userid);
 				channel->trigger_special("!channelonline", ([
 					//Synthesize a basic person mapping

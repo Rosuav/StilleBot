@@ -1332,12 +1332,13 @@ void delete_single_message(object channel, mapping data) {channel->delete_single
 //existing messages getting logged as the channels are spotted online/offline.
 @EventNotify("stream.online=1"):
 void stream_online(object channel, mapping data) {
-	werror("%sStream now online! %O %O\n", ctime(time()), channel, data);
+	Stdio.append_file("onlinedelay.log", sprintf("EventSub %d %s\n", time() - time_from_iso(data->started_at)->unix_time(), data->broadcaster_user_login));
 }
 
 @EventNotify("stream.offline=1"):
 void stream_offline(object channel, mapping data) {
-	werror("%sStream now offline! %O %O\n", ctime(time()), channel, data);
+	//Stream offline doesn't have any useful information, but it seems to be prompt enough to use.
+	//werror("%sStream now offline! %O %O\n", ctime(time()), channel, data);
 }
 
 void session_cleanup() {
