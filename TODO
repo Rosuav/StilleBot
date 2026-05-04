@@ -275,3 +275,22 @@
     reauthenticate (maybe on next channel-online)
   - If the broadcaster sees this and doesn't do anything, don't continue to spam, just flag
     the channel as inactive and probably delete most of the data at some point.
+* Dynamic channel point rewards are a bit of a mess, having grown organically.
+  - Ideally, each field should be able to be dynamic or simple (static)
+  - Having a dynamic title or prompt will update it when necessary (eg on variable change)
+  - Having a base cost causes the cost to be reset to that every time the channel goes
+    online/offline. This should be replaced with "on the stream reset signal".
+  - Having Availability set will make the reward available only while you're online.
+    - For fixed "always" and "never", just configure the reward directly, this isn't dynamic
+    - For anything more complicated, create a special trigger. Note that the current system
+      is unable to handle concepts like "when stream has this tag", and could only be checked
+      on stream online or offline, not at other times.
+  - Having a growth formula set will make the price change each time it's used. Instead
+    of having "PREV" as the formula, simply have no growth formula set.
+    - Replace this with a simple "increment" that adds that number. Nobody's doing weird
+      stuff like "double it and add 500 points". *MAYBE* allow an increment of "double it"?
+    - Move crownholder cost detection elsewhere as it's really an internal thing and should
+      not be cluttering up this UI anyway.
+  - The current cost is there for convenience. This is worth keeping, but it may be better to
+    merge this with the /c/pointsrewards gear button.
+  - In fact, this entire feature may be better done in /c/pointsrewards.
