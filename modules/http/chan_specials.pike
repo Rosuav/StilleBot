@@ -13,7 +13,7 @@ constant SPECIAL_ORDER = ({
 	"!hypetrain_begin", "!hypetrain_progress", "!hypetrain_end",
 	"!goalprogress",
 	"!watchstreak",
-	"!channelonline", "!channelsetup", "!channeloffline",
+	"!channelonline", "!channelsetup", "!channeloffline", "!channelreset",
 	"!musictrack",
 	"!pollbegin", "!pollended",
 	"!predictionlocked", "!predictionended",

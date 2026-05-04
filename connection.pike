@@ -167,6 +167,7 @@ constant cheerbadge = special_trigger("!cheerbadge", "A viewer attains a new che
 constant charity = special_trigger("!charity", "Someone donates to the charity you're supporting", "The donor", "amount, msgid", "Stream support");
 constant watchstreak = special_trigger("!watchstreak", "Someone achieved a new watch streak!", "The viewer", "months, reward", "Stream support");
 constant timeout = special_trigger("!timeout", "A user got timed out or banned", "The victim", "", "Status");
+constant channelreset = special_trigger("!channelreset", "The channel has fully gone offline. Corresponds to 'once per stream' settings.", "The broadcaster", ([]), "Status");
 
 class channel(mapping identity) {
 	string name; //name begins with a hash and is all lowercase. Preference: Use this->login (no hash) instead.
@@ -293,6 +294,7 @@ class channel(mapping identity) {
 
 	void stream_reset() {
 		raiders = ([]);
+		trigger_special("!channelreset", (["displayname": display_name, "name": login, "uid": (string)userid]), ([]));
 		array|zero msgs = m_delete(stream_reset_messages, userid);
 		if (msgs) foreach (msgs, array msg) _send_with_catch(@msg);
 	}

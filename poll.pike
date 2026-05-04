@@ -337,7 +337,7 @@ constant channelsetup = special_trigger("!channelsetup", "The channel has change
 	"{tag_names}": "Stream tags eg '[English], [FamilyFriendly]' - should be searched case insensitively",
 	"{ccls}": "Content classification labels eg '[ProfanityVulgarity], [ViolentGraphic]'",
 ]), "Status");
-constant channeloffline = special_trigger("!channeloffline", "The channel has recently gone offline (stopped streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english", "Status");
+constant channeloffline = special_trigger("!channeloffline", "The channel has stopped streaming (possibly briefly)", "The broadcaster", "uptime, uptime_hms, uptime_english", "Status");
 
 
 //When you go offline, reset things. However, in case the stream glitched (either
