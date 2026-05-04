@@ -143,6 +143,9 @@ __async__ void populate_rewards_cache(string|int broadcaster_id, mapping|void cu
 	string url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id;
 	mapping params = (["Authorization": "Bearer " + token_for_user_id(broadcaster_id)[0]]);
 	array rewards = await(twitch_api_request(url, params))->data;
+	//Twitch seems to give them to us in UUID order, which is consistent, but not very
+	//human-friendly. Sort by name, although new rewards will be added to the end.
+	sort(rewards->title, rewards);
 	//Prune the dynamic rewards list
 	object channel = G->G->irc->id[(int)broadcaster_id];
 	if (!current) current = await(G->G->DB->load_config(channel->userid, "dynamic_rewards"));
