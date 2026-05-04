@@ -34,6 +34,13 @@ To have dynamic pricing carry from one stream to another, set the base cost to z
 code {background: #ffe;}
 [name=availability-choices]:not(:has( [value=\"\"]:checked)) ~ [name=availability] {display: none;}
 </style>
+
+> ### Edit description
+>
+> <textarea id=editme rows=8 cols=50></textarea>
+>
+> [Apply](:#editapply) [Cancel](:.dialog_close)
+{: tag=formdialog #editdlg}
 ";
 
 /* Each one needs:

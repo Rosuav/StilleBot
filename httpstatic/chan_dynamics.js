@@ -1,5 +1,5 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BR, FORM, INPUT, OPTION, SELECT, TD, TR} = choc; //autoimport
+const {BR, BUTTON, FORM, INPUT, OPTION, SELECT, TD, TR} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 let allrewards = { };
@@ -16,8 +16,11 @@ export const autorender = {
 	dynreward(r) { //extcall
 		const av = r.availability || "1";
 		return TR({"data-id": r.id}, [
-			TD(FORM({id: r.id, className: "editreward"}, INPUT({name: "title", value: r.title, "size": 30}))),
-			TD(INPUT({name: "prompt", form: r.id, value: r.prompt, size: 30})),
+			TD(FORM({id: r.id, className: "editreward"}, INPUT({name: "title", value: r.title, "size": 15}))),
+			TD([
+				INPUT({name: "prompt", form: r.id, value: r.prompt, size: 15}),
+				" ", BUTTON({form: r.id, class: "editbtn", type: "button"}, "\u{1F589}")
+			]),
 			TD(INPUT({name: "basecost", form: r.id, type: "number", value: r.basecost})),
 			TD([
 				SELECT({name: "availability-choices", form: r.id, value: availability_choices[av] ? av : ""}, [
@@ -92,4 +95,18 @@ on("click", "#save_all", e => {
 		saved[inp.form.id] = 1;
 		save(inp.form.elements);
 	});
+});
+
+let editing = [null, null];
+on("click", ".editbtn", e => {
+	const frm = e.match.form;
+	editing = [frm.id, "prompt"]; //In case we need to edit other things too
+	DOM("#editme").value = frm.elements.prompt.value;
+	DOM("#editdlg").showModal();
+});
+on("click", "#editapply", e => {
+	const elem = document.forms[editing[0]].elements[editing[1]];
+	elem.value = DOM("#editme").value;
+	elem.classList.add("dirty")
+	DOM("#editdlg").close();
 });
