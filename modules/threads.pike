@@ -68,7 +68,23 @@ class menu_clicked
 	int closewindow() {G->G->ticker_active = 0; ::closewindow();}
 }
 
+//If there's a crisis, log everything. Updating will start the monitor; open and close the Threads window to stop it.
+void thread_monitor(object t) {
+	object tm = System.Timer();
+	while (G->G->ticker_active) {
+		/*
+		string msg = "MAIN THREAD RIGHT NOW:\n";
+		foreach (t->backtrace(), object f)
+			msg += sprintf("\t%s:%d\n", f->filename, f->line);
+		werror(msg); //Write it all in one big block
+		*/
+		Stdio.append_file("backtrace.log", "\nMAIN THREAD RIGHT NOW:\n" + describe_backtrace(t->backtrace()));
+		sleep(1);
+	}
+}
+
 protected void create(string name) {
 	::create(name);
 	G->G->ticker_active = 0;
+	//Thread.Thread(thread_monitor, Thread.this_thread());
 }
