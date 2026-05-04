@@ -167,28 +167,12 @@ constant cheerbadge = special_trigger("!cheerbadge", "A viewer attains a new che
 constant charity = special_trigger("!charity", "Someone donates to the charity you're supporting", "The donor", "amount, msgid", "Stream support");
 constant watchstreak = special_trigger("!watchstreak", "Someone achieved a new watch streak!", "The viewer", "months, reward", "Stream support");
 constant timeout = special_trigger("!timeout", "A user got timed out or banned", "The victim", "", "Status");
-constant combostarted = special_trigger("!combostarted", "A hype combo started", "Broadcaster", ([
-	"{time_remaining}": "Time remaining (ms)",
-	"{gift_id}": "Type of icon shown??",
-]), "Stream support");
-constant combolvlup = special_trigger("!combolvlup", "A hype combo levelled up", "Broadcaster", ([
-	"{level}": "Level just attained in the combo",
-	"{threshold}": "Bits required for next level??",
-]), "Stream support");
-constant combofinished = special_trigger("!combofinished", "A hype combo finished", "Broadcaster", ([
-	"{contributor_N}": "Name of Nth top contributor",
-	"{contributor_N_taps}": "Number of times the Nth top contrib tapped",
-	"{gift_id}": "Type of icon that was shown??",
-	"{largest_contributor_count}": "Number of top contributors",
-	"{streak_size_bits}": "Total number of bits given",
-	"{streak_size_taps}": "Total number of taps given",
-]), "Stream support");
 
 class channel(mapping identity) {
 	string name; //name begins with a hash and is all lowercase. Preference: Use this->login (no hash) instead.
 	string color;
 	int userid; string login, display_name;
-	mapping raiders = ([]); //People who raided the channel this (or most recent) stream. Cleared on stream online.
+	mapping raiders = ([]); //People who raided the channel this (or most recent) stream. Cleared on stream reset.
 	mapping user_badges = ([]); //Latest-seen user badge status (see gather_person_info_*). Not guaranteed fresh.
 	//Command names are simple atoms (eg "foo" will handle the "!foo" command), or well-known
 	//bang-prefixed special triggers (eg "!resub" for a channel's resubscription trigger).
