@@ -8,6 +8,7 @@ constant messagetypes = ({"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMS
 mapping irc_connections = ([]); //Not persisted across code reloads, but will be repopulated (after checks) from the connection_cache.
 @retain: mapping channelcolor = ([]);
 @retain: mapping cooldown_timeout = ([]);
+@retain: mapping stream_reset_counter = ([]); //Incremented when the stream resets.
 int(1bit) is_active; //Cache of is_active_bot() since we need to check it freuqently.
 Concurrent.Promise|zero reconnection_in_progress; //If non-null, we're reconnecting
 @retain: mapping(int:array) stream_reset_messages = ([]); //Map channel ID to array of echoable_messages and their contexts
@@ -293,6 +294,7 @@ class channel(mapping identity) {
 	}
 
 	void stream_reset() {
+		stream_reset_counter[userid]++;
 		raiders = ([]);
 		trigger_special("!channelreset", (["displayname": display_name, "name": login, "uid": (string)userid]), ([]));
 		array|zero msgs = m_delete(stream_reset_messages, userid);
@@ -601,19 +603,22 @@ class channel(mapping identity) {
 				string key = message->cdname + name;
 				if (has_prefix(key, "*")) key = vars["{uid}"] + key; //Cooldown of "*foo" will be a per-user cooldown.
 				if (message->cdlength < 0) {
-					//It's a till-end-of-stream cooldown. What we store is the stream-online time,
-					//negated, and if the current stream-online time is different, the cooldown is
-					//considered to be over. Note that this WILL reset cooldowns even if the stream
-					//blips, which may be inconsistent with other definitions of "stream offline".
+					//It's a till-end-of-stream cooldown. What we store is the stream-reset counter,
+					//negated, and if the current one is different, the cooldown is considered to be
+					//over. Note that this is a change from previous behaviour (pre 20260504).
 					vars["{cooldown}"] = vars["{cooldown_hms}"] = "-1"; //Not relevant in this mode.
-					int streamonline = G->G->stream_online_since[userid]->?unix_time();
-					if (!streamonline)
-						//Stream is not online, so all usage is blocked.
+					int marker = -1 - stream_reset_counter[userid]; //Ensure that the marker is strictly negative
+					if (!G->G->stream_online_since[userid])
+						//Stream is not online, so all usage is blocked. Ideally, once the stream
+						//goes online, usage will be permitted until the reset signal; currently,
+						//when the stream goes offline, there's a half hour blocking period when
+						//going online again won't reset cooldowns, but the command is still not
+						//available, even to those not on cooldown.
 						msg = message->otherwise;
-					else if (-streamonline != cooldown_timeout[key])
+					else if (marker != cooldown_timeout[key])
 						//It's a new stream! (Or there's no timeout stored, which means it
 						//hasn't been used this stream - zero won't equal any negative number.)
-						cooldown_timeout[key] = -streamonline;
+						cooldown_timeout[key] = marker;
 					else
 						//Same stream, cooldown is in effect.
 						msg = message->otherwise;
