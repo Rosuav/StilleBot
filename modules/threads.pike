@@ -62,7 +62,7 @@ class menu_clicked
 				->append_column(GTK2.TreeViewColumn("TID", GTK2.CellRendererText(), "text", 0))
 				->append_column(GTK2.TreeViewColumn("Time", GTK2.CellRendererText(), "text", 1))
 				->append_column(GTK2.TreeViewColumn("Location", GTK2.CellRendererText(), "text", 2))
-			)->pack_start(GTK2.HbuttonBox()->add(GTK2.Button("Update"))->add(stock_close()), 0, 0, 0)
+			)->pack_start(GTK2.HbuttonBox()->add(stock_close()), 0, 0, 0)
 		);
 	}
 	int closewindow() {G->G->ticker_active = 0; ::closewindow();}
