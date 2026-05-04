@@ -4,7 +4,7 @@ import {simpleconfirm} from "$$static||utils.js$$";
 
 let allrewards = { };
 
-//Choices offered in the drop-down. You can enter a custom value if you need more flexibility.
+//Choices offered in the drop-down
 const availability_choices = {
 	1: "Always",
 	0: "Never",
@@ -14,7 +14,6 @@ const availability_choices = {
 export const autorender = {
 	dynreward_parent: DOM("#rewards tbody"),
 	dynreward(r) { //extcall
-		const av = r.availability || "1";
 		return TR({"data-id": r.id}, [
 			TD(FORM({id: r.id, className: "editreward"}, INPUT({name: "title", value: r.title, "size": 15}))),
 			TD([
@@ -23,11 +22,9 @@ export const autorender = {
 			]),
 			TD(INPUT({name: "basecost", form: r.id, type: "number", value: r.basecost})),
 			TD([
-				SELECT({name: "availability-choices", form: r.id, value: availability_choices[av] ? av : ""}, [
+				SELECT({name: "availability", form: r.id, value: r.availability || "1"}, [
 					Object.entries(availability_choices).map(([value, lbl]) => OPTION({value}, lbl)),
-					OPTION({value: ""}, "Custom..."),
 				]),
-				BR(), INPUT({name: "availability", form: r.id, value: av}),
 			]),
 			TD(INPUT({name: "formula", form: r.id, value: r.formula})),
 			TD(INPUT({name: "curcost", form: r.id, type: "number", value: r.curcost})),
