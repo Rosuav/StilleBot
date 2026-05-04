@@ -944,10 +944,7 @@ mapping|Concurrent.Future message_params(object channel, mapping person, array p
 	}
 }
 
-@retain: mapping queued_offline_resets = ([]);
-void reset_goal_bar(int broadcaster_id, string id) {
-	object channel = G->G->irc->id[broadcaster_id]; if (!channel) return;
-	remove_call_out(m_delete(queued_offline_resets, id + "#" + channel->userid));
+void reset_goal_bar(object channel, string id) {
 	mapping info = G->G->DB->load_cached_config(channel->userid, "monitors")[id];
 	switch (info->type) {
 		case "pile": {
@@ -978,8 +975,7 @@ string timepart_monthly(object ts) {
 	return sprintf("%d-%02d", ts->year_no(), ts->month_no());
 }
 
-void check_for_resets(int broadcaster_id, int streamreset) {
-	object channel = G->G->irc->id[broadcaster_id]; if (!channel) return;
+void check_for_resets(object channel, int streamreset) {
 	int changed = 0;
 	mapping mon = G->G->DB->load_cached_config(channel->userid, "monitors");
 	foreach (mon; string id; mapping info) {
@@ -993,25 +989,13 @@ void check_for_resets(int broadcaster_id, int streamreset) {
 				reset = changed = 1;
 			}
 		}
-		if (reset) {
-			string key = id + "#" + channel->userid;
-			remove_call_out(m_delete(queued_offline_resets, key));
-			//When we go offline, delay the reset by half an hour. When online, do it as quickly as possible.
-			queued_offline_resets[key] = call_out(reset_goal_bar, streamreset && 1800, channel->userid, id);
-		}
+		if (reset) reset_goal_bar(channel, id);
 	}
 	if (changed) G->G->DB->save_config(channel->userid, "monitors", mon);
 }
 
-@hook_channel_online: int channel_online(string chan, int uptime, int broadcaster_id) {
-	//Since we're now online, make sure we don't do any pending just-went-offline checks.
-	foreach (indices(queued_offline_resets), string key) {
-		if (has_suffix(key, "#" + broadcaster_id)) remove_call_out(m_delete(queued_offline_resets, key));
-	}
-	check_for_resets(broadcaster_id, 0);
-}
-
-@hook_channel_offline: int channel_offline(string chan, int uptime, int broadcaster_id) {check_for_resets(broadcaster_id, 1);}
+@hook_channel_online: int channel_online(string chan, int uptime, int broadcaster_id) {check_for_resets(G->G->irc->id[broadcaster_id], 0);}
+@hook_stream_reset: int stream_reset(object channel) {check_for_resets(channel, 1);}
 
 //Use when StreamLabs falls over or something fails to track for whatever reason
 //hack_support("devicat", "dkurtze", "tip", 2500);

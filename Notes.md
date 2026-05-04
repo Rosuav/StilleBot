@@ -101,14 +101,14 @@ definition should be published as "stream counts as offline when...".
 
 * The !!streamoffline special trigger happens immediately when Twitch signals
   that you have gone offline.
-* The internal stream-reset signal waits 30 minutes before resetting,
-  cancelling if you go online again within that time.
-* Goal bar autoreset imitates the stream-reset semantics and should be switched
-  to use it directly
-* Cooldowns reset if you have gone online again since the last usage (with a
-  TODO to have it more consistent with the others)
+* The !!streamreset special trigger waits 30 minutes before resetting,
+  cancelling if you go online again within that time. (This is also available
+  internally as the "stream-reset" signal.)
 * Twitch watch streaks only count two separate streams if there's 30 minutes
   between them
+* Goal bar autoreset triggers on stream-reset (and also stream-online)
+* Cooldowns reset if you have gone online again since the last usage (with a
+  TODO to have it more consistent with the others)
 * ?? Twitch channel point redemptions on one-per-stream?? Find out.
 * Delaying an echoable_message until end of stream uses the stream-reset signal.
 * Dynamic channel point costs reset every time the stream goes on/offline,
