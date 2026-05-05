@@ -80,8 +80,9 @@ mapping(string:mixed) gather_person_info_eventsub(mapping data) {
 	ret->msgid = data->message_id;
 	ret->badges = ([]);
 	foreach (data->badges || ({ }), mapping badge) {
-		ret->badges[badge->set_id] = badge->id;
-		if (string flag = badge_aliases[badge->set_id]) ret->badges[flag] = badge->id;
+		string id = badge->id; if (id == "0") id = "1"; //We use 0 as false, so for those, just use 1 instead.
+		ret->badges[badge->set_id] = id;
+		if (string flag = badge_aliases[badge->set_id]) ret->badges[flag] = id;
 	}
 	if (data->message->fragments) ret->fragments = data->message->fragments;
 	//ret->raw = data; //For testing
@@ -406,17 +407,22 @@ class channel(mapping identity) {
 		//Replace shorthands with their long forms. They are exactly equivalent, but the
 		//long form can be enhanced with filters and/or defaults.
 		text = replace(text, (["%s": "{param}", "$participant$": "{participant}"]));
-		if (!vars["{participant}"] && has_value(text, "{participant}") && person->user)
-		{
+		if (!vars["{participant}"] && has_value(text, "{participant") && person->user) {
 			//Note that {participant} with a delay will invite people to be active
 			//before the timer runs out, but only if there's no {participant} prior
-			//to the delay.
+			//to the delay. And for the same reason, this doesn't allow multiple
+			//filtered participant lists; having {participant|sub0} and {participant}
+			//will give the same person for both (and they won't be a sub).
+			sscanf(text, "%*s{participant%*1[|]%[^|}]%*[|]%[^|}]}", string filter, string dflt);
 			array users = ({ });
 			int limit = time() - 300; //Find people active within the last five minutes
 			foreach (G_G_("participants", name[1..]); string name; mapping info)
-				if (info->lastnotice >= limit && name != person->user) users += ({name});
-			//If there are no other chat participants, pick the person speaking.
-			string chosen = sizeof(users) ? random(users) : person->user;
+				if (info->lastnotice >= limit && name != person->user) {
+					if (filter == "" || has_value(info->badges || ({ }), filter)) users += ({name});
+				}
+			//If there are no other chat participants, pick the person speaking, even if they don't fit the filter.
+			if (dflt == "") dflt = person->user;
+			string chosen = sizeof(users) ? random(users) : dflt;
 			vars["{participant}"] = chosen;
 		}
 		//TODO: Don't use the shortforms internally anywhere
@@ -928,6 +934,12 @@ class channel(mapping identity) {
 			mapping p = G_G_("participants", name[1..], person->user);
 			p->lastnotice = time();
 			p->userid = person->uid;
+			//Store a series of "mod0", "sub1", etc that can be checked with {participant|sub0}
+			p->badges = ({
+				"mod" + person->badges->?_mod,
+				"sub" + person->badges->?_sub,
+				"vip" + person->badges->?_vip,
+			});
 		}
 		person->vars = ([
 			"%s": msg, "{@mod}": person->badges->?_mod ? "1" : "0", "{@sub}": person->badges->?_sub ? "1" : "0",
