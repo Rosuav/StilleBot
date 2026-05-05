@@ -491,13 +491,13 @@ int concurrent_websockets() {
 
 array(string) token_for_user_login(string login) {
 	mapping cred = login && G->G->user_credentials[lower_case(login)];
-	if (cred) return ({cred->token, cred->scopes * " "});
+	if (cred->?token) return ({cred->token, cred->scopes * " "});
 	return ({"", ""});
 }
 
 array(string) token_for_user_id(int|string userid) {
 	mapping cred = userid && G->G->user_credentials[(int)userid];
-	if (cred) return ({cred->token, cred->scopes * " "});
+	if (cred->?token) return ({cred->token, cred->scopes * " "});
 	return ({"", ""});
 }
 
