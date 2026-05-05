@@ -215,9 +215,9 @@ function make_eventhook_handler(string hookname) {
 	return lambda(object channel, mapping info) {
 		mapping params = channel && this[hookname](channel, info);
 		mapping user = ([ //For most event hooks, $$ is the broadcaster.
-			"user": channel->login,
-			"displayname": channel->config->display_name,
-			"uid": channel->userid,
+			"user": channel && channel->login,
+			"displayname": channel && channel->config->display_name,
+			"uid": channel && channel->userid,
 		]);
 		//The hook function may report a different $$ user. It is provided as a mapping
 		//of the same three as above, but if only user or uid is provided, the rest will
