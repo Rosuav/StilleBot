@@ -44,6 +44,7 @@ __async__ mixed spawn_task(mixed gen) {
 }
 
 //task_sleep(seconds)->then() { ... }; //Delay efficiently (like sleep(delay) in an async func)
+//DEPRECATED. Use sleep(delay) as it will have the same effect.
 Concurrent.Future task_sleep(int|float delay) {
 	return Concurrent.resolve(0)->delay(delay);
 }
