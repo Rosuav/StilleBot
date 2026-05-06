@@ -734,6 +734,11 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 	return ([]);
 }
 
+//NOTE: "First" resets instantly when the stream goes offline. This may or may not be quite the same
+//as when the redemption becomes available again, which seems to take ever so slightly longer.
+//TODO: Try to recognize if the rewards have become available again, and don't shame people for
+//taking again (eg if Fred took First, Joe took Second, then something bounced the stream, then Joe
+//took First, Fred took Second, currently MM will shame Fred for double-taking).
 @hook_channel_offline: __async__ void disconnected(string channel, int uptime, int userid) {
 	m_delete(already_claimed, userid);
 	mapping games = await(G->G->DB->load_config(userid, "minigames"));
@@ -749,8 +754,12 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 				]), "return_errors": 1])));
 		}
 	}
+}
+
+@hook_stream_reset: __async__ void reset(object channel) {
+	mapping games = await(G->G->DB->load_config(channel->userid, "minigames"));
 	if (mapping game = games->boss) {
-		if (game->autoreset) reset_boss(G->G->irc->id[userid], sections->boss | game);
+		if (game->autoreset) reset_boss(channel, sections->boss | game);
 	}
 }
 

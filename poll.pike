@@ -330,7 +330,12 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 	});
 }
 
-constant channelonline = special_trigger("!channelonline", "The channel has recently gone online (started streaming)", "The broadcaster", "uptime, uptime_hms, uptime_english", "Status");
+constant channelonline = special_trigger("!channelonline", "The channel has recently gone online (started streaming)", "The broadcaster", ([
+	"{uptime}": "Stream broadcast duration - use {uptime|time_hms} or {uptime|time_english} for readable form",
+	"{uptime_hms}": "(deprecated) Equivalent to {uptime|time_hms}",
+	"{uptime_english}": "(deprecated) Equivalent to {uptime|time_english}",
+	"{initial}": "1 if the stream has reset since the last stream, 0 if it has not (ie resuming after a hiccup)",
+]), "Status");
 constant channelsetup = special_trigger("!channelsetup", "The channel has changed its category/title/CCLs", "The broadcaster", ([
 	"{category}": "English name of the game or category being streamed in",
 	"{title}": "Title of the stream",
@@ -369,6 +374,8 @@ void streaminfo(array data) {
 				int uptime = time() - started->unix_time();
 				Stdio.append_file("onlinedelay.log", sprintf("Poll %d %s\n", uptime, channel->login));
 				event_notify("channel_online", channel->login, uptime, channel->userid);
+				mixed co = m_delete(stream_reset_callout, channel->userid);
+				remove_call_out(co);
 				channel->trigger_special("!channelonline", ([
 					//Synthesize a basic person mapping
 					"user": channel->login,
@@ -378,8 +385,8 @@ void streaminfo(array data) {
 					"{uptime}": (string)uptime,
 					"{uptime_hms}": describe_time_short(uptime),
 					"{uptime_english}": describe_time(uptime),
+					"{initial}": co ? "0" : "1", //If there was a reset pending, it's not an initial stream start
 				]));
-				remove_call_out(m_delete(stream_reset_callout, channel->userid));
 			}
 			stream_online_since[channel->userid] = started;
 		} else { //If the channel's offline, we have no status info (since it returns data only for those online).

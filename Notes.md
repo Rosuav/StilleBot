@@ -109,7 +109,11 @@ definition should be published as "stream counts as offline when...".
 * Goal bar autoreset triggers on stream-reset (and also stream-online)
 * Cooldowns reset on stream-reset, but are blocked if the stream is offline,
   even temporarily.
-* ?? Twitch channel point redemptions on one-per-stream?? Find out.
+* Twitch channel point redemptions on one-per-stream are a bit quirky. Normally,
+  any bounce of the stream resets them; however, in some cases, it might be that
+  the stream-offline signal isn't sent but the redemptions are available again.
+  TODO: See whether the EventSub offline signal is in fact sent - it might just
+  be a quirk of Stillebot's polling.
 * Delaying an echoable_message until end of stream uses the stream-reset signal.
 * Dynamic channel point costs reset every time the stream goes on/offline,
   without delay
