@@ -19,7 +19,7 @@ export const autorender = {
 					OPTION({value: "{online}"}, "While you're live"),
 				]),
 			]),
-			TD(INPUT({name: "formula", form: r.id, value: r.formula})),
+			TD(INPUT({name: "increment", form: r.id, type: "number", value: r.increment || 0})),
 			TD(INPUT({name: "curcost", form: r.id, type: "number", value: r.curcost})),
 			TD([
 				INPUT({name: "rewardid", form: r.id, type: "hidden", value: r.id}),
@@ -59,7 +59,7 @@ DOM("#add").onclick = e => {
 async function save(el) {
 	ws_sync.send({cmd: "update_dynamic",
 		dynamic_id: el.rewardid.value, title: el.title.value, prompt: el.prompt.value,
-		availability: el.availability.value, formula: el.formula.value, curcost: el.curcost.value});
+		availability: el.availability.value, increment: el.increment.value, curcost: el.curcost.value});
 }
 on("submit", "form.editreward", e => {e.preventDefault(); save(e.match.elements);}, true);
 

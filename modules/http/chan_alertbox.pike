@@ -1559,7 +1559,7 @@ void enable_feature(object channel, string kwd, int state) {
 				G->G->cmdmgr->update_command(channel, "", kwd - "!", cmd);
 				G->G->DB->mutate_config(channel->userid, "dynamic_rewards") {
 					__ARGS__[0][rewardid] = ([
-						"basecost": 0, "availability": "{online}", "formula": "PREV",
+						"basecost": 0, "availability": "{online}",
 						"prompt": prompt,
 					]);
 				};

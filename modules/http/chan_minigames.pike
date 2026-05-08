@@ -460,11 +460,11 @@ __async__ void update_crown(object channel, mapping game) {
 			"basecost": 0, "availability": "{online}",
 			"prompt": "Seize the crown for yourself! The crown is currently held by $crownholder:name$, who was the last person to take it.",
 		]);
-		rwd->formula = "PREV + " + game->increase;
+		rwd->increment = game->increase;
 		//Magically capture the updated cost in a variable. (See pointsmgr.pike for where this happens.)
-		//This might be a bit backwards; maybe it'd be better to not change the cost with the formula,
-		//but instead bind the cost to $crownholder:cost$, and have the !seizecrown command change that
-		//variable. For now, this works. Note that this entire feature is undocumented and not editable
+		//This might feel a bit backwards; maybe it'd be better to not change the cost with the increment,
+		//but instead have the !seizecrown command change that variable and update the price. For now,
+		//this works. Note that this entire feature is undocumented and not editable
 		//in the UI; this may need to be made available at some point.
 		rwd->price_variable = "crownholder:cost";
 	});

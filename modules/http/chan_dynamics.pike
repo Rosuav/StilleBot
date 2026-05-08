@@ -1,7 +1,7 @@
 inherit http_endpoint;
 constant markdown = #"# Channel points - dynamic rewards
 
-Title | Description | Availability | Growth Formula | Current cost | Actions
+Title | Description | Availability | Cost increment | Current cost | Actions
 ------|-------------|--------------|----------------|--------------|--------
 -     | -           | -            | -              | -            | (loading...)
 {: #rewards}
@@ -10,28 +10,13 @@ Title | Description | Availability | Growth Formula | Current cost | Actions
 
 <select id=copyfrom><option value=\"-1\">-- Create new --</option></select> [Add dynamic reward](:#add)
 
-Choose how the price grows by setting a formula, for example:
-* `PREV` (keep the price same - the default)
-* `PREV * 2` (double the price every time)
-* `PREV + 500` (add 500 points per purchase)
-* `PREV * 2 + 1500` (double it, then add 1500 points)
-
 Use [variables](variables) in the title or description to automatically update them
 whenever the variable changes.
 
-Rewards will reset to base price whenever the stream starts, and will be automatically
-put on pause when the stream is offline. Note that, due to various delays, it's best to
-have a cooldown on the reward itself - at least 30 seconds - to ensure that two people
-can't claim the reward at the same price.
-
-To have dynamic pricing carry from one stream to another, set the base cost to zero.
+Note that, due to various delays, it's best to have a cooldown on the reward itself -
+at least 30 seconds - to ensure that two people can't claim the reward at the same price.
 
 [Configure reward details here](https://dashboard.twitch.tv/u/$$channel$$/viewer-rewards/channel-points/rewards)
-
-<style>
-code {background: #ffe;}
-[name=availability-choices]:not(:has( [value=\"\"]:checked)) ~ [name=availability] {display: none;}
-</style>
 
 > ### Edit description
 >
@@ -40,17 +25,6 @@ code {background: #ffe;}
 > [Apply](:#editapply) [Cancel](:.dialog_close)
 {: tag=formdialog #editdlg}
 ";
-
-/* Each one needs:
-- ID, provided by Twitch. Clicking "New" assigns one.
-- Base cost. Whenever the stream goes live, it'll be updated to this.
-- Formula for calculating the next. Use PREV for the previous cost. Give examples.
-- Title, which also serves as the description within the web page
-- Other attributes maybe, or let people handle them elsewhere
-
-TODO: Expand on chan_pointsrewards so it can handle most of the work, including the
-API for managing the rewards (the HTML page will be different though).
-*/
 
 mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Request req)
 {

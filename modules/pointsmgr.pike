@@ -20,8 +20,8 @@ __async__ void points_redeemed(object channel, mapping data, int|void removal) {
 	if (mapping dyn = !removal && all_dyn[data->reward->id]) {
 		//Up the price every time it's redeemed
 		//For this to be viable, the reward needs a global cooldown of at least a few seconds.
-		int newcost = (int)G->G->evaluate_expr(channel->expand_variables(replace(dyn->formula, "PREV", (string)data->reward->cost)), ({channel, ([])}));
-		if ((string)newcost != (string)data->reward->cost)
+		int newcost = (int)data->reward->cost + dyn->increment;
+		if (dyn->increment)
 			twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 					+ data->broadcaster_user_id + "&id=" + data->reward->id,
 				(["Authorization": channel->userid]),

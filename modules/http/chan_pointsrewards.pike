@@ -80,7 +80,8 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id, str
 	array rewards = G->G->pointsrewards[channel->userid] || ({ }), dynrewards = ({ });
 	mapping current = await(G->G->DB->load_config(channel->userid, "dynamic_rewards"));
 	//TODO: Stop remapping dynrewards to an array here, only to remap them back to ID-based
-	//lookups on the front end
+	//lookups on the front end. (Currently chan_dynamics.js needs it as an array; when that
+	//is removed, unremap and unremap.)
 	foreach (rewards, mapping rew) {
 		mapping r = current[rew->id];
 		//Note that attributes set in dynamic_rewards override those seen in current status.
@@ -119,7 +120,7 @@ __async__ void wscmd_new_dynamic(object channel, mapping(string:mixed) conn, map
 		foreach (G->G->pointsrewards[broadcaster_id] || ({ }), mapping r) if (r->id == body->id) rew = r;
 		if (rew && rew->can_manage && !rew->is_dynamic) {
 			dyn[rew->id] = ([
-				"availability": "1", "formula": "PREV",
+				"availability": "1",
 			]);
 			await(G->G->DB->save_config(channel->userid, "dynamic_rewards", dyn));
 			//As below, might be worth pushing out the update immediately (rather than waiting for Twitch to notify us)
@@ -131,7 +132,7 @@ __async__ void wscmd_new_dynamic(object channel, mapping(string:mixed) conn, map
 	//Titles must be unique (among all rewards). To simplify rapid creation of
 	//multiple rewards, add a numeric disambiguator on conflict.
 	string deftitle = copyfrom->title || "Example Dynamic Reward";
-	mapping rwd = (["availability": "1", "formula": "PREV"]);
+	mapping rwd = (["availability": "1"]);
 	array have = filter((G->G->pointsrewards[broadcaster_id]||({}))->title, has_prefix, deftitle);
 	copyfrom |= (["title": deftitle + " #" + (sizeof(have) + 1), "cost": copyfrom->cost || 1000]);
 	mapping info = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
@@ -189,9 +190,9 @@ __async__ void wscmd_update_dynamic(object channel, mapping(string:mixed) conn, 
 		if (value != body[kwd]) rwd[kwd] = body[kwd];
 		else {updates[kwd] = body[kwd]; m_delete(rwd, kwd);}
 	}
-	if (body->formula) rwd->formula = body->formula;
+	if (!undefinedp(body->increment)) rwd->increment = (int)body->increment;
 	if (body->availability) rwd->availability = body->availability;
-	if (rwd->availability == "" && rwd->formula == "") m_delete(dyn, id); //Hack: Delete by blanking the values. Will be replaced later.
+	//FIXME: THERE IS NO WAY TO DELETE A DYNAMIC NOW, since you can't set formula and availability to blank!
 	if (body->curcost) updates["cost"] = (int)body->curcost;
 	if (sizeof(updates)) {
 		//Currently fire-and-forget - there's no feedback if you get something wrong.
