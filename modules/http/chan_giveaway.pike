@@ -94,8 +94,6 @@ details {border: 1px solid black; padding: 0.5em; margin: 0.5em;}
 ";
 
 inherit builtin_command;
-constant visibility = "hidden";
-constant access = "none";
 @retain: mapping giveaway_tickets = ([]);
 @retain: mapping giveaway_rigged = ([]); //Map a channel ID to its rigged status (if non-null, the giveaway was rigged by that mod)
 @retain: multiset giveaway_purchases = (<>);

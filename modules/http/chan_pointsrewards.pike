@@ -5,8 +5,6 @@ inherit http_websocket;
 inherit builtin_command;
 inherit hook;
 inherit annotated;
-constant hidden_command = 1;
-constant access = "none";
 constant markdown = #"# Points rewards - $$channel$$
 
 Icon | Title | Prompt | Manage? | Commands
