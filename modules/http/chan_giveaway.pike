@@ -231,6 +231,7 @@ void notify_websockets(int channelid, mapping givcfg) {
 @hook_point_redemption:
 __async__ void redemption(object channel, string rewardid, int(0..1) refund, mapping data) {
 	mapping givcfg = await(G->G->DB->load_config(channel->userid, "giveaways"));
+	if (!givcfg->rewards) return; //No giveaway rewards, no need to check anything
 	await(update_ticket_count(givcfg, data, refund));
 	notify_websockets(channel->userid, givcfg);
 }
