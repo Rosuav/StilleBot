@@ -117,7 +117,7 @@ __async__ void wscmd_new_dynamic(object channel, mapping(string:mixed) conn, map
 		foreach (G->G->pointsrewards[broadcaster_id] || ({ }), mapping r) if (r->id == body->id) rew = r;
 		if (rew && rew->can_manage && !rew->is_dynamic) {
 			dyn[rew->id] = ([
-				"basecost": rew->cost || 1000, "availability": "1", "formula": "PREV",
+				"availability": "1", "formula": "PREV",
 			]);
 			await(G->G->DB->save_config(channel->userid, "dynamic_rewards", dyn));
 			//As below, might be worth pushing out the update immediately (rather than waiting for Twitch to notify us)
@@ -129,9 +129,9 @@ __async__ void wscmd_new_dynamic(object channel, mapping(string:mixed) conn, map
 	//Titles must be unique (among all rewards). To simplify rapid creation of
 	//multiple rewards, add a numeric disambiguator on conflict.
 	string deftitle = copyfrom->title || "Example Dynamic Reward";
-	mapping rwd = (["basecost": copyfrom->cost || 1000, "availability": "1", "formula": "PREV"]);
+	mapping rwd = (["availability": "1", "formula": "PREV"]);
 	array have = filter((G->G->pointsrewards[broadcaster_id]||({}))->title, has_prefix, deftitle);
-	copyfrom |= (["title": deftitle + " #" + (sizeof(have) + 1), "cost": rwd->basecost]);
+	copyfrom |= (["title": deftitle + " #" + (sizeof(have) + 1), "cost": copyfrom->cost || 1000]);
 	mapping info = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
 		(["Authorization": channel->userid]),
 		(["method": "POST", "json": copyfrom]),
@@ -187,7 +187,6 @@ __async__ void wscmd_update_dynamic(object channel, mapping(string:mixed) conn, 
 		if (value != body[kwd]) rwd[kwd] = body[kwd];
 		else {updates[kwd] = body[kwd]; m_delete(rwd, kwd);}
 	}
-	if (!undefinedp(body->basecost)) rwd->basecost = (int)body->basecost;
 	if (body->formula) rwd->formula = body->formula;
 	if (body->availability) rwd->availability = body->availability;
 	if (rwd->availability == "" && rwd->formula == "") m_delete(dyn, id); //Hack: Delete by blanking the values. Will be replaced later.
@@ -239,7 +238,6 @@ __async__ void channel_on_off(string channel, int online, int broadcaster_id) {
 		int active = 0;
 		mapping params = ([]);
 		//Whenever we go online/offline, reset to base cost (if there is one).
-		if (info->basecost) params->cost = info->basecost;
 		if (info->availability == "{online}") {
 			//Weirdly negative. We want to know if the enabled state differs from
 			//the online state, but online is 1 or 0 where is_enabled is True/False.

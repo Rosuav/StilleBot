@@ -13,7 +13,6 @@ export const autorender = {
 				INPUT({name: "prompt", form: r.id, value: r.prompt, size: 15}),
 				" ", BUTTON({form: r.id, class: "editbtn", type: "button"}, "\u{1F589}")
 			]),
-			TD(INPUT({name: "basecost", form: r.id, type: "number", value: r.basecost})),
 			TD([
 				SELECT({name: "availability", form: r.id, value: r.availability === "{online}" ? "{online}" : "1"}, [
 					OPTION({value: "1"}, "Always"),
@@ -59,7 +58,7 @@ DOM("#add").onclick = e => {
 
 async function save(el) {
 	ws_sync.send({cmd: "update_dynamic",
-		dynamic_id: el.rewardid.value, title: el.title.value, prompt: el.prompt.value, basecost: el.basecost.value,
+		dynamic_id: el.rewardid.value, title: el.title.value, prompt: el.prompt.value,
 		availability: el.availability.value, formula: el.formula.value, curcost: el.curcost.value});
 }
 on("submit", "form.editreward", e => {e.preventDefault(); save(e.match.elements);}, true);
