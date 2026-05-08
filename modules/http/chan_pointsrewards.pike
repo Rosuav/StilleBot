@@ -231,16 +231,6 @@ __async__ void channel_on_off(string channel, int online, int broadcaster_id) {
 	object ts = G->G->stream_online_since[broadcaster_id] || Calendar.now();
 	if (chan->config->timezone && chan->config->timezone != "") ts = ts->set_timezone(chan->config->timezone) || ts;
 	string date = sprintf("%d %s %d", ts->month_day(), ts->month_name(), ts->year_no());
-	mapping args = ([
-		//Is "1" or "0" based on whether you are probably online. It's possible for this to be wrong
-		//if you just went live or shut down.
-		"{online}": (string)online,
-		//Date/time info is in your timezone or UTC if not set, and is the time the stream went online
-		//or (approximately) offline.
-		"{year}": (string)ts->year_no(), "{month}": (string)ts->month_no(), "{day}": (string)ts->month_day(),
-		"{hour}": (string)ts->hour_no(), "{min}": (string)ts->minute_no(), "{sec}": (string)ts->second_no(),
-		"{dow}": (string)ts->week_day(), //1 = Monday, 7 = Sunday
-	]);
 	string token = token_for_user_login(channel)[0];
 	//TODO: Store the cache keyed by id?
 	mapping rewards = ([]);
@@ -250,17 +240,16 @@ __async__ void channel_on_off(string channel, int online, int broadcaster_id) {
 		mapping params = ([]);
 		//Whenever we go online/offline, reset to base cost (if there is one).
 		if (info->basecost) params->cost = info->basecost;
-		if (mixed ex = info->availability && catch {
-			//write("Evaluating: %O\n", info->availability);
-			active = (int)G->G->evaluate_expr(chan->expand_variables(info->availability, args), ({channel, ([])}));
-			//write("Result: %O\n", active);
-			//Triple negative. We want to know if the enabled state has changed, but
-			//some things will use 1 and 0, others will use Val.true and Val.false.
-			//So to be safe, we booleanly negate both sides, and THEN see if they
-			//differ; if they do, we update using Val.* to ensure the right JSON.
-			if (!rewards[reward_id]->?is_enabled != !active)
-				params->is_enabled = active ? Val.true : Val.false;
-		}) werror("ERROR ACTIVATING REWARD:\n%s\n", describe_backtrace(ex)); //TODO: Report to the streamer
+		if (info->availability == "{online}") {
+			//Weirdly negative. We want to know if the enabled state differs from
+			//the online state, but online is 1 or 0 where is_enabled is True/False.
+			//So we booleanly negate is_enabled, then see if the result is the same
+			//as onlineness; if so, we update using Val.* to ensure the right JSON.
+			//TODO maybe: When availability is dynamic, disable the reward as part
+			//of stream reset, and enable it as part of an initial online.
+			if (!rewards[reward_id]->?is_enabled == online)
+				params->is_enabled = online ? Val.true : Val.false;
+		}
 		if (sizeof(params)) twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 				+ broadcaster_id + "&id=" + reward_id,
 			(["Authorization": "Bearer " + token]),

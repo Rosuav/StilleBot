@@ -4,13 +4,6 @@ import {simpleconfirm} from "$$static||utils.js$$";
 
 let allrewards = { };
 
-//Choices offered in the drop-down
-const availability_choices = {
-	1: "Always",
-	0: "Never",
-	"{online}": "While you're live",
-};
-
 export const autorender = {
 	dynreward_parent: DOM("#rewards tbody"),
 	dynreward(r) { //extcall
@@ -22,8 +15,9 @@ export const autorender = {
 			]),
 			TD(INPUT({name: "basecost", form: r.id, type: "number", value: r.basecost})),
 			TD([
-				SELECT({name: "availability", form: r.id, value: r.availability || "1"}, [
-					Object.entries(availability_choices).map(([value, lbl]) => OPTION({value}, lbl)),
+				SELECT({name: "availability", form: r.id, value: r.availability === "{online}" ? "{online}" : "1"}, [
+					OPTION({value: "1"}, "Always"),
+					OPTION({value: "{online}"}, "While you're live"),
 				]),
 			]),
 			TD(INPUT({name: "formula", form: r.id, value: r.formula})),
