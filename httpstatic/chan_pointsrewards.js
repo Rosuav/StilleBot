@@ -1,5 +1,5 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, IMG, INPUT, LABEL, LI, OPTION, TBODY, TD, TEXTAREA, TR, UL} = choc; //autoimport
+const {BR, BUTTON, IMG, INPUT, LABEL, LI, OPTION, SPAN, TBODY, TD, TEXTAREA, TR, UL} = choc; //autoimport
 import {commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 import {simpleconfirm} from "$$static||utils.js$$";
 
@@ -104,7 +104,10 @@ set_content("#rewardfields", TBODY(Object.entries(reward_attributes).map(([field
 	const attrs = {id: "rew_" + field, name: field};
 	const fac = reward_editing_elements[field] || reward_editing_elements[""];
 	return TR([
-		TD(label && LABEL({for: attrs.id}, label)),
+		TD(label && [
+			SPAN({id: "dynmarker-" + field, hidden: true, title: "Dynamically updated by Mustard Mine"}, "\u{1f52e} "),
+			LABEL({for: attrs.id}, label),
+		]),
 		TD(fac(attrs)),
 	]);
 })));
@@ -126,6 +129,11 @@ on("click", ".editreward", e => {
 		const elem = form[field];
 		if (elem) elem[elem.type === "checkbox" ? "checked" : "value"] = rew[field];
 	}
+	//Mark dynamic fields with a crystal ball icon.
+	const dyn = dynamics[rew.id] || { };
+	DOM("#dynmarker-title").hidden = !dyn.title;
+	DOM("#dynmarker-prompt").hidden = !dyn.prompt;
+	DOM("#dynmarker-cost").hidden = !dyn.increment;
 	DOM("#editrewarddlg").showModal();
 });
 
