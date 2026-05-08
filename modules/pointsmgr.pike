@@ -15,20 +15,20 @@ void redemptiongone(object channel, mapping data) {points_redeemed(channel, data
 __async__ void points_redeemed(object channel, mapping data, int|void removal) {
 	if (!channel) return;
 	event_notify("point_redemption", channel, data->reward->id, removal, data);
-	string token = token_for_user_id(channel->userid)[0];
 
 	mapping all_dyn = await(G->G->DB->load_config(channel->userid, "dynamic_rewards"));
 	if (mapping dyn = !removal && all_dyn[data->reward->id]) {
 		//Up the price every time it's redeemed
-		//For this to be viable, the reward needs a global cooldown of
-		//at least a few seconds, preferably a few minutes.
+		//For this to be viable, the reward needs a global cooldown of at least a few seconds.
 		int newcost = (int)G->G->evaluate_expr(channel->expand_variables(replace(dyn->formula, "PREV", (string)data->reward->cost)), ({channel, ([])}));
 		if ((string)newcost != (string)data->reward->cost)
 			twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 					+ data->broadcaster_user_id + "&id=" + data->reward->id,
-				(["Authorization": "Bearer " + token]),
+				(["Authorization": channel->userid]),
 				(["method": "PATCH", "json": (["cost": newcost])]),
 			);
+		//For things like the Stream Boss, capture the newly-updated price in a variable.
+		if (dyn->price_variable) channel->set_variable(dyn->price_variable, (string)newcost);
 	}
 	if (channel && !removal) {
 		mapping badges = channel->user_badges[data->user_id] || ([]);
@@ -112,9 +112,8 @@ __async__ void update_dynamic_reward(object channel, string rewardid, mapping rw
 		if (value != cur[kwd]) updates[kwd] = value;
 	}
 	if (!sizeof(updates)) return 0;
-	string token = token_for_user_id(channel->userid)[0];
 	mixed resp = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + rewardid,
-		(["Authorization": "Bearer " + token]),
+		(["Authorization": channel->userid]),
 		(["method": "PATCH", "json": updates]),
 	));
 	//TODO: Error check
@@ -141,7 +140,7 @@ __async__ void update_all_rewards(object channel) {
 __async__ void populate_rewards_cache(string|int broadcaster_id, mapping|void current) {
 	pointsrewards[(int)broadcaster_id] = ({ }); //If there's any error, don't keep retrying
 	string url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id;
-	mapping params = (["Authorization": "Bearer " + token_for_user_id(broadcaster_id)[0]]);
+	mapping params = (["Authorization": (int)broadcaster_id]);
 	array rewards = await(twitch_api_request(url, params))->data;
 	//Twitch seems to give them to us in UUID order, which is consistent, but not very
 	//human-friendly. Sort by name, although new rewards will be added to the end.

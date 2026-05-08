@@ -79,6 +79,8 @@ bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp, string|void id, string|void type) {
 	array rewards = G->G->pointsrewards[channel->userid] || ({ }), dynrewards = ({ });
 	mapping current = await(G->G->DB->load_config(channel->userid, "dynamic_rewards"));
+	//TODO: Stop remapping dynrewards to an array here, only to remap them back to ID-based
+	//lookups on the front end
 	foreach (rewards, mapping rew) {
 		mapping r = current[rew->id];
 		//Note that attributes set in dynamic_rewards override those seen in current status.
