@@ -457,7 +457,7 @@ __async__ void update_crown(object channel, mapping game) {
 	await(G->G->DB->mutate_config(channel->userid, "dynamic_rewards") {
 		mapping rwd = __ARGS__[0][game->rewardid];
 		if (!rwd) rwd = __ARGS__[0][game->rewardid] = ([
-			"basecost": 0, "availability": "{online}",
+			"availability": "{online}",
 			"prompt": "Seize the crown for yourself! The crown is currently held by $crownholder:name$, who was the last person to take it.",
 		]);
 		rwd->increment = game->increase;
