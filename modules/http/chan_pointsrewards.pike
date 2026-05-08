@@ -152,6 +152,16 @@ __async__ void wscmd_update_reward(object channel, mapping(string:mixed) conn, m
 	//Able to edit more fields than update_dynamic can, but does not store placeholdered text for future changes.
 	//The edits done by this command are always immediate; note that this might result in a dynamic reward pushing
 	//out another update, overwriting your changes here.
+	//TODO: For title and prompt, if the field contains dollar signs, set it as dynamic and apply the
+	//current values of variables. Otherwise, set it as non-dynamic and apply the given value immediately.
+	//TODO: For cost, have two fields: current cost and increment. If increment is nonzero, set it as
+	//dynamic; otherwise set it as non-dynamic. Either way, apply the current cost. (In the front end,
+	//add a second field for the increment, permanently visible.)
+	//TODO: After saving, ensure that dynamics are pushed out properly.
+	//TODO: Have an option for dynamic availability, a third state for Enabled, sorta-kinda.
+	//TODO: If everything has become non-dynamic, delete the dynamic altogether (removing a big FIXME)
+	//TODO maybe: Automatic price capture into variable????? Currently an invisible undocumented feature
+	//used exclusively by stream boss.
 	multiset fields = (<
 		"title", "prompt", "cost",
 		"background_color",
@@ -177,6 +187,7 @@ __async__ void wscmd_delete_reward(object channel, mapping(string:mixed) conn, m
 }
 
 __async__ void wscmd_update_dynamic(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//TODO: Merge all of this into wscmd_update_reward()
 	string id = msg->dynamic_id;
 	mapping body = msg; //this used to be a PUT request...
 	mapping dyn = await(G->G->DB->load_config(channel->userid, "dynamic_rewards"));

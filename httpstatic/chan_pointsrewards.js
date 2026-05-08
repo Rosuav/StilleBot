@@ -115,6 +115,7 @@ set_content("#rewardfields", TBODY(Object.entries(reward_attributes).map(([field
 let editing_reward = null;
 on("click", ".editreward", e => {
 	const rew = e.match.closest("tr").reward_details;
+	const dyn = dynamics[rew.id] || { };
 	editing_reward = e.match.closest_data("id");
 	const form = DOM("#editrewarddlg form").elements;
 	//Special-case the paired fields by removing the info if it's not enabled
@@ -127,10 +128,9 @@ on("click", ".editreward", e => {
 	}
 	for (let field in rew) {
 		const elem = form[field];
-		if (elem) elem[elem.type === "checkbox" ? "checked" : "value"] = rew[field];
+		if (elem) elem[elem.type === "checkbox" ? "checked" : "value"] = /*dyn[field] ||*/ rew[field]; //TODO: Show the placeholder if one exists; also show price increment
 	}
 	//Mark dynamic fields with a crystal ball icon.
-	const dyn = dynamics[rew.id] || { };
 	DOM("#dynmarker-title").hidden = !dyn.title;
 	DOM("#dynmarker-prompt").hidden = !dyn.prompt;
 	DOM("#dynmarker-cost").hidden = !dyn.increment;
