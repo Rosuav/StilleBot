@@ -516,54 +516,10 @@ __async__ mapping|zero websocket_cmd_master(mapping(string:mixed) conn, mapping(
 	send_updates_all(channel, "control");
 }
 
-//TODO: Migrate the dynamic reward management to pointsrewards, keeping the giveaway management here
-__async__ void channel_on_off(string channel, int online, int broadcaster_id) {
-	if (!is_active_bot()) return 0;
-	object chan = G->G->irc->id[broadcaster_id]; if (!chan) return;
-	mapping dyn = await(G->G->DB->load_config(broadcaster_id, "dynamic_rewards"));
-	if (!sizeof(dyn)) return; //Nothing to do
-	object ts = G->G->stream_online_since[broadcaster_id] || Calendar.now();
-	if (chan->config->timezone && chan->config->timezone != "") ts = ts->set_timezone(chan->config->timezone) || ts;
-	string date = sprintf("%d %s %d", ts->month_day(), ts->month_name(), ts->year_no());
-	mapping args = ([
-		//Is "1" or "0" based on whether you are probably online. It's possible for this to be wrong
-		//if you just went live or shut down.
-		"{online}": (string)online,
-		//Date/time info is in your timezone or UTC if not set, and is the time the stream went online
-		//or (approximately) offline.
-		"{year}": (string)ts->year_no(), "{month}": (string)ts->month_no(), "{day}": (string)ts->month_day(),
-		"{hour}": (string)ts->hour_no(), "{min}": (string)ts->minute_no(), "{sec}": (string)ts->second_no(),
-		"{dow}": (string)ts->week_day(), //1 = Monday, 7 = Sunday
-	]);
-	string token = token_for_user_login(channel)[0];
-	//TODO: Store the cache keyed by id?
-	mapping rewards = ([]);
-	foreach (G->G->pointsrewards[broadcaster_id] || ({ }), mapping r) rewards[r->id] = r;
-	if (token != "") foreach (dyn; string reward_id; mapping info) {
-		int active = 0;
-		mapping params = ([]);
-		//Whenever we go online/offline, reset to base cost (if there is one).
-		if (info->basecost) params->cost = info->basecost;
-		if (mixed ex = info->availability && catch {
-			//write("Evaluating: %O\n", info->availability);
-			active = (int)G->G->evaluate_expr(chan->expand_variables(info->availability, args), ({channel, ([])}));
-			//write("Result: %O\n", active);
-			//Triple negative. We want to know if the enabled state has changed, but
-			//some things will use 1 and 0, others will use Val.true and Val.false.
-			//So to be safe, we booleanly negate both sides, and THEN see if they
-			//differ; if they do, we update using Val.* to ensure the right JSON.
-			if (!rewards[reward_id]->?is_enabled != !active)
-				params->is_enabled = active ? Val.true : Val.false;
-		}) werror("ERROR ACTIVATING REWARD:\n%s\n", describe_backtrace(ex)); //TODO: Report to the streamer
-		if (sizeof(params)) twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
-				+ broadcaster_id + "&id=" + reward_id,
-			(["Authorization": "Bearer " + token]),
-			(["method": "PATCH", "json": params]),
-		);
-	}
-}
-@hook_channel_online: int channel_online(string channel, int uptime, int id) {channel_on_off(channel, 1, id);}
-@hook_channel_offline: int channel_offline(string channel, int uptime, int id) {channel_on_off(channel, 0, id);}
+//TODO: Remove these stubs at some point when there's no further need for them
+@hook_channel_online: int channel_online(string channel, int uptime, int id) { }
+@hook_channel_offline: int channel_offline(string channel, int uptime, int id) { }
+//End TODO
 
 constant command_description = "Giveaway tools. Use subcommand 'status' or 'refund'.";
 constant builtin_description = "Handle giveaways via channel point redemptions"; //The subcommands are mandated by the parameter type

@@ -1,5 +1,3 @@
-//NOTE!!! A lot of the relevant code is actually in chan_giveaway.pike. It needs to move
-//(probably to pointsmgr or somesuch).
 inherit http_endpoint;
 constant markdown = #"# Channel points - dynamic rewards
 
