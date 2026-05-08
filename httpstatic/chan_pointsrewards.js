@@ -3,6 +3,20 @@ const {BR, BUTTON, IMG, INPUT, LABEL, LI, OPTION, TBODY, TD, TEXTAREA, TR, UL} =
 import {commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 import {simpleconfirm} from "$$static||utils.js$$";
 
+let dynamics = { }; //Map a UUID to its dynamic reward info, if any
+
+function reward_edit_button(rew) {
+	return TD({class: "editrewardcell", title:
+		dynamics[rew.id] ? "Reward is dynamically managed by Mustard Mine" :
+		rew.can_manage ? "Reward can be managed by Mustard Mine" + (rew.should_redemptions_skip_request_queue ? " (redemptions skip queue)" : "")
+		: "Reward created elsewhere, can attach functionality only"
+	},
+		rew.can_manage ? BUTTON({type: "button", class: "editreward"}, 
+			dynamics[rew.id] ? "\u2699\u{1f52e}" : "\u2699"
+		) : "❎"
+	);
+}
+
 export const render_parent = DOM("#rewards tbody");
 export function render_item(rew) {
 	return TR({"data-id": rew.id, ".reward_details": rew}, [
@@ -12,11 +26,7 @@ export function render_item(rew) {
 		})),
 		TD(rew.title),
 		TD(rew.prompt),
-		TD({title: rew.can_manage
-			? "Reward can be managed by Mustard Mine" + (rew.should_redemptions_skip_request_queue ? " (redemptions skip queue)" : "")
-			: "Reward created elsewhere, can attach functionality only"},
-			rew.can_manage ? BUTTON({type: "button", class: "editreward"}, "\u2699") : "❎"
-		),
+		reward_edit_button(rew),
 		TD(UL([
 			//NOTE: The invocations are simple names eg "coinflip", but the command editor
 			//expects them to match the commands array, which shows eg "coinflip#rosuav".
@@ -37,6 +47,16 @@ export function render(data) {
 		sel.firstElementChild,
 		data.items.map(rew => OPTION({value: rew.id}, rew.title)),
 	]).value = val;
+	if (data.dynrewards) {
+		const prevdyn = dynamics;
+		dynamics = { }; //mkmapping(data.dynrewards[*].id, data.dynrewards);
+		data.dynrewards.forEach(d => dynamics[d.id] = d);
+		render_parent.querySelectorAll("tr[data-id]").forEach(tr => {
+			if (!dynamics[tr.dataset.id] != !prevdyn[tr.dataset.id]) {
+				tr.querySelector(".editrewardcell").replaceWith(reward_edit_button(tr.reward_details));
+			}
+		});
+	}
 }
 
 on("click", ".addcmd", e => {
