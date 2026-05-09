@@ -285,12 +285,6 @@
     - For anything more complicated, create a special trigger. Note that the current system
       is unable to handle concepts like "when stream has this tag", and could only be checked
       on stream online or offline, not at other times.
-  - Having a growth formula set will make the price change each time it's used. Instead
-    of having "PREV" as the formula, simply have no growth formula set.
-    - Replace this with a simple "increment" that adds that number. Nobody's doing weird
-      stuff like "double it and add 500 points". *MAYBE* allow an increment of "double it"?
-    - Move crownholder cost detection elsewhere as it's really an internal thing and should
-      not be cluttering up this UI anyway.
   - The current cost is there for convenience. This is worth keeping, but it may be better to
     merge this with the /c/pointsrewards gear button.
   - In fact, this entire feature may be better done in /c/pointsrewards.
