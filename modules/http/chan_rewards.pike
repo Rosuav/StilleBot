@@ -116,9 +116,7 @@ __async__ void wscmd_new_dynamic(object channel, mapping(string:mixed) conn, map
 		mapping rew;
 		foreach (G->G->pointsrewards[broadcaster_id] || ({ }), mapping r) if (r->id == body->id) rew = r;
 		if (rew && rew->can_manage && !rew->is_dynamic) {
-			dyn[rew->id] = ([
-				"availability": "1",
-			]);
+			dyn[rew->id] = ([]);
 			await(G->G->DB->save_config(channel->userid, "dynamic_rewards", dyn));
 			//As below, might be worth pushing out the update immediately (rather than waiting for Twitch to notify us)
 			return;
@@ -129,7 +127,7 @@ __async__ void wscmd_new_dynamic(object channel, mapping(string:mixed) conn, map
 	//Titles must be unique (among all rewards). To simplify rapid creation of
 	//multiple rewards, add a numeric disambiguator on conflict.
 	string deftitle = copyfrom->title || "Example Dynamic Reward";
-	mapping rwd = (["availability": "1"]);
+	mapping rwd = ([]);
 	array have = filter((G->G->pointsrewards[broadcaster_id]||({}))->title, has_prefix, deftitle);
 	copyfrom |= (["title": deftitle + " #" + (sizeof(have) + 1), "cost": copyfrom->cost || 1000]);
 	mapping info = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
@@ -146,16 +144,12 @@ __async__ void wscmd_new_dynamic(object channel, mapping(string:mixed) conn, map
 }
 
 __async__ void wscmd_update_reward(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	//Able to edit more fields than update_dynamic can, but does not store placeholdered text for future changes.
-	//The edits done by this command are always immediate; note that this might result in a dynamic reward pushing
-	//out another update, overwriting your changes here.
-	//TODO: Have an option for dynamic availability, a third state for Enabled, sorta-kinda.
 	//TODO maybe: Automatic price capture into variable????? Currently an invisible undocumented feature
 	//used exclusively by stream boss.
 	mapping simpleedits = msg & (< //Simple fields to update at Twitch
 		"cost",
 		"background_color",
-		"is_enabled", "is_paused", "is_user_input_required",
+		"is_paused", "is_user_input_required",
 		"should_redemptions_skip_request_queue",
 		"max_per_stream", "is_max_per_stream_enabled",
 		"max_per_user_per_stream", "is_max_per_user_per_stream_enabled",
@@ -170,6 +164,11 @@ __async__ void wscmd_update_reward(object channel, mapping(string:mixed) conn, m
 		simpleedits[kwd] = channel->expand_variables(msg[kwd]);
 		if (simpleedits[kwd] != msg[kwd]) dynedits[kwd] = msg[kwd];
 		else dynedits[kwd] = 0;
+	}
+	//If you set enabled status to "only while online", that's dynamic.
+	if (msg->is_enabled) {
+		if (msg->is_enabled == "{online}") dynedits->is_enabled = "{online}";
+		else {dynedits->is_enabled = 0; simpleedits->is_enabled = msg->is_enabled;}
 	}
 	if (sizeof(dynedits)) await(G->G->DB->mutate_config(channel->userid, "dynamic_rewards") {mapping alldyn = __ARGS__[0];
 		mapping dyn = alldyn[msg->reward_id] || ([]);
@@ -209,7 +208,7 @@ __async__ void wscmd_update_dynamic(object channel, mapping(string:mixed) conn, 
 		else {updates[kwd] = body[kwd]; m_delete(rwd, kwd);}
 	}
 	if (!undefinedp(body->increment)) rwd->increment = (int)body->increment;
-	if (body->availability) rwd->availability = body->availability;
+	if (body->is_enabled) rwd->is_enabled = body->is_enabled;
 	if (body->curcost) updates["cost"] = (int)body->curcost;
 	if (sizeof(updates)) {
 		//Currently fire-and-forget - there's no feedback if you get something wrong.
@@ -258,12 +257,12 @@ __async__ void channel_on_off(string channel, int online, int broadcaster_id) {
 		int active = 0;
 		mapping params = ([]);
 		//Whenever we go online/offline, reset to base cost (if there is one).
-		if (info->availability == "{online}") {
+		if (info->is_enabled == "{online}") {
 			//Weirdly negative. We want to know if the enabled state differs from
 			//the online state, but online is 1 or 0 where is_enabled is True/False.
 			//So we booleanly negate is_enabled, then see if the result is the same
 			//as onlineness; if so, we update using Val.* to ensure the right JSON.
-			//TODO maybe: When availability is dynamic, disable the reward as part
+			//TODO maybe: When is_enabled is dynamic, disable the reward as part
 			//of stream reset, and enable it as part of an initial online.
 			if (!rewards[reward_id]->?is_enabled == online)
 				params->is_enabled = online ? Val.true : Val.false;

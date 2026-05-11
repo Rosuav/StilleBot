@@ -1,5 +1,5 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, IMG, INPUT, LABEL, LI, OPTION, SPAN, TBODY, TD, TEXTAREA, TR, UL} = choc; //autoimport
+const {BR, BUTTON, IMG, INPUT, LABEL, LI, OPTION, SELECT, SPAN, TBODY, TD, TEXTAREA, TR, UL} = choc; //autoimport
 import {commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 import {simpleconfirm} from "$$static||utils.js$$";
 
@@ -91,9 +91,13 @@ const reward_editing_elements = {
 		INPUT({id: "rew_increment", name: "increment", type: "number"}),
 	],
 	background_color: attrs => INPUT({...attrs, type: "color"}),
+	is_enabled: attrs => SELECT({...attrs}, [
+		OPTION({value: "false"}, "Disabled"),
+		OPTION({value: "true"}, "Enabled"),
+		OPTION({value: "{online}"}, "While stream is online"),
+	]),
 	flags: attrs => [
 		//Group some checkboxes into a single row
-		LABEL([INPUT({name: "is_enabled", type: "checkbox"}), " Enabled"]), BR(),
 		LABEL([INPUT({name: "is_paused", type: "checkbox"}), " Paused"]), BR(),
 		LABEL([INPUT({name: "is_user_input_required", type: "checkbox"}), " Prompt for text"]), BR(),
 		LABEL([INPUT({name: "should_redemptions_skip_request_queue", type: "checkbox"}), " Auto-fulfil"]), BR(),
@@ -105,6 +109,7 @@ const reward_attributes = {
 	prompt: "Description",
 	cost: "Cost",
 	background_color: "Color",
+	is_enabled: "Enabled",
 	flags: "",
 	max_per_stream: "Max per stream",
 	max_per_user_per_stream: "Max per user",

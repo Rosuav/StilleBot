@@ -14,7 +14,7 @@ export const autorender = {
 				" ", BUTTON({form: r.id, class: "editbtn", type: "button"}, "\u{1F589}")
 			]),
 			TD([
-				SELECT({name: "availability", form: r.id, value: r.availability === "{online}" ? "{online}" : "1"}, [
+				SELECT({name: "is_enabled", form: r.id, value: r.is_enabled === "{online}" ? "{online}" : "1"}, [
 					OPTION({value: "1"}, "Always"),
 					OPTION({value: "{online}"}, "While you're live"),
 				]),
@@ -59,22 +59,13 @@ DOM("#add").onclick = e => {
 async function save(el) {
 	ws_sync.send({cmd: "update_dynamic",
 		dynamic_id: el.rewardid.value, title: el.title.value, prompt: el.prompt.value,
-		availability: el.availability.value, increment: el.increment.value, curcost: el.curcost.value});
+		is_enabled: el.is_enabled.value, increment: el.increment.value, curcost: el.curcost.value});
 }
 on("submit", "form.editreward", e => {e.preventDefault(); save(e.match.elements);}, true);
 
 on("input", "#rewards input", e => e.match.classList.add("dirty"));
 on("change", "#rewards input, #rewards select", e => e.match.classList.add("dirty"));
 on("paste", "#rewards input", e => e.match.classList.add("dirty"));
-
-on("change", "[name=availability-choices]", e => {
-	if (e.match.value !== "") {
-		const inp = e.match.form.elements["availability"];
-		inp.value = e.match.value;
-		inp.classList.add("dirty"); //Changing the actual availability maes both the drop-down and the input dirty
-	}
-});
-on("change", "[name=availability]", e => availability_choices[e.match.value] && (e.match.form.elements["availability-choices"].value = e.match.value));
 
 on("click", "#save_all", e => {
 	//For now, just save each row individually; it may be nice to have a bulk save
