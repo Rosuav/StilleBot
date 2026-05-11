@@ -1,6 +1,28 @@
 inherit http_websocket;
 inherit enableable_module; //Also handles all builtins with suggestions
 
+//FIXME: Merge this into the main page, possibly as a dialog.
+constant REPEATS_PAGE = #"# Automated commands for $$channel$$
+
+Specify the time as `50-60` to mean a random range of times, or as `14:40` to mean that
+exact time (in your timezone). Automated commands will be sent only if the channel is
+online at that time.
+
+Command | Frequency | Output |
+--------|-----------|--------|-
+loading... | - | - | -
+{: #commandview}
+
+[Save changes](:#savechanges)
+
+<style>
+table {width: 100%;}
+th, td:not(.wrap) {width: max-content; white-space: nowrap;}
+th:nth-of-type(3), th:nth-of-type(3) {width: 100%;}
+code {overflow-wrap: anywhere;}
+</style>
+";
+
 //Simplistic stringification for read-only display.
 string respstr(echoable_message resp)
 {
@@ -162,6 +184,9 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"total": tot + " total lines",
 ]));
 		}
+		if (req->variables->repeats) return render_template(REPEATS_PAGE, ([
+			"vars": (["ws_type": ws_type, "ws_group": "#" + req->misc->channel->userid, "ws_code": "chan_repeats"]),
+		]) | req->misc->chaninfo);
 		return render(req, ([
 			"vars": (["ws_group": "", "complex_templates": complex_templates]),
 			"templates": commands_templates,

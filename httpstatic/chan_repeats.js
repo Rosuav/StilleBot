@@ -1,3 +1,4 @@
+//FIXME: Merge this code into chan_commands.js and have the two pages be the same
 import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {BR, BUTTON, CODE, EM, INPUT, TD, TR} = choc; //autoimport
 import {scan_message, commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
