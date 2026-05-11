@@ -100,44 +100,6 @@ void wscmd_add(object channel, mapping(string:mixed) conn, mapping(string:mixed)
 	create_channel_point_reward(channel, settings);
 }
 
-//TODO: Deduplicate with wscmd_add(). Conceptually, this might add, might not, and will make the
-//dynamic part. Can it share code?
-__async__ void wscmd_new_dynamic(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping body = msg; //this used to be a PUT request...
-	int broadcaster_id = channel->userid;
-	mapping dyn = await(G->G->DB->load_config(channel->userid, "dynamic_rewards"));
-	if (!body->copy_from) {
-		//Was an existing ID specified? If so - and if it's manageable and not already dynamic - don't copy it.
-		mapping rew;
-		foreach (G->G->pointsrewards[broadcaster_id] || ({ }), mapping r) if (r->id == body->id) rew = r;
-		if (rew && rew->can_manage && !rew->is_dynamic) {
-			dyn[rew->id] = ([]);
-			await(G->G->DB->save_config(channel->userid, "dynamic_rewards", dyn));
-			//As below, might be worth pushing out the update immediately (rather than waiting for Twitch to notify us)
-			return;
-		}
-		else body->copy_from = rew; //If there's no such reward, well, we'll start blank anyway. But otherwise, copy that reward.
-	}
-	mapping copyfrom = body->copy_from || ([]); //Whatever we get from the front end, pass to Twitch. Good idea? Not sure.
-	//Titles must be unique (among all rewards). To simplify rapid creation of
-	//multiple rewards, add a numeric disambiguator on conflict.
-	string deftitle = copyfrom->title || "Example Dynamic Reward";
-	mapping rwd = ([]);
-	array have = filter((G->G->pointsrewards[broadcaster_id]||({}))->title, has_prefix, deftitle);
-	copyfrom |= (["title": deftitle + " #" + (sizeof(have) + 1), "cost": copyfrom->cost || 1000]);
-	mapping info = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id,
-		(["Authorization": channel->userid]),
-		(["method": "POST", "json": copyfrom]),
-	))->data[0];
-	//write("Created new dynamic: %O\n", info);
-	//TODO: Update G->G->pointsrewards immediately, and push out the update
-	//This will speed up the response to user significantly.
-	dyn[info->id] = rwd;
-	if (!G->G->rewards_manageable[broadcaster_id]) G->G->rewards_manageable[broadcaster_id] = (<>);
-	G->G->rewards_manageable[broadcaster_id][info->id] = 1;
-	await(G->G->DB->save_config(channel->userid, "dynamic_rewards", dyn));
-}
-
 __async__ void wscmd_update_reward(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//TODO maybe: Automatic price capture into variable????? Currently an invisible undocumented feature
 	//used exclusively by stream boss.
@@ -185,35 +147,6 @@ __async__ void wscmd_delete_reward(object channel, mapping(string:mixed) conn, m
 		(["Authorization": channel->userid]),
 		(["method": "DELETE"]),
 	));
-}
-
-__async__ void wscmd_update_dynamic(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	//TODO: Merge all of this into wscmd_update_reward()
-	string id = msg->dynamic_id;
-	mapping body = msg; //this used to be a PUT request...
-	mapping dyn = await(G->G->DB->load_config(channel->userid, "dynamic_rewards"));
-	mapping rwd = dyn[id]; if (!rwd) return;
-	mapping updates = ([]);
-	foreach ("title prompt" / " ", string kwd) if (body[kwd]) {
-		//See if there are any variable or placeholder references in the title/prompt.
-		//If there are, retain the value with placeholders, for future updates; but
-		//otherwise, set the value immediately, and DON'T store it for placeholdering.
-		string value = channel->expand_variables(body[kwd]);
-		if (value != body[kwd]) rwd[kwd] = body[kwd];
-		else {updates[kwd] = body[kwd]; m_delete(rwd, kwd);}
-	}
-	if (!undefinedp(body->increment)) rwd->increment = (int)body->increment;
-	if (body->is_enabled) rwd->is_enabled = body->is_enabled;
-	if (body->curcost) updates["cost"] = (int)body->curcost;
-	if (sizeof(updates)) {
-		//Currently fire-and-forget - there's no feedback if you get something wrong.
-		twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + channel->userid + "&id=" + id,
-			(["Authorization": channel->userid]),
-			(["method": "PATCH", "json": updates]),
-		);
-	}
-	await(G->G->DB->save_config(channel->userid, "dynamic_rewards", dyn));
-	G->G->update_dynamic_reward(channel, id, rwd);
 }
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
