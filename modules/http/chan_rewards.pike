@@ -171,17 +171,11 @@ __async__ void channel_on_off(string channel, int online, int broadcaster_id) {
 	object chan = G->G->irc->id[broadcaster_id]; if (!chan) return;
 	mapping dyn = await(G->G->DB->load_config(broadcaster_id, "dynamic_rewards"));
 	if (!sizeof(dyn)) return; //Nothing to do
-	object ts = G->G->stream_online_since[broadcaster_id] || Calendar.now();
-	if (chan->config->timezone && chan->config->timezone != "") ts = ts->set_timezone(chan->config->timezone) || ts;
-	string date = sprintf("%d %s %d", ts->month_day(), ts->month_name(), ts->year_no());
-	string token = token_for_user_login(channel)[0];
 	//TODO: Store the cache keyed by id?
 	mapping rewards = ([]);
 	foreach (G->G->pointsrewards[broadcaster_id] || ({ }), mapping r) rewards[r->id] = r;
-	if (token != "") foreach (dyn; string reward_id; mapping info) {
-		int active = 0;
+	foreach (dyn; string reward_id; mapping info) {
 		mapping params = ([]);
-		//Whenever we go online/offline, reset to base cost (if there is one).
 		if (info->is_enabled == "{online}") {
 			//Weirdly negative. We want to know if the enabled state differs from
 			//the online state, but online is 1 or 0 where is_enabled is True/False.
@@ -194,7 +188,7 @@ __async__ void channel_on_off(string channel, int online, int broadcaster_id) {
 		}
 		if (sizeof(params)) twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 				+ broadcaster_id + "&id=" + reward_id,
-			(["Authorization": "Bearer " + token]),
+			(["Authorization": broadcaster_id]),
 			(["method": "PATCH", "json": params]),
 		);
 	}
