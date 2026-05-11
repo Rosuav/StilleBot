@@ -74,20 +74,15 @@ There are three levels of permission that can be granted:
 
 bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp, string|void id, string|void type) {
-	array rewards = G->G->pointsrewards[channel->userid] || ({ }), dynrewards = ({ });
-	mapping current = await(G->G->DB->load_config(channel->userid, "dynamic_rewards"));
-	//TODO: Stop remapping dynrewards to an array here, only to remap them back to ID-based
-	//lookups on the front end. (Currently chan_dynamics.js needs it as an array; when that
-	//is removed, unremap and unremap.)
+	array rewards = G->G->pointsrewards[channel->userid] || ({ });
+	mapping dynrewards = await(G->G->DB->load_config(channel->userid, "dynamic_rewards"));
 	foreach (rewards, mapping rew) {
-		mapping r = current[rew->id];
-		//Note that attributes set in dynamic_rewards override those seen in current status.
-		if (r) dynrewards += ({(["id": rew->id, "title": rew->title, "prompt": rew->prompt, "curcost": rew->cost]) | r});
 		rew->invocations = channel->redemption_commands[rew->id] || ({ });
-		if (rew->id == id) return type == "dynreward" ? r && dynrewards[-1] : rew; //Can't be bothered remapping to remove the search
+		if (mapping dyn = dynrewards[rew->id]) rew->dynamic = dyn;
+		if (rew->id == id) return rew;
 	}
 	if (id) return 0; //Clearly it wasn't found
-	return (["items": rewards, "dynrewards": dynrewards]);
+	return (["items": rewards]);
 }
 
 Regexp.SimpleRegexp trailing_number = Regexp.SimpleRegexp(" #[0-9]+$");
@@ -234,10 +229,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 }
 
 @hook_reward_changed: void notify_rewards(object channel, string|void rewardid) {
-	if (rewardid) {
-		update_one(channel, "", rewardid);
-		update_one(channel, "", rewardid, "dynreward");
-	}
+	if (rewardid) update_one(channel, "", rewardid);
 	else send_updates_all(channel, "");
 }
 

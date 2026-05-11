@@ -3,16 +3,14 @@ const {BR, BUTTON, IMG, INPUT, LABEL, LI, OPTION, SELECT, SPAN, TBODY, TD, TEXTA
 import {commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 import {simpleconfirm} from "$$static||utils.js$$";
 
-let dynamics = { }; //Map a UUID to its dynamic reward info, if any
-
 function reward_edit_button(rew) {
 	return TD({class: "editrewardcell", title:
-		dynamics[rew.id] ? "Reward is dynamically managed by Mustard Mine" :
+		rew.dynamic ? "Reward is dynamically managed by Mustard Mine" :
 		rew.can_manage ? "Reward can be managed by Mustard Mine" + (rew.should_redemptions_skip_request_queue ? " (redemptions skip queue)" : "")
 		: "Reward created elsewhere, can attach functionality only"
 	},
 		rew.can_manage ? BUTTON({type: "button", class: "editreward"}, 
-			dynamics[rew.id] ? "\u2699\u{1f52e}" : "\u2699"
+			rew.dynamic ? "\u2699\u{1f52e}" : "\u2699"
 		) : "❎"
 	);
 }
@@ -47,22 +45,6 @@ export function render(data) {
 		sel.firstElementChild,
 		data.items.map(rew => OPTION({value: rew.id}, rew.title)),
 	]).value = val;
-	if (data.dynrewards) {
-		const prevdyn = dynamics;
-		dynamics = { }; //mkmapping(data.dynrewards[*].id, data.dynrewards);
-		data.dynrewards.forEach(d => dynamics[d.id] = d);
-		render_parent.querySelectorAll("tr[data-id]").forEach(tr => {
-			if (!dynamics[tr.dataset.id] != !prevdyn[tr.dataset.id]) {
-				tr.querySelector(".editrewardcell").replaceWith(reward_edit_button(tr.reward_details));
-			}
-		});
-	}
-	if (data.type === "dynreward") {
-		//Single-item update for a dynamic - adjust whether it has the crystal ball icon
-		dynamics[data.id] = data.data;
-		const tr = render_parent.querySelector('tr[data-id="' + data.id + '"]');
-		if (tr) tr.querySelector(".editrewardcell").replaceWith(reward_edit_button(tr.reward_details));
-	}
 }
 
 on("click", ".addcmd", e => {
@@ -130,7 +112,7 @@ set_content("#rewardfields", TBODY(Object.entries(reward_attributes).map(([field
 let editing_reward = null;
 on("click", ".editreward", e => {
 	const rew = e.match.closest("tr").reward_details;
-	const dyn = dynamics[rew.id] || { };
+	const dyn = rew.dynamic || { };
 	editing_reward = e.match.closest_data("id");
 	const form = DOM("#editrewarddlg form").elements;
 	//Special-case the paired fields by removing the info if it's not enabled
