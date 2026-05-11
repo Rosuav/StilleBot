@@ -43,7 +43,7 @@ export function render_empty() {
 }
 export function render(data) {
 	const sel = DOM("#copyfrom"), val = sel.value;
-	if (data.items) set_content(sel, [
+	if (data.items) set_content(sel, [ //TODO: Does this need to also handle single-item updates?
 		sel.firstElementChild,
 		data.items.map(rew => OPTION({value: rew.id}, rew.title)),
 	]).value = val;
@@ -56,6 +56,12 @@ export function render(data) {
 				tr.querySelector(".editrewardcell").replaceWith(reward_edit_button(tr.reward_details));
 			}
 		});
+	}
+	if (data.type === "dynreward") {
+		//Single-item update for a dynamic - adjust whether it has the crystal ball icon
+		dynamics[data.id] = data.data;
+		const tr = render_parent.querySelector('tr[data-id="' + data.id + '"]');
+		if (tr) tr.querySelector(".editrewardcell").replaceWith(reward_edit_button(tr.reward_details));
 	}
 }
 
@@ -79,7 +85,11 @@ const limit = attrs => [INPUT({...attrs, type: "number"}), " (blank for unlimite
 const reward_editing_elements = {
 	"": attrs => INPUT(attrs),
 	prompt: attrs => TEXTAREA({...attrs, rows: 3, cols: 40}),
-	cost: attrs => INPUT({...attrs, type: "number"}),
+	cost: attrs => [
+		INPUT({...attrs, type: "number"}),
+		" Each redemption, increase by ",
+		INPUT({id: "rew_increment", name: "increment", type: "number"}),
+	],
 	background_color: attrs => INPUT({...attrs, type: "color"}),
 	flags: attrs => [
 		//Group some checkboxes into a single row
@@ -128,8 +138,9 @@ on("click", ".editreward", e => {
 	}
 	for (let field in rew) {
 		const elem = form[field];
-		if (elem) elem[elem.type === "checkbox" ? "checked" : "value"] = /*dyn[field] ||*/ rew[field]; //TODO: Show the placeholder if one exists; also show price increment
+		if (elem) elem[elem.type === "checkbox" ? "checked" : "value"] = dyn[field] || rew[field]; //Show the placeholder if one exists
 	}
+	form.increment.value = dyn.increment || "0";
 	//Mark dynamic fields with a crystal ball icon.
 	DOM("#dynmarker-title").hidden = !dyn.title;
 	DOM("#dynmarker-prompt").hidden = !dyn.prompt;

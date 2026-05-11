@@ -149,18 +149,13 @@ __async__ void wscmd_update_reward(object channel, mapping(string:mixed) conn, m
 	//Able to edit more fields than update_dynamic can, but does not store placeholdered text for future changes.
 	//The edits done by this command are always immediate; note that this might result in a dynamic reward pushing
 	//out another update, overwriting your changes here.
-	//TODO: For title and prompt, if the field contains dollar signs, set it as dynamic and apply the
-	//current values of variables. Otherwise, set it as non-dynamic and apply the given value immediately.
-	//TODO: For cost, have two fields: current cost and increment. If increment is nonzero, set it as
-	//dynamic; otherwise set it as non-dynamic. Either way, apply the current cost. (In the front end,
-	//add a second field for the increment, permanently visible.)
 	//TODO: After saving, ensure that dynamics are pushed out properly.
 	//TODO: Have an option for dynamic availability, a third state for Enabled, sorta-kinda.
 	//TODO: If everything has become non-dynamic, delete the dynamic altogether (removing a big FIXME)
 	//TODO maybe: Automatic price capture into variable????? Currently an invisible undocumented feature
 	//used exclusively by stream boss.
-	multiset fields = (<
-		"title", "prompt", "cost",
+	mapping simpleedits = msg & (< //Simple fields to update at Twitch
+		"cost",
 		"background_color",
 		"is_enabled", "is_paused", "is_user_input_required",
 		"should_redemptions_skip_request_queue",
@@ -168,10 +163,27 @@ __async__ void wscmd_update_reward(object channel, mapping(string:mixed) conn, m
 		"max_per_user_per_stream", "is_max_per_user_per_stream_enabled",
 		"global_cooldown_seconds", "is_global_cooldown_enabled",
 	>);
-	mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+	mapping dynedits = ([]);
+	if (!undefinedp(msg->increment)) dynedits->increment = (int)msg->increment;
+	foreach ("title prompt" / " ", string kwd) if (msg[kwd]) {
+		//See if there are any variable or placeholder references in the title/prompt.
+		//If there are, store this as a dynamic field, for future updates; either way,
+		//set the current value after any expansion.
+		simpleedits[kwd] = channel->expand_variables(msg[kwd]);
+		if (simpleedits[kwd] != msg[kwd]) dynedits[kwd] = msg[kwd];
+		else dynedits[kwd] = 0;
+	}
+	if (sizeof(dynedits)) await(G->G->DB->mutate_config(channel->userid, "dynamic_rewards") {mapping alldyn = __ARGS__[0];
+		mapping dyn = alldyn[msg->reward_id] || ([]);
+		dyn = filter(dyn | dynedits) {return __ARGS__[0];}; //Exclude any that have become null
+		if (sizeof(dyn)) alldyn[msg->reward_id] = dyn;
+		else m_delete(alldyn, msg->reward_id);
+		//NOTE: Not calling G->G->update_dynamic_reward here - the immediate update is folded into simpleedits
+	});
+	if (sizeof(simpleedits)) await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 			+ channel->userid + "&id=" + msg->reward_id,
 		(["Authorization": channel->userid]),
-		(["method": "PATCH", "json": msg & fields]),
+		(["method": "PATCH", "json": simpleedits]),
 	));
 }
 
