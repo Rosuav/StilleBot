@@ -76,7 +76,7 @@ const reward_editing_elements = {
 	is_enabled: attrs => SELECT({...attrs}, [
 		OPTION({value: "false"}, "Disabled"),
 		OPTION({value: "true"}, "Enabled"),
-		OPTION({value: "{online}"}, "While stream is online"),
+		OPTION({value: "{online}"}, "\u{1f52e} While stream is online"),
 	]),
 	flags: attrs => [
 		//Group some checkboxes into a single row
@@ -132,6 +132,7 @@ on("click", ".editreward", e => {
 	DOM("#dynmarker-title").hidden = !dyn.title;
 	DOM("#dynmarker-prompt").hidden = !dyn.prompt;
 	DOM("#dynmarker-cost").hidden = !dyn.increment;
+	DOM("#dynmarker-is_enabled").hidden = !dyn.is_enabled;
 	DOM("#editrewarddlg").showModal();
 });
 
