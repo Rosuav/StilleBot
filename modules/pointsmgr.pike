@@ -137,7 +137,42 @@ __async__ void update_all_rewards(object channel) {
 	call_out(spawn_task, 0, update_all_rewards(channel));
 }
 
+constant reward_template = ([
+	"can_manage": 1, "invocations": ({ }),
+	"background_color": "#663399", "cost": 250,
+	"default_image": (["url_1x": "https://static-cdn.jtvnw.net/custom-reward-images/default-1.png"]),
+	"id": "00000000-0000-8000-8000-000000000000", //UUID version 8 "Custom", abused as a unique ID
+	"is_enabled": Val.true, "is_in_stock": Val.true, "is_paused": Val.false, "is_user_input_required": Val.false,
+	"global_cooldown_setting": (["global_cooldown_seconds": 0, "is_enabled": Val.false]),
+	"max_per_stream_setting": (["max_per_stream": 0, "is_enabled": Val.false]),
+	"max_per_user_per_stream_setting": (["max_per_user_per_stream": 0, "is_enabled": Val.false]),
+	"should_redemptions_skip_request_queue": Val.false,
+]);
 __async__ void populate_rewards_cache(string|int broadcaster_id, mapping|void current) {
+	if (!(int)broadcaster_id) {
+		//Provide some demo rewards for the demo channel
+		pointsrewards[0] = ({reward_template | ([
+			"id": "00000000-0000-8000-8000-000000000001",
+			"title": "Say hello!",
+			"prompt": "Say hello to everyone in chat",
+		]), reward_template | ([
+			"id": "00000000-0000-8000-8000-000000000002",
+			"background_color": "#FFD700",
+			"cost": 197,
+			"title": "Au-some Test Reward",
+			"prompt": "Does nothing, but does it in a nice gold colour.",
+			"max_per_stream_setting": (["max_per_stream": 7, "is_enabled": Val.true]),
+			"max_per_user_per_stream_setting": (["max_per_user_per_stream": 2, "is_enabled": Val.true]),
+		]), reward_template | ([
+			"id": "00000000-0000-8000-8000-000000000003",
+			"cost": 500,
+			"title": "Example Dynamic Reward",
+			"global_cooldown_setting": (["global_cooldown_seconds": 30, "is_enabled": Val.true]),
+			"dynamic": (["prompt": "This will be updated by the bot: goal is up to $goalbarB$."]),
+			"prompt": "This will be updated by the bot: goal is up to 4750.",
+		])});
+		return;
+	}
 	pointsrewards[(int)broadcaster_id] = ({ }); //If there's any error, don't keep retrying
 	string url = "https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=" + broadcaster_id;
 	mapping params = (["Authorization": (int)broadcaster_id]);
@@ -168,7 +203,7 @@ __async__ void populate_rewards_cache(string|int broadcaster_id, mapping|void cu
 @on_irc_loaded: void populate_all_rewards() {
 	G->G->DB->load_all_configs("dynamic_rewards")->then() {
 		foreach (indices(G->G->irc->id), int userid)
-			if (userid && !pointsrewards[userid]) {
+			if (!pointsrewards[userid]) {
 				array scopes = G->G->user_credentials[(int)userid]->?scopes || ({ });
 				if (has_value(scopes, "channel:manage:redemptions")
 					|| has_value(scopes, "channel:read:redemptions"))

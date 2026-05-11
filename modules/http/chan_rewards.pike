@@ -218,7 +218,7 @@ __async__ void wscmd_update_dynamic(object channel, mapping(string:mixed) conn, 
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
-	if (string scopes = !req->misc->session->fake && ensure_bcaster_token(req, "channel:manage:redemptions"))
+	if (string scopes = req->misc->channel->userid && ensure_bcaster_token(req, "channel:manage:redemptions"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
 	//Force an update, in case we have stale data. Note that the command editor will only use
@@ -302,8 +302,6 @@ constant vars_provided = ([
 
 __async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
 	if (cfg->simulate) return ([]); //In simulation mode, all this is likely to be used for is refunding or fulfilling the triggering redemption, so assume that that happened.
-	string token = token_for_user_id(channel->userid)[0];
-	if (token == "") error("Need broadcaster permissions\n");
 	string reward_id = param[0];
 	mapping params = ([]);
 	int empty_ok = 0;
@@ -328,13 +326,12 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 	}
 	if (!sizeof(params) && !empty_ok) error("No changes requested\n");
 	if (reward_id == "") return (["{action}": "Nothing to do"]);
-	int broadcaster_id = await(get_user_id(channel->name[1..]));
 	mapping prev = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
-			+ broadcaster_id + "&id=" + reward_id,
-		(["Authorization": "Bearer " + token])));
+			+ channel->userid + "&id=" + reward_id,
+		(["Authorization": channel->userid])));
 	mapping ret = sizeof(params) ? await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
-			+ broadcaster_id + "&id=" + reward_id,
-		(["Authorization": "Bearer " + token]),
+			+ channel->userid + "&id=" + reward_id,
+		(["Authorization": channel->userid]),
 		(["method": "PATCH", "json": params, "return_errors": 1]),
 	)) : prev; //If you didn't request any changes, the previous and new states are the same.
 	if (ret->error) error(ret->error + ": " + ret->message + "\n");
