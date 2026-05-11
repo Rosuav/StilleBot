@@ -149,9 +149,7 @@ __async__ void wscmd_update_reward(object channel, mapping(string:mixed) conn, m
 	//Able to edit more fields than update_dynamic can, but does not store placeholdered text for future changes.
 	//The edits done by this command are always immediate; note that this might result in a dynamic reward pushing
 	//out another update, overwriting your changes here.
-	//TODO: After saving, ensure that dynamics are pushed out properly.
 	//TODO: Have an option for dynamic availability, a third state for Enabled, sorta-kinda.
-	//TODO: If everything has become non-dynamic, delete the dynamic altogether (removing a big FIXME)
 	//TODO maybe: Automatic price capture into variable????? Currently an invisible undocumented feature
 	//used exclusively by stream boss.
 	mapping simpleedits = msg & (< //Simple fields to update at Twitch
@@ -212,7 +210,6 @@ __async__ void wscmd_update_dynamic(object channel, mapping(string:mixed) conn, 
 	}
 	if (!undefinedp(body->increment)) rwd->increment = (int)body->increment;
 	if (body->availability) rwd->availability = body->availability;
-	//FIXME: THERE IS NO WAY TO DELETE A DYNAMIC NOW, since you can't set formula and availability to blank!
 	if (body->curcost) updates["cost"] = (int)body->curcost;
 	if (sizeof(updates)) {
 		//Currently fire-and-forget - there's no feedback if you get something wrong.
