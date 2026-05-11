@@ -8,12 +8,12 @@ inherit annotated;
 constant hypetrain = replace(#"
 ## Hype Train set nine
 ### Unlockable Apr 2025 to current
-### Additional columns unlocked Jul 2025, Sep 2025, Dec 2025
-SpillTheTea ThatsAServe WhosThisDiva ConfettiHype FrogWow OhWow<br>
-RespectfullyNo ThatsIconique HerMind ImSpiraling LuvLuvLUV EpicClip<br>
-NoComment DownBad UghMood ShyGhost MeSweat SoCinema<br>
-TheyAte PlotTwist AnActualQueen LilTrickster HiHand RageOut<br>
-PackItUp InTheirBag SpitTheTruth PufferPop IAmClap HonkShoe<br>
+### Additional columns unlocked Jul 2025, Sep 2025, Dec 2025, May 2026
+SpillTheTea ThatsAServe WhosThisDiva ConfettiHype FrogWow OhWow EndlerLove<br>
+RespectfullyNo ThatsIconique HerMind ImSpiraling LuvLuvLUV EpicClip GeorgieMarch<br>
+NoComment DownBad UghMood ShyGhost MeSweat SoCinema ServalBop<br>
+TheyAte PlotTwist AnActualQueen LilTrickster HiHand RageOut EmuLoad<br>
+PackItUp InTheirBag SpitTheTruth PufferPop IAmClap HonkShoe WinnieHuh<br>
 (10) BleedPurpleHD (25) HeyHeyGuys (50) PogChomp (100) KappaInfinite<br>
 (111) ShouldICelebrate<br>
 Note that set eight can also still be unlocked.
@@ -274,6 +274,11 @@ constant emoteids = ([
 	"SoCinema": "emotesv2_d515e6c3d8064692a706bbdf4662b9a0",
 	"RageOut": "emotesv2_6f481718579c4314bc47a3321519315a",
 	"HonkShoe": "emotesv2_db69fc51205244758607e286d1894c8c",
+	"EndlerLove": "emotesv2_fdad2a52b6344d4ca34f56757de20ea0",
+	"GeorgieMarch": "emotesv2_fe033011e785496798e30cef29b1c9d7",
+	"ServalBop": "emotesv2_daa7dff7413c49fba8f5429da76d8e76",
+	"EmuLoad": "emotesv2_af8346ed03b7412a8f2190a6f3245b67",
+	"WinnieHuh": "emotesv2_b052637fefd045fea52a7d7c68bb5d6c",
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
