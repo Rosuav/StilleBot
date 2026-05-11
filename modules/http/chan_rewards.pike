@@ -1,11 +1,8 @@
-//NOTE: This violates the "unique in two letters" by collision with /c/polls.
-//If renamed to /c/rewards, it would instead collide with /c/repeats.
-//Since /c/repeats is less relevant, look into deprecating it and renaming this.
 inherit http_websocket;
 inherit builtin_command;
 inherit hook;
 inherit annotated;
-constant markdown = #"# Points rewards - $$channel$$
+constant markdown = #"# Channel Point Rewards - $$channel$$
 
 Icon | Title | Prompt | Manage? | Commands
 -----|-------|--------|---------|-----------
@@ -353,4 +350,5 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 	return resp;
 }
 
-protected void create(string name) {::create(name);}
+mapping(string:mixed) pointsrewards(Protocols.HTTP.Server.Request req) {return redirect("rewards");}
+protected void create(string name) {::create(name); G->G->http_endpoints["chan_pointsrewards"] = pointsrewards;}
