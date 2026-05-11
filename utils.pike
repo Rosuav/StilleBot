@@ -175,8 +175,8 @@ __async__ void watch() {
 @"Test MustardScript parsing and reconstitution":
 __async__ void script() {
 	//Rather than actually load up all the builtins, just make sure the names can be validated.
-	//List is correct as of 20231210.
-	constant builtin_names = ({"chan_share", "chan_giveaway", "shoutout", "cmdmgr", "hypetrain", "chan_mpn", "tz", "chan_alertbox", "raidfinder", "uptime", "renamed", "log", "quote", "nowlive", "calc", "chan_monitors", "chan_errors", "argsplit", "chan_pointsrewards", "chan_labels", "uservars"});
+	//List is correct as of 20260511.
+	constant builtin_names = ({"argsplit", "calc", "cast", "chan_alertbox", "chan_errors", "chan_form", "chan_giveaway", "chan_goals", "chan_labels", "chan_minigames", "chan_monitors", "chan_notify", "chan_obs", "chan_pointsrewards", "chan_rewards", "chan_rt", "chan_share", "chan_snoozeads", "chan_streamsetup", "cmdmgr", "hypetrain", "log", "nowlive", "participant", "quote", "raidfinder", "renamed", "setvar", "shoutout", "streamsetup", "tz", "uptime", "uservars"});
 	G->G->builtins = mkmapping(builtin_names, allocate(sizeof(builtin_names), 1));
 	G->bootstrap("modules/cmdmgr.pike");
 	object mustard = G->bootstrap("modules/mustard.pike");

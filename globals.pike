@@ -68,6 +68,25 @@ class run_process {
 	void donecb(object proc) {call_out(done, 0, proc);}
 }
 
+//When a builtin gets renamed, leave a redirect at the old name.
+//TODO maybe: On saving of a command, if it references any redirects, automatically
+//replace it with the new name?
+class builtin_redirect(object canonical) {
+	string builtin_description;
+	string builtin_name;
+	mixed builtin_param;
+	mapping vars_provided;
+	string scope_required;
+	function message_params;
+	protected void create() {
+		builtin_name = canonical->builtin_name + " (deprecated)";
+		builtin_description = canonical->builtin_description;
+		builtin_param = canonical->builtin_param;
+		vars_provided = canonical->vars_provided;
+		scope_required = canonical->scope_required;
+		message_params = canonical->message_params;
+	}
+}
 
 //Some bot features are available for commands to call on.
 //The name is somewhat archaic now, and "builtin" would probably serve better.

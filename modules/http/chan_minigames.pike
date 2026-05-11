@@ -472,7 +472,7 @@ __async__ void update_crown(object channel, mapping game) {
 		#access \"none\"
 		#visibility \"hidden\"
 		#redemption \"" + game->rewardid + #"\"
-		try chan_pointsrewards(\"{rewardid}\", \"fulfil\", \"{redemptionid}\") \"\"
+		try chan_rewards(\"{rewardid}\", \"fulfil\", \"{redemptionid}\") \"\"
 		catch \"\"
 		if (\"{uid}\" == \"$crownholder:uid$\") \"You already hold the crown, {username} - good job wasting your points.\"
 		else \"Congratulations to {username} for successfully claiming the crown from $crownholder:name$! You will retain this title until someone else seizes it from you...\"
@@ -490,7 +490,7 @@ __async__ void update_crown(object channel, mapping game) {
 			$crownholder:avatar$ = \"{avatar}\"
 		}
 		try {
-			chan_pointsrewards(\"" + game->rewardid + #"\", \"cost\", \"" + cfg->initialprice + #"\") \"\"
+			chan_rewards(\"" + game->rewardid + #"\", \"cost\", \"" + cfg->initialprice + #"\") \"\"
 		}
 		catch \"\"
 		\"Crown has been retrieved.\"
@@ -548,16 +548,16 @@ constant first_code = #"
 	#visibility \"hidden\"
 	#redemption \"%s\"
 	try {
-		chan_pointsrewards(\"{rewardid}\", \"fulfil\", \"{redemptionid}\") \"\"
+		chan_rewards(\"{rewardid}\", \"fulfil\", \"{redemptionid}\") \"\"
 	}
 	catch \"Unexpected error: {error}\"
 	chan_minigames(\"first\", %q) {
 		if (\"{shame}\" == \"1\") {
 			%q
-			chan_pointsrewards(\"{rewardid}\", \"desc\", %q) \"\"
+			chan_rewards(\"{rewardid}\", \"desc\", %q) \"\"
 		} else {
 			%q
-			chan_pointsrewards(\"{rewardid}\", \"desc\", %q) \"\"
+			chan_rewards(\"{rewardid}\", \"desc\", %q) \"\"
 		}
 	}
 ";
@@ -566,7 +566,7 @@ constant checkin_code = #"
 	#visibility \"hidden\"
 	#redemption \"%s\"
 	try {
-		chan_pointsrewards(\"{rewardid}\", \"fulfil\", \"{redemptionid}\") \"\"
+		chan_rewards(\"{rewardid}\", \"fulfil\", \"{redemptionid}\") \"\"
 	}
 	catch \"Unexpected error: {error}\"
 	$*checkins$ += \"1\"

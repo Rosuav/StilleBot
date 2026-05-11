@@ -269,8 +269,8 @@ __async__ void channel_on_off(string channel, int online, int broadcaster_id) {
 @hook_channel_online: int channel_online(string channel, int uptime, int id) {channel_on_off(channel, 1, id);}
 @hook_channel_offline: int channel_offline(string channel, int uptime, int id) {channel_on_off(channel, 0, id);}
 
-constant command_description = "Manage channel point rewards - fulfil and cancel need redemption ID too";
-constant builtin_name = "Points rewards";
+constant builtin_description = "Manage channel point rewards - fulfil and cancel need redemption ID too";
+constant builtin_name = "Channel points rewards";
 //TODO: In the front end, label them as "[En/Dis]able reward", "Mark complete", "Refund points"
 //TODO: Allow setting more than one attribute, eg setting both title and desc atomically
 constant builtin_param = ({"/Reward/reward_id", "/Action/enable/disable/cost/title/desc/cooldown/query/fulfil/cancel", "Redemption ID"});
@@ -351,4 +351,8 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 }
 
 mapping(string:mixed) pointsrewards(Protocols.HTTP.Server.Request req) {return redirect("rewards");}
-protected void create(string name) {::create(name); G->G->http_endpoints["chan_pointsrewards"] = pointsrewards;}
+protected void create(string name) {
+	::create(name);
+	G->G->http_endpoints["chan_pointsrewards"] = pointsrewards;
+	G->G->builtins->chan_pointsrewards = builtin_redirect(this);
+}

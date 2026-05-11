@@ -33,6 +33,6 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	//TODO: Should non-mods be allowed to see the details?
 	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
 	return render_template(markdown, ([
-		"vars": (["ws_type": "chan_pointsrewards", "ws_group": req->misc->channel->name, "ws_code": "chan_dynamics"]),
+		"vars": (["ws_type": "chan_rewards", "ws_group": req->misc->channel->name, "ws_code": "chan_dynamics"]),
 	]) | req->misc->chaninfo);
 }

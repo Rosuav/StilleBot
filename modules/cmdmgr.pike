@@ -585,7 +585,7 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 			if (cmdedit) cmdedit->update_command(channel, cmd);
 		}
 	}
-	if (object handler = G->G->websocket_types->chan_pointsrewards) {
+	if (object handler = G->G->websocket_types->chan_rewards) {
 		//Similarly to the above, notify changes to any redemption invocations.
 		foreach (updates; cmd;) {
 			if (!has_prefix(cmd, "rew ")) continue;

@@ -1504,7 +1504,7 @@ constant ENABLEABLE_FEATURES = ([
 						"conditional": "string", "casefold": "",
 						"expr1": "{alert_sent}", "expr2": "yes",
 						"message": ([
-							"builtin": "chan_pointsrewards",
+							"builtin": "chan_rewards",
 							"builtin_param": ({"{rewardid}", "fulfil", "{redemptionid}"}),
 							"message": ([
 								"conditional": "string",
@@ -1514,14 +1514,14 @@ constant ENABLEABLE_FEATURES = ([
 							]),
 						]),
 						"otherwise": ([
-							"builtin": "chan_pointsrewards",
+							"builtin": "chan_rewards",
 							"builtin_param": ({"{rewardid}", "cancel", "{redemptionid}"}),
 							"message": "Unrecognized keyword {param}, points refunded",
 						]),
 					]),
 				]),
 				"otherwise": ([
-					"builtin": "chan_pointsrewards",
+					"builtin": "chan_rewards",
 					"builtin_param": ({"{rewardid}", "cancel", "{redemptionid}"}),
 					"message": "Unexpected error: {error}",
 				]),

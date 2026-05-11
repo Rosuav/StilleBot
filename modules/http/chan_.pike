@@ -69,7 +69,7 @@ constant sidebar_menu = ({
 	({"*specials", "Specials"}),
 	({"*variables", "Variables"}),
 	({"*commands?repeats", "Autocommands"}),
-	({"*pointsrewards", "Channel points"}),
+	({"*rewards", "Channel points"}),
 	({"*dynamics", "Dynamic costs"}),
 	({"quotes", "Quotes"}),
 	({"giveaway", "Giveaway"}),

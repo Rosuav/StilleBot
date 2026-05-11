@@ -334,7 +334,7 @@ function stub_type(typename) {
 }
 
 const builtin_label_funcs = {
-	chan_pointsrewards: el => {
+	chan_rewards: el => {
 		if (!el.builtin_param || typeof el.builtin_param === "string") return "Points rewards"; //TODO: Reformat into new style?
 		switch (el.builtin_param[1]) {
 			case "enable": if (el.builtin_param[2] !== "0") return "Points reward: enable";
@@ -347,6 +347,7 @@ const builtin_label_funcs = {
 		return "Points rewards";
 	},
 };
+builtin_label_funcs.chan_pointsrewards = builtin_label_funcs.chan_rewards; //Alias the deprecated to the new
 function builtin_types() {
 	const ret = { };
 	Object.entries(window.cmdedit_collections.builtins).forEach(([name, blt]) => {
@@ -858,7 +859,7 @@ const tray_tabs = [
 		{type: "builtin_tz", builtin_param: "Los Angeles"},
 	]},
 	{name: "Advanced", color: "#bbffbb", items: [
-		{type: "builtin_chan_pointsrewards"},
+		{type: "builtin_chan_rewards"},
 		{type: "randrot", mode: "rotate"},
 		{type: "weight", weight: 2},
 		{type: "cooldown", cdlength: "30", cdname: ""},

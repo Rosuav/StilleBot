@@ -385,7 +385,7 @@ void wscmd_clawdone(object channel, mapping(string:mixed) conn, mapping(string:m
 				#access "none"
 				#visibility "hidden"
 				#redemption %O
-				chan_pointsrewards("{rewardid}", "fulfil", "{redemptionid}") ""
+				chan_rewards("{rewardid}", "fulfil", "{redemptionid}") ""
 			#}, rewardid) + code;
 			break;
 		}
