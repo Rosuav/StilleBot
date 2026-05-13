@@ -380,6 +380,9 @@ void streaminfo(array data) {
 					"{initial}": co ? "0" : "1", //If there was a reset pending, it's not an initial stream start
 				]));
 			}
+			//TODO: Is it important that this happens *after* signals are sent out? Asynchronicity
+			//means it may well still happen before some things get processed. Would it be cleaner
+			//to instead guarantee that it will always happen *before* signals are sent?
 			stream_online_since[channel->userid] = started;
 		} else { //If the channel's offline, we have no status info (since it returns data only for those online).
 			if (object started = m_delete(stream_online_since, channel->userid)) {
@@ -614,6 +617,13 @@ __async__ void check_hooks() {
 	if (ex) error("Unable to fetch %O: %O\n", url, ex);
 }
 
+//NOTE: Polling should not be necessary long-term. However, it still has some value: startup checks.
+//Once we're in steady state, we should be able to use EventSub to get notified when streams go live
+//and shut down, but on startup and on bot hop, we need to know who's live *already*. So poll() will
+//become an occasional call rather than a 60-secondly query, which will remove all the issues of
+//overload (and I believe there are still cases where we get multiple poll chains running), and the
+//code for "stream has now gone online" / "stream is no longer online" will need to be unified with
+//the EventSub-triggered ones.
 void poll()
 {
 	G->G->poll_call_out = call_out(poll, 60); //Maybe make the poll interval customizable?
