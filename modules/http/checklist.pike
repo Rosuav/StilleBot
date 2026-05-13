@@ -15,7 +15,7 @@ NoComment DownBad UghMood ShyGhost MeSweat SoCinema ServalBop<br>
 TheyAte PlotTwist AnActualQueen LilTrickster HiHand RageOut EmuLoad<br>
 PackItUp InTheirBag SpitTheTruth PufferPop IAmClap HonkShoe WinnieHuh<br>
 (10) BleedPurpleHD (25) HeyHeyGuys (50) PogChomp (100) KappaInfinite<br>
-(111) ShouldICelebrate<br>
+(111) ShouldICelebrate (123) NeuroJAM (126) EvilJAM<br>
 Note that set eight can also still be unlocked.
 
 ## Holidays 2024
@@ -279,6 +279,9 @@ constant emoteids = ([
 	"ServalBop": "emotesv2_daa7dff7413c49fba8f5429da76d8e76",
 	"EmuLoad": "emotesv2_af8346ed03b7412a8f2190a6f3245b67",
 	"WinnieHuh": "emotesv2_b052637fefd045fea52a7d7c68bb5d6c",
+	//A couple more bonus emotes for stupid-high-level trains
+	"NeuroJAM": "emotesv2_16862a2d50724c34b78499f3c094ce47",
+	"EvilJAM": "emotesv2_c3134ab06c334403a7691d3ef58441d1",
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
