@@ -336,21 +336,13 @@ constant channelonline = special_trigger("!channelonline", "The channel has rece
 	"{uptime_english}": "(deprecated) Equivalent to {uptime|time_english}",
 	"{initial}": "1 if the stream has reset since the last stream, 0 if it has not (ie resuming after a hiccup)",
 ]), "Status");
-constant channelsetup = special_trigger("!channelsetup", "The channel has changed its category/title/CCLs", "The broadcaster", ([
-	"{category}": "English name of the game or category being streamed in",
-	"{title}": "Title of the stream",
-	"{tag_names}": "Stream tags eg '[English], [FamilyFriendly]' - should be searched case insensitively",
-	"{ccls}": "Content classification labels eg '[ProfanityVulgarity], [ViolentGraphic]'",
-]), "Status");
 constant channeloffline = special_trigger("!channeloffline", "The channel has stopped streaming (possibly briefly)", "The broadcaster", "uptime, uptime_hms, uptime_english", "Status");
-
 
 //When you go offline, reset things. However, in case the stream glitched (either
 //due to network issues, or because you briefly went offline to fix something),
 //the stream shouldn't be counted as having started over. Matching Twitch's own
 //definition as affects watch streaks, we wait 30 minutes, and only reset if the
-//stream does not go online again within that time. TODO: Have a !!reset special
-//trigger that happens at this same time, allowing any custom actions to go here.
+//stream does not go online again within that time.
 @retain: mapping(int:mixed) stream_reset_callout = ([]); //Map channel ID to call_out
 void delayed_stream_reset(int chanid) {
 	m_delete(stream_reset_callout, chanid);
@@ -408,26 +400,6 @@ void streaminfo(array data) {
 			}
 		}
 	}
-}
-
-@EventNotify("channel.update=2"): __async__ void channel_setup_changed(object channel, mapping info) {
-	//As of 20240401, this notification does not include stream tags. Even worse, there's a
-	//short time delay during which the OLD tags are returned by the API. So we lag out by
-	//a bit, *then* query the tags. Can eliminate both if the notification grows tags.
-	if (!channel) {werror("Setup changed w/o channel: %O\n", info); return;}
-	sleep(0.5);
-	mapping chaninfo = await(get_channel_info(info->broadcaster_user_name));
-	channel->trigger_special("!channelsetup", ([
-		//Synthesize a basic person mapping
-		"user": info->broadcaster_user_login,
-		"displayname": info->broadcaster_user_name,
-		"uid": info->broadcaster_user_id,
-	]), ([
-		"{category}": info->category_name,
-		"{title}": info->title,
-		"{tag_names}": sprintf("[%s]", chaninfo->tags[*]) * ", ",
-		"{ccls}": sprintf("[%s]", info->content_classification_labels[*]) * ", ",
-	]));
 }
 
 //The regrettable order of parameters is due to channelids being added later.

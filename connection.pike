@@ -170,6 +170,12 @@ constant charity = special_trigger("!charity", "Someone donates to the charity y
 constant watchstreak = special_trigger("!watchstreak", "Someone achieved a new watch streak!", "The viewer", "months, reward", "Stream support");
 constant timeout = special_trigger("!timeout", "A user got timed out or banned", "The victim", "", "Status");
 constant channelreset = special_trigger("!channelreset", "The channel has fully gone offline. Corresponds to 'once per stream' settings.", "The broadcaster", ([]), "Status");
+constant channelsetup = special_trigger("!channelsetup", "The channel has changed its category/title/CCLs", "The broadcaster", ([
+	"{category}": "English name of the game or category being streamed in",
+	"{title}": "Title of the stream",
+	"{tag_names}": "Stream tags eg '[English], [FamilyFriendly]' - should be searched case insensitively",
+	"{ccls}": "Content classification labels eg '[ProfanityVulgarity], [ViolentGraphic]'",
+]), "Status");
 
 class channel(mapping identity) {
 	string name; //name begins with a hash and is all lowercase. Preference: Use this->login (no hash) instead.
@@ -1342,6 +1348,26 @@ void stream_online(object channel, mapping data) {
 void stream_offline(object channel, mapping data) {
 	//Stream offline doesn't have any useful information, but it seems to be prompt enough to use.
 	//werror("%sStream now offline! %O %O\n", ctime(time()), channel, data);
+}
+
+@EventNotify("channel.update=2"): __async__ void channel_setup_changed(object channel, mapping info) {
+	//As of 20240401, this notification does not include stream tags. Even worse, there's a
+	//short time delay during which the OLD tags are returned by the API. So we lag out by
+	//a bit, *then* query the tags. Can eliminate both if the notification grows tags.
+	if (!channel) {werror("Setup changed w/o channel: %O\n", info); return;}
+	sleep(0.5);
+	mapping chaninfo = await(get_channel_info(info->broadcaster_user_name));
+	channel->trigger_special("!channelsetup", ([
+		//Synthesize a basic person mapping
+		"user": info->broadcaster_user_login,
+		"displayname": info->broadcaster_user_name,
+		"uid": info->broadcaster_user_id,
+	]), ([
+		"{category}": info->category_name,
+		"{title}": info->title,
+		"{tag_names}": sprintf("[%s]", chaninfo->tags[*]) * ", ",
+		"{ccls}": sprintf("[%s]", info->content_classification_labels[*]) * ", ",
+	]));
 }
 
 void session_cleanup() {
