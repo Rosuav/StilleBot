@@ -350,61 +350,6 @@ void delayed_stream_reset(int chanid) {
 	event_notify("stream_reset", channel);
 }
 
-void streaminfo(array data) {
-	//First, quickly remap the array into a lookup mapping
-	//This helps us ensure that we look up those we care about, and no others.
-	mapping channels = ([]);
-	foreach (data, mapping chan) channels[(int)chan->user_id] = chan;
-	//Now we check over our own list of channels. Anything absent is assumed offline.
-	foreach (values(G->G->irc->id), object channel) if (channel->userid) {
-		if (mapping info = channels[channel->userid]) {
-			object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->started_at);
-			if (!stream_online_since[channel->userid]) {
-				//Is there a cleaner way to say "convert to local time"?
-				object started_here = started->set_timezone(Calendar.now()->timezone());
-				write("** Channel %s went online at %s **\n", channel->login, started_here->format_nice());
-				int uptime = time() - started->unix_time();
-				Stdio.append_file("onlinedelay.log", sprintf("Poll %d %s\n", uptime, channel->login));
-				event_notify("channel_online", channel->login, uptime, channel->userid);
-				mixed co = m_delete(stream_reset_callout, channel->userid);
-				remove_call_out(co);
-				channel->trigger_special("!channelonline", ([
-					//Synthesize a basic person mapping
-					"user": channel->login,
-					"displayname": info->user_name,
-					"uid": (string)info->user_id,
-				]), ([
-					"{uptime}": (string)uptime,
-					"{uptime_hms}": describe_time_short(uptime),
-					"{uptime_english}": describe_time(uptime),
-					"{initial}": co ? "0" : "1", //If there was a reset pending, it's not an initial stream start
-				]));
-			}
-			//TODO: Is it important that this happens *after* signals are sent out? Asynchronicity
-			//means it may well still happen before some things get processed. Would it be cleaner
-			//to instead guarantee that it will always happen *before* signals are sent?
-			stream_online_since[channel->userid] = started;
-		} else { //If the channel's offline, we have no status info (since it returns data only for those online).
-			if (object started = m_delete(stream_online_since, channel->userid)) {
-				write("** Channel %s noticed offline at %s **\n", channel->login, Calendar.now()->format_nice());
-				int uptime = time() - started->unix_time();
-				event_notify("channel_offline", channel->login, uptime, channel->userid);
-				channel->trigger_special("!channeloffline", ([
-					//Synthesize a basic person mapping
-					"user": channel->login,
-					"displayname": channel->display_name,
-					"uid": (string)channel->userid,
-				]), ([
-					"{uptime}": (string)uptime,
-					"{uptime_hms}": describe_time_short(uptime),
-					"{uptime_english}": describe_time(uptime),
-				]));
-				stream_reset_callout[channel->userid] = call_out(delayed_stream_reset, 1800, channel->userid);
-			}
-		}
-	}
-}
-
 //The regrettable order of parameters is due to channelids being added later.
 //NOTE: These hooks may be called on a non-active bot. Check for this if it matters to you.
 @create_hook: constant channel_online = ({"string channelname", "int uptime", "int channelid"});
@@ -624,9 +569,8 @@ __async__ void check_hooks() {
 //overload (and I believe there are still cases where we get multiple poll chains running), and the
 //code for "stream has now gone online" / "stream is no longer online" will need to be unified with
 //the EventSub-triggered ones.
-void poll()
-{
-	G->G->poll_call_out = call_out(poll, 60); //Maybe make the poll interval customizable?
+__async__ void poll() {
+	G->G->poll_call_out = call_out(poll, 60);
 	array chan = indices(G->G->irc->?id || ([]));
 	chan = filter(chan) {return __ARGS__[0];}; //Exclude !demo which has a userid of 0
 	if (!sizeof(chan)) return; //Nothing to check.
@@ -637,13 +581,59 @@ void poll()
 	//channels that we get info for and don't need, ignore them; if there are
 	//some that we wanted but didn't get, we'll just think they're offline
 	//until the next poll.
-	get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (array(string))chan, "first": "100"]))
-		->on_success(streaminfo);
-	//There has been an issue with failures and a rate limiting from Twitch.
-	//I suspect that something is automatically retrying AND the sixty-sec
-	//poll is triggering again, causing stacking requests. Look into it if
-	//possible. Otherwise, there'll be a bit of outage (cooldown) any time
-	//I hit this sort of problem.
+	array data = await(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (array(string))chan, "first": "100"])));
+	//First, quickly remap the array into a lookup mapping
+	//This helps us ensure that we look up those we care about, and no others.
+	mapping channels = ([]);
+	foreach (data, mapping chan) channels[(int)chan->user_id] = chan;
+	//Now we check over our own list of channels. Anything absent is assumed offline.
+	foreach (values(G->G->irc->id), object channel) if (channel->userid) {
+		if (mapping info = channels[channel->userid]) {
+			object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->started_at);
+			if (!stream_online_since[channel->userid]) {
+				//Is there a cleaner way to say "convert to local time"?
+				object started_here = started->set_timezone(Calendar.now()->timezone());
+				write("** Channel %s went online at %s **\n", channel->login, started_here->format_nice());
+				int uptime = time() - started->unix_time();
+				Stdio.append_file("onlinedelay.log", sprintf("Poll %d %s\n", uptime, channel->login));
+				event_notify("channel_online", channel->login, uptime, channel->userid);
+				mixed co = m_delete(stream_reset_callout, channel->userid);
+				remove_call_out(co);
+				channel->trigger_special("!channelonline", ([
+					//Synthesize a basic person mapping
+					"user": channel->login,
+					"displayname": info->user_name,
+					"uid": (string)info->user_id,
+				]), ([
+					"{uptime}": (string)uptime,
+					"{uptime_hms}": describe_time_short(uptime),
+					"{uptime_english}": describe_time(uptime),
+					"{initial}": co ? "0" : "1", //If there was a reset pending, it's not an initial stream start
+				]));
+			}
+			//TODO: Is it important that this happens *after* signals are sent out? Asynchronicity
+			//means it may well still happen before some things get processed. Would it be cleaner
+			//to instead guarantee that it will always happen *before* signals are sent?
+			stream_online_since[channel->userid] = started;
+		} else { //If the channel's offline, we have no status info (since it returns data only for those online).
+			if (object started = m_delete(stream_online_since, channel->userid)) {
+				write("** Channel %s noticed offline at %s **\n", channel->login, Calendar.now()->format_nice());
+				int uptime = time() - started->unix_time();
+				event_notify("channel_offline", channel->login, uptime, channel->userid);
+				channel->trigger_special("!channeloffline", ([
+					//Synthesize a basic person mapping
+					"user": channel->login,
+					"displayname": channel->display_name,
+					"uid": (string)channel->userid,
+				]), ([
+					"{uptime}": (string)uptime,
+					"{uptime_hms}": describe_time_short(uptime),
+					"{uptime_english}": describe_time(uptime),
+				]));
+				stream_reset_callout[channel->userid] = call_out(delayed_stream_reset, 1800, channel->userid);
+			}
+		}
+	}
 }
 
 int(1bit) is_active; //Last-known active state
