@@ -1096,6 +1096,7 @@ class channel(mapping identity) {
 		lastmsg[(int)person->uid] = ({msg, params});
 		if (!is_active) return;
 		mapping event = ([ //Applicable only to NOTICE/USERNOTICE messages
+			"_raw": params,
 			"notice_type": params->msg_id, "message_id": params->id,
 			"broadcaster_user_id": userid,
 			"broadcaster_user_login": login,
