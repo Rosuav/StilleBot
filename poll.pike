@@ -570,17 +570,12 @@ __async__ void check_hooks() {
 //code for "stream has now gone online" / "stream is no longer online" will need to be unified with
 //the EventSub-triggered ones.
 __async__ void poll() {
+	remove_call_out(G->G->poll_call_out);
 	G->G->poll_call_out = call_out(poll, 60);
-	array chan = indices(G->G->irc->?id || ([]));
-	chan = filter(chan) {return __ARGS__[0];}; //Exclude !demo which has a userid of 0
+	array chan = indices(G->G->irc->?id || ([])) - ({0}); //Exclude !demo which has a userid of 0
 	if (!sizeof(chan)) return; //Nothing to check.
 	//Prune any "channel online" statuses for channels we don't track any more
 	foreach (indices(stream_online_since) - chan, int id) m_delete(stream_online_since, id);
-	//Note: There's a slight TOCTOU here - the list of channel IDs will be
-	//re-checked from saved configs when the response comes in. If there are
-	//channels that we get info for and don't need, ignore them; if there are
-	//some that we wanted but didn't get, we'll just think they're offline
-	//until the next poll.
 	array data = await(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (array(string))chan, "first": "100"])));
 	//First, quickly remap the array into a lookup mapping
 	//This helps us ensure that we look up those we care about, and no others.
