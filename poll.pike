@@ -562,6 +562,55 @@ __async__ void check_hooks() {
 	if (ex) error("Unable to fetch %O: %O\n", url, ex);
 }
 
+@EventNotify("stream.online=1"):
+void stream_online(object channel, mapping data) {
+	object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", data->started_at);
+	 {
+		//Is there a cleaner way to say "convert to local time"?
+		object started_here = started->set_timezone(Calendar.now()->timezone());
+		write("** Channel %s went online at %s **\n", channel->login, started_here->format_nice());
+		int uptime = time() - started->unix_time();
+		event_notify("channel_online", channel->login, uptime, channel->userid);
+		mixed co = m_delete(stream_reset_callout, channel->userid);
+		remove_call_out(co);
+		channel->trigger_special("!channelonline", ([
+			//Synthesize a basic person mapping
+			"user": channel->login,
+			"displayname": data->broadcaster_user_name,
+			"uid": (string)data->broadcaster_user_id,
+		]), ([
+			"{uptime}": (string)uptime,
+			"{uptime_hms}": describe_time_short(uptime),
+			"{uptime_english}": describe_time(uptime),
+			"{initial}": co ? "0" : "1", //If there was a reset pending, it's not an initial stream start
+		]));
+	}
+	//TODO: Is it important that this happens *after* signals are sent out? Asynchronicity
+	//means it may well still happen before some things get processed. Would it be cleaner
+	//to instead guarantee that it will always happen *before* signals are sent?
+	stream_online_since[channel->userid] = started;
+}
+
+@EventNotify("stream.offline=1"):
+void stream_offline(object channel, mapping data) {
+	object started = m_delete(stream_online_since, channel->userid);
+	if (!started) return;
+	write("** Channel %s noticed offline at %s **\n", channel->login, Calendar.now()->format_nice());
+	int uptime = time() - started->unix_time();
+	event_notify("channel_offline", channel->login, uptime, channel->userid);
+	channel->trigger_special("!channeloffline", ([
+		//Synthesize a basic person mapping
+		"user": channel->login,
+		"displayname": channel->display_name,
+		"uid": (string)channel->userid,
+	]), ([
+		"{uptime}": (string)uptime,
+		"{uptime_hms}": describe_time_short(uptime),
+		"{uptime_english}": describe_time(uptime),
+	]));
+	stream_reset_callout[channel->userid] = call_out(delayed_stream_reset, 1800, channel->userid);
+}
+
 //NOTE: Polling should not be necessary long-term. However, it still has some value: startup checks.
 //Once we're in steady state, we should be able to use EventSub to get notified when streams go live
 //and shut down, but on startup and on bot hop, we need to know who's live *already*. So poll() will
@@ -583,51 +632,14 @@ __async__ void poll() {
 	foreach (data, mapping chan) channels[(int)chan->user_id] = chan;
 	//Now we check over our own list of channels. Anything absent is assumed offline.
 	foreach (values(G->G->irc->id), object channel) if (channel->userid) {
-		if (mapping info = channels[channel->userid]) {
-			object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", info->started_at);
-			if (!stream_online_since[channel->userid]) {
-				//Is there a cleaner way to say "convert to local time"?
-				object started_here = started->set_timezone(Calendar.now()->timezone());
-				write("** Channel %s went online at %s **\n", channel->login, started_here->format_nice());
-				int uptime = time() - started->unix_time();
-				Stdio.append_file("onlinedelay.log", sprintf("Poll %d %s\n", uptime, channel->login));
-				event_notify("channel_online", channel->login, uptime, channel->userid);
-				mixed co = m_delete(stream_reset_callout, channel->userid);
-				remove_call_out(co);
-				channel->trigger_special("!channelonline", ([
-					//Synthesize a basic person mapping
-					"user": channel->login,
-					"displayname": info->user_name,
-					"uid": (string)info->user_id,
-				]), ([
-					"{uptime}": (string)uptime,
-					"{uptime_hms}": describe_time_short(uptime),
-					"{uptime_english}": describe_time(uptime),
-					"{initial}": co ? "0" : "1", //If there was a reset pending, it's not an initial stream start
-				]));
-			}
-			//TODO: Is it important that this happens *after* signals are sent out? Asynchronicity
-			//means it may well still happen before some things get processed. Would it be cleaner
-			//to instead guarantee that it will always happen *before* signals are sent?
-			stream_online_since[channel->userid] = started;
-		} else { //If the channel's offline, we have no status info (since it returns data only for those online).
-			if (object started = m_delete(stream_online_since, channel->userid)) {
-				write("** Channel %s noticed offline at %s **\n", channel->login, Calendar.now()->format_nice());
-				int uptime = time() - started->unix_time();
-				event_notify("channel_offline", channel->login, uptime, channel->userid);
-				channel->trigger_special("!channeloffline", ([
-					//Synthesize a basic person mapping
-					"user": channel->login,
-					"displayname": channel->display_name,
-					"uid": (string)channel->userid,
-				]), ([
-					"{uptime}": (string)uptime,
-					"{uptime_hms}": describe_time_short(uptime),
-					"{uptime_english}": describe_time(uptime),
-				]));
-				stream_reset_callout[channel->userid] = call_out(delayed_stream_reset, 1800, channel->userid);
-			}
-		}
+		if (mapping info = !stream_online_since[channel->userid] && channels[channel->userid])
+			stream_online(channel, ([
+				"broadcaster_user_id": info->user_id,
+				"broadcaster_user_login": info->user_login,
+				"broadcaster_user_name": info->user_name,
+			]));
+		else if (!channels[channel->userid] && stream_online_since[channel->userid])
+			stream_offline(channel, ([]));
 	}
 }
 

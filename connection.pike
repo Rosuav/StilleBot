@@ -1333,23 +1333,6 @@ void clear_user_messages(object channel, mapping data) {channel->delete_user_mes
 @EventNotify("channel.chat.message_delete=1", ({"channel:bot"}), "user_id"):
 void delete_single_message(object channel, mapping data) {channel->delete_single_message(data->target_user_login, data->message_id);}
 
-//TODO: Consider migrating the stream on/offline checks from poll.pike into here.
-//Yes, that will mean depriving poll.pike of its poll() function and its polling
-//functionality, making it actually the repository for all Twitch API calls, but
-//not the twitch_apis... yeah the names here are a bit weird. For now, check to
-//see if the notifications come through in a timely manner, comparing to the
-//existing messages getting logged as the channels are spotted online/offline.
-@EventNotify("stream.online=1"):
-void stream_online(object channel, mapping data) {
-	Stdio.append_file("onlinedelay.log", sprintf("EventSub %d %s\n", time() - time_from_iso(data->started_at)->unix_time(), data->broadcaster_user_login));
-}
-
-@EventNotify("stream.offline=1"):
-void stream_offline(object channel, mapping data) {
-	//Stream offline doesn't have any useful information, but it seems to be prompt enough to use.
-	//werror("%sStream now offline! %O %O\n", ctime(time()), channel, data);
-}
-
 @EventNotify("channel.update=2"): __async__ void channel_setup_changed(object channel, mapping info) {
 	//As of 20240401, this notification does not include stream tags. Even worse, there's a
 	//short time delay during which the OLD tags are returned by the API. So we lag out by
