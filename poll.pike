@@ -565,26 +565,24 @@ __async__ void check_hooks() {
 @EventNotify("stream.online=1"):
 void stream_online(object channel, mapping data) {
 	object started = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", data->started_at);
-	 {
-		//Is there a cleaner way to say "convert to local time"?
-		object started_here = started->set_timezone(Calendar.now()->timezone());
-		write("** Channel %s went online at %s **\n", channel->login, started_here->format_nice());
-		int uptime = time() - started->unix_time();
-		event_notify("channel_online", channel->login, uptime, channel->userid);
-		mixed co = m_delete(stream_reset_callout, channel->userid);
-		remove_call_out(co);
-		channel->trigger_special("!channelonline", ([
-			//Synthesize a basic person mapping
-			"user": channel->login,
-			"displayname": data->broadcaster_user_name,
-			"uid": (string)data->broadcaster_user_id,
-		]), ([
-			"{uptime}": (string)uptime,
-			"{uptime_hms}": describe_time_short(uptime),
-			"{uptime_english}": describe_time(uptime),
-			"{initial}": co ? "0" : "1", //If there was a reset pending, it's not an initial stream start
-		]));
-	}
+	//Is there a cleaner way to say "convert to local time"?
+	object started_here = started->set_timezone(Calendar.now()->timezone());
+	write("** Channel %s went online at %s **\n", channel->login, started_here->format_nice());
+	int uptime = time() - started->unix_time();
+	event_notify("channel_online", channel->login, uptime, channel->userid);
+	mixed co = m_delete(stream_reset_callout, channel->userid);
+	remove_call_out(co);
+	channel->trigger_special("!channelonline", ([
+		//Synthesize a basic person mapping
+		"user": channel->login,
+		"displayname": data->broadcaster_user_name,
+		"uid": (string)data->broadcaster_user_id,
+	]), ([
+		"{uptime}": (string)uptime,
+		"{uptime_hms}": describe_time_short(uptime),
+		"{uptime_english}": describe_time(uptime),
+		"{initial}": co ? "0" : "1", //If there was a reset pending, it's not an initial stream start
+	]));
 	//TODO: Is it important that this happens *after* signals are sent out? Asynchronicity
 	//means it may well still happen before some things get processed. Would it be cleaner
 	//to instead guarantee that it will always happen *before* signals are sent?
@@ -637,6 +635,7 @@ __async__ void poll() {
 				"broadcaster_user_id": info->user_id,
 				"broadcaster_user_login": info->user_login,
 				"broadcaster_user_name": info->user_name,
+				"started_at": info->started_at,
 			]));
 		else if (!channels[channel->userid] && stream_online_since[channel->userid])
 			stream_offline(channel, ([]));
