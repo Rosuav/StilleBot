@@ -1,5 +1,3 @@
 *.log
-*.pem
-db.rosuav.com.key
 tts-credentials.json
 instance-config.json
