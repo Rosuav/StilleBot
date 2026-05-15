@@ -130,69 +130,6 @@ string livedb, fastdb; //Host name for the current read-write database, and poss
 array(string) database_ips = ({"sikorsky.mustardmine.com", "gideon.mustardmine.com"});
 mapping notify_channels = ([]);
 
-//Credentials management
-//NOTE: This may be expanded in the future to include the HTTPS server certificate.
-//NOTE: This may in the future be able to signal a certificate change, which would
-//negate any need for cache validity checks here. Simply ensure that we have a
-//connection to the key fob, and then depend on it for validity. (Given that a cert
-//is replaced when it still has weeks of life on it, even a failure of checking is
-//unlikely to cause actual issues.)
-@retain: mapping(string:string|array) sugarmill = ([]);
-@retain: Stdio.File|zero sugarsock = 0;
-
-//FIXME FIXME FIXME: Disconnect when no longer the active one, or perhaps better,
-//stop being a class and slide the callbacks to the new code instead.
-object sugarbuyer = class {
-	string buf = "";
-	array|zero file_receive = 0;
-
-	void readable(object sock, string data) {
-		buf += data;
-		while (sscanf(buf, "%s\n%s", string line, buf) == 2) {
-			if (file_receive) {
-				if (line == ".") {
-					//File complete! See if anyone's waiting on it.
-					//Note that this has a very small race condition. I would like an atomic
-					//"replace mapping value and return the previous value" but we're single
-					//threaded so it shouldn't happen.
-					string|array pending = sugarmill[file_receive[0]];
-					sugarmill[file_receive[0]] = file_receive[1];
-					if (arrayp(pending)) pending->success(file_receive[1]);
-					file_receive = 0;
-					continue;
-				}
-				file_receive[1] += line + "\n";
-				continue;
-			}
-			[string cmd, array args] = Array.shift(line / " ");
-			switch (cmd) {
-				case "hello":
-					write("Sugarmill: Attempting auth...\n");
-					sock->write("auth sugar %s\n", totp(G->G->instance_config->sugar));
-					break;
-				case "login": write("Sugarmill: Login OK\n"); sock->write("fetch db.rosuav.com\n"); break;
-				case "certificate": file_receive = ({args[0], ""}); break;
-				default: break;
-			}
-		}
-	}
-
-	void closed(object sock) {
-		werror("SUGARMILL DISCONNECTED\n");
-		//Autoreconnect?
-	}
-
-	__async__ void connect() {
-		if (G->G->sugarmill_sock) G->G->sugarmill_sock->close();
-		object sock = G->G->sugarmill_sock = Stdio.File();
-		sock->open_socket();
-		sock->set_nonblocking(readable, 0, closed);
-		if (!sock->connect_unix("/var/run/certmgr")) werror("SUGARMILL NOT RUNNING\n"); //Autoretry?
-	}
-
-	protected void create() {connect();}
-}();
-
 #if constant(SSLDatabase)
 //SSLDatabase automatically parses and encodes JSON.
 #define JSONDECODE(x) (x)
@@ -442,22 +379,7 @@ __async__ void reconnect(int force, int|void both) {
 		}
 		m_delete(pg_connections, indices(pg_connections)[*]); //Mutate the existing mapping so all clones of the module see that there are no connections
 	}
-	object ctx = SSL.Context();
-	mixed cert = sugarmill["db.rosuav.com"];
-	//For now, look for the local files. These will eventually cease to be.
-	string c = Stdio.read_file("db.rosuav.com.pem"), pk = Stdio.read_file("db.rosuav.com.key");
-	if (c && pk) cert = c + pk;
-	//If they don't exist, go back to checking the key fob.
-	if (!stringp(cert)) {
-		//It should be zero or an array. Add ourselves to it.
-		werror("Waiting for cert...\n");
-		object p = Concurrent.Promise();
-		sugarmill["db.rosuav.com"] += ({p});
-		cert = await(p->future());
-		werror("Got cert\n");
-	}
-	object pem = Standards.PEM.Messages(cert);
-	ctx->add_cert(pem->get_private_key(), pem->get_certificates());
+	object ctx = await(provide_ssl_certificate("db.rosuav.com"));
 	foreach (database_ips, string host) {
 		if (!pg_connections[host]) await((mixed)connect(ctx, host));
 		if (!both && host == G->G->instance_config->local_address) _have_fastdb(host);

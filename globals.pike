@@ -9,6 +9,7 @@ protected void create(string n)
 	//HACK: Support hot reload across the implementation of G->G->args. Can delete once bot restarted everywhere.
 	if (!G->G->args) G->G->args = Arg.parse(G->G->argv);
 	if (G->G->args["no-http"]) G->G->instance_config->http_address = G->G->instance_config->local_address = "";
+	add_constant("sugarmill_hmac", Crypto.SHA1.HMAC(MIME.decode_base32(G->G->instance_config->sugar || "JBSWY3DPEHPK3PXP"))); //Default 2FA key grants access to test/expired certs only
 }
 
 //A sendable message could be a string (echo that string), a mapping with a "message"

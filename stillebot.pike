@@ -5,7 +5,7 @@ https://dev.twitch.tv/docs/api/reference
 Requires OAuth authentication, which is by default handled by the GUI.
 */
 
-array(string) bootstrap_files = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike", "connection.pike", "window.pike", "modules", "modules/http", "zz_local"});
+array(string) bootstrap_files = ({"globals.pike", "pgssl.pike", "sugar.pike", "database.pike", "poll.pike", "connection.pike", "window.pike", "modules", "modules/http", "zz_local"});
 array(string) restricted_update;
 mapping G = (["dbsettings": ([]), "instance_config": ([])]);
 
@@ -79,6 +79,7 @@ class Hilfe {
 		::create(({"start backend",
 			"mixed _ignore = G->bootstrap(\"globals.pike\");",
 			"mixed _ignore = G->bootstrap(\"pgssl.pike\");",
+			"mixed _ignore = G->bootstrap(\"sugar.pike\");",
 			"mixed _ignore = G->bootstrap(\"database.pike\");",
 			"object poll = G->bootstrap(\"poll.pike\"); function req = poll->twitch_api_request;",
 		}));
@@ -96,7 +97,7 @@ int|Concurrent.Future main(int argc,array(string) argv) {
 	foreach ("test dbupdate lookup script help" / " ", string cmd) if (G->args[cmd]) G->args->exec = cmd; //"--test" is a synonym for "--exec=test"
 	if (string fn = G->args->exec) {
 		add_constant("INTERACTIVE", 1);
-		restricted_update = ({"globals.pike", "pgssl.pike", "database.pike", "poll.pike", "utils.pike"});
+		restricted_update = ({"globals.pike", "pgssl.pike", "sugar.pike", "database.pike", "poll.pike", "utils.pike"});
 		bootstrap_all();
 		if (fn == 1)
 			if (sizeof(G->args[Arg.REST])) [fn, G->args[Arg.REST]] = Array.shift(G->args[Arg.REST]);
