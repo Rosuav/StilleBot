@@ -1,0 +1,37 @@
+<!DOCTYPE HTML>
+<html lang=en>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Local WebSocket test</title>
+</head>
+<body>
+<main>
+<div>
+	<button type=button data-host="127.0.0.1">Loopback IP</button>
+	<button type=button data-host=localhost>Loopback IP</button>
+	<button type=button data-host="192.168.2.100">LAN IP</button>
+	<button type=button data-host=traal>LAN name</button>
+	<button type=button data-host="2403:5803:f90e:8000::8ef7">External IP</button>
+	<button type=button data-host="traal6.rosuav.com">External name</button>
+</div>
+<ul id=status></ul>
+</main>
+<script type=module>
+import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
+const {LI} = choc; //autoimport
+on("click", "button", e => {
+	const host = e.match.dataset.host;
+	const socket = new WebSocket("ws://" + host + ":4567/ws");
+	set_content("#status", LI("Connecting..."));
+	socket.onopen = () => {
+		DOM("#status").append(LI("Connected."));
+		socket.close();
+	};
+	socket.onclose = (e) => {
+		DOM("#status").append(LI("Closed."));
+	};
+});
+</script>
+</body>
+</html>
