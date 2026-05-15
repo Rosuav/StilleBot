@@ -23,12 +23,18 @@
 <script type=module>
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {LI} = choc; //autoimport
+const loopback = await navigator.permissions.query({ name: "loopback-network" });
+const local = await navigator.permissions.query({ name: "local-network" });
+set_content("#status", LI("Loopback " + loopback.state + ", local " + local.state));
 on("click", "button", e => {
 	const host = e.match.dataset.host;
 	const socket = new WebSocket("ws://" + host + ":4567/ws");
 	set_content("#status", LI("Connecting..."));
 	socket.onopen = () => {
 		DOM("#status").append(LI("Connected."));
+	};
+	socket.onmessage = (e) => {
+		DOM("#status").append(LI("Message: " + e.data));
 		socket.close();
 	};
 	socket.onclose = (e) => {
