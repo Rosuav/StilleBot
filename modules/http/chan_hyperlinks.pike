@@ -27,6 +27,7 @@ constant hyperlink = special_trigger("!hyperlink", "A user posted a hyperlink", 
 	"{allowed}": "One of 'unblocked', 'mod', 'vip', 'raider', 'permit', or 'twitch', or blank otherwise",
 	"{offense}": "0 if given a permit, else number of times they've posted links this stream",
 	"{msg}": "The message that was posted",
+	"{msgid}": "The ID of that message",
 ]), "Status");
 
 constant ENABLEABLE_FEATURES = ([
@@ -128,7 +129,12 @@ string evaluate_message(object channel, mapping person, string msg) {
 	//Humans will talk about "strike one" as the first, but since we're looking up in an array,
 	//the first offense is strike 0.
 	int strike = !allowed && bans[person->uid]++;
-	channel->trigger_special("!hyperlink", person, (["{allowed}": allowed || "", "{offense}": allowed ? "0" : (string)(strike + 1), "{msg}": msg]));
+	channel->trigger_special("!hyperlink", person, ([
+		"{allowed}": allowed || "",
+		"{offense}": allowed ? "0" : (string)(strike + 1),
+		"{msg}": msg,
+		"{msgid}": person->msgid,
+	]));
 	if (allowed || strike < 0) return 0; //Actually, no punishment; the user had a permit (aka "Get Out Of Jail Free Card") or was otherwise allowed
 	mapping cfg = channel->config->hyperlinks;
 	if (strike >= sizeof(cfg->warnings)) strike = sizeof(cfg->warnings) - 1;
