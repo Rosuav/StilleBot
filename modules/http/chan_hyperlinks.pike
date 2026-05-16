@@ -23,7 +23,8 @@ $$save_or_login$$
 
 @retain: mapping(int:mapping(int:int)) hyperlink_bans = ([]);
 
-constant hyperlink = special_trigger("!hyperlink", "A user posted a hyperlink (if filtering is active)", "The user", ([
+constant hyperlink = special_trigger("!hyperlink", "A user posted a hyperlink", "The user", ([
+	"{allowed}": "One of 'unblocked', 'mod', 'vip', 'raider', 'permit', or 'twitch', or blank otherwise",
 	"{offense}": "0 if given a permit, else number of times they've posted links this stream",
 	"{msg}": "The message that was posted",
 ]), "Status");
@@ -42,7 +43,6 @@ void enable_feature(object channel, string kwd, int state) {
 }
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
-
 	return render(req, ([
 		"vars": (["ws_group": req->misc->is_mod ? "control" : ""]),
 		req->misc->is_mod ? "save_or_login" : "ignoreme": "",
@@ -93,9 +93,11 @@ int(1bit) contains_link(string msg) {
 }
 
 object twitchlink = Regexp.SimpleRegexp("(https://)*(www.)*twitch.tv/");
-@hook_allmsgs: int message(object channel, mapping person, string msg) {
+
+//Helper for the allmsgs hook - returns a reason for permitting the message, or null if it may need to be blocked
+string evaluate_message(object channel, mapping person, string msg) {
 	mapping cfg = channel->config->hyperlinks || ([]);
-	if (!cfg->blocked) return 0; //All links are permitted, no filtering is being done
+	if (!cfg->blocked) return "unblocked"; //All links are permitted, no filtering is being done
 	if (person->badges->?_mod) {
 		//Mods are always permitted, no matter what settings we have. Check for a !permit magic command,
 		//or maybe this should be an explicit builtin?? Note that there's no message in chat here.
@@ -104,26 +106,31 @@ object twitchlink = Regexp.SimpleRegexp("(https://)*(www.)*twitch.tv/");
 			if (!bans) bans = hyperlink_bans[channel->userid] = ([]);
 			bans[__ARGS__[0]] = -1;
 		};
-		return 0;
+		return "mod";
 	}
-	if (!cfg->warnings || !sizeof(cfg->warnings)) return 0; //No actions to be taken against links
-	if (!contains_link(msg)) return 0; //No link? No problem.
+	if (!cfg->warnings || !sizeof(cfg->warnings)) return "unblocked"; //No actions to be taken against links
 	if (cfg->permit_twitch_links) {
 		//When Twitch links are permitted, permit anything from any Twitch subdomain.
 		//Note that this doesn't allow you to specify "only clips from my channel".
 		//TODO: Allow "only clips"?
-		if (!contains_link(twitchlink->replace(msg, ""))) return 0; //Remove the Twitch links, then if there's any other links, it's still got links.
+		if (!contains_link(twitchlink->replace(msg, ""))) return "twitch"; //Remove the Twitch links, then if there's any other links, it's still got links.
 	}
-	if (person->badges->?vip && has_value(cfg->permit, "vip")) return 0;
-	if (channel->raiders[person->uid] && has_value(cfg->permit, "raider")) return 0;
-	//If we got this far, the user probably needs to be punished.
+	if (person->badges->?vip && has_value(cfg->permit, "vip")) return "vip";
+	if (channel->raiders[person->uid] && has_value(cfg->permit, "raider")) return "raider";
+}
+
+@hook_allmsgs: int message(object channel, mapping person, string msg) {
+	if (!contains_link(msg)) return 0; //No link? No problem.
+	string allowed = evaluate_message(channel, person, msg);
+	//If allowed isn't set, the user probably needs to be punished.
 	mapping bans = hyperlink_bans[channel->userid];
 	if (!bans) bans = hyperlink_bans[channel->userid] = ([]);
 	//Humans will talk about "strike one" as the first, but since we're looking up in an array,
 	//the first offense is strike 0.
-	int strike = bans[person->uid]++;
-	channel->trigger_special("!hyperlink", person, (["{offense}": (string)(strike + 1), "{msg}": msg]));
-	if (strike < 0) return 0; //Actually, no punishment; the user had a permit (aka "Get Out Of Jail Free Card")
+	int strike = !allowed && bans[person->uid]++;
+	channel->trigger_special("!hyperlink", person, (["{allowed}": allowed || "", "{offense}": allowed ? "0" : (string)(strike + 1), "{msg}": msg]));
+	if (allowed || strike < 0) return 0; //Actually, no punishment; the user had a permit (aka "Get Out Of Jail Free Card") or was otherwise allowed
+	mapping cfg = channel->config->hyperlinks;
 	if (strike >= sizeof(cfg->warnings)) strike = sizeof(cfg->warnings) - 1;
 	//TODO: If we don't have moderator:manage:banned_users on the broadcaster, demand that a voice
 	//be selected. Otherwise this will just fail.
