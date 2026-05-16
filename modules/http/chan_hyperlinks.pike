@@ -103,7 +103,6 @@ object twitchlink = Regexp.SimpleRegexp("(https://)*(www.)*twitch.tv/");
 			mapping bans = hyperlink_bans[channel->userid];
 			if (!bans) bans = hyperlink_bans[channel->userid] = ([]);
 			bans[__ARGS__[0]] = -1;
-			werror("%O\n", bans);
 		};
 		return 0;
 	}
