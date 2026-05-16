@@ -1545,7 +1545,7 @@ mapping all_twitch_scopes = ([
 	"moderator:manage:banned_users": "*Ban/timeout/unban users",
 	"moderator:read:blocked_terms": "See currently-blocked words and phrases",
 	"moderator:manage:blocked_terms": "*Change the blocked words/phrases list",
-	"moderator:manage:chat_messages": "*Delete individual chat messages",
+	"moderator:manage:chat_messages": "*Pin, unpin, and delete individual chat messages",
 	"moderator:read:chat_settings": "View chat restrictions eg slow mode",
 	"moderator:manage:chat_settings": "*Set/remove chat restrictions eg slow mode",
 	"moderator:read:chatters": "See who's currently in chat",
