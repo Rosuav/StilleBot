@@ -25,6 +25,12 @@ back is probably never going to happen now. At least in theory, this should
 work for any Postgres database over SSL, with no Stillebot-specific code.
 NOTE: Fully asynchronous I/O. Everything is non-blocking and promise-based.
 
+**sugar.pike** connects to the Sugar Mill keyfob (see separate repo on GitHub)
+to access SSL certificates and their private keys. These are used for database
+connections and the HTTPS server. Ideally, it should be possible to spin up a
+localhost-only bot without the sugar mill, with no encryption on the web server
+and using a Unix socket for the database; as of 20260518 this is not possible.
+
 **database.pike** has all of the Stillebot-specific database code. Some of the
 helper functions are fairly trivial and could be replaced with queries in the
 places they're used; but the vast majority of queries use more helpful helpers
@@ -41,7 +47,9 @@ some additional helpers including getting user info (and translating between
 user IDs and logins), get_helix_paginated which wraps all the pagination logic
 (note that "Helix" is now the only Twitch API, but formerly there was Kraken),
 and as of 20260423, it polls every 60 seconds to see what streams are online.
-This last one is where the file name came from but is likely to soon be gone.
+This last one is where the file name came from but is likely to be reworked
+somewhat; it is necessary on bot startup and handover but should no longer
+need to happen every 60 seconds. This will reduce bot-to-Twitch load.
 
 **connection.pike** handles channels/streams. It handles IRC and EventSub
 connections, and has all core functionality relating to managing a channel:
