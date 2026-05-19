@@ -1338,7 +1338,7 @@ void delete_single_message(object channel, mapping data) {channel->delete_single
 	//As of 20240401, this notification does not include stream tags. Even worse, there's a
 	//short time delay during which the OLD tags are returned by the API. So we lag out by
 	//a bit, *then* query the tags. Can eliminate both if the notification grows tags.
-	if (!channel) {werror("Setup changed w/o channel: %O\n", info); return;}
+	if (!channel) return;
 	sleep(0.5);
 	mapping chaninfo = await(get_channel_info(info->broadcaster_user_name));
 	channel->trigger_special("!channelsetup", ([
