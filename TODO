@@ -275,3 +275,6 @@
     reauthenticate (maybe on next channel-online)
   - If the broadcaster sees this and doesn't do anything, don't continue to spam, just flag
     the channel as inactive and probably delete most of the data at some point.
+* On presenting a "you're not a mod" page, check perms for user:read:moderated_channels, and
+  if not, offer a login page to add it. Query moderated channels. Add self to each tracked
+  channel as a moderator.
