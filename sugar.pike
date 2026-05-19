@@ -1,4 +1,5 @@
 //Sugar buyer - connect to CSR and get a certificate
+//Copy of satisfactory-looting's sugar.pike
 inherit annotated;
 
 @retain: mapping(string:Standards.PEM.Messages) sugarmill_certs = ([]);
