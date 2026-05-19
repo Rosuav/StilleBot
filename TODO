@@ -278,3 +278,6 @@
 * On presenting a "you're not a mod" page, check perms for user:read:moderated_channels, and
   if not, offer a login page to add it. Query moderated channels. Add self to each tracked
   channel as a moderator.
+* Messages in chat do not trigger mod status on an inactive bot. How to solve this? Should
+  we ask for moderation:read scope from all active channels, query the mod list, get events
+  on change, and maintain a list?
