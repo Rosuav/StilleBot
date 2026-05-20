@@ -276,9 +276,8 @@
   - If the broadcaster sees this and doesn't do anything, don't continue to spam, just flag
     the channel as inactive and probably delete most of the data at some point.
 * On presenting a "you're not a mod" page, check perms for user:read:moderated_channels, and
-  if not, offer a login page to add it. Query moderated channels. Add self to each tracked
-  channel as a moderator.
-* Messages in chat do not trigger mod status on an inactive bot. How to solve this? Should
-  we ask for moderation:read scope from all active channels, query the mod list, get events
-  on change, and maintain a list?
-  - Now requesting it. Need to query channel moderators as well as query moderated channels.
+  if not, offer a login page to add it. Upon refresh, this will trigger the modprobe and
+  thus should recognize mod status.
+* Mod status is not tracked on an inactive bot. Need some way to share this. When that's
+  done, we can do a mod lookup on code reload, and make sure it's also done on change of
+  active bot, and then maintain it using EventSub (not currently being done).
