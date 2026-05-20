@@ -38,8 +38,10 @@ What can the bot do for you? Check out the [help pages](/c/help) or dive right i
 Still got questions? Reach out to [Rosuav](https://twitch.tv/rosuav) via Twitch, Discord, or GitHub.
 ";
 
+//We request these at a minimum from all channel owners. Try to keep this minimal.
+constant scopes_required = "chat:read channel:bot bits:read moderator:read:followers moderation:read";
 __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
-	string scopes = "chat:read channel:bot bits:read moderator:read:followers";
+	string scopes = scopes_required; //Will be expanded on if you've already granted others
 	if (int userid = (int)req->misc->session->user->?id) {
 		object channel = G->G->irc->id[userid];
 		if (channel) return render_template(bot_is_active, ([]));

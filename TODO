@@ -281,3 +281,4 @@
 * Messages in chat do not trigger mod status on an inactive bot. How to solve this? Should
   we ask for moderation:read scope from all active channels, query the mod list, get events
   on change, and maintain a list?
+  - Now requesting it. Need to query channel moderators as well as query moderated channels.

@@ -554,7 +554,9 @@ __async__ void emotify() {
 __async__ void channel_scopes() {
 	//Audit channel permission scopes; we need all active channels to have granted these.
 	//Scope list copied from modules/http/activate.pike
-	array wantscopes = "chat:read channel:bot bits:read moderator:read:followers" / " ";
+	add_constant("connect_to_channel", __async__ lambda(int uid) { });
+	string scopes_required = G->bootstrap("modules/http/activate.pike")->scopes_required;
+	array wantscopes = scopes_required / " ";
 	array channels = await(G->G->DB->query_ro(#"
 		select stillebot.botservice.twitchid as userid, login, display_name, coalesce(data, '{}') as creds
 		from stillebot.botservice left join stillebot.config
@@ -563,7 +565,8 @@ __async__ void channel_scopes() {
 	foreach (channels, mapping chan) {
 		array havescopes = chan->creds->scopes || ({ });
 		array needscopes = wantscopes - havescopes;
-		if (sizeof(needscopes)) {
+		if (sizeof(needscopes) && chan->creds->missing * " " != needscopes * " ") {
+			werror("%O needs %O\n", chan->login, needscopes * " ");
 			chan->creds->missing = needscopes;
 			await(G->G->DB->save_config(chan->userid, "credentials", chan->creds));
 		}
