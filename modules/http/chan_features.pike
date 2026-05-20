@@ -33,7 +33,7 @@ $$save_or_login||$$
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	return render(req, ([
-		"vars": (["ws_group": req->misc->is_mod ? "control" : "view"]),
+		"vars": (["ws_group": await(modprobe(req)) ? "control" : "view"]),
 		"chan": req->misc->channel->name[1..] - "!",
 	]) | req->misc->chaninfo);
 }

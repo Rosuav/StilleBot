@@ -96,9 +96,8 @@ void enable_feature(object channel, string kwd, int state) {
 	G->G->update_command(channel, "!!", info->special, response);
 }
 
-__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
-{
-	if (!req->misc->is_mod) {
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
+	if (!await(modprobe(req))) {
 		//Read-only view is a bit of a hack - it just doesn't say it's loading.
 		return render_template("chan_specials.md", ([
 			"loadingmsg": "Restricted to moderators only",

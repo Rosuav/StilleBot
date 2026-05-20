@@ -42,7 +42,7 @@ mapping message_params(object channel, mapping person, array param, mapping cfg)
 }
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
-	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
+	if (!await(modprobe(req))) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
 	return render(req, ([
 		"vars": (["ws_group": ""]),
 	]) | req->misc->chaninfo);

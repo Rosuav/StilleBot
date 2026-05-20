@@ -153,7 +153,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	if (string scopes = req->misc->channel->userid && ensure_bcaster_token(req, "channel:manage:redemptions"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
-	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
+	if (!await(modprobe(req))) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
 	//Force an update, in case we have stale data. Note that the command editor will only use
 	//what's sent in the initial response, but at least this way, if there's an issue, hitting
 	//Refresh will fix it (otherwise there's no way for the client to force a refetch).

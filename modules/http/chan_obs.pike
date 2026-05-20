@@ -83,7 +83,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			"title": "Mustard Mine-OBS integration",
 		]));
 	}
-	if (!req->misc->is_mod) {
+	if (!await(modprobe(req))) {
 		if (req->misc->session->user) return render(req, req->misc->chaninfo | ([
 			"notmodmsg": "You're logged in, but you're not a recognized mod. Please say something in chat so I can see your sword.",
 			"blank": "",

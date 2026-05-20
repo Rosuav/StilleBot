@@ -338,7 +338,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		Stdio.append_file("patreon.log", sprintf("GOT PATREON NOTIFICATION %O %O\n", req->misc->channel->name, body));
 		return "Thanks!";
 	}
-	if (req->misc->is_mod) {
+	if (await(modprobe(req))) {
 		return render(req, ([
 			"vars": (["ws_group": ""]),
 			"webhook_url": sprintf("%s/channels/%s/integrations",

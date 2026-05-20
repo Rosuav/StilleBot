@@ -44,9 +44,10 @@ void enable_feature(object channel, string kwd, int state) {
 }
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
+	int mod = await(modprobe(req));
 	return render(req, ([
-		"vars": (["ws_group": req->misc->is_mod ? "control" : ""]),
-		req->misc->is_mod ? "save_or_login" : "ignoreme": "",
+		"vars": (["ws_group": mod ? "control" : ""]),
+		mod ? "save_or_login" : "ignoreme": "",
 	]) | req->misc->chaninfo);
 }
 

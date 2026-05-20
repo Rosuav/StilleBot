@@ -261,7 +261,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	login += " [Mod login](:.twitchlogin)"; //TODO: If logged in as wrong user, allow logout
 	mapping config = ([]);
 	config->title = givcfg->title || ""; //Give this one even to non-mods
-	if (req->misc->is_mod) {
+	if (await(modprobe(req))) {
 		config->cost = givcfg->cost || 1;
 		config->max = givcfg->max_tickets;
 		config->desc = givcfg->desc_template || "";

@@ -48,7 +48,7 @@ From here, you can make all kinds of really important changes. Maybe.
 */
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
-	if (!req->misc->is_mod) return render_template("login.md", (["msg": "that the broadcaster use it"]) | req->misc->chaninfo);
+	if (!await(modprobe(req))) return render_template("login.md", (["msg": "that the broadcaster use it"]) | req->misc->chaninfo);
 	if (req->misc->session->fake) return render(req, (["js": "chan_mastercontrol"]) | req->misc->chaninfo);
 	if ((int)req->misc->session->user->id != req->misc->channel->userid
 		//&& !is_localhost_mod(req->misc->session->user->login, req->get_ip()) //Uncomment to allow localhost override for this page (not normally)

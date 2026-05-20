@@ -68,7 +68,7 @@ void enable_feature(object channel, string kwd, int state) {
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	//Read-only view is a bit of a hack - it just doesn't say it's loading.
-	if (!req->misc->is_mod) return render_template(markdown, ([
+	if (!await(modprobe(req))) return render_template(markdown, ([
 		"loadingmsg": "Restricted to moderators only",
 	]) | req->misc->chaninfo);
 	return render_template(markdown, ([

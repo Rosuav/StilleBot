@@ -76,7 +76,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		synchronize(req->misc->channel->userid);
 		return "Okay.";
 	}
-	if (!req->misc->is_mod) return render_template("login.md", req->misc->chaninfo);
+	if (!await(modprobe(req))) return render_template("login.md", req->misc->chaninfo);
 	if (string scopes = !req->misc->session->fake && ensure_bcaster_token(req, "channel:manage:schedule"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
 	return render(req, ([
