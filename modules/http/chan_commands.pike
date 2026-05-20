@@ -140,7 +140,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		}
 		return jsonify(result, 7);
 	}
-	if (req->misc->is_mod) {
+	if (await(modprobe(req))) {
 		if (req->variables->cmdname) {
 			//HACK: Test out a command
 			object c = req->misc->channel;

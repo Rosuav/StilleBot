@@ -222,7 +222,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		}
 		return (["type": "image/png", "data": Image.PNG.encode(image, (["alpha": alpha]))]);
 	}
-	if (!req->misc->is_mod) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
+	if (!await(modprobe(req))) return render_template("login.md", (["msg": "moderator privileges"]) | req->misc->chaninfo);
 	return render(req, ([
 		"vars": ([
 			"ws_group": "",
