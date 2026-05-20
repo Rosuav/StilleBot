@@ -269,6 +269,45 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 	});
 }
 
+//This is only useful in an http_endpoint, but due to bootstrap order, it can't be
+//part of the inheritable. So it's global, but accepts a Request as a parameter.
+//If mod status is needed: if (await(modprobe(req))) is_a_mod; else not_a_mod;
+//Will requery mod status by channel or user, if permissions are available, and
+//if this session hasn't checked recently. NOTE: There could be weirdness if (a)
+//you just received a mod sword, (b) you are querying an inactive bot, and (c)
+//you checked just before getting a mod sword, less than five minutes ago. The
+//solution here would be properly sharing mod status with the inactive bot.
+@export: __async__ int modprobe(Protocols.HTTP.Server.Request req) {
+	if (!req->misc->channel) return 0; //This only makes sense for channel pages
+	if (req->misc->is_mod) return 1; //We don't revoke mod status this way
+	mapping user = req->misc->session->user;
+	if (!user) return 0; //Not logged in? Definitely not a mod.
+	if (req->misc->session->modcheck_time > time() - 300) return 0;
+	//Okay, let's go probe that.
+	req->misc->session->modcheck_time = time();
+	object channel = req->misc->channel;
+	//Two options. Do we have perms from the channel?
+	mapping cred = G->G->user_credentials[channel->userid];
+	if (has_value(cred->scopes, "moderation:read") || has_value(cred->scopes, "channel:manage:moderators")) {
+		//This happens automatically on code reload, but we'll do it again if nec.
+		//Can remove this if (a) we listen for EventSub messages on adding/removing mods,
+		//and (b) this information is communicated to the inactive bot.
+		await(channel->moderator_lookup());
+		if (channel->user_badges[(int)user->id]->?_mod) {m_delete(req->misc->chaninfo, "save_or_login"); return req->misc->is_mod = 1;}
+		return 0; //If we can do a mod lookup and you're not listed, then you're not a mod.
+	}
+	//Alternatively, do we have perms from the user?
+	cred = G->G->user_credentials((int)user->id);
+	if (has_value(cred->?scopes || ({ }), "user:read:moderated_channels")) {
+		array channels = await(get_helix_paginated("https://api.twitch.tv/helix/moderation/channels",
+			(["user_id": (string)user->id]),
+			(["Authorization": (int)user->id])));
+		//TODO: Record this for other channels you mod too, to save querying again for another channel
+		if (has_value(channels->broadcaster_id, (string)channel->userid)) {m_delete(req->misc->chaninfo, "save_or_login"); return req->misc->is_mod = 1;}
+	}
+	//No permissions? Assume not a mod.
+}
+
 @export: __async__ array get_banned_list(string|int userid, int|void force) {
 	if (intp(userid)) userid = (string)userid;
 	mapping cached = G_G_("banned_list", userid);
