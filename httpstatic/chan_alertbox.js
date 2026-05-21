@@ -78,10 +78,11 @@ populate_freemedia();
 
 let have_authkey = false;
 export function sockmsg_authkey(msg) {
-	DOM("#alertboxlink").href = "alertbox?key=" + msg.key;
+	const link = "alertbox?key=" + msg.key;
+	document.querySelectorAll(".alertboxlink").forEach(a => a.href = link);
 	msg.key = "<hidden>";
 	have_authkey = true;
-	if (DOM("#previewdlg").open) DOM("#alertembed").src = DOM("#alertboxlink").href;
+	DOM("#alertembed").src = link;
 }
 
 function update_condition_summary(par) {
@@ -264,10 +265,8 @@ function update_gif_variants() {
 
 let selecttab = location.hash.slice(1);
 export function render(data) {
-	if (data.authkey === "<REVOKED>") {
-		have_authkey = false;
-		if (DOM("#previewdlg").open) ws_sync.send({cmd: "getkey"});
-	}
+	if (data.authkey === "<REVOKED>") have_authkey = false;
+	if (!have_authkey) ws_sync.send({cmd: "getkey"}); //Automatically fetch the key on load. This key will be different for mods than the broadcaster, so it can't just be in state.
 	if (data.alerttypes) data.alerttypes.forEach(info => {
 		const type = info.id;
 		alert_definitions[type] = info;
@@ -820,19 +819,18 @@ on("reset", ".alertconfig", e => {
 	], () => ws_sync.send({cmd: "delete", type: "alert", id}))();
 });
 
-on("dragstart", "#alertboxlink", e => {
+on("dragstart", ".alertboxlink", e => {
 	//TODO: Set the width and height to the (individual) maximums of all alerts, incl defaults
 	e.dataTransfer.setData("text/uri-list", `${e.match.href}&layer-name=Mustard%20Mine%20Alerts&layer-width=600&layer-height=400`);
 });
 
 on("click", "#authpreview", e => {
 	if (!have_authkey) ws_sync.send({cmd: "getkey"});
-	else DOM("#alertembed").src = DOM("#alertboxlink").href;
 	DOM("#previewdlg").showModal();
 });
 on("click", "#alertboxlabel", e => {
 	const inp = DOM("#alertboxdisplay");
-	inp.value = DOM("#alertboxlink").href;
+	inp.value = document.querySelector(".alertboxlink").href; //There will be multiple matching elements but they'll all have the same href
 	inp.parentElement.classList.remove("blur");
 	inp.select();
 });

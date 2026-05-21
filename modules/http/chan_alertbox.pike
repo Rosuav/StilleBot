@@ -56,7 +56,7 @@ constant markdown = #"# Alertbox management for channel $$channel$$
 
 <!-- -->
 
-$$notmodmsg||To use these alerts, [show the preview](:#authpreview) from which you can access your unique display link.<br>$$
+$$notmodmsg||To use these alerts, [show the preview](:#authpreview) or add [this browser source](alertbox?key=LOADING :.alertboxlink) to OBS.<br>$$
 $$blank||Keep this link secret; if the authentication key is accidentally shared, you can [Revoke Key](:.opendlg data-dlg=revokekeydlg) to generate a new one.$$
 
 $$notmod2||[Show library](:.showlibrary) [Recent events](:.opendlg data-dlg=recenteventsdlg)$$
@@ -236,7 +236,7 @@ form:not(.unsaved-changes) .if-unsaved {display: none;}
 > ### Alert preview
 >
 > Drag this to OBS or use this URL as a browser source:
-> <a id=alertboxlink href=\"alertbox?key=LOADING\" target=_blank>Alert Box</a><br><label id=alertboxlabel>
+> <a class=alertboxlink href=\"alertbox?key=LOADING\" target=_blank>Alert Box</a><br><label id=alertboxlabel>
 > Click to reveal: <span class=blur><input readonly size=65 value=\"https://mustardmine.com/channels/$$channel$$/alertbox?key=(hidden)\" id=alertboxdisplay></span></label>
 >
 > Your alerts currently look like this:
@@ -710,6 +710,13 @@ void update_all(string|int channelid, string authkey) {
 	get_state("preview-#" + channelid)->then() {_low_send_updates(__ARGS__[0], allsocks);};
 }
 
+//This is a bit overengineered for current needs. It used to be a big deal to get this auth key,
+//since - unlike the nonces used for monitors etc - this could get you a Twitch IRC login. Now
+//that that's not a thing, the information that would be leaked through this key is comparable
+//to any other nonce, so this could be provided directly in the state. However, there's currently
+//only one "control" connection, and in order to achieve easy mod testing, we have a separate
+//"preview-only" key that gets test alerts from yourself only; that doesn't work with different
+//state, so we have a message to request the relevant key.
 __async__ void websocket_cmd_getkey(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel || grp != "control") return;
