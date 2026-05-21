@@ -297,7 +297,7 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 		return 0; //If we can do a mod lookup and you're not listed, then you're not a mod.
 	}
 	//Alternatively, do we have perms from the user?
-	cred = G->G->user_credentials((int)user->id);
+	cred = G->G->user_credentials[(int)user->id];
 	if (has_value(cred->?scopes || ({ }), "user:read:moderated_channels")) {
 		array channels = await(get_helix_paginated("https://api.twitch.tv/helix/moderation/channels",
 			(["user_id": (string)user->id]),
