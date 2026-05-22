@@ -287,14 +287,21 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 	//as moderation:read permission is a default perm on activation.
 	object channel = req->misc->channel;
 	mapping cred = G->G->user_credentials[channel->userid];
-	if (has_value(cred->scopes, "moderation:read") || has_value(cred->scopes, "channel:manage:moderators")) return 0;
-	if (req->misc->session->modcheck_time > time() - 300) return 0;
+	if (has_value(cred->scopes, "moderation:read") || has_value(cred->scopes, "channel:manage:moderators")) {
+		req->misc->chaninfo->save_or_login = "*Channel moderators may make changes here.*";
+		return 0;
+	}
 	//Otherwise, we can query the swords held by this user, but don't do that on every
 	//page load - once per five minutes is probably fine. If this is a problem, it should
 	//be sufficient to post a message in chat, which will update mod status.
 	cred = G->G->user_credentials[(int)user->id];
-	if (!has_value(cred->?scopes || ({ }), "user:read:moderated_channels")) return 0;
+	if (!has_value(cred->?scopes || ({ }), "user:read:moderated_channels")) {
+		//We can't currently check if you have a sword. Reword the "not a mod" message and include a button.
+		req->misc->chaninfo->save_or_login = "*You're logged in, but not a recognized mod.* [Show mod swords](:.twitchlogin data-scopes=user:read:moderated_channels)";
+		return 0;
+	}
 	//Okay, let's go probe that.
+	if (req->misc->session->modcheck_time > time() - 300) return 0;
 	req->misc->session->modcheck_time = time();
 	array channels = await(get_helix_paginated("https://api.twitch.tv/helix/moderation/channels",
 		(["user_id": (string)user->id]),

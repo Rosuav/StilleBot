@@ -131,7 +131,13 @@ __async__ mapping(string:mixed) find_channel(Protocols.HTTP.Server.Request req, 
 	if (mapping user = req->misc->session->?user) {
 		if (channel->is_mod((string)user->id) || is_localhost_mod(user->login, req->get_ip()))
 			req->misc->is_mod = 1;
-		else req->misc->chaninfo->save_or_login = "<i>You're logged in, but not a recognized mod. Before you can make changes, go to the channel and say something, so I can see your mod sword. Thanks!</i>";
+		//Note that this message will ideally be quite rare, as it happens only if (1) the channel
+		//has not granted moderation:read permission (one of the default perms); (2) the user HAS
+		//granted user:read:moderated_channels permission (likely from a previous "not a mod" prompt);
+		//(3) the user checked a page within the last five minutes and was seen to not have a sword;
+		//and (4) it's only relevant if the user does in fact now have a sword. Note that, if the
+		//user has NOT granted permission, this message will be replaced inside modprobe().
+		else req->misc->chaninfo->save_or_login = "*You're logged in, but not a recognized mod. If you only just received your sword, please go to the channel and say something, so I can see your brand new mod sword. Thanks!*";
 		req->misc->chaninfo->logout = "| <a href=\"/logout\" class=twitchlogout>Log out</a>";
 		if ((int)user->id == channel->userid) {
 			//The channel may be in a reduced functionality state due to missing permissions.
