@@ -244,10 +244,8 @@ class channel(mapping identity) {
 			(["Authorization": userid])));
 		array prevmods = G->G->DB->load_cached_config(userid, "moderators")->mods || ({ });
 		array nowmods = sort(mods->user_id); //Sort order doesn't matter as long as it's consistent. This will sort by user ID as strings, which is weird, but whatever.
-		if (prevmods * " " != nowmods * " ") {
-			werror("Mods for %O have changed!\n- Lose:%{ %s%}\n- Gain:%{ %s%}\n", display_name, prevmods - nowmods, nowmods - prevmods);
+		if (prevmods * " " != nowmods * " ")
 			G->G->DB->save_config(userid, "moderators", (["lastcheck": time(), "mods": nowmods]));
-		}
 	}
 
 	void load_commands(array cmds) { //Could be inlined into create() if desired
@@ -916,13 +914,13 @@ class channel(mapping identity) {
 		return has_vip_badge[uid];
 	}
 	void recheck_mod_status(string uid, int(1bit) now_mod, int(1bit) now_vip) {
-		//TODO maybe: Ignore this if we have moderation:read or channel:manage:moderators,
-		//since we then manage things in other ways
+		//TODO: Split this up - updating mod and VIP should be independent if triggered
+		//by EventSub (note that currently we don't get VIP status in eventsub).
 		mapping info = G->G->DB->load_cached_config(userid, "moderators");
 		if (now_mod != is_mod(uid)) {
-			werror("MOD STATUS CHANGED %O %O %O %O\n", display_name, uid, is_mod(uid), now_mod);
 			array prevmods = info->mods || ({ });
 			info->mods = now_mod ? prevmods + ({uid}) : prevmods - ({uid});
+			sort(info->mods); //Order needs to be consistent with moderator_lookup()
 			//Note that we do not update the timestamp here. If anything needs to know how recently
 			//we checked mod status, it should see the oldest date relevant, and if we don't have
 			//permission to list all mods, it will remain at zero.
@@ -1337,6 +1335,13 @@ void autoreward(object channel, mapping data) {
 	//the channel.bits.use event, so currently none of these actually need to do anything.
 	//werror("AUTO REWARD %O %O\n", channel, data);
 }
+
+//NOTE: The docs say only that moderation:read can enable this. What if you have manage
+//but not read? This is fine for querying the list of mods, it is likely also fine for this.
+@EventNotify("channel.moderator.add=1", ({"moderation:read", "channel:manage:moderators"})):
+void addmod(object channel, mapping data) {channel->recheck_mod_status(data->user_id, 1, 0);} //If you're now a mod, you aren't a VIP
+@EventNotify("channel.moderator.remove=1", ({"moderation:read", "channel:manage:moderators"})):
+void remmod(object channel, mapping data) {channel->recheck_mod_status(data->user_id, 0, 0);} //If you were a mod, you weren't a VIP. TODO: What if you become a VIP and lose mod at the same time? They should be independent.
 
 @EventNotify("channel.chat.message=1", ({"channel:bot"}), "user_id"):
 void chatmessage(object channel, mapping data) {channel->chat_message_received(data);}
