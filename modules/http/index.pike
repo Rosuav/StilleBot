@@ -32,6 +32,13 @@ __async__ string pingrw(Protocols.HTTP.Server.Request req) {
 	return sprintf("%O\n", await(G->G->DB->query_rw("select 1")));
 }
 
+//For channels where we don't have mod-check perms, let the user click a button to recheck
+//mod status. Otherwise it will only be done occasionally.
+string swordcheck(Protocols.HTTP.Server.Request req) {
+	req->misc->session->modcheck_time = 0;
+	return "Okay";
+}
+
 //Quick and dirty font display test
 mapping font(Protocols.HTTP.Server.Request req) {return render_template(#"# Font test
 
@@ -55,4 +62,5 @@ protected void create(string name)
 	G->G->http_endpoints["pingro"] = pingro;
 	G->G->http_endpoints["pingrw"] = pingrw;
 	G->G->http_endpoints["font"] = font;
+	G->G->http_endpoints["swordcheck"] = swordcheck;
 }

@@ -301,7 +301,7 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 		return 0;
 	}
 	//Okay, let's go probe that.
-	if (req->misc->session->modcheck_time > time() - 300) return 0;
+	if (req->misc->session->modcheck_time > time() - 3600) return 0;
 	req->misc->session->modcheck_time = time();
 	array channels = await(get_helix_paginated("https://api.twitch.tv/helix/moderation/channels",
 		(["user_id": (string)user->id]),

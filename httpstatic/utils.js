@@ -96,6 +96,11 @@ on("click", ".twitchlogout", async e => {
 	location.reload();
 });
 
+on("click", "#recheck-modswords", async e => {
+	await fetch("/swordcheck");
+	location.reload();
+});
+
 //NOTE: This is very similar to the behaviour of <button command=show-modal command-for=some-dlg-id>
 //which was added to Chrome 135 and Firefox 144 (2025). Consider switching to that, eventually.
 on("click", ".opendlg", e => {e.preventDefault(); DOM("#" + e.match.dataset.dlg).showModal();});
