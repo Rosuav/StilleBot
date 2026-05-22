@@ -91,6 +91,9 @@ constant user_types = ({
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (mapping resp = ensure_login(req)) return resp;
+	//FIXME: If the broadcaster hasn't givem channel:read:vips or channel:manage:vips,
+	//notify the front end to disable the VIPs check box, and if broadcaster, offer a
+	//login button that will enable it.
 	return render(req, ([
 		"vars": (["ws_group": (string)req->misc->session->user->id,
 			//Not currently shown anywhere; if you exceed the limit, you'll be told.
@@ -154,8 +157,14 @@ __async__ string permission_check(object channel, int is_mod, mapping user) {
 		error = "Moderators are allowed to share artwork. If you're a mod, please say something in chat so I can see your mod sword.";
 	}
 	if (who->vip) {
-		if (!channel->is_vip(user->id)) return 0;
-		error = (who->mod ? "Mods and" : "Only") + " VIPs are allowed to share artwork. If you are such, please say something in chat so I can see your badge.";
+		//TODO: If we don't have permission, report it differently and recommend that the broadcaster visit the page
+		array|zero vips = await(twitch_api_request("https://api.twitch.tv/helix/channels/vips?broadcaster_id=" + channel->userid
+			+ "user_id=" + user->id,
+			(["Authorization": channel->userid]),
+			(["return_errors": 1]),
+		))->data;
+		if (sizeof(vips)) return 1; //Since we're querying for a single user ID, we will either get back 1 result or none.
+		error = (who->mod ? "Mods and" : "Only") + " VIPs are allowed to share artwork.";
 	}
 	return error;
 }

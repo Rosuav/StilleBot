@@ -182,7 +182,6 @@ class channel(mapping identity) {
 	string color;
 	int userid; string login, display_name;
 	mapping raiders = ([]); //People who raided the channel this (or most recent) stream. Cleared on stream reset.
-	multiset(string) has_vip_badge = (<>); //Deprecated from the start, needs to be replaced with actual querying.
 	//Command names are simple atoms (eg "foo" will handle the "!foo" command), or well-known
 	//bang-prefixed special triggers (eg "!resub" for a channel's resubscription trigger).
 	mapping(string:echoable_message) commands = ([]);
@@ -909,11 +908,7 @@ class channel(mapping identity) {
 		if (!userid && uid == "3141592653589793") return 1; //Fake mod status for the fake mod
 		return has_value(G->G->DB->load_cached_config(userid, "moderators")->mods || ({ }), uid);
 	}
-	int(1bit) is_vip(string uid) {
-		//TODO: Actually retain the list of VIPs same as we do for moderators
-		return has_vip_badge[uid];
-	}
-	void recheck_mod_status(string uid, int(1bit) now_mod, int(-1..1) now_vip) {
+	void recheck_mod_status(string uid, int(1bit) now_mod) {
 		mapping info = G->G->DB->load_cached_config(userid, "moderators");
 		if (now_mod != is_mod(uid)) {
 			array prevmods = info->mods || ({ });
@@ -924,7 +919,6 @@ class channel(mapping identity) {
 			//permission to list all mods, it will remain at zero.
 			G->G->DB->save_config(userid, "moderators", info);
 		}
-		if (now_vip != -1) has_vip_badge[uid] = now_vip; //Not retained or shared.
 	}
 
 	multiset message_seen = (<>); //Not retained over code reload; duplicate handling should be very close in time.
@@ -932,7 +926,7 @@ class channel(mapping identity) {
 		if (message_seen[data->message_id]) return;
 		message_seen[data->message_id] = 1;
 		mapping(string:mixed) person = data->person || gather_person_info_eventsub(data);
-		if (person->uid && person->badges) recheck_mod_status((string)person->uid, (int)person->badges->_mod, (int)person->badges->_vip);
+		if (person->uid && person->badges) recheck_mod_status((string)person->uid, (int)person->badges->_mod);
 		request_rate_token(person->user, name);
 		string msg = data->message->text;
 		if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
@@ -1103,7 +1097,7 @@ class channel(mapping identity) {
 	void irc_message_delayed(string type, string chan, string msg, mapping params) {
 		if (message_seen[params->id]) return;
 		mapping(string:mixed) person = gather_person_info_irc(params, msg);
-		if (person->uid && person->badges) recheck_mod_status((string)person->uid, (int)person->badges->_mod, (int)person->badges->_vip);
+		if (person->uid && person->badges) recheck_mod_status((string)person->uid, (int)person->badges->_mod);
 		lastmsg[(int)person->uid] = ({msg, params});
 		if (!is_active) return;
 		mapping event = ([ //Applicable only to NOTICE/USERNOTICE messages
@@ -1337,9 +1331,9 @@ void autoreward(object channel, mapping data) {
 //NOTE: The docs say only that moderation:read can enable this. What if you have manage
 //but not read? This is fine for querying the list of mods, it is likely also fine for this.
 @EventNotify("channel.moderator.add=1", ({"moderation:read", "channel:manage:moderators"})):
-void addmod(object channel, mapping data) {channel->recheck_mod_status(data->user_id, 1, 0);} //If you're now a mod, you aren't a VIP
+void addmod(object channel, mapping data) {channel->recheck_mod_status(data->user_id, 1);}
 @EventNotify("channel.moderator.remove=1", ({"moderation:read", "channel:manage:moderators"})):
-void remmod(object channel, mapping data) {channel->recheck_mod_status(data->user_id, 0, -1);}
+void remmod(object channel, mapping data) {channel->recheck_mod_status(data->user_id, 0);}
 
 @EventNotify("channel.chat.message=1", ({"channel:bot"}), "user_id"):
 void chatmessage(object channel, mapping data) {channel->chat_message_received(data);}

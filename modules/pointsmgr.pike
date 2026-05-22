@@ -38,8 +38,6 @@ __async__ void points_redeemed(object channel, mapping data, int|void removal) {
 			]), channel->commands[cmd], ([
 				"%s": data->user_input,
 				"{rewardid}": data->reward->id, "{redemptionid}": data->id,
-				"{@mod}": channel->is_mod(data->user_id) ? "1" : "0",
-				"{@vip}": channel->is_vip(data->user_id) ? "1" : "0",
 			]));
 		}
 	}

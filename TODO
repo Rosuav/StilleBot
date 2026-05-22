@@ -275,7 +275,3 @@
     reauthenticate (maybe on next channel-online)
   - If the broadcaster sees this and doesn't do anything, don't continue to spam, just flag
     the channel as inactive and probably delete most of the data at some point.
-* Request channel:read:vips permission and enable eventsub for that, and then rework VIP
-  lookup the same way as moderator lookup. This will allow reliable checks for VIP status
-  for /c/share and channel point redemptions, although for commands, it should still be
-  safe to use the badge.
