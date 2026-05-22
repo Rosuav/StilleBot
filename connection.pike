@@ -183,6 +183,7 @@ class channel(mapping identity) {
 	int userid; string login, display_name;
 	mapping raiders = ([]); //People who raided the channel this (or most recent) stream. Cleared on stream reset.
 	mapping user_badges = ([]); //Latest-seen user badge status (see gather_person_info_*). Not guaranteed fresh.
+	multiset(string) moderators = (<>); //Moderators' user IDs (as strings); will also include the broadcaster.
 	//Command names are simple atoms (eg "foo" will handle the "!foo" command), or well-known
 	//bang-prefixed special triggers (eg "!resub" for a channel's resubscription trigger).
 	mapping(string:echoable_message) commands = ([]);
@@ -210,6 +211,7 @@ class channel(mapping identity) {
 		//might look like the perfect solution, but it requires broadcaster's
 		//permission, so it's not actually dependable.
 		user_badges = G_G_("channel_user_badges", (string)userid);
+		moderators[(string)userid] = 1;
 		if (!user_badges[userid]) user_badges[userid] = (["_mod": 1, "broadcaster": 1]);
 		if (name == "#!demo") user_badges[3141592653589793] = (["_mod": 1, "moderator": 1]); //Fake mod status for the fake mod
 		//Note that !demo has no userid and can't re-fetch login/display name.
@@ -253,6 +255,11 @@ class channel(mapping identity) {
 		array mods = await(get_helix_paginated("https://api.twitch.tv/helix/moderation/moderators",
 			(["broadcaster_id": (string)userid]),
 			(["Authorization": userid])));
+		array prevmods = G->G->DB->load_cached_config(userid, "moderators")->mods || ({ });
+		array nowmods = sort(mods->user_id); //Sort order doesn't matter as long as it's consistent. This will sort by user ID as strings, which is weird, but whatever.
+		if (prevmods * " " != nowmods * " ")
+			G->G->DB->save_config(userid, "moderators", (["lastcheck": time(), "mods": nowmods]));
+		moderators = (multiset)nowmods; moderators[(string)userid] = 1;
 		foreach (mods, mapping mod)
 			//Note that if you previously showed other badges but not moderator, this will
 			//replace your badges. The only other badge likely to be relevant is VIP, and
