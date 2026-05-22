@@ -299,7 +299,10 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 	array channels = await(get_helix_paginated("https://api.twitch.tv/helix/moderation/channels",
 		(["user_id": (string)user->id]),
 		(["Authorization": (int)user->id])));
-	//TODO: Record this for other channels you mod too, to save querying again for another channel
+	//Record mod status for every channel
+	multiset has_sword = (multiset)channels->broadcaster_id;
+	foreach (G->G->irc->id; int chanid; object chan)
+		chan->recheck_mod_status(user->id, has_sword[(string)chanid], -1);
 	if (has_value(channels->broadcaster_id, (string)channel->userid)) {m_delete(req->misc->chaninfo, "save_or_login"); return req->misc->is_mod = 1;}
 }
 

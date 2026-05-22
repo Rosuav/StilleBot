@@ -913,9 +913,7 @@ class channel(mapping identity) {
 		//TODO: Actually retain the list of VIPs same as we do for moderators
 		return has_vip_badge[uid];
 	}
-	void recheck_mod_status(string uid, int(1bit) now_mod, int(1bit) now_vip) {
-		//TODO: Split this up - updating mod and VIP should be independent if triggered
-		//by EventSub (note that currently we don't get VIP status in eventsub).
+	void recheck_mod_status(string uid, int(1bit) now_mod, int(-1..1) now_vip) {
 		mapping info = G->G->DB->load_cached_config(userid, "moderators");
 		if (now_mod != is_mod(uid)) {
 			array prevmods = info->mods || ({ });
@@ -926,7 +924,7 @@ class channel(mapping identity) {
 			//permission to list all mods, it will remain at zero.
 			G->G->DB->save_config(userid, "moderators", info);
 		}
-		has_vip_badge[uid] = now_vip; //Not retained or shared.
+		if (now_vip != -1) has_vip_badge[uid] = now_vip; //Not retained or shared.
 	}
 
 	multiset message_seen = (<>); //Not retained over code reload; duplicate handling should be very close in time.
@@ -1341,7 +1339,7 @@ void autoreward(object channel, mapping data) {
 @EventNotify("channel.moderator.add=1", ({"moderation:read", "channel:manage:moderators"})):
 void addmod(object channel, mapping data) {channel->recheck_mod_status(data->user_id, 1, 0);} //If you're now a mod, you aren't a VIP
 @EventNotify("channel.moderator.remove=1", ({"moderation:read", "channel:manage:moderators"})):
-void remmod(object channel, mapping data) {channel->recheck_mod_status(data->user_id, 0, 0);} //If you were a mod, you weren't a VIP. TODO: What if you become a VIP and lose mod at the same time? They should be independent.
+void remmod(object channel, mapping data) {channel->recheck_mod_status(data->user_id, 0, -1);}
 
 @EventNotify("channel.chat.message=1", ({"channel:bot"}), "user_id"):
 void chatmessage(object channel, mapping data) {channel->chat_message_received(data);}
