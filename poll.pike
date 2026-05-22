@@ -293,7 +293,7 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 		//Can remove this if (a) we listen for EventSub messages on adding/removing mods,
 		//and (b) this information is communicated to the inactive bot.
 		await(channel->moderator_lookup());
-		if (channel->user_badges[(int)user->id]->?_mod) {m_delete(req->misc->chaninfo, "save_or_login"); return req->misc->is_mod = 1;}
+		if (channel->is_mod(user->id)) {m_delete(req->misc->chaninfo, "save_or_login"); return req->misc->is_mod = 1;}
 		return 0; //If we can do a mod lookup and you're not listed, then you're not a mod.
 	}
 	//Alternatively, do we have perms from the user?

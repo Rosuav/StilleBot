@@ -522,16 +522,15 @@ array(string) token_for_user_id(int|string userid) {
 	return ({"", ""});
 }
 
-//Mod status is stored by ID, but attempt to find it (synchronously) based on usernames.
-//Will return 0 if it isn't confident that user IS a mod.
-//NOTE: chan MUST begin with a hash.
-int(1bit) is_mod_for(string user, string chan) {
+//Lookup for moderator status based on user and channel *names*, rather than IDs.
+//Not for normal usage; is a helper for request_rate_token only.
+int(1bit) _is_mod_for(string user, string chan) {
 	if ("#" + user == chan) return 1;
 	object channel = G->G->irc->channels[chan];
 	if (!channel) return 0; //Uncertain for any channel we don't monitor, or before channels loaded
 	int id = (int)G->G->user_info[user]->?id; //Note that we don't care about cache expiration here, but if it's not in cache, fail.
 	if (!id) return 0;
-	return channel->user_badges[id]->?_mod;
+	return channel->is_mod((string)id);
 }
 
 //Token bucket system, shared among all IRC connections.
@@ -556,7 +555,7 @@ float request_rate_token(string user, string chan, int|void lowprio) {
 		bucket[0] = now + 11.0; //safety margin
 		return 0;
 	}
-	else if (is_mod_for(user, chan))
+	else if (_is_mod_for(user, chan))
 		//You can spam harder in channels you mod for.
 		bucket_size = 100;
 	else if (has_suffix(chan, "-nonmod")) {
@@ -1462,7 +1461,7 @@ class http_websocket
 			]);
 			conn->is_mod = 1;
 		}
-		else conn->is_mod = channel->user_badges[(int)conn->session->user->?id]->?_mod || is_localhost_mod(login, conn->remote_ip);
+		else conn->is_mod = channel->is_mod((string)conn->session->user->?id) || is_localhost_mod(login, conn->remote_ip);
 		if (!conn->is_mod && need_mod(grp)) return "Not logged in";
 		//Note that this validation can be called for either initialization or subscription.
 		//The subgroup here applies to the main group, not to the subscription group.

@@ -31,7 +31,6 @@ __async__ void points_redeemed(object channel, mapping data, int|void removal) {
 		if (dyn->price_variable) channel->set_variable(dyn->price_variable, (string)newcost);
 	}
 	if (channel && !removal) {
-		mapping badges = channel->user_badges[data->user_id] || ([]);
 		foreach (channel->redemption_commands[data->reward->id] || ({ }), string cmd) {
 			channel->send(([
 				"displayname": data->user_name, "user": data->user_login,
@@ -39,8 +38,8 @@ __async__ void points_redeemed(object channel, mapping data, int|void removal) {
 			]), channel->commands[cmd], ([
 				"%s": data->user_input,
 				"{rewardid}": data->reward->id, "{redemptionid}": data->id,
-				"{@mod}": badges->?_mod ? "1" : "0", "{@sub}": badges->?_sub ? "1" : "0",
-				"{@vip}": badges->?vip ? "1" : "0",
+				"{@mod}": channel->is_mod(data->user_id) ? "1" : "0",
+				"{@vip}": channel->is_vip(data->user_id) ? "1" : "0",
 			]));
 		}
 	}

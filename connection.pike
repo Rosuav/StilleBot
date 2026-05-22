@@ -182,8 +182,7 @@ class channel(mapping identity) {
 	string color;
 	int userid; string login, display_name;
 	mapping raiders = ([]); //People who raided the channel this (or most recent) stream. Cleared on stream reset.
-	mapping user_badges = ([]); //Latest-seen user badge status (see gather_person_info_*). Not guaranteed fresh.
-	multiset(string) moderators = (<>); //Moderators' user IDs (as strings); will also include the broadcaster.
+	multiset(string) has_vip_badge = (<>); //Deprecated from the start, needs to be replaced with actual querying.
 	//Command names are simple atoms (eg "foo" will handle the "!foo" command), or well-known
 	//bang-prefixed special triggers (eg "!resub" for a channel's resubscription trigger).
 	mapping(string:echoable_message) commands = ([]);
@@ -204,16 +203,6 @@ class channel(mapping identity) {
 			color = sprintf("\e[1;3%dm", channelcolor[name]);
 		}
 		else color = "\e[0m"; //Nothing will normally be logged, so don't allocate a color. If logging gets enabled, it'll take a reset to assign one.
-		//The streamer counts as a mod. Everyone else has to speak in chat to
-		//show us the badge, after which we'll acknowledge mod status. (For a
-		//mod-only command, that's trivially easy; for web access, just "poke
-		//the bot" in chat first.) The helix/moderation/moderators endpoint
-		//might look like the perfect solution, but it requires broadcaster's
-		//permission, so it's not actually dependable.
-		user_badges = G_G_("channel_user_badges", (string)userid);
-		moderators[(string)userid] = 1;
-		if (!user_badges[userid]) user_badges[userid] = (["_mod": 1, "broadcaster": 1]);
-		if (name == "#!demo") user_badges[3141592653589793] = (["_mod": 1, "moderator": 1]); //Fake mod status for the fake mod
 		//Note that !demo has no userid and can't re-fetch login/display name.
 		if (userid) {
 			moderator_lookup();
@@ -246,9 +235,7 @@ class channel(mapping identity) {
 
 	__async__ void moderator_lookup() {
 		//If we have the necessary permissions, look up the full list of moderators,
-		//and grant them immediate permission to use the web site. This won't be
-		//perfect, but it is likely to *mostly-work*, as new moderators are fairly
-		//rare and will usually speak up in chat anyway.
+		//and grant them immediate permission to use the web site.
 		while (!G->G->user_credentials_loaded) sleep(0.125); //Shouldn't happen since we have serialized queries
 		mapping creds = G->G->user_credentials[userid];
 		if (!creds || !creds->scopes || !sizeof(creds->scopes & ({"moderation:read", "channel:manage:moderators"}))) return;
@@ -257,14 +244,10 @@ class channel(mapping identity) {
 			(["Authorization": userid])));
 		array prevmods = G->G->DB->load_cached_config(userid, "moderators")->mods || ({ });
 		array nowmods = sort(mods->user_id); //Sort order doesn't matter as long as it's consistent. This will sort by user ID as strings, which is weird, but whatever.
-		if (prevmods * " " != nowmods * " ")
+		if (prevmods * " " != nowmods * " ") {
+			werror("Mods for %O have changed!\n- Lose:%{ %s%}\n- Gain:%{ %s%}\n", display_name, prevmods - nowmods, nowmods - prevmods);
 			G->G->DB->save_config(userid, "moderators", (["lastcheck": time(), "mods": nowmods]));
-		moderators = (multiset)nowmods; moderators[(string)userid] = 1;
-		foreach (mods, mapping mod)
-			//Note that if you previously showed other badges but not moderator, this will
-			//replace your badges. The only other badge likely to be relevant is VIP, and
-			//in most contexts, moderator trumps VIP anyway.
-			if (!user_badges[(int)mod->user_id]->?_mod) user_badges[(int)mod->user_id] = (["_mod": 1, "moderator": 1]);
+		}
 	}
 
 	void load_commands(array cmds) { //Could be inlined into create() if desired
@@ -923,12 +906,37 @@ class channel(mapping identity) {
 		trigger_special("!raided", person, (["{viewers}": (string)info->viewers]));
 	}
 
+	int(1bit) is_mod(string uid) {
+		if (uid == (string)userid) return 1; //Broadcaster counts as a mod
+		if (!userid && uid == "3141592653589793") return 1; //Fake mod status for the fake mod
+		return has_value(G->G->DB->load_cached_config(userid, "moderators")->mods || ({ }), uid);
+	}
+	int(1bit) is_vip(string uid) {
+		//TODO: Actually retain the list of VIPs same as we do for moderators
+		return has_vip_badge[uid];
+	}
+	void recheck_mod_status(string uid, int(1bit) now_mod, int(1bit) now_vip) {
+		//TODO maybe: Ignore this if we have moderation:read or channel:manage:moderators,
+		//since we then manage things in other ways
+		mapping info = G->G->DB->load_cached_config(userid, "moderators");
+		if (now_mod != is_mod(uid)) {
+			werror("MOD STATUS CHANGED %O %O %O %O\n", display_name, uid, is_mod(uid), now_mod);
+			array prevmods = info->mods || ({ });
+			info->mods = now_mod ? prevmods + ({uid}) : prevmods - ({uid});
+			//Note that we do not update the timestamp here. If anything needs to know how recently
+			//we checked mod status, it should see the oldest date relevant, and if we don't have
+			//permission to list all mods, it will remain at zero.
+			G->G->DB->save_config(userid, "moderators", info);
+		}
+		has_vip_badge[uid] = now_vip; //Not retained or shared.
+	}
+
 	multiset message_seen = (<>); //Not retained over code reload; duplicate handling should be very close in time.
 	void chat_message_received(mapping data) {
 		if (message_seen[data->message_id]) return;
 		message_seen[data->message_id] = 1;
 		mapping(string:mixed) person = data->person || gather_person_info_eventsub(data);
-		if (person->uid && person->badges) user_badges[person->uid] = person->badges;
+		if (person->uid && person->badges) recheck_mod_status((string)person->uid, (int)person->badges->_mod, (int)person->badges->_vip);
 		request_rate_token(person->user, name);
 		string msg = data->message->text;
 		if (sscanf(msg, "\1ACTION %s\1", msg)) person->is_action_msg = 1;
@@ -1099,7 +1107,7 @@ class channel(mapping identity) {
 	void irc_message_delayed(string type, string chan, string msg, mapping params) {
 		if (message_seen[params->id]) return;
 		mapping(string:mixed) person = gather_person_info_irc(params, msg);
-		if (person->uid && person->badges) user_badges[person->uid] = person->badges;
+		if (person->uid && person->badges) recheck_mod_status((string)person->uid, (int)person->badges->_mod, (int)person->badges->_vip);
 		lastmsg[(int)person->uid] = ({msg, params});
 		if (!is_active) return;
 		mapping event = ([ //Applicable only to NOTICE/USERNOTICE messages

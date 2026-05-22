@@ -151,6 +151,7 @@ __async__ void force_recalc(object channel, int|void fast) {
 
 	int chanid = channel->userid;
 	if (!fast || !stats->mods) {
+		//FIXME: Make use of G->G->DB->load_cached_config(userid, "moderators")->mods if available
 		array mods = await(twitch_api_request("https://api.twitch.tv/helix/moderation/moderators?first=100&broadcaster_id=" + chanid,
 			(["Authorization": "Bearer " + token_for_user_id(chanid)[0]])))->data;
 		stats->mods = mkmapping(mods->user_id, mods->user_name);

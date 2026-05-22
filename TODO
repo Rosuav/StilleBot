@@ -281,3 +281,7 @@
 * Mod status is not tracked on an inactive bot. Need some way to share this. When that's
   done, we can do a mod lookup on code reload, and make sure it's also done on change of
   active bot, and then maintain it using EventSub (not currently being done).
+* Request channel:read:vips permission and enable eventsub for that, and then rework VIP
+  lookup the same way as moderator lookup. This will allow reliable checks for VIP status
+  for /c/share and channel point redemptions, although for commands, it should still be
+  safe to use the badge.
