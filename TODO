@@ -256,11 +256,15 @@
   - Consider changing format from "hitpoints" to "avatar", and then having a format_style
     to specify whether they get hitpoints.
 * It looks like IRC is not going to be the preferred way, soon. What will it take to move?
-  - Set up webhooks for incoming chat. Will require more perms. Might need to make a
-    fallback using IRC for when we don't have perms.
   - EVERYTHING that currently goes through irc_message() will need to be fetched via
     eventsub instead.
     - charity donation
+  - When IRC goes down, some channels will no longer be accessible.
+  - Most of them either don't need the bot, or haven't been active on Twitch in ages
+  - Put some sort of notification in chat inviting the broadcaster to go to the site and
+    reauthenticate (maybe on next channel-online)
+  - If the broadcaster sees this and doesn't do anything, don't continue to spam, just flag
+    the channel as inactive and probably delete most of the data at some point.
 * Goal bars: Can we make it so the text is inverted in colour, meaning that the gradient
   behind it flips colour for the text? Make it a checkbox in place of a text colour, but
   it'll probably need some handcrafting in the JS and CSS.
@@ -269,9 +273,3 @@
   - Do they have a way to trigger a test dono? Otherwise it's going to be either expensive
     or slow to figure anything out.
   - Are there any other (preferably free and easily testable) webhooks that we can test?
-* When IRC goes down, some channels will no longer be accessible.
-  - Most of them either don't need the bot, or haven't been active on Twitch in ages
-  - Put some sort of notification in chat inviting the broadcaster to go to the site and
-    reauthenticate (maybe on next channel-online)
-  - If the broadcaster sees this and doesn't do anything, don't continue to spam, just flag
-    the channel as inactive and probably delete most of the data at some point.
