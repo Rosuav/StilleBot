@@ -163,7 +163,7 @@ __async__ string permission_check(object channel, int is_mod, mapping user) {
 			(["Authorization": channel->userid]),
 			(["return_errors": 1]),
 		))->data;
-		if (sizeof(vips)) return 1; //Since we're querying for a single user ID, we will either get back 1 result or none.
+		if (sizeof(vips)) return 0; //Since we're querying for a single user ID, we will either get back 1 result or none.
 		error = (who->mod ? "Mods and" : "Only") + " VIPs are allowed to share artwork.";
 	}
 	return error;
