@@ -518,7 +518,7 @@ __async__ void check_hooks() {
 	//it with another promise.
 	if (!G->G->eventhooks_ready) G->G->eventhooks_ready = completion = Concurrent.Promise();
 	array eventhooks = await(get_helix_paginated("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([]), (["authtype": "app"])));
-	multiset(string) have_conduitbroken = (<>);
+	multiset(string) have_conduitbroken = (<>), have_authrevoked = (<>);
 	mapping seen = ([]);
 	foreach (eventhooks, mapping hook) {
 		if (hook->transport->method == "conduit") {
@@ -547,12 +547,14 @@ __async__ void check_hooks() {
 		//Otherwise it's a webhook event. There is only one of these, and it's conduitbroken; which means
 		//we need to establish it if we don't yet have it.
 		sscanf(hook->transport->callback || "h", "http%*[s]://%s/junket?%s=", string addr, string type);
-		if (type != "conduitbroken") {
+		werror("Got webhook %O %O\n", addr, type);
+		if (type == "conduitbroken") have_conduitbroken[addr] = 1;
+		else if (type == "authrevoked") have_authrevoked[addr] = 1;
+		else {
 			write("Deleting eventhook: %O\n", hook);
 			twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions?id=" + hook->id,
 				([]), (["method": "DELETE", "authtype": "app", "return_status": 1]));
 		}
-		else have_conduitbroken[addr] = 1;
 	}
 
 	foreach (values(G->G->irc->id), object channel) {
@@ -574,13 +576,13 @@ __async__ void check_hooks() {
 	//If we don't have a conduitbroken eventhook for our local address, establish one.
 	if (!have_conduitbroken[G->G->instance_config->local_address]) {
 		string secret = MIME.encode_base64(random_string(15));
-		G->G->DB->mutate_config(0, "eventhook_secret") {
+		await(G->G->DB->mutate_config(0, "eventhook_secret") {
 			//Save the secret. This is unencrypted and potentially could be leaked.
 			//The attack surface is fairly small, though - at worst, an attacker
 			//could forge a notification from Twitch, causing us to switch which
 			//bot is primary. And to do that, you'd need access to the database.
 			__ARGS__[0][G->G->instance_config->local_address] = secret;
-		};
+		});
 		twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
 			"authtype": "app",
 			"json": ([
@@ -594,6 +596,24 @@ __async__ void check_hooks() {
 				]),
 			]),
 		]));
+	}
+	//Also ensure we have the auth revoked hook. (Should this now get deduplicated?)
+	if (!have_authrevoked[G->G->instance_config->local_address]) {
+		//Assumes that the conduitbroken check has already ensured that we have a secret.
+		string secret = await(G->G->DB->load_config(0, "eventhook_secret"))[G->G->instance_config->local_address];
+		werror("CREATED REVOCATION %O\n", await(twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
+			"authtype": "app",
+			"json": ([
+				"type": "user.authorization.revoke", "version": "1",
+				"condition": (["client_id": G->G->instance_config->clientid]),
+				"transport": ([
+					"method": "webhook",
+					"callback": sprintf("https://%s/junket?authrevoked=1",
+						G->G->instance_config->local_address),
+					"secret": secret,
+				]),
+			]),
+		]))));
 	}
 	if (completion) completion->success(1);
 }

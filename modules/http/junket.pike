@@ -25,6 +25,34 @@ __async__ void hook_conduitbroken(mapping|array data) {
 	else werror("CONDUIT LOST ON INACTIVE BOT, NO RECOURSE\n"); //Should only happen in a crisis situation eg main bot down, standby not yet promoted
 }
 
+__async__ void hook_authrevoked(mapping data) {
+	//In case the request was forged, don't trust it in any way, just do a recheck of
+	//the user's credentials.
+	werror("AUTH REVOKED %O\n", data);
+	int userid = (int)data->user_id;
+	if (!userid) return;
+	mapping cred = G->G->user_credentials[userid];
+	if (!cred) return; //Probably already threw them away, maybe we got a double notification
+	mixed resp = await(twitch_api_request("https://id.twitch.tv/oauth2/validate",
+		(["Authorization": "Bearer " + cred->token])));
+	//If the authentication has been completely revoked, we no longer have a valid token.
+	//This is signalled by status 401 "Unauthorized", which notably is NOT sent as an
+	//HTTP status code, and so we do not receive an exception.
+	if (resp->status == 401) {
+		await(G->G->DB->delete_user_credentials(userid));
+		return;
+	}
+	array scopes = sort(resp->scopes || ({ }));
+	if (cred->scopes * " " != scopes * " ") {
+		cred->scopes = scopes;
+		cred->validated = 0; //Force an update
+	}
+	if (cred->validated < time() - 604800) { //Save back to the database only if it was >1 week old, or of course if the scopes have changed.
+		cred->validated = time();
+		await(G->G->DB->save_user_credentials(cred));
+	}
+}
+
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	//Hack: Using this for Google oauth for the timebeing
 	if (req->variables->code && has_value(req->variables->scope || "??", "https://www.googleapis.com/auth/")) {
