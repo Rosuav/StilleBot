@@ -1329,10 +1329,10 @@ void autoreward(object channel, mapping data) {
 }
 
 //NOTE: The docs say only that moderation:read can enable this. What if you have manage
-//but not read? This is fine for querying the list of mods, it is likely also fine for this.
-@EventNotify("channel.moderator.add=1", ({"moderation:read", "channel:manage:moderators"})):
+//but not read? This is fine for querying the list of mods, but not for these messages. Odd.
+@EventNotify("channel.moderator.add=1", ({"moderation:read"})):
 void addmod(object channel, mapping data) {channel->recheck_mod_status(data->user_id, 1);}
-@EventNotify("channel.moderator.remove=1", ({"moderation:read", "channel:manage:moderators"})):
+@EventNotify("channel.moderator.remove=1", ({"moderation:read"})):
 void remmod(object channel, mapping data) {channel->recheck_mod_status(data->user_id, 0);}
 
 @EventNotify("channel.chat.message=1", ({"channel:bot"}), "user_id"):
