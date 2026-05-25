@@ -619,7 +619,8 @@ __async__ void session_jsonify() {
 			continue;
 		}
 		if (catch (Standards.JSON.encode(data))) werror("Not JSON compatible:%{ %s%}\n", sort(indices(data)));
-		else werror("OK:%{ %s%}\n", indices(data));
+		else werror("OK:%{ %s%}\n", sort(indices(data)));
+		if (m_delete(data, "scopes")) await(G->G->DB->save_session(data));
 	}
 }
 
