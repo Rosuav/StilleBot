@@ -95,7 +95,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	//notify the front end to disable the VIPs check box, and if broadcaster, offer a
 	//login button that will enable it.
 	return render(req, ([
-		"vars": (["ws_group": (string)req->misc->session->user->id,
+		"vars": (["ws_group": (string)req->misc->session->user->?id,
 			//Not currently shown anywhere; if you exceed the limit, you'll be told.
 			//"maxfilesize": G->G->DB->MAX_PER_FILE, "maxfiles": G->G->DB->MAX_EPHEMERAL_FILES,
 			"user_types": user_types, "is_mod": req->misc->is_mod,
