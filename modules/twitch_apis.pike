@@ -382,8 +382,7 @@ string|Concurrent.Future send_chat_command(object channel, string voiceid, strin
 	}
 	if (!voiceid || voiceid == "0") {
 		voiceid = (string)G->G->bot_uid;
-		tok = (["token": G->G->dbsettings->credentials->token,
-			"scopes": G->G->dbsettings->credentials->scopes || ({"whispers:edit"})]);
+		tok = G->G->user_credentials[(int)voiceid];
 	}
 	if (!has_value(tok->scopes, need_scope[cmd])) {
 		channel->report_error("ERROR", "This command requires " + need_scope[cmd] + " permission", msg);

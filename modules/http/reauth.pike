@@ -20,7 +20,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 				token_for_user_login(req->misc->session->user->login)),
 			"type": "text/plain; charset=\"UTF-8\""]);
 	}
-	array havescopes = G->G->dbsettings->credentials->scopes || ({ });
+	array havescopes = G->G->user_credentials[G->G->bot_uid]->?scopes || ({ });
 	multiset scopes = (multiset)havescopes | (<"chat:read", "chat:edit", "user_read", "whispers:edit", "user_subscriptions">);
 	//Add any requested scopes
 	foreach (req->variables; string key; string value)
@@ -32,7 +32,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			"username": req->misc->session->user->login,
 			"userid": req->misc->session->user->id,
 			"token": req->misc->session->token,
-			"scopes": sort(indices(req->misc->session->scopes)),
 		]);
 		werror("Saving to DB.\n");
 		spawn_task(G->G->DB->query_rw("update stillebot.settings set credentials = :c",
@@ -50,6 +49,6 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	return render_template(markdown, ([
 		"desc": desc,
 		"user": sprintf("%O", req->misc->session->user),
-		"scopes": sort(indices(req->misc->session->scopes)) * ", " + "\n" + add_scopes + "\n> " + authbtn + "\n{:tag=form method=post}",
+		"scopes": havescopes * ", " + "\n" + add_scopes + "\n> " + authbtn + "\n{:tag=form method=post}",
 	]));
 }

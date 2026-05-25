@@ -34,7 +34,6 @@ mapping scope_reasons = ([
 
 mapping(string:mixed) login_popup_done(Protocols.HTTP.Server.Request req, mapping user, multiset scopes, string token) {
 	req->misc->session->user = user;
-	req->misc->session->scopes = scopes;
 	req->misc->session->token = token;
 	return (["data": "<script>window.close(); window.opener.location.reload();</script>", "type": "text/html"]);
 }

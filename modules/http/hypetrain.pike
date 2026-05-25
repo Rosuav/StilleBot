@@ -160,7 +160,8 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (chan == "") {
 		//If you've just logged in, assume that you want your own hype train stats.
 		//Make sure that the page link is viably copy-pastable.
-		if (req->misc->session->scopes[?"channel:read:hype_train"])
+		mapping creds = G->G->user_credentials[(int)req->misc->session->user->id] || ([]);
+		if (has_value(creds->scopes || ({ }), "channel:read:hype_train"))
 			return redirect("hypetrain?for=" + req->misc->session->user->login);
 		return render_template(req->variables->mobile ? "hypetrain_mobile.html" : "hypetrain.md", ([
 			"loading": "(no channel selected)",
