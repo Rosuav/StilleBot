@@ -4,6 +4,7 @@ class gtksignal(object obj, mixed ... args)
 	protected void create() {if (obj) signal_id=obj->signal_connect(@args);}
 	protected void destroy() {if (obj && signal_id) obj->signal_disconnect(signal_id);}
 	protected void _destruct() {if (obj && signal_id) obj->signal_disconnect(signal_id);}
+	protected string _sprintf(int fmt) {return fmt == 'O' && sprintf("gtksignal[%d](%O%{, %O%})", signal_id, obj, args);}
 }
 
 class MessageBox
