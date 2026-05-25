@@ -547,7 +547,6 @@ __async__ void check_hooks() {
 		//Otherwise it's a webhook event. There is only one of these, and it's conduitbroken; which means
 		//we need to establish it if we don't yet have it.
 		sscanf(hook->transport->callback || "h", "http%*[s]://%s/junket?%s=", string addr, string type);
-		werror("Got webhook %O %O\n", addr, type);
 		if (type == "conduitbroken") have_conduitbroken[addr] = 1;
 		else if (type == "authrevoked") have_authrevoked[addr] = 1;
 		else {
@@ -601,7 +600,7 @@ __async__ void check_hooks() {
 	if (!have_authrevoked[G->G->instance_config->local_address]) {
 		//Assumes that the conduitbroken check has already ensured that we have a secret.
 		string secret = await(G->G->DB->load_config(0, "eventhook_secret"))[G->G->instance_config->local_address];
-		werror("CREATED REVOCATION %O\n", await(twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
+		twitch_api_request("https://api.twitch.tv/helix/eventsub/subscriptions", ([]), ([
 			"authtype": "app",
 			"json": ([
 				"type": "user.authorization.revoke", "version": "1",
@@ -613,7 +612,7 @@ __async__ void check_hooks() {
 					"secret": secret,
 				]),
 			]),
-		]))));
+		]));
 	}
 	if (completion) completion->success(1);
 }
