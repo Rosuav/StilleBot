@@ -615,6 +615,7 @@ __async__ void session_jsonify() {
 		if (sizeof(data) == 1 && data->cookie == row->cookie) {
 			//Degenerate session
 			werror("Degenerate [%O]\n", row->active);
+			await(G->G->DB->save_session(data));
 			continue;
 		}
 		if (catch (Standards.JSON.encode(data))) werror("Not JSON compatible:%{ %s%}\n", sort(indices(data)));
