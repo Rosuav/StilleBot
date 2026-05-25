@@ -268,3 +268,5 @@
   - Do they have a way to trigger a test dono? Otherwise it's going to be either expensive
     or slow to figure anything out.
   - Are there any other (preferably free and easily testable) webhooks that we can test?
+* Get notified when credentials are revoked
+  - Should this deactivate the bot?
