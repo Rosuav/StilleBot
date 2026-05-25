@@ -17,7 +17,7 @@ constant vars_provided = ([
 mapping message_params(object channel, mapping person, array params) {
 	array args = Process.split_quoted_string(params[0]);
 	int maxargs = sizeof(params) > 1 && (int)params[1];
-	if (maxargs < sizeof(args))
+	if (maxargs && maxargs < sizeof(args))
 		args = args[..maxargs-2] + ({args[maxargs-1..] * " "});
 	mapping ret = (["{argc}": ""+sizeof(args)]);
 	foreach (args; int i; string arg) ret[sprintf("{arg%d}", i + 1)] = arg;
