@@ -10,8 +10,22 @@ __async__ void confirm_conduit_active() {
 	werror("Post-check, conduit status %O\n", resp->data);
 }
 
-__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
-{
+__async__ void hook_conduitbroken(mapping|array data) {
+	werror("Conduit broken! %O\n", data); //Probably a non-event if we're active??
+	Stdio.append_file("conduit_reconnect.log", sprintf("%sJUNKET CONDUIT BROKEN: %O\n", ctime(time()), data));
+	if (is_active_bot()) G->G->setup_conduit();
+	else if (string other = get_active_bot()) {
+		//Forward the request to the other bot.
+		//Note that the notification itself gives no feedback. So we wait a few seconds,
+		//then check to see if the conduit is now active.
+		G->G->DB->query_rw(sprintf("notify \"stillebot.conduit_broken\", '%s for %s'", G->G->instance_config->local_address || "unknown", other));
+		confirm_conduit_active();
+	}
+	else if (G->G->emergency) G->G->emergency();
+	else werror("CONDUIT LOST ON INACTIVE BOT, NO RECOURSE\n"); //Should only happen in a crisis situation eg main bot down, standby not yet promoted
+}
+
+__async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	//Hack: Using this for Google oauth for the timebeing
 	if (req->variables->code && has_value(req->variables->scope || "??", "https://www.googleapis.com/auth/")) {
 		mapping state = m_delete(G->G->google_logins_pending, req->variables->state);
@@ -52,7 +66,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		//Probably not worth the hassle though. They can always close this one anyway.
 		return redirect("/c/calendar");
 	}
-	if (!req->variables->conduitbroken) return 0; //The only webhook handler now is this one.
+	function|zero handler;
+	foreach (indices(this), string func)
+		if (has_prefix(func, "hook_") && req->variables[func - "hook_"]) handler = this[func];
+	if (!handler) return 0;
 	if (req->request_headers["twitch-eventsub-message-type"] == "webhook_callback_verification") {
 		mixed body = Standards.JSON.decode_utf8(req->body_raw);
 		if (!mappingp(body) || !stringp(body->challenge)) return (["error": 400, "data": "Unrecognized body type"]);
@@ -74,17 +91,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	mixed body = Standards.JSON.decode_utf8(req->body_raw);
 	array|mapping data = mappingp(body) && body->event;
 	if (!data) return (["error": 400, "data": "Unrecognized body type"]);
-	werror("Conduit broken! %O\n", data); //Probably a non-event if we're active??
-	Stdio.append_file("conduit_reconnect.log", sprintf("%sJUNKET CONDUIT BROKEN: %O\n", ctime(time()), data));
-	if (is_active_bot()) G->G->setup_conduit();
-	else if (string other = get_active_bot()) {
-		//Forward the request to the other bot.
-		//Note that the notification itself gives no feedback. So we wait a few seconds,
-		//then check to see if the conduit is now active.
-		G->G->DB->query_rw(sprintf("notify \"stillebot.conduit_broken\", '%s for %s'", G->G->instance_config->local_address || "unknown", other));
-		confirm_conduit_active();
-	}
-	else if (G->G->emergency) G->G->emergency();
-	else werror("CONDUIT LOST ON INACTIVE BOT, NO RECOURSE\n"); //Should only happen in a crisis situation eg main bot down, standby not yet promoted
+	handler(data);
 	return (["data": "PRAD"]);
 }
