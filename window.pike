@@ -299,8 +299,12 @@ class _mainwindow
 		if (lc != txt) self->set_text(lc);
 	}
 
-	void sig_update_activate(object self)
-	{
+	//NOTE: During the signal callback function's execution, the signal itself is in a
+	//blocking state that will cause problems if we remove said signal. Thus, since the
+	//update will in fact attempt to remove that signal, we bump it to the next event
+	//loop iteration. This prevents a noisy (but otherwise inconsequential) console error.
+	void sig_update_activate(object self) {call_out(low_sig_update_activate, 0);}
+	void low_sig_update_activate() {
 		//object main = G->bootstrap("stillebot.pike"); //Test new bootstrap code
 		//int err = main ? main->bootstrap_all() : 1;
 		G->G->warnings = 0;
