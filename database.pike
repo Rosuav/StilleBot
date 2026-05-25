@@ -603,6 +603,7 @@ __async__ string|zero save_session(mapping data) {
 			--retry;
 			werror("COOKIE INSERTION\n%s\n", describe_backtrace(ex));
 		}
+		return 0; //If we can't insert one, fail.
 	}
 	if (data->cookie && sizeof(data) == 1)
 		//Saving (["cookie": "nomnom"]) with no data will delete the session.

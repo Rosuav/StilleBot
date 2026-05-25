@@ -146,6 +146,8 @@
     session).
     - Remove req->misc->session->scopes at the same time. This should leave sessions
       JSON-compatible; then convert the database to use JSON instead of encode_value.
+  - NOTE: Degenerate sessions, containing just the cookie and nothing else, are getting
+    saved periodically. Why? They should be nulls.
 * Failed auth when attempting to send a voiced message should be logged to the
   channel's error log.
 * Running into weird problems with app auth. Maybe the cached G->G->app_access_token

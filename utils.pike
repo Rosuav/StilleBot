@@ -609,6 +609,19 @@ __async__ void clean_notif_perms() {
 	}
 }
 
+__async__ void session_jsonify() {
+	foreach (await(G->G->DB->query_ro("select cookie, data, active from stillebot.http_sessions")), mapping row) {
+		mapping data = decode_value(row->data);
+		if (sizeof(data) == 1 && data->cookie == row->cookie) {
+			//Degenerate session
+			werror("Degenerate [%O]\n", row->active);
+			continue;
+		}
+		if (catch (Standards.JSON.encode(data))) werror("Not JSON compatible:%{ %s%}\n", sort(indices(data)));
+		else werror("OK:%{ %s%}\n", indices(data));
+	}
+}
+
 __async__ void test() {
 	//Recode this to whatever's needed, and use "pike stillebot --test" to run it.
 	werror("Nothing to see here, move along.\n");
