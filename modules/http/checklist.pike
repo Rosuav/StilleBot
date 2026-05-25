@@ -300,7 +300,7 @@ mapping valid_showcase_groups = ([]); //After verifying, is valid for 60 seconds
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 {
 	string login_link = "[Log in to highlight the emotes you have access to](:.twitchlogin data-scopes=@user:read:emotes@)";
-	multiset scopes = req->misc->session->?scopes || (<>);
+	array havescopes = G->G->user_credentials[(int)req->misc->session->?user->?id]->?scopes || ({ });
 	string title = "Emote checklist";
 	string group = req->misc->session->?user->?id;
 	if (string id = req->variables->showcase) {
@@ -310,7 +310,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 		title = "Emote showcase for " + await(get_user_info(id))->display_name;
 		valid_showcase_groups[group = id] = time() + 60;
 	}
-	else if (scopes["user:read:emotes"]) {
+	else if (has_value(havescopes, "user:read:emotes")) {
 		login_link = "<input type=checkbox id=showall>\n\n<label for=showall>Show all</label>\n\n"
 			"[Enable showcase](:#toggleshowcase)\n\n"
 			"[Show off your emotes here](checklist?showcase=" + req->misc->session->?user->?id + " :#showcaselink)";
@@ -336,8 +336,8 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 		return 0;
 	}
 	if (msg->group != conn->session->?user->?id) return "Not you";
-	multiset scopes = conn->session->?scopes || (<>);
-	if (scopes["user:read:emotes"]) update_user_emotes(conn->session->user->id, conn->session->token);
+	array havescopes = G->G->user_credentials[(int)conn->session->?user->?id]->?scopes || ({ });
+	if (has_value(havescopes, "user:read:emotes")) update_user_emotes(conn->session->user->id, conn->session->token);
 }
 __async__ mapping get_state(string group) {
 	mapping en = valid_showcase_groups[group] > time()

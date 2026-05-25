@@ -139,9 +139,8 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	//Merge scopes, similarly to ensure_login()
 	//NOTE: Some things are inconsistent on whether it's "scope" or "scopes". Currently
 	//checking for either. TODO: Make them all consistent.
-	multiset havescopes = req->misc->session->?scopes || (<>);
 	mapping tok = G->G->user_credentials[(int)req->misc->session->?user->?id] || ([]);
-	if (tok->scopes) havescopes |= (multiset)tok->scopes;
+	multiset havescopes = (multiset)(tok->scopes || ({ }));
 	if (tok->missing) havescopes |= (multiset)tok->missing; //These are actually ones we DON'T have, but include them in the request anyway.
 	multiset wantscopes = (multiset)((req->variables->scopes || req->variables->scope || "") / " " - ({""}));
 	multiset bad = wantscopes - TwitchAuth()->list_valid_scopes();

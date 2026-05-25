@@ -172,8 +172,8 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		login = logged_in->login; disp = logged_in->display_name;
 		//Do we have authentication to start raids? Note that this is
 		//irrelevant if we're doing a raidfind for someone else.
-		multiset havescopes = req->misc->session->?scopes || (<>);
-		if (havescopes["channel:manage:raids"]) raidbtn = "[Raid now!](:#raidnow)";
+		array havescopes = G->G->user_credentials[(int)req->misc->session->?user->?id]->?scopes || ({ });
+		if (has_value(havescopes, "channel:manage:raids")) raidbtn = "[Raid now!](:#raidnow)";
 		else raidbtn = "[Authenticate to raid automatically](:.twitchlogin data-scopes=channel:manage:raids)";
 	}
 	else if (mapping user = userid && G->G->user_info[userid])
@@ -761,8 +761,8 @@ __async__ void send_raid(string id, int target, mapping conn) {
 //if you fiddle around and force the message to be sent, all that will happen is that
 //the raid is started for YOUR channel, not the one you're raidfinding for.
 void websocket_cmd_raidnow(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	multiset havescopes = conn->session->?scopes || (<>);
-	if (!havescopes["channel:manage:raids"]) return;
+	array havescopes = G->G->user_credentials[(int)conn->session->user->id]->?scopes || ({ });
+	if (!has_value(havescopes, "channel:manage:raids")) return;
 	string id = conn->session->?user->?id; if (!id) return;
 	int target = (int)msg->target; if (!target) return; //Ensure that it casts to int correctly
 	spawn_task(send_raid(id, target, conn));
