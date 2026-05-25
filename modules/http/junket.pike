@@ -28,7 +28,6 @@ __async__ void hook_conduitbroken(mapping|array data) {
 __async__ void hook_authrevoked(mapping data) {
 	//In case the request was forged, don't trust it in any way, just do a recheck of
 	//the user's credentials.
-	werror("AUTH REVOKED %O\n", data);
 	int userid = (int)data->user_id;
 	if (!userid) return;
 	mapping cred = G->G->user_credentials[userid];
@@ -40,6 +39,12 @@ __async__ void hook_authrevoked(mapping data) {
 	//HTTP status code, and so we do not receive an exception.
 	if (resp->status == 401) {
 		await(G->G->DB->delete_user_credentials(userid));
+		//Go through all HTTP sessions and delete those that belong to this user.
+		//If you've revoked the bot's permission to know who you are, then you must
+		//be logged out in all sessions.
+		//FIXME: Since sessions are stored in Postgres as byte arrays (not JSON),
+		//and there's no dedicated field for the user ID, this will be a pain. May
+		//need to first migrate them to JSON.
 		return;
 	}
 	array scopes = sort(resp->scopes || ({ }));
