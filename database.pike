@@ -592,6 +592,8 @@ Concurrent.Future revert_command(string|int twitchid, string cmdname, string uui
 //and there was no data to save, in which case 0 is returned.
 __async__ string|zero save_session(mapping data) {
 	if (!data->cookie && sizeof(data)) {
+		m_delete(data, "cookie"); //In case there's a null in there for some reason
+		if (!sizeof(data)) return 0; //No session to save
 		int retry = 2;
 		while (1) {
 			data->cookie = random(1<<64)->digits(36);
