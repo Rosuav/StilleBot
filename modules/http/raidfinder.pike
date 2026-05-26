@@ -308,7 +308,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			}
 			case "": case "categories": { //For ?categories and ?categories= modes, show those you follow
 				if (mapping resp = ensure_login(req)) return resp;
-				args->game_id = await(G->G->DB->load_config(req->misc->session->user->id, "followed_categories", ({ })));
+				args->game_id = await(G->G->DB->load_config(req->misc->session->user->?id, "followed_categories", ({ })));
 				title = "Followed categories";
 				catfollow = "<button id=followcategory data-action=show data-cats=\"" + args->game_id * "," + "\">💜 All followed categories</button><br>";
 				break;
