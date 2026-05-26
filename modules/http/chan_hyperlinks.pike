@@ -122,8 +122,8 @@ string evaluate_message(object channel, mapping person, string msg) {
 }
 
 @hook_allmsgs: int message(object channel, mapping person, string msg) {
-	if (!contains_link(msg)) return 0; //No link? No problem.
 	string allowed = evaluate_message(channel, person, msg);
+	if (!contains_link(msg)) return 0; //No link? No problem.
 	//If allowed isn't set, the user probably needs to be punished.
 	mapping bans = hyperlink_bans[channel->userid];
 	if (!bans) bans = hyperlink_bans[channel->userid] = ([]);
