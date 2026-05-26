@@ -49,7 +49,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 	if (mapping resp = ensure_login(req)) return resp;
 	return render(req, ([
 		"vars": ([
-			"ws_group": req->misc->session->user->id,
+			"ws_group": (string)req->misc->session->user->?id,
 			"ws_extra_group": req->misc->is_mod ? "-1" + req->misc->channel->name : 0,
 		]),
 		"recip": req->misc->session->user->display_name,
