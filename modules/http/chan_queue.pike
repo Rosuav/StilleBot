@@ -15,11 +15,27 @@ constant markdown = #"# Request Queue
 </style>
 ";
 
-string choose(object channel, string selection, string user) {
-	//TODO: Fuzzy match against the available selections
+void choose(object channel, string selection, string user) {
 	G->G->DB->mutate_config(channel->userid, "requestqueue") {mapping cfg = __ARGS__[0];
+		//First, check the queue: if there are too many from this user, reject.
+		if (!cfg->queue_open || !cfg->selections) return; //No selecting at all
+		if (int limit = cfg->queuelimit) {
+			foreach (cfg->queue || ({ }), mapping q)
+				if (q->user == user) --limit;
+			if (limit <= 0) return;
+		}
+		//Okay. So, let's see if we can add this one.
+		//Note that we don't deduplicate with existing requests.
+		array matches = ({ }), scores = ({ });
+		string match = lower_case(selection);
+		foreach (cfg->selections, mapping sel) if (sel->title) {
+			int score = String.fuzzymatch(lower_case(sel->title), match);
+			if (score > 66) {matches += ({sel}); scores += ({score});}
+		}
+		if (!sizeof(matches)) return; //Nothing was a good enough match
+		sort(scores, matches);
 		cfg->queue += ({([
-			"title": selection,
+			"title": matches[-1]->title,
 			"user": user,
 		])});
 	}->then() {send_updates_all(channel, "");};
@@ -78,8 +94,8 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 mapping wscmd_choose(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Select something. If you're a mod, you can do an "on behalf of" that changes the source name,
 	//though it'll still record the "added by".
-	string sel = choose(channel, msg->selection, conn->session->user->display_name);
-	return (["cmd": "choose", "selection": sel]);
+	choose(channel, msg->selection, conn->session->user->display_name);
+	//return (["cmd": "choose", "selection": actual selection, "error": blank if okay else reason for rejection]);
 }
 
 void wscmd_unchoose(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
