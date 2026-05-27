@@ -6,8 +6,9 @@ export function render(data) {
 	replace_content("#queueinfo", [
 		H2("Requests"),
 		!data.queue?.length ? P("No requests currently.")
-			: UL(data.queue.map(q => LI([
-				q.title, " [", q.user, "]",
+			: UL(data.queue.map((q, idx) => LI([
+				q.title, " [", q.user, "] ",
+				(is_mod || q.user === myname) && BUTTON({class: "unchoose", "data-index": idx}, "Remove"),
 			]))),
 		H2("Selections"),
 		data.selections && UL(data.selections.map(sel => LI({"data-selection": sel.title}, [
@@ -37,6 +38,10 @@ on("click", "#closequeue", e => ws_sync.send({cmd: "configure", closed: 1}));
 
 on("click", ".choose", simpleconfirm("Add this to the queue?", e => {
 	ws_sync.send({cmd: "choose", selection: e.match.closest_data("selection")});
+}));
+
+on("click", ".unchoose", simpleconfirm("Remove this from the queue?", e => {
+	ws_sync.send({cmd: "unchoose", index: +e.match.dataset.index});
 }));
 
 on("click", "#addselections", simpleconfirm("Add this/these to the available selections?", e => {

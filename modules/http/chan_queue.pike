@@ -25,6 +25,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	return render(req, (["vars": ([
 		"ws_group": "",
 		"is_mod": await(modprobe(req)), //Show or hide the mod-specific things. If you hack this in the front end, you'll get a bunch of non-functional controls.
+		"myname": req->misc->session->user->?display_name || "-", //
 	])]) | req->misc->chaninfo);
 }
 
@@ -70,6 +71,15 @@ void wscmd_unchoose(object channel, mapping(string:mixed) conn, mapping(string:m
 	//Remove a selection. If you're a mod, you can remove anyone's selections. Currently
 	//this is the only way to say "done", though there may need to be a simple "next" button.
 	//Non-mods can cancel their own requests.
+	if (undefinedp(msg->index) || !intp(msg->index)) return;
+	G->G->DB->mutate_config(channel->userid, "requestqueue") {mapping cfg = __ARGS__[0];
+		if (!cfg->queue || msg->index >= sizeof(cfg->queue)) return;
+		mapping sel = cfg->queue[msg->index];
+		if (conn->is_mod || sel->user == conn->session->user->display_name) {
+			cfg->queue[msg->index] = 0;
+			cfg->queue -= ({0});
+		}
+	}->then() {send_updates_all(channel, "");};
 }
 
 constant builtin_name = "Request Queue";
