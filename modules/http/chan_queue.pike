@@ -10,8 +10,6 @@ constant markdown = #"# Request Queue
 <div id=queueinfo>Loading...</div>
 ";
 
-@retain: mapping(int:array) request_queue = ([]);
-
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->session->user) return render_template("login.md", req->misc->chaninfo);
 	return render(req, (["vars": ([
@@ -21,10 +19,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 }
 
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
-	return ([
-		"config": await(G->G->DB->load_config(channel->userid, "requestqueue")),
-		"queue": request_queue[channel->userid] || ({ }),
-	]);
+	return await(G->G->DB->load_config(channel->userid, "requestqueue"));
 }
 
 @"is_mod": void wscmd_configure(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -33,7 +28,6 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	G->G->DB->mutate_config(channel->userid, "requestqueue") {mapping cfg = __ARGS__[0];
 		if (msg->open) cfg->queue_open = 1;
 		if (msg->closed) cfg->queue_open = 0;
-		if (msg->toggleopen) cfg->queue_open = !cfg->queue_open;
 	}->then() {send_updates_all(channel, "");};
 }
 
