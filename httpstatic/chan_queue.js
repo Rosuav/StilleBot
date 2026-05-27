@@ -42,9 +42,19 @@ export function render(data) {
 on("click", "#openqueue", e => ws_sync.send({cmd: "configure", open: 1}));
 on("click", "#closequeue", e => ws_sync.send({cmd: "configure", closed: 1}));
 
-on("click", ".choose", simpleconfirm("Add this to the queue?", e => {
+const selfadd = simpleconfirm("Add this to the queue?", e => {
 	ws_sync.send({cmd: "choose", selection: e.match.closest_data("selection")});
-}));
+});
+on("click", ".choose", e => {
+	if (e.shiftKey) {
+		DOM("#cf_selection").value = e.match.closest_data("selection");
+		DOM("#cf_username").value = "";
+		DOM("#choosefordlg").showModal();
+	} else selfadd(e);
+});
+on("click", "#choosefor", e => {
+	ws_sync.send({cmd: "choose", selection: DOM("#cf_selection").value, added_for: DOM("#cf_username").value});
+});
 
 on("click", ".unchoose", simpleconfirm("Remove this from the queue?", e => {
 	ws_sync.send({cmd: "unchoose", index: +e.match.dataset.index});

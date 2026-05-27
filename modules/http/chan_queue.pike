@@ -13,9 +13,18 @@ constant markdown = #"# Request Queue
 .blank {list-style-type: none; height: 1em;}
 .heading {list-style-type: none; font-weight: bold; font-size: larger;}
 </style>
+
+> ### Choose on behalf of
+>
+> <label>Selection: <input readonly id=cf_selection size=40></label><br>
+> <label>User name: <input id=cf_username size=20></label><br>
+>
+> [Choose](:#choosefor .dialog_close) [Cancel](:.dialog_close)
+{: tag=formdialog #choosefordlg}
 ";
 
-void choose(object channel, string selection, string user) {
+void choose(object channel, string selection, string user, mapping|void extra) {
+	if (!extra) extra = ([]);
 	G->G->DB->mutate_config(channel->userid, "requestqueue") {mapping cfg = __ARGS__[0];
 		//First, check the queue: if there are too many from this user, reject.
 		if (!cfg->queue_open || !cfg->selections) return; //No selecting at all
@@ -37,7 +46,7 @@ void choose(object channel, string selection, string user) {
 		cfg->queue += ({([
 			"title": matches[-1]->title,
 			"user": user,
-		])});
+		]) | extra});
 	}->then() {send_updates_all(channel, "");};
 }
 
@@ -46,7 +55,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 	return render(req, (["vars": ([
 		"ws_group": "",
 		"is_mod": await(modprobe(req)), //Show or hide the mod-specific things. If you hack this in the front end, you'll get a bunch of non-functional controls.
-		"myname": req->misc->session->user->?display_name || "-", //
+		"myname": req->misc->session->user->?display_name || "-",
 	])]) | req->misc->chaninfo);
 }
 
@@ -94,7 +103,13 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 mapping wscmd_choose(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Select something. If you're a mod, you can do an "on behalf of" that changes the source name,
 	//though it'll still record the "added by".
-	choose(channel, msg->selection, conn->session->user->display_name);
+	mapping extra = ([]);
+	string user = conn->session->user->display_name;
+	if (conn->is_mod && msg->added_for) {
+		extra->added_by = user;
+		user = msg->added_for;
+	}
+	choose(channel, msg->selection, user, extra);
 	//return (["cmd": "choose", "selection": actual selection, "error": blank if okay else reason for rejection]);
 }
 
