@@ -7,11 +7,11 @@ export function render(data) {
 		H2("Requests"),
 		!data.queue?.length ? P("No requests currently.")
 			: UL(data.queue.map(q => LI([
-				"(queue entry)",
+				q.title, " [", q.user, "]",
 			]))),
 		H2("Selections"),
-		data.selections && UL(data.selections.map(sel => LI([
-			sel.title,
+		data.selections && UL(data.selections.map(sel => LI({"data-selection": sel.title}, [
+			BUTTON({class: "choose"}, "Pick"), " ", sel.title,
 		]))),
 		is_mod && DETAILS([
 			SUMMARY("Moderator controls"),

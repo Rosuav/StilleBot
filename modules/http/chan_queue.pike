@@ -10,6 +10,16 @@ constant markdown = #"# Request Queue
 <div id=queueinfo>Loading...</div>
 ";
 
+string choose(object channel, string selection, string user) {
+	//TODO: Fuzzy match against the available selections
+	G->G->DB->mutate_config(channel->userid, "requestqueue") {mapping cfg = __ARGS__[0];
+		cfg->queue += ({([
+			"title": selection,
+			"user": user,
+		])});
+	}->then() {send_updates_all(channel, "");};
+}
+
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->session->user) return render_template("login.md", req->misc->chaninfo);
 	return render(req, (["vars": ([
@@ -49,9 +59,11 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	//Edit a selection. This won't change existing queue entries.
 }
 
-void wscmd_choose(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+mapping wscmd_choose(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Select something. If you're a mod, you can do an "on behalf of" that changes the source name,
 	//though it'll still record the "added by".
+	string sel = choose(channel, msg->selection, conn->session->user->display_name);
+	return (["cmd": "choose", "selection": sel]);
 }
 
 void wscmd_unchoose(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
