@@ -13,6 +13,7 @@ constant markdown = #"# Request Queue
 @retain: mapping(int:array) request_queue = ([]);
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
+	if (!req->misc->session->user) return render_template("login.md", req->misc->chaninfo);
 	return render(req, (["vars": ([
 		"ws_group": "",
 		"is_mod": await(modprobe(req)), //Show or hide the mod-specific things. If you hack this in the front end, you'll get a bunch of non-functional controls.
@@ -26,13 +27,19 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	]);
 }
 
-@"is_mod": __async__ void wscmd_configure(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"is_mod": void wscmd_configure(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Configure things. Do we even HAVE a queue? If we do, is it open and accepting requests?
 	//Can people request more than one? Etc.
+	G->G->DB->mutate_config(channel->userid, "requestqueue") {mapping cfg = __ARGS__[0];
+		if (msg->open) cfg->queue_open = 1;
+		if (msg->closed) cfg->queue_open = 0;
+		if (msg->toggleopen) cfg->queue_open = !cfg->queue_open;
+	}->then() {send_updates_all(channel, "");};
 }
 
 @"is_mod": __async__ void wscmd_newselection(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Mods can add a new thing to the selections. Or multiple, offer an MLE.
+	if (stringp(msg->selections)) msg->selection = msg->selections / "\n" - ({""});
 }
 
 @"is_mod": __async__ void wscmd_editselection(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
