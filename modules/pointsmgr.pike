@@ -13,6 +13,7 @@ constant reward_changed = ({"object channel", "string|void rewardid"}); //If no 
 void redemptiongone(object channel, mapping data) {points_redeemed(channel, data, 1);}
 @EventNotify("channel.channel_points_custom_reward_redemption.add=1"):
 __async__ void points_redeemed(object channel, mapping data, int|void removal) {
+	Stdio.append_file("redemptions.log", sprintf("\n%sREDEMPTION %O %O\n%O\n", ctime(time()), channel, removal, data));
 	if (!channel) return;
 	event_notify("point_redemption", channel, data->reward->id, removal, data);
 
