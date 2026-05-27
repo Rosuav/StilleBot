@@ -37,12 +37,12 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 			if (limit <= 0) m_delete(cfg, "queuelimit");
 			else cfg->queuelimit = limit;
 		}
+		if (arrayp(msg->selections)) foreach (msg->selections, string sel)
+			if (sel != "") cfg->selections += ({([
+				"title": sel,
+				//Do we need to track any more info?
+			])});
 	}->then() {send_updates_all(channel, "");};
-}
-
-@"is_mod": __async__ void wscmd_newselection(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	//Mods can add a new thing to the selections. Or multiple, offer an MLE.
-	if (stringp(msg->selections)) msg->selection = msg->selections / "\n" - ({""});
 }
 
 @"is_mod": __async__ void wscmd_editselection(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {

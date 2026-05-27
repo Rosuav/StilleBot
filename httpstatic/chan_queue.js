@@ -10,8 +10,8 @@ export function render(data) {
 				"(queue entry)",
 			]))),
 		H2("Selections"),
-		data.selections && UL(data.selections.map(LI([
-			"(available selection)",
+		data.selections && UL(data.selections.map(sel => LI([
+			sel.title,
 		]))),
 		is_mod && DETAILS([
 			SUMMARY("Moderator controls"),
@@ -39,8 +39,8 @@ on("click", ".choose", simpleconfirm("Add this to the queue?", e => {
 	ws_sync.send({cmd: "choose", selection: e.match.closest_data("selection")});
 }));
 
-on("click", "#addselections", simpleconfirm("Add this to the available selections?", e => {
-	ws_sync.send({cmd: "newselection", selections: DOM("#newselections").value});
+on("click", "#addselections", simpleconfirm("Add this/these to the available selections?", e => {
+	ws_sync.send({cmd: "configure", selections: DOM("#newselections").value.split("\n")});
 }));
 
 //NOTE: Limit can be set as a string or a number, but to set it to zero, must use "0".
