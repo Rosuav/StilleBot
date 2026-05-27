@@ -8,6 +8,11 @@ inherit http_websocket;
 constant markdown = #"# Request Queue
 
 <div id=queueinfo>Loading...</div>
+
+<style>
+.blank {list-style-type: none; height: 1em;}
+.heading {list-style-type: none; font-weight: bold; font-size: larger;}
+</style>
 ";
 
 string choose(object channel, string selection, string user) {
@@ -48,16 +53,26 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 			if (limit <= 0) m_delete(cfg, "queuelimit");
 			else cfg->queuelimit = limit;
 		}
-		if (arrayp(msg->selections)) foreach (msg->selections, string sel)
-			if (sel != "") cfg->selections += ({([
-				"title": sel,
-				//Do we need to track any more info?
-			])});
+		if (arrayp(msg->selections)) {
+			//TODO: If we add any info other than just the title, do a lookup and locate
+			//the previous version of them so they get kept.
+			array prev = cfg->selections || ({ });
+			cfg->selections = ({ });
+			foreach (msg->selections, string sel) cfg->selections += ({
+				sel == "" ? (["gap": 1]) //
+				: sel[0] == '#' ? (["heading": String.trim(sel[1..])])
+				: (["title": String.trim(sel)])
+			});
+			//Clean off any blanks at the end
+			while (sizeof(cfg->selections) && cfg->selections[-1]->gap)
+				cfg->selections = cfg->selections[..<1];
+		}
 	}->then() {send_updates_all(channel, "");};
 }
 
 @"is_mod": __async__ void wscmd_editselection(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Edit a selection. This won't change existing queue entries.
+	//TODO: Allow extra info to be added than just the title?
 }
 
 mapping wscmd_choose(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {

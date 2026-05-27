@@ -11,9 +11,11 @@ export function render(data) {
 				(is_mod || q.user === myname) && BUTTON({class: "unchoose", "data-index": idx}, "Remove"),
 			]))),
 		H2("Selections"),
-		data.selections && UL(data.selections.map(sel => LI({"data-selection": sel.title}, [
-			BUTTON({class: "choose"}, "Pick"), " ", sel.title,
-		]))),
+		data.selections && UL(data.selections.map(sel => 
+			sel.title ? LI({"data-selection": sel.title}, [BUTTON({class: "choose"}, "Pick"), " ", sel.title])
+			: sel.heading ? LI({class: "heading"}, sel.heading)
+			: LI({class: "blank"}),
+		)),
 		is_mod && DETAILS([
 			SUMMARY("Moderator controls"),
 			data.queue_open ? P([
@@ -24,8 +26,12 @@ export function render(data) {
 				BUTTON({type: "button", id: "openqueue"}, "Open queue"),
 			]),
 			FORM([
-				LABEL(["Add new selections, one per line:", BR(), TEXTAREA({id: "newselections", rows: 8, cols: 80})]),
-				BR(), BUTTON({type: "button", id: "addselections"}, "Add"),
+				LABEL(["Available selections:", BR(), TEXTAREA({id: "newselections", rows: 20, cols: 60,
+					value: (data.selections||[]).map(sel =>
+						sel.title ? sel.title : sel.heading ? "# " + sel.heading : ""
+					).join("\n") + "\n",
+				})]),
+				BR(), BUTTON({type: "button", id: "editselections"}, "Save"),
 				P(LABEL(["Queue limit per person: ", INPUT({type: "number", id: "queuelimit", minimum: 0, value: data.queuelimit || 0})])),
 			]),
 		]),
@@ -44,7 +50,7 @@ on("click", ".unchoose", simpleconfirm("Remove this from the queue?", e => {
 	ws_sync.send({cmd: "unchoose", index: +e.match.dataset.index});
 }));
 
-on("click", "#addselections", simpleconfirm("Add this/these to the available selections?", e => {
+on("click", "#editselections", simpleconfirm("Replace the available selections?", e => {
 	ws_sync.send({cmd: "configure", selections: DOM("#newselections").value.split("\n")});
 }));
 
