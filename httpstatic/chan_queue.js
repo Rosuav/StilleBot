@@ -1,5 +1,5 @@
 import {lindt, replace_content, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DETAILS, FORM, H2, LABEL, LI, P, SUMMARY, TEXTAREA, UL} = lindt; //autoimport
+const {BR, BUTTON, DETAILS, FORM, H2, INPUT, LABEL, LI, P, SUMMARY, TEXTAREA, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 export function render(data) {
@@ -25,6 +25,7 @@ export function render(data) {
 			FORM([
 				LABEL(["Add new selections, one per line:", BR(), TEXTAREA({id: "newselections", rows: 8, cols: 80})]),
 				BR(), BUTTON({type: "button", id: "addselections"}, "Add"),
+				P(LABEL(["Queue limit per person: ", INPUT({type: "number", id: "queuelimit", minimum: 0, value: data.queuelimit || 0})])),
 			]),
 		]),
 	]);
@@ -41,3 +42,6 @@ on("click", ".choose", simpleconfirm("Add this to the queue?", e => {
 on("click", "#addselections", simpleconfirm("Add this to the available selections?", e => {
 	ws_sync.send({cmd: "newselection", selections: DOM("#newselections").value});
 }));
+
+//NOTE: Limit can be set as a string or a number, but to set it to zero, must use "0".
+on("change", "#queuelimit", e => ws_sync.send({cmd: "configure", queuelimit: e.match.value}));

@@ -27,7 +27,16 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	//Can people request more than one? Etc.
 	G->G->DB->mutate_config(channel->userid, "requestqueue") {mapping cfg = __ARGS__[0];
 		if (msg->open) cfg->queue_open = 1;
-		if (msg->closed) cfg->queue_open = 0;
+		if (msg->closed) m_delete(cfg, "queue_open");
+		if (msg->queuelimit) {
+			//Set queuelimit to 1 or "1" to limit to one per person; but to
+			//remove the limit, set it to "0". I could use undefinedp() here
+			//but with the quirks of JavaScript on the front end, easier to
+			//just use a string.
+			int limit = (int)msg->queuelimit;
+			if (limit <= 0) m_delete(cfg, "queuelimit");
+			else cfg->queuelimit = limit;
+		}
 	}->then() {send_updates_all(channel, "");};
 }
 
