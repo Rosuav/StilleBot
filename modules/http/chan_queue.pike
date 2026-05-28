@@ -56,7 +56,9 @@ __async__ mapping choose(object channel, string selection, string user, mapping|
 		string match = lower_case(selection);
 		foreach (cfg->selections, mapping sel) if (sel->title) {
 			int score = String.fuzzymatch(lower_case(sel->title), match);
-			if (score > 66) {matches += ({sel}); scores += ({score});}
+			if (sel->shorttitle) score += String.fuzzymatch(lower_case(sel->shorttitle), match) * 2;
+			else score *= 3;
+			if (score > 100) {matches += ({sel}); scores += ({score});}
 		}
 		if (!sizeof(matches)) {ret->error = "Couldn't find that song - check the song list"; return;} //Nothing was a good enough match
 		sort(scores, matches);
@@ -97,6 +99,13 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	return await(G->G->DB->load_config(channel->userid, "requestqueue"));
 }
 
+//Shorten a title to the most relevant part, for priority matching
+string shorten(string title) {
+	if (sscanf(title, "%s(%*s)%s", string before, string after))
+		return String.trim(before) + " " + String.trim(after);
+	return title;
+}
+
 @"is_mod": void wscmd_configure(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Configure things. Do we even HAVE a queue? If we do, is it open and accepting requests?
 	//Can people request more than one? Etc.
@@ -120,7 +129,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 			foreach (msg->selections, string sel) cfg->selections += ({
 				sel == "" ? (["gap": 1]) //
 				: sel[0] == '#' ? (["heading": String.trim(sel[1..])])
-				: (["title": String.trim(sel)])
+				: (["title": String.trim(sel), "shorttitle": shorten(String.trim(sel))])
 			});
 			//Clean off any blanks at the end
 			while (sizeof(cfg->selections) && cfg->selections[-1]->gap)
