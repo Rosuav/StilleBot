@@ -1434,13 +1434,16 @@ class http_websocket
 		if (!name) return;
 		if (!ws_type) ws_type = name;
 	}
-	mapping(string:mixed) render(Protocols.HTTP.Server.Request req, mapping replacements) {
+	variant mapping(string:mixed) render(Protocols.HTTP.Server.Request req, string md, mapping replacements) {
 		if (replacements->vars->?ws_group) {
 			if (!replacements->vars->ws_type) replacements->vars->ws_type = ws_type;
 			if (req->misc->channel) replacements->vars->ws_group += "#" + req->misc->channel->userid;
 		}
-		if (markdown != "") return render_template(markdown, replacements);
-		return render_template(ws_type + ".md", replacements);
+		return render_template(md, replacements);
+	}
+	variant mapping(string:mixed) render(Protocols.HTTP.Server.Request req, mapping replacements) {
+		if (markdown != "") return render(req, markdown, replacements);
+		return render(req, ws_type + ".md", replacements);
 	}
 
 	string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {

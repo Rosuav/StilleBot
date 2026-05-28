@@ -39,6 +39,14 @@ constant markdown = #"# Request Queue
 {: tag=formdialog #choosefordlg}
 ";
 
+constant minimode = #"
+<div id=queueinfo></div>
+
+<style>
+main {max-width: unset; background: none; padding: 0;}
+</style>
+";
+
 __async__ mapping choose(object channel, string selection, string user, mapping|void extra) {
 	if (!extra) extra = ([]);
 	mapping ret = ([]);
@@ -88,6 +96,7 @@ __async__ mapping unchoose(object channel, string user) {
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->session->user) return render_template("login.md", req->misc->chaninfo);
+	if (req->variables->mini) return render(req, minimode, (["vars": (["ws_group": "", "minimode": 1, "is_mod": 0, "myname": "-"])]));
 	return render(req, (["vars": ([
 		"ws_group": "",
 		"is_mod": await(modprobe(req)), //Show or hide the mod-specific things. If you hack this in the front end, you'll get a bunch of non-functional controls.

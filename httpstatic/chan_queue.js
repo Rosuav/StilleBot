@@ -10,8 +10,8 @@ export function render(data) {
 				q.title, " [", q.user, "] ",
 				(is_mod || q.user === myname) && BUTTON({class: "unchoose", "data-index": idx}, "Remove"),
 			]))),
-		H2("Selections"),
-		data.selections && UL(data.selections.map(sel => 
+		!minimode && H2("Selections"),
+		!minimode && data.selections && UL(data.selections.map(sel => 
 			sel.title ? LI({"data-selection": sel.title}, [BUTTON({class: "choose"}, "Pick"), " ", sel.title])
 			: sel.heading ? LI({class: "heading"}, sel.heading)
 			: LI({class: "blank"}),
