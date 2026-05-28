@@ -69,6 +69,21 @@ __async__ mapping choose(object channel, string selection, string user, mapping|
 	return ret;
 }
 
+__async__ mapping unchoose(object channel, string user) {
+	mapping ret = ([]);
+	await(G->G->DB->mutate_config(channel->userid, "requestqueue") {mapping cfg = __ARGS__[0];
+		if (!cfg->queue) {ret->error = "Queue is not active."; return;}
+		int idx = -1;
+		foreach (cfg->queue; int i; mapping q) if (q->user == user) idx = i; //Retain the last, not the first, found
+		if (idx == -1) {ret->error = "You don't have anything in the queue."; return;}
+		ret->selection = cfg->queue[idx]->title;
+		cfg->queue[idx] = 0;
+		cfg->queue -= ({0});
+	});
+	if (ret->selection) send_updates_all(channel, "");
+	return ret;
+}
+
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (!req->misc->session->user) return render_template("login.md", req->misc->chaninfo);
 	return render(req, (["vars": ([
@@ -166,9 +181,10 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 			mapping ret = await(choose(channel, param[1], person->displayname));
 			return (["{selection}": ret->selection || "", "{error}": ret->error || ""]);
 		}
-		case "unchoose":
-			//TODO: Remove this user's most recent selection
-			return (["{selection}": "", "{error}": "unimpl"]);
+		case "unchoose": {
+			mapping ret = await(unchoose(channel, person->displayname));
+			return (["{selection}": ret->selection || "", "{error}": ret->error || ""]);
+		}
 		default: return (["{selection}": "", "{error}": "Bad subcommand"]);
 	}
 }
