@@ -595,7 +595,7 @@ __async__ void update_first(object channel, mapping game) {
 					(["json": ([
 						"title": desc->title,
 						"cost": desc->cost,
-						"prompt": desc->unclaimed,
+						"prompt": game[which + "desc"] || sections->first[which + "desc"],
 						"is_max_per_stream_enabled": Val.true, "max_per_stream": 1,
 						//Note that you can't actually create a paused reward; instead, we create
 						//the reward and then immediately pause it.
