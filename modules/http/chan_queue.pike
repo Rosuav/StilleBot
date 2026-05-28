@@ -101,6 +101,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		"ws_group": "",
 		"is_mod": await(modprobe(req)), //Show or hide the mod-specific things. If you hack this in the front end, you'll get a bunch of non-functional controls.
 		"myname": req->misc->session->user->?display_name || "-",
+		"minimode": 0,
 	])]) | req->misc->chaninfo);
 }
 
