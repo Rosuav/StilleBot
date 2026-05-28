@@ -23,15 +23,16 @@ constant markdown = #"# Request Queue
 {: tag=formdialog #choosefordlg}
 ";
 
-void choose(object channel, string selection, string user, mapping|void extra) {
+__async__ mapping choose(object channel, string selection, string user, mapping|void extra) {
 	if (!extra) extra = ([]);
-	G->G->DB->mutate_config(channel->userid, "requestqueue") {mapping cfg = __ARGS__[0];
+	mapping ret = ([]);
+	await(G->G->DB->mutate_config(channel->userid, "requestqueue") {mapping cfg = __ARGS__[0];
 		//First, check the queue: if there are too many from this user, reject.
-		if (!cfg->queue_open || !cfg->selections) return; //No selecting at all
+		if (!cfg->queue_open || !cfg->selections) {ret->error = "Queue is not open."; return;}
 		if (int limit = cfg->queuelimit) {
 			foreach (cfg->queue || ({ }), mapping q)
 				if (q->user == user) --limit;
-			if (limit <= 0) return;
+			if (limit <= 0) {ret->error = "You already have requests pending."; return;}
 		}
 		//Okay. So, let's see if we can add this one.
 		//Note that we don't deduplicate with existing requests.
@@ -41,13 +42,15 @@ void choose(object channel, string selection, string user, mapping|void extra) {
 			int score = String.fuzzymatch(lower_case(sel->title), match);
 			if (score > 66) {matches += ({sel}); scores += ({score});}
 		}
-		if (!sizeof(matches)) return; //Nothing was a good enough match
+		if (!sizeof(matches)) {ret->error = "Couldn't find that song - check the song list"; return;} //Nothing was a good enough match
 		sort(scores, matches);
 		cfg->queue += ({([
-			"title": matches[-1]->title,
+			"title": ret->selection = matches[-1]->title,
 			"user": user,
 		]) | extra});
-	}->then() {send_updates_all(channel, "");};
+	});
+	if (ret->selection) send_updates_all(channel, "");
+	return ret;
 }
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
@@ -100,7 +103,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	//TODO: Allow extra info to be added than just the title?
 }
 
-mapping wscmd_choose(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ mapping wscmd_choose(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Select something. If you're a mod, you can do an "on behalf of" that changes the source name,
 	//though it'll still record the "added by".
 	mapping extra = ([]);
@@ -109,8 +112,8 @@ mapping wscmd_choose(object channel, mapping(string:mixed) conn, mapping(string:
 		extra->added_by = user;
 		user = msg->added_for;
 	}
-	choose(channel, msg->selection, user, extra);
-	//return (["cmd": "choose", "selection": actual selection, "error": blank if okay else reason for rejection]);
+	mapping ret = await(choose(channel, msg->selection, user, extra));
+	return (["cmd": "choose", "selection": ret->selection || "", "error": ret->error || ""]);
 }
 
 void wscmd_unchoose(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -131,7 +134,8 @@ void wscmd_unchoose(object channel, mapping(string:mixed) conn, mapping(string:m
 constant builtin_name = "Request Queue";
 constant builtin_param = ({"/Action/choose/unchoose", "Selection"});
 constant vars_provided = ([
-	"{selection}": "The actual selection, or blank if not found",
+	"{selection}": "The actual selection that was added",
+	"{error}": "If nonblank, there was a problem",
 ]);
 
 __async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
@@ -140,7 +144,17 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 	//sufficiently close, fail. If unchoosing, allow a blank to mean "first available", but
 	//for choosing, require that it be kinda close. Maybe offer a suggestion if within a
 	//further threshold?
-	return ([]);
+	if (sizeof(param) != 2) return ([]);
+	switch (param[0]) {
+		case "choose": {
+			mapping ret = await(choose(channel, param[1], person->displayname));
+			return (["{selection}": ret->selection || "", "{error}": ret->error || ""]);
+		}
+		case "unchoose":
+			//TODO: Remove this user's most recent selection
+			return (["{selection}": "", "{error}": "unimpl"]);
+		default: return (["{selection}": "", "{error}": "Bad subcommand"]);
+	}
 }
 
 protected void create(string name) {::create(name);}
