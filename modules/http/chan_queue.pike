@@ -9,9 +9,25 @@ constant markdown = #"# Request Queue
 
 <div id=queueinfo>Loading...</div>
 
+<div id=flashed-message></div>
+
 <style>
 .blank {list-style-type: none; height: 1em;}
 .heading {list-style-type: none; font-weight: bold; font-size: larger;}
+#flashed-message {
+	position: fixed;
+	left: 3em;
+	top: 1em;
+	right: 3em;
+	border: 1px solid rebeccapurple;
+	background: aliceblue;
+	opacity: 0;
+	transition: opacity 2s;
+}
+#flashed-message.visible {
+	opacity: 1;
+	transition: opacity 0.25s;
+}
 </style>
 
 > ### Choose on behalf of

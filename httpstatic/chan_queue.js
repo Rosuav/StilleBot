@@ -1,6 +1,6 @@
 import {lindt, replace_content, on} from "https://rosuav.github.io/choc/factory.js";
 const {BR, BUTTON, DETAILS, FORM, H2, INPUT, LABEL, LI, P, SUMMARY, TEXTAREA, UL} = lindt; //autoimport
-import {simpleconfirm} from "$$static||utils.js$$";
+import {simpleconfirm, simplemessage} from "$$static||utils.js$$";
 
 export function render(data) {
 	replace_content("#queueinfo", [
@@ -55,6 +55,14 @@ on("click", ".choose", e => {
 on("click", "#choosefor", e => {
 	ws_sync.send({cmd: "choose", selection: DOM("#cf_selection").value, added_for: DOM("#cf_username").value});
 });
+export function sockmsg_choose(msg) {
+	if (msg.error) simplemessage(msg.error, "Unable to add to the queue");
+	else {
+		//If it's successfully added, put a banner that fades out
+		set_content("#flashed-message", "Added to queue: " + msg.selection).classList.add("visible");
+		setTimeout(() => DOM("#flashed-message").classList.remove("visible"), 5000);
+	}
+}
 
 on("click", ".unchoose", simpleconfirm("Remove this from the queue?", e => {
 	ws_sync.send({cmd: "unchoose", index: +e.match.dataset.index});
