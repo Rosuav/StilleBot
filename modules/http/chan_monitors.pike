@@ -96,13 +96,13 @@ constant vars_provided = ([
 
 //Some of these attributes make sense only with certain types (eg needlesize is only for goal bars).
 constant saveable_attributes = "previewbg barcolor fillcolor altcolor needlesize thresholds progressive "
-	"infinitier lvlupcmd format format_style width height label "
+	"infinitier lvlupcmd format format_style width height label vargroup slots "
 	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip se_tip follow kofi_dono kofi_member kofi_renew kofi_shop kofi_commission "
 	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive startonscene startonscene_time record_leaderboard "
 	"twitchsched twitchsched_offset fadeouttime wall_top wall_left wall_right wall_floor autoreset clawsize "
 	"wallcolor wallalpha clawcolor clawthickness behaviour bouncemode addmode" / " " + TEXTFORMATTING_ATTRS;
 constant retained_attributes = (<"boss_selfheal", "boss_giftrecipient">); //Attributes set externally, not editable with wscmd_updatemonitor.
-constant valid_types = (<"text", "goalbar", "countdown", "pile">);
+constant valid_types = (<"text", "goalbar", "countdown", "pile", "usershowcase">);
 
 constant AUGMENTATIONS = (<"knife", "ghost", "pumpkin", "rock", "paper", "scissors">);
 
@@ -431,6 +431,7 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 	//(by 4 base64 characters), to allow them to be distinguished for debugging.
 	string nonce = replace(MIME.encode_base64(random_string(27)), (["/": "1", "+": "0"]));
 	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
+	//TODO: Generalize this into a type-based mapping of defaults
 	monitors[nonce] = ([
 		"type": msg->type,
 		"text": msg->text || ([
@@ -451,6 +452,11 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 	if (msg->type == "pile") monitors[nonce] |= ([
 		"wall_top": 0, "wall_left": 100, "wall_right": 100, "wall_floor": 100,
 		"things": msg->things || ({default_thing_type | ([])}), //If you provide an array of things, note that it is not validated in any way
+	]);
+	if (msg->type == "usershowcase") monitors[nonce] |= ([
+		"vargroup": msg->vargroup || "showcase", //TODO: Separate these same as with varname (showcaseA, showcaseB etc)
+		"slots": "first second third", //$showcase:first$, $showcase:first-avatar$, etc
+		//"use_health": 1, //TODO: If set, each slot will have a health bar. Then this can be used for bit boss.
 	]);
 	mapping info = monitors[nonce];
 	//Hack: Create a new variable for a new goal bar etc.

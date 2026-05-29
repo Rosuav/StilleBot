@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, B, BR, BUTTON, CAPTION, CODE, DIV, FIELDSET, FIGCAPTION, FIGURE, IFRAME, IMG, INPUT, LABEL, LEGEND, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR} = choc; //autoimport
+const {A, B, BR, BUTTON, CAPTION, CODE, DIV, FIELDSET, FIGCAPTION, FIGURE, IFRAME, IMG, INPUT, LABEL, LEGEND, LI, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR, UL} = choc; //autoimport
 import {update_display, formatters} from "$$static||monitor.js$$";
 import {simpleconfirm, TEXTFORMATTING, upload_to_library} from "$$static||utils.js$$";
 import {commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
@@ -426,6 +426,28 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 	TR([TH("Custom CSS"), TD(TEXTAREA({name: "css"}))]),
 	TR([TH("Share styles"), TD([BUTTON({type: "button", class: "copystyles"}, "Copy to clipboard"), BUTTON({type: "button", class: "pastestyles"}, "Paste from clipboard")])]),
 ]));
+
+set_content("#editusershowcase form div", TEXTFORMATTING({
+	before: [
+		TR([TH("Name"), TD([
+			INPUT({name: "label", "data-nocopy": 1}),
+			" For your own reference",
+		])]),
+		TR([TH("Variable"), TD([
+			INPUT({name: "vargroup", size: 20, "data-nocopy": 1}),
+		])]),
+		TR([TH("Slots"), TD(UL([
+			//TODO: Map over the slots and create them all as separate fields
+			LI(INPUT({name: "slots", size: 40})),
+		]))]),
+		TR([TH("Features"), TD(UL([
+			//TODO: Map over the slots and create them all as separate fields
+			LI(LABEL([INPUT({type: "checkbox", name: "use_health"}), " Health (HP) bar (coming soon!)"])),
+		]))]),
+	],
+	use_preview: true,
+	texts: [],
+}));
 
 function ACTIVATIONS(action) {
 	return [

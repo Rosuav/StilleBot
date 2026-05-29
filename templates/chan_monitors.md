@@ -68,6 +68,7 @@ loading... | - | -
 
 [Add text monitor](:.add_monitor data-type=text) [Add goal bar](:.add_monitor data-type=goalbar)
 [Add countdown timer](:.add_monitor data-type=countdown) [Add Pile of Pics](:.add_monitor data-type=pile)
+[Add user showcase](:.add_monitor data-type=usershowcase)
 
 > ### Edit text monitor
 >
@@ -99,6 +100,17 @@ Note that Piles of Pics may re-drop all objects if the page is refreshed.
 > [Save](: type=submit value=save) [Add category](: #addpilecat) [Close](: type=submit value=cancel)
 > </form>
 {: tag=dialog #editpile}
+
+<!-- -->
+
+> ### Edit user showcase
+>
+> <form method=dialog>
+> <div></div>
+>
+> [Save](: type=submit value=save) [Add slot](: #adduserslot) [Close](: type=submit value=cancel)
+> </form>
+{: tag=dialog #editusershowcase}
 
 <!-- -->
 
