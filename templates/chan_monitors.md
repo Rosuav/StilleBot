@@ -108,7 +108,7 @@ Note that Piles of Pics may re-drop all objects if the page is refreshed.
 > <form method=dialog>
 > <div></div>
 >
-> [Save](: type=submit value=save) [Add slot](: #adduserslot) [Close](: type=submit value=cancel)
+> [Save](: type=submit value=save) [Close](: type=submit value=cancel)
 > </form>
 {: tag=dialog #editusershowcase}
 

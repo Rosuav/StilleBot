@@ -1,5 +1,5 @@
-import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, B, BR, BUTTON, CAPTION, CODE, DIV, FIELDSET, FIGCAPTION, FIGURE, IFRAME, IMG, INPUT, LABEL, LEGEND, LI, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TD, TEXTAREA, TH, TR, UL} = choc; //autoimport
+import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
+const {A, B, BR, BUTTON, CAPTION, CODE, DIV, FIELDSET, FIGCAPTION, FIGURE, IFRAME, IMG, INPUT, LABEL, LEGEND, LI, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TBODY, TD, TEXTAREA, TFOOT, TH, THEAD, TR, UL} = choc; //autoimport
 import {update_display, formatters} from "$$static||monitor.js$$";
 import {simpleconfirm, TEXTFORMATTING, upload_to_library} from "$$static||utils.js$$";
 import {commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
@@ -43,6 +43,7 @@ function update_activation_lists() {
 const editables = { }, vargroups = { }, variables = { };
 function set_values(info, elem) {
 	if (!info) return 0;
+	const slotsdisplay = elem.querySelector(".slotsdisplay");
 	for (let attr in info) {
 		if (attr === "text" && elem.querySelector("[name=varname]")) {
 			//Fracture text into the variable name and the actual text.
@@ -50,6 +51,21 @@ function set_values(info, elem) {
 			const v = elem.querySelector("[name=varname]"); if (v) v.value = m[1];
 			const t = elem.querySelector("[name=text]");    if (t) t.value = m[2];
 			continue;
+		}
+		if (attr == "slots" && slotsdisplay) {
+			//Map over the slots and create them all as separate fields
+			if (slotsdisplay.querySelectorAll("tbody tr").length !== info.slots.length) set_content(slotsdisplay, [
+				THEAD(TR([TH("ID"), TH("Label")])),
+				TBODY(info.slots.map((s, i) => TR([
+					TD(INPUT({name: "slotid" + i, size: 12})),
+					TD(INPUT({name: "slotlabel" + i, size: 24})),
+				]))),
+				TFOOT(TR([TD(BUTTON({class: "newslot"}, "+")), TD()])),
+			]);
+			info.slots.forEach((s, i) => {
+				slotsdisplay.querySelector("[name=slotid" + i + "]").value = s.id;
+				slotsdisplay.querySelector("[name=slotlabel" + i + "]").value = s.label;
+			});
 		}
 		elem.querySelectorAll("[data-content=" + attr + "]").forEach(el => set_content(el, info[attr]));
 		const el = elem.querySelector("[name=" + attr + "]");
@@ -437,12 +453,9 @@ set_content("#editusershowcase form div", TEXTFORMATTING({
 		TR([TH("Variable"), TD([
 			INPUT({name: "vargroup", size: 20, "data-nocopy": 1}),
 		])]),
-		TR([TH("Slots"), TD(UL([
-			//TODO: Map over the slots and create them all as separate fields
-			LI(INPUT({name: "slots", size: 40})),
-		]))]),
+		TR([TH("Slots"), TD(TABLE({class: "slotsdisplay"}))]),
 		TR([TH("Features"), TD(UL([
-			//TODO: Map over the slots and create them all as separate fields
+			//TODO: Where appropriate put these on the slots rather than globally
 			LI(LABEL([INPUT({type: "checkbox", name: "use_health"}), " Health (HP) bar (coming soon!)"])),
 		]))]),
 	],
@@ -586,6 +599,17 @@ on("submit", "dialog form", async e => {
 		body.cmd = "managethings";
 		body.update = dlg.dataset.originalid;
 	}
+	//Build arrays of slots and their labels. If we find at least one slotid element, make a slots array.
+	const slots = [];
+	for (let i = 0; ; ++i) {
+		const id = e.match.elements["slotid" + i];
+		if (!id) break;
+		slots.push({
+			id: id.value,
+			label: e.match.elements["slotlabel" + i].value,
+		});
+	}
+	if (slots.length) body.slots = slots;
 	for (let el of e.match.elements)
 		if (el.name) body[el.name] = el.type === "checkbox" ? el.checked : el.value;
 	ws_sync.send(body);

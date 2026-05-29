@@ -151,7 +151,7 @@ constant vars_provided = ([
 
 //Some of these attributes make sense only with certain types (eg needlesize is only for goal bars).
 constant saveable_attributes = "previewbg barcolor fillcolor altcolor needlesize thresholds progressive "
-	"infinitier lvlupcmd format format_style width height label vargroup slots "
+	"infinitier lvlupcmd format format_style width height label vargroup "
 	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip se_tip follow kofi_dono kofi_member kofi_renew kofi_shop kofi_commission "
 	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive startonscene startonscene_time record_leaderboard "
 	"twitchsched twitchsched_offset fadeouttime wall_top wall_left wall_right wall_floor autoreset clawsize "
@@ -514,7 +514,7 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 	]);
 	if (msg->type == "usershowcase") monitors[nonce] |= ([
 		"vargroup": msg->vargroup || "showcase", //TODO: Separate these same as with varname (showcaseA, showcaseB etc)
-		"slots": "first second third", //$showcase:first$, $showcase:first:avatar$, etc
+		"slots": ({(["id": "first", "label": "1st"]), (["id": "second", "label": "2nd"]), (["id": "third", "label": "3rd"])}),
 		//"use_health": 1, //TODO: If set, each slot will have a health bar. Then this can be used for bit boss.
 	]);
 	mapping info = monitors[nonce];
@@ -556,6 +556,14 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 		info = monitors[nonce] = (["type": info->type, "text": msg->text]) | (monitors[nonce] & retained_attributes);
 	}
 	foreach (saveable_attributes, string key) if (msg[key]) info[key] = msg[key];
+	if (arrayp(msg->slots)) {
+		//Validate the slots. It should be an array of mappings.
+		info->slots = ({ });
+		foreach (msg->slots, mixed s) if (mappingp(s) && s->id != "") info->slots += ({([
+			"id": (string)s->id,
+			"label": (string)s->label,
+		])});
+	}
 	if (info->needlesize == "") info->needlesize = "0";
 	if (msg->varname) info->text = sprintf("$%s$:%s", msg->varname, info->text);
 	textformatting_validate(info);
