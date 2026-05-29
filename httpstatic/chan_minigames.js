@@ -183,6 +183,7 @@ export function render(data) {
 			]),
 			" ",
 			INPUT({name: which.toLowerCase() + "desc", value: first[which.toLowerCase() + "desc"] || "", size: 80}),
+			first[which.toLowerCase()] && !first[which.toLowerCase() + "rwd"] && SPAN({class: "warning", title: "Reward not linked"}, "\u26a0\ufe0f")
 		])),
 		LI(LABEL([INPUT({type: "checkbox", name: "checkin", checked: Boolean(first.checkin), disabled: !!rewardscopes}), " Check-in (may be redeemed once each by all users)"])),
 	]));
