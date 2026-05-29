@@ -97,7 +97,7 @@ img {
 	height: 100%;
 	object-fit: cover;
 }
-label {
+.text {
 	flex: 1;
 	min-width: 0;
 	display: flex;

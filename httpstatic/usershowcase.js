@@ -19,11 +19,10 @@ export function render(data) {
 	if (data.data) {
 		//Primary reconfiguration
 		set_content("#display", [
-			STYLE("label {" + (data.data.text_css||"") + "}"),
+			STYLE(".text {" + (data.data.text_css||"") + "}"),
 			data.data.slots.split(" ").map(slot => DIV({class: "box", "data-slot": slot}, [
 				DIV({class: "profile-pic"}, IMG({src: TRANSPARENT_IMAGE})),
-				//Not really sure why this is a label but I'll keep it for now
-				LABEL([
+				DIV({class: "text"}, [
 					DIV({class: "title"}, slot), //TODO: Allow the slots to be labelled nicely
 					DIV({class: "name"}),
 				]),
