@@ -19,7 +19,7 @@ ZacharyLumsden, for contributing ideas and discussion to the Rock-Paper-Scissors
 */
 
 //Note that "#display" gets replaced with ".preview" for the preview styles
-constant monitorstyles = #"
+constant styles = (["monitor": #"
 #display div {width: 33%;}
 #display div:nth-of-type(2) {text-align: center;}
 #display div:nth-of-type(3) {text-align: right;}
@@ -59,17 +59,16 @@ constant monitorstyles = #"
 	padding: 1px;
 	margin: 1px;
 }
-";
-
+",
 /* The Pile of Pics - credit to DeviCat for claiming that name!
 - https://brm.io/matter-js/docs/
 */
-constant pilestyles = #"
+"pile": #"
 body.invisible {
 	opacity: 0;
 	transition: opacity 5s;
 }
-";
+"]);
 
 constant builtin_name = "Monitors"; //The front end may redescribe this according to the parameters
 constant builtin_description = "Get information about a channel monitor";
@@ -151,16 +150,13 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		string|zero nonce = req->variables->view;
 		mapping info = monitors[nonce];
 		if (!info) nonce = 0;
-		//Pile of Pics has different code, best to isolate them.
-		if (info->?type == "pile") return render_template("monitor.html", ([
-			"vars": ([
-				"ws_type": ws_type, "ws_group": nonce + "#" + req->misc->channel->userid, "ws_code": "pile",
-			]),
-			"styles": pilestyles,
-		]));
+		//Some types get separate code and styles. The JS file name will, in those cases, match
+		//the monitor type. If there's no separate styles, there's also no separate code, and
+		//the default monitor.js will be used.
+		string code = styles[info->?type] ? info->type : "monitor";
 		return render_template("monitor.html", ([
-			"vars": (["ws_type": ws_type, "ws_group": nonce + "#" + req->misc->channel->userid, "ws_code": "monitor"]),
-			"styles": monitorstyles,
+			"vars": (["ws_type": ws_type, "ws_group": nonce + "#" + req->misc->channel->userid, "ws_code": code]),
+			"styles": styles[code],
 		]));
 	}
 	if (AUGMENTATIONS[req->variables->augment]) {
@@ -227,7 +223,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			"followersscopes": req->misc->channel->userid && ensure_bcaster_token(req, "moderator:read:followers"),
 			"bitsscopes": req->misc->channel->userid && ensure_bcaster_token(req, "bits:read"),
 		]),
-		"styles": replace(monitorstyles, "#display", ".preview"),
+		"styles": replace(styles->monitor, "#display", ".preview"),
 	]) | req->misc->chaninfo);
 }
 
