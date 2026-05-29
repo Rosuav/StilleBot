@@ -231,7 +231,7 @@ mapping|zero websocket_cmd_update(mapping(string:mixed) conn, mapping(string:mix
 	if (mappingp(msg->group)) {
 		string pfx = replace(msg->id, "*|$:{}" / 1, "") + ":";
 		foreach (msg->group; string suffix; string value) {
-			string var = pfx + replace(suffix, "*|$:{}" / 1, "");
+			string var = pfx + replace(suffix, "*|${}" / 1, "");
 			if (!undefinedp(vars["$" + var + "$"])) channel->set_variable(var, value, "set");
 		}
 		return 0;
