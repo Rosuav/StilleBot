@@ -73,6 +73,7 @@ body.invisible {
 #display {
 	padding: 0;
 	display: flex;
+	flex-wrap: wrap;
 }
 .box {
 	background: white;

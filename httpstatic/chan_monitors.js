@@ -40,6 +40,15 @@ function update_activation_lists() {
 		update_activations(elem, elem.dataset.activationid, elem.dataset.activationaction))
 }
 
+//Note that you can create more of these with the [+] button, but there's
+//currently no way to remove them other than blanking the ID and saving.
+function SLOT_ROW(i) {
+	return TR([
+		TD(INPUT({name: "slotid" + i, size: 12})),
+		TD(INPUT({name: "slotlabel" + i, size: 24})),
+	]);
+}
+
 const editables = { }, vargroups = { }, variables = { };
 function set_values(info, elem) {
 	if (!info) return 0;
@@ -56,11 +65,8 @@ function set_values(info, elem) {
 			//Map over the slots and create them all as separate fields
 			if (slotsdisplay.querySelectorAll("tbody tr").length !== info.slots.length) set_content(slotsdisplay, [
 				THEAD(TR([TH("ID"), TH("Label")])),
-				TBODY(info.slots.map((s, i) => TR([
-					TD(INPUT({name: "slotid" + i, size: 12})),
-					TD(INPUT({name: "slotlabel" + i, size: 24})),
-				]))),
-				TFOOT(TR([TD(BUTTON({class: "newslot"}, "+")), TD()])),
+				TBODY(info.slots.map((s, i) => SLOT_ROW(i))),
+				TFOOT(TR([TD(BUTTON({type: "button", class: "newslot"}, "+")), TD()])),
 			]);
 			info.slots.forEach((s, i) => {
 				slotsdisplay.querySelector("[name=slotid" + i + "]").value = s.id;
@@ -589,6 +595,11 @@ on("click", ".addactivation", e => ws_sync.send({
 	invocation: e.match.closest_data("invocation"), action: e.match.closest_data("action"),
 	thingid: e.match.closest_data("originalid"),
 }));
+
+on("click", ".newslot", e => {
+	const body = e.match.closest("table").querySelector("tbody");
+	body.appendChild(SLOT_ROW(body.children.length)); //If there are currently 3, numbered 0, 1, and 2, then add one that's numbered 3.
+});
 
 on("submit", "dialog form", async e => {
 	if (e.submitter.value === "cancel") return; //The "Cancel" button is actually a submit-type button to make it manage the dialog, but don't actually save anything
