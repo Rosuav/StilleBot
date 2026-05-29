@@ -682,10 +682,16 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 	if (!game) return ([]); //Including if you mess up the keyword
 	if (param[0] == "first") {
 		int seen = 0;
+		mapping user = await(get_user_info(person->uid));
+		channel->set_variable("firsts:" + param[1], user->display_name, "set");
+		channel->set_variable("firsts:" + param[1] + ":avatar", user->profile_image_url, "set");
+		channel->set_variable("firsts:" + param[1] + ":mode", "", "set");
 		foreach ("first second third last" / " ", string which) {
 			if (which == param[1]) seen = 1;
 			else if (string id = seen && game[which + "rwd"]) {
 				//Okay. We've found the next active reward. Enable it!
+				channel->set_variable("firsts:" + which, "Redeem now!", "set");
+				channel->set_variable("firsts:" + which + ":mode", "available", "set");
 				await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 					+ channel->userid + "&id=" + id,
 					(["Authorization": channel->userid]),
@@ -740,12 +746,21 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 //TODO: Try to recognize if the rewards have become available again, and don't shame people for
 //taking again (eg if Fred took First, Joe took Second, then something bounced the stream, then Joe
 //took First, Fred took Second, currently MM will shame Fred for double-taking).
-@hook_channel_offline: __async__ void disconnected(string channel, int uptime, int userid) {
+@hook_channel_offline: __async__ void disconnected(string chan, int uptime, int userid) {
 	m_delete(already_claimed, userid);
 	mapping games = await(G->G->DB->load_config(userid, "minigames"));
 	//Disable the second and subsequent rewards until First gets claimed
+	object channel = G->G->irc->id[userid];
 	if (mapping game = games->first) foreach ("first second third last" / " ", string which) {
 		if (string id = game[which + "rwd"]) {
+			if (which == "first") {
+				channel->set_variable("firsts:" + which, "Redeem now!", "set");
+				channel->set_variable("firsts:" + which + ":mode", "available", "set");
+			} else {
+				channel->set_variable("firsts:" + which, "Waiting...", "set");
+				channel->set_variable("firsts:" + which + ":mode", "unavailable", "set");
+			}
+			channel->set_variable("firsts:" + which + ":avatar", "", "set");
 			await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 				+ userid + "&id=" + id,
 				(["Authorization": userid]),
