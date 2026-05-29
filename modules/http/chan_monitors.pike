@@ -116,10 +116,12 @@ label {
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
-.available {
+/* Generic mode keywords, so any slot can be given a mode and it will get that CSS class */
+/* TODO: Allow these CSS blocks to be specified in the monitor config */
+.mode-available {
 	font-weight: 700;
 }
-.unavailable {
+.mode-unavailable {
 	color: rgba(0, 0, 0, 0.5);
 	font-style: italic;
 }
@@ -294,13 +296,19 @@ __async__ void update_scheduled_timer(object channel, mapping mon) {
 mapping _get_monitor(object channel, mapping monitors, string id) {
 	mapping text = monitors[id];
 	if (!text) return 0;
+	text |= (["id": id, "text_css": textformatting_css(text)]); //Disconnect, don't mutate the original
 	if (text->type == "countdown" && text->twitchsched) update_scheduled_timer(channel, text);
-	return text | ([
-		"id": id,
-		"display": channel->expand_variables(text->text),
-		"thresholds_rendered": channel->expand_variables(text->thresholds || ""), //In case there are variables in the thresholds
-		"text_css": textformatting_css(text),
-	]);
+	if (text->vargroup) {
+		//This monitor needs an entire group of variables. Include them in every full update.
+		string pfx = "$" + text->vargroup + ":";
+		mapping vars = text->vars = ([]);
+		foreach (G->G->DB->load_cached_config(channel->userid, "variables"); string varname; mixed val) {
+			if (has_prefix(varname, pfx)) vars[varname[sizeof(pfx)..<1]] = val;
+		}
+	}
+	if (text->text) text->display = channel->expand_variables(text->text);
+	if (text->thresholds) text->thresholds_rendered = channel->expand_variables(text->thresholds); //In case there are variables in the thresholds
+	return text;
 }
 
 bool need_mod(string grp) {return grp == "";} //Require mod status for the master socket
@@ -330,6 +338,9 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id, str
 		}
 		if (info->type == "pile" && sscanf(var, "$" + info->varname + ":%s$", string type) && type)
 			send_updates_all(channel, nonce, (["newcount": ([type: (int)newval])]));
+		if (info->vargroup && has_prefix(var, "$" + info->vargroup + ":"))
+			//The monitor requests an entire group of variables. Send out every variable that changes.
+			send_updates_all(channel, nonce, (["groupvar": var[sizeof(info->vargroup) + 2..<1], "value": newval]));
 		if (!has_value(info->text, var[..<1])) continue; //Remove the last character so we search for "$varname" in case it has a filter
 		mapping info = (["data": (["id": nonce, "display": channel->expand_variables(info->text)])]);
 		send_updates_all(channel, nonce, info); //Send to the group for just that nonce
@@ -504,7 +515,7 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 	]);
 	if (msg->type == "usershowcase") monitors[nonce] |= ([
 		"vargroup": msg->vargroup || "showcase", //TODO: Separate these same as with varname (showcaseA, showcaseB etc)
-		"slots": "first second third", //$showcase:first$, $showcase:first-avatar$, etc
+		"slots": "first second third", //$showcase:first$, $showcase:first:avatar$, etc
 		//"use_health": 1, //TODO: If set, each slot will have a health bar. Then this can be used for bit boss.
 	]);
 	mapping info = monitors[nonce];
