@@ -106,7 +106,6 @@ constant valid_types = (<"text", "goalbar", "countdown", "pile", "usershowcase">
 
 constant AUGMENTATIONS = (<"knife", "ghost", "pumpkin", "rock", "paper", "scissors">);
 
-constant default_thing_image = (["url": "/static/MustardMineAvatar.png", "xsize": 844, "ysize": 562]);
 constant default_thing_type = ([
 	"id": "default", "xsize": 50,
 	"images": ({ }),
@@ -156,7 +155,6 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		if (info->?type == "pile") return render_template("monitor.html", ([
 			"vars": ([
 				"ws_type": ws_type, "ws_group": nonce + "#" + req->misc->channel->userid, "ws_code": "pile",
-				"default_thing_image": default_thing_image,
 			]),
 			"styles": pilestyles,
 		]));

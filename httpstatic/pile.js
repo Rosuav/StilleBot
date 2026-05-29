@@ -31,6 +31,7 @@ const conflict_resolution = {
 	pumpkin_ghost: "Pumpkin scares Ghost",
 	ghost_knife: "Ghost possesses Knife",
 };
+const default_thing_image = {url: "/static/MustardMineAvatar.png", xsize: 844, ysize: 562};
 let merge_mode = "normal";
 
 //Map a category ID to the array of things
