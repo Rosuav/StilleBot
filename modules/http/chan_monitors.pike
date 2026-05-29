@@ -106,10 +106,9 @@ img {
 	margin: 2px;
 }
 .title {
-	/* FIXME: This doesn't respect textformatting */
-	font-size: 12px;
+	font-size: 0.8em;
 	font-weight: 700;
-	color: #9146FF;
+	color: #9146FF; /* TODO: Add another colour picker to the monitor config */
 }
 .name {
 	white-space: nowrap;
