@@ -572,6 +572,19 @@ constant checkin_code = #"
 	\"Thank you for signing the guest book for today, {username}! You have signed it $*checkins$ times.\"
 ";
 
+//Reset the variables for a slot. TODO: Mark it as available if the preceding reward has been claimed,
+//rather than if which is "first".
+void reset_firsts_slot(object channel, string which) {
+	if (which == "first") {
+		channel->set_variable("firsts:" + which, "Redeem now!", "set");
+		channel->set_variable("firsts:" + which + ":mode", "available", "set");
+	} else {
+		channel->set_variable("firsts:" + which, "Waiting...", "set");
+		channel->set_variable("firsts:" + which + ":mode", "unavailable", "set");
+	}
+	channel->set_variable("firsts:" + which + ":avatar", "/static/" + which + ".webp", "set");
+}
+
 __async__ void update_first(object channel, mapping game) {
 	//First (pun intended), some validation. Sequential rewards depend on each other.
 	//(Note that "checkin" doesn't require "first" or any others.)
@@ -607,6 +620,7 @@ __async__ void update_first(object channel, mapping game) {
 					(["Authorization": channel->userid]),
 					(["method": "PATCH", "json": (["is_paused": Val.true]), "return_errors": 1])));
 				changed = 1;
+				reset_firsts_slot(channel, which);
 			}
 			if (!channel->commands["rwd" + which]) {
 				string code = sprintf(first_code, game[which + "rwd"] || "", which,
@@ -753,14 +767,7 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 	object channel = G->G->irc->id[userid];
 	if (mapping game = games->first) foreach ("first second third last" / " ", string which) {
 		if (string id = game[which + "rwd"]) {
-			if (which == "first") {
-				channel->set_variable("firsts:" + which, "Redeem now!", "set");
-				channel->set_variable("firsts:" + which + ":mode", "available", "set");
-			} else {
-				channel->set_variable("firsts:" + which, "Waiting...", "set");
-				channel->set_variable("firsts:" + which + ":mode", "unavailable", "set");
-			}
-			channel->set_variable("firsts:" + which + ":avatar", "", "set");
+			reset_firsts_slot(channel, which);
 			await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 				+ userid + "&id=" + id,
 				(["Authorization": userid]),
