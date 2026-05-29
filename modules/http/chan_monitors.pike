@@ -68,6 +68,61 @@ body.invisible {
 	opacity: 0;
 	transition: opacity 5s;
 }
+",
+"usershowcase": #"
+#display {
+	padding: 0;
+	display: flex;
+}
+.box {
+	background: white;
+	display: flex;
+	width: 200px;
+	flex-direction: row;
+	border-radius: 20px;
+	border: 2px solid black;
+	padding: 2px;
+	margin: 2px;
+}
+.profile-pic {
+	flex: 0;
+	flex-basis: 40px;
+	margin: 2px;
+	aspect-ratio: 1/1;
+	border-radius: 100px;
+	overflow: hidden;
+}
+img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+label {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	margin: 2px;
+}
+.title {
+	/* FIXME: This doesn't respect textformatting */
+	font-size: 12px;
+	font-weight: 700;
+	color: #9146FF;
+}
+.name {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.available {
+	font-weight: 700;
+}
+.unavailable {
+	color: rgba(0, 0, 0, 0.5);
+	font-style: italic;
+}
 "]);
 
 constant builtin_name = "Monitors"; //The front end may redescribe this according to the parameters
