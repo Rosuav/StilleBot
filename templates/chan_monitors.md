@@ -105,6 +105,8 @@ Note that Piles of Pics may re-drop all objects if the page is refreshed.
 
 > ### Edit user showcase
 >
+> Layout created by [Erallie](https://twitch.tv/erallie) - thanks!
+>
 > <form method=dialog>
 > <div></div>
 >
