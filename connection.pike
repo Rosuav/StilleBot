@@ -1005,9 +1005,11 @@ class channel(mapping identity) {
 
 	//Designed around the EventSub chat notification but can also handle IRC notifs
 	void chat_notification_received(mapping notif) {
-		if (!stringp(notif->message_id)) werror("NON STRING MESSAGE ID IN NOTIF: %O\n", notif); //Shouldn't happen, probably a bug somewhere
-		if (message_seen[notif->message_id]) return;
-		message_seen[notif->message_id] = 1;
+		if (notif->message_id) {
+			if (!stringp(notif->message_id)) werror("NON STRING MESSAGE ID IN NOTIF: %O\n", notif); //Shouldn't happen, probably a bug somewhere
+			if (message_seen[notif->message_id]) return;
+			message_seen[notif->message_id] = 1;
+		}
 		mapping(string:mixed) person = gather_person_info_eventsub(notif);
 		switch (notif->notice_type) {
 			case "unraid": break; //Raid has been cancelled - might be worth notifying raidfinder if it caused the raid in the first place
