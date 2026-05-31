@@ -266,10 +266,8 @@
   - Are there any other (preferably free and easily testable) webhooks that we can test?
 * Get notified when credentials are revoked
   - Should this deactivate the bot?
-* Multimonitor
+* User showcase
   - Example: Leaderboard, with names and avatars
-  - Page subscribes to any number of variables
-  - chan_monitors::notify_monitors could check for subscriptions
-  - Note that this isn't compatible with the existing meaning of "subscribe" (as used for
-    the command editor) and should be given a different name. Maybe call it "monitor" as
-    per the module? Or would that be confusing?
+  - If the browser source is too small, rotate through the available options.
+  - Tell the user the minimum size, which is also the size to use if you want them to
+    simply rotate with one visible at a time.
