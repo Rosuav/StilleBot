@@ -48,12 +48,55 @@ main {max-width: unset; background: none; padding: 0;}
 </style>
 ";
 
-//Mini-mode for the streamer to have on display
+//Mini-mode that can be used as an OBS panel
 constant minimode = #"
 <div id=queueinfo>Loading...</div>
 
 <style>
-main {max-width: unset; background: none; padding: 0;}
+body {
+	/* TODO: Lift the background color from textformatting */
+}
+main {
+	max-width: unset;
+	/* TODO: textformatting */
+	background: #0e0e10;
+	color: #efeff1;
+	padding: 0;
+	font-size: 32px;
+}
+table {
+	width: 100%;
+	/* TODO: Lift the border radius from textformatting */
+	border-radius: 16px;
+}
+td, th {
+	overflow: ellipsize;
+	border-bottom: 1px solid #2a2a2a;
+}
+th {
+	padding: 8px 6px;
+}
+td {
+	padding: 6px;
+}
+tr:nth-child(even) td {
+	background: #1a1a1f;
+}
+.unchoose {
+	background: none;
+	border: none;
+	color: #cfcfd4;
+	font-size: 1em;
+	cursor: pointer;
+	padding: 0 6px;
+	line-height: 1;
+	border-radius: 6px;
+}
+
+.unchoose:hover {
+	background: #3a1f2b;
+	color: #ff4d6d;
+}
 </style>
 ";
 
