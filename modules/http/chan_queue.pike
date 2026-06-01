@@ -39,8 +39,18 @@ constant markdown = #"# Request Queue
 {: tag=formdialog #choosefordlg}
 ";
 
-constant minimode = #"
+//View-only mode that doesn't require any login (eg for embedding in OBS)
+constant viewonlymode = #"
 <div id=queueinfo></div>
+
+<style>
+main {max-width: unset; background: none; padding: 0;}
+</style>
+";
+
+//Mini-mode for the streamer to have on display
+constant minimode = #"
+<div id=queueinfo>Loading...</div>
 
 <style>
 main {max-width: unset; background: none; padding: 0;}
@@ -95,12 +105,18 @@ __async__ mapping unchoose(object channel, string user) {
 }
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
+	if (req->variables->viewonly) return render(req, viewonlymode, (["vars": (["ws_group": "", "minimode": 1, "is_mod": 0, "myname": "-"])]));
 	if (!req->misc->session->user) return render_template("login.md", req->misc->chaninfo);
-	if (req->variables->mini) return render(req, minimode, (["vars": (["ws_group": "", "minimode": 1, "is_mod": 0, "myname": "-"])]));
+	if (req->variables->mini) return render(req, minimode, (["vars": ([
+		"ws_group": "",
+		"is_mod": await(modprobe(req)), //Show or hide the mod-specific things. If you hack this in the front end, you'll get a bunch of non-functional controls.
+		"myname": req->misc->session->user->display_name,
+		"minimode": 2,
+	])])); //No chaninfo - suppress the sidebar
 	return render(req, (["vars": ([
 		"ws_group": "",
 		"is_mod": await(modprobe(req)), //Show or hide the mod-specific things. If you hack this in the front end, you'll get a bunch of non-functional controls.
-		"myname": req->misc->session->user->?display_name || "-",
+		"myname": req->misc->session->user->display_name,
 		"minimode": 0,
 	])]) | req->misc->chaninfo);
 }

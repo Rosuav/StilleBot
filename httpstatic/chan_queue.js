@@ -1,9 +1,23 @@
 import {lindt, replace_content, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DETAILS, FORM, H2, INPUT, LABEL, LI, P, SUMMARY, TEXTAREA, UL} = lindt; //autoimport
+const {BR, BUTTON, DETAILS, FORM, H2, INPUT, LABEL, LI, P, SUMMARY, TABLE, TBODY, TD, TEXTAREA, TH, THEAD, TR, UL} = lindt; //autoimport
 import {simpleconfirm, simplemessage} from "$$static||utils.js$$";
 
 export function render(data) {
-	replace_content("#queueinfo", [
+	if (minimode === 2) replace_content("#queueinfo", [
+		TABLE([
+			//TODO: Make the labels "Song" and "Musical/Artist" configurable
+			THEAD(TR([TH("#"), TH("Song"), TH("Musical/Artist"), TH("Requestor"), TH()])),
+			TBODY(!data.queue?.length ? TR(TD({colSpan: 5}, "No requests currently."))
+			: data.queue.map((q, idx) => TR([
+				TD(idx + 1),
+				TD(q.title), //FIXME: Split into two cells
+				TD(""),
+				TD(q.user),
+				TD((is_mod || q.user === myname) && BUTTON({class: "unchoose", "data-index": idx}, "X")),
+			]))),
+		]),
+	]);
+	else replace_content("#queueinfo", [
 		H2("Requests"),
 		!data.queue?.length ? P("No requests currently.")
 			: UL(data.queue.map((q, idx) => LI([
