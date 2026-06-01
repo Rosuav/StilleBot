@@ -11,6 +11,13 @@ constant markdown = #"# Request Queue
 
 <div id=flashed-message></div>
 
+> ### Configure panel view
+>
+> <div id=panelconfigs></div>
+>
+> [Apply](:#panelcfgsave .dialog_close) [Cancel](:.dialog_close)
+{: tag=formdialog #panelcfgdlg}
+
 <style>
 .blank {list-style-type: none; height: 1em;}
 .heading {list-style-type: none; font-weight: bold; font-size: larger;}
@@ -53,21 +60,13 @@ constant minimode = #"
 <div id=queueinfo>Loading...</div>
 
 <style>
-body {
-	/* TODO: Lift the background color from textformatting */
-}
 main {
 	max-width: unset;
-	/* TODO: textformatting */
-	background: #0e0e10;
-	color: #efeff1;
+	background: none;
 	padding: 0;
-	font-size: 32px;
 }
 table {
 	width: 100%;
-	/* TODO: Lift the border radius from textformatting */
-	border-radius: 16px;
 }
 td, th {
 	border-bottom: 1px solid #2a2a2a;
@@ -223,6 +222,14 @@ string shorten(string title) {
 			//Clean off any blanks at the end
 			while (sizeof(cfg->selections) && cfg->selections[-1]->gap)
 				cfg->selections = cfg->selections[..<1];
+		}
+		if (mappingp(msg->panelstyle)) {
+			mapping style = ([]);
+			foreach (TEXTFORMATTING_ATTRS, string attr) style[attr] = msg->panelstyle[attr];
+			textformatting_validate(style);
+			werror("Setting panel styles %O\n", style);
+			style->css_text = textformatting_css(style),
+			cfg->panelstyle = style;
 		}
 	}->then() {send_updates_all(channel, "");};
 }

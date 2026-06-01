@@ -1,26 +1,33 @@
-import {lindt, replace_content, on} from "https://rosuav.github.io/choc/factory.js";
+import {lindt, replace_content, set_content, on} from "https://rosuav.github.io/choc/factory.js";
 const {BR, BUTTON, DETAILS, DIV, FORM, H2, INPUT, LABEL, LI, P, SUMMARY, TABLE, TBODY, TD, TEXTAREA, TH, THEAD, TR, UL} = lindt; //autoimport
-import {simpleconfirm, simplemessage} from "$$static||utils.js$$";
+import {simpleconfirm, simplemessage, TEXTFORMATTING, ensure_font} from "$$static||utils.js$$";
 
 export function render(data) {
-	if (minimode === 2) replace_content("#queueinfo", [
-		TABLE([
-			//TODO: Make the labels "Song" and "Musical/Artist" configurable
-			THEAD(TR([TH("#"), TH("Song"), TH("Musical/Artist"), TH("Requestor"), TH()])),
-			TBODY(!data.queue?.length ? TR(TD({colSpan: 5}, "No requests currently."))
-			: data.queue.map((q, idx) => TR([
-				TD(idx + 1),
-				TD(q.title), //FIXME: Split into two cells
-				TD(""),
-				TD(q.user),
-				TD((is_mod || q.user === myname) && BUTTON({class: "unchoose", "data-index": idx}, "X")),
-			]))),
-		]),
-		DIV({id: "bottombar"},
-			data.queue_open ? BUTTON({type: "button", id: "closequeue"}, "Close queue")
-				: BUTTON({type: "button", id: "openqueue"}, "Open queue"),
-		),
-	]);
+	if (minimode === 2) {
+		if (data.panelstyle && data.panelstyle.font) ensure_font(data.panelstyle.font);
+		document.body.style.background = data.panelstyle?.bgcolor;
+		replace_content("#queueinfo", [
+			TABLE({style: data.panelstyle?.css_text}, [
+				//TODO: Make the labels "Song" and "Musical/Artist" configurable
+				THEAD(TR([TH("#"), TH("Song"), TH("Musical/Artist"), TH("Requestor"), TH()])),
+				TBODY(!data.queue?.length ? TR(TD({colSpan: 5}, "No requests currently."))
+				: data.queue.map((q, idx) => {
+					const item = q.title, origin = ""; //TODO: Split with the parens
+					return TR([
+						TD(idx + 1),
+						TD(item),
+						TD(origin),
+						TD(q.user),
+						TD((is_mod || q.user === myname) && BUTTON({class: "unchoose", "data-index": idx}, "X")),
+					]);
+				})),
+			]),
+			DIV({id: "bottombar"},
+				data.queue_open ? BUTTON({type: "button", id: "closequeue"}, "Close queue")
+					: BUTTON({type: "button", id: "openqueue"}, "Open queue"),
+			),
+		]);
+	}
 	else replace_content("#queueinfo", [
 		H2("Requests"),
 		!data.queue?.length ? P("No requests currently.")
@@ -43,6 +50,7 @@ export function render(data) {
 				"The queue is closed. ",
 				BUTTON({type: "button", id: "openqueue"}, "Open queue"),
 			]),
+			P(BUTTON({class: "opendlg", "data-dlg": "panelcfgdlg"}, "Configure panel view")),
 			FORM([
 				LABEL(["Available selections:", BR(), TEXTAREA({id: "newselections", rows: 20, cols: 60,
 					value: (data.selections||[]).map(sel =>
@@ -54,7 +62,16 @@ export function render(data) {
 			]),
 		]),
 	]);
+	if (is_mod && data.panelstyle) for (let attr in data.panelstyle) {
+		const elem = DOM("#panelconfigs [name=" + attr + "]");
+		if (elem) elem.value = data.panelstyle[attr] || "";
+	}
 }
+
+//Don't bother if you're not a mod, you won't be able to save it anyway
+if (is_mod && !minimode) set_content("#panelconfigs", [
+	TEXTFORMATTING({texts: []}),
+]);
 
 //No confirmation here; if you misclick, click it again.
 on("click", "#openqueue", e => ws_sync.send({cmd: "configure", open: 1}));
@@ -92,3 +109,10 @@ on("click", "#editselections", simpleconfirm("Replace the available selections?"
 
 //NOTE: Limit can be set as a string or a number, but to set it to zero, must use "0".
 on("change", "#queuelimit", e => ws_sync.send({cmd: "configure", queuelimit: e.match.value}));
+
+on("click", "#panelcfgsave", e => {
+	const sty = { };
+	for (let el of DOM("#panelcfgdlg form").elements)
+		if (el.name) sty[el.name] = el.value;
+	ws_sync.send({cmd: "configure", panelstyle: sty});
+});
