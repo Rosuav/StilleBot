@@ -78,8 +78,7 @@ td {padding: 6px;}
 	border: none;
 	font-size: 1em;
 	cursor: pointer;
-	padding: 0 6px;
-	line-height: 1;
+	padding: 2px 6px;
 	border-radius: 6px;
 }
 
