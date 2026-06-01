@@ -20,7 +20,7 @@ export function render(data) {
 						TD(item),
 						TD(origin),
 						TD(q.user),
-						TD((is_mod || q.user === myname) && BUTTON({class: "unchoose", "data-index": idx}, "X")),
+						TD((is_mod || q.user === myname) && BUTTON({class: "unchoose", "data-index": idx}, "\u00d7")),
 					]);
 				})),
 			]),
