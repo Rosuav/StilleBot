@@ -97,6 +97,26 @@ tr:nth-child(even) td {
 	background: #3a1f2b;
 	color: #ff4d6d;
 }
+
+#bottombar {
+	position: fixed;
+	bottom: 12px;
+	left: 0; right: 0;
+	display: flex;
+	justify-content: space-around;
+}
+#openqueue, #closequeue {
+	/* TODO: Secondary textformatting for these buttons */
+	color: white;
+	font-size: 13px;
+	font-weight: 600;
+	border: none;
+	border-radius: 8px;
+	padding: 8px 18px;
+	cursor: pointer;
+}
+button#openqueue {background: #229922;}
+button#closequeue {background: #992222;}
 </style>
 ";
 

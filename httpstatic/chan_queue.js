@@ -1,5 +1,5 @@
 import {lindt, replace_content, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DETAILS, FORM, H2, INPUT, LABEL, LI, P, SUMMARY, TABLE, TBODY, TD, TEXTAREA, TH, THEAD, TR, UL} = lindt; //autoimport
+const {BR, BUTTON, DETAILS, DIV, FORM, H2, INPUT, LABEL, LI, P, SUMMARY, TABLE, TBODY, TD, TEXTAREA, TH, THEAD, TR, UL} = lindt; //autoimport
 import {simpleconfirm, simplemessage} from "$$static||utils.js$$";
 
 export function render(data) {
@@ -16,6 +16,10 @@ export function render(data) {
 				TD((is_mod || q.user === myname) && BUTTON({class: "unchoose", "data-index": idx}, "X")),
 			]))),
 		]),
+		DIV({id: "bottombar"},
+			data.queue_open ? BUTTON({type: "button", id: "closequeue"}, "Close queue")
+				: BUTTON({type: "button", id: "openqueue"}, "Open queue"),
+		),
 	]);
 	else replace_content("#queueinfo", [
 		H2("Requests"),
