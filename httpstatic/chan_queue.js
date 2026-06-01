@@ -7,7 +7,7 @@ export function render(data) {
 		const sty = data.panelstyle || { };
 		if (sty.font) ensure_font(sty.font);
 		document.body.style.background = sty.bgcolor;
-		const btnstyle = "font-family: " + sty.font + ", " + sty.fontfamily + "; font-size: " + sty.fontsize + "px";
+		const btnstyle = "font-family: " + sty.font + ", " + sty.fontfamily + "; font-size: " + sty.fontsize + "px; background: ";
 		replace_content("#queueinfo", [
 			TABLE({style: sty.css_text}, [
 				THEAD(TR([TH("#"), TH(sty.itemlbl || "Song"), TH(sty.originlbl || "Musical/Artist"), TH("Requestor"), TH()])),
@@ -25,8 +25,8 @@ export function render(data) {
 				})),
 			]),
 			DIV({id: "bottombar"},
-				data.queue_open ? BUTTON({type: "button", id: "closequeue", style: btnstyle}, "Close queue")
-					: BUTTON({type: "button", id: "openqueue", style: btnstyle}, "Open queue"),
+				data.queue_open ? BUTTON({type: "button", id: "closequeue", style: btnstyle + (sty.queuebgclose||"aliceblue")}, "Close queue")
+					: BUTTON({type: "button", id: "openqueue", style: btnstyle + (sty.queuebgopen||"aliceblue")}, "Open queue"),
 			),
 		]);
 	}
@@ -72,11 +72,18 @@ export function render(data) {
 
 //Don't bother if you're not a mod, you won't be able to save it anyway
 if (is_mod && !minimode) set_content("#panelconfigs", [
-	TEXTFORMATTING({texts: [
-		{name: "itemlbl", label: "Item heading", desc: " The thing people select"},
-		{name: "originlbl", label: "Origin heading", desc: " Extra info in parentheses after the selection"},
-		{name: "dfltorigin", label: "Default origin", desc: " If there's no origin, use this"},
-	]}),
+	TEXTFORMATTING({
+		texts: [
+			{name: "itemlbl", label: "Item heading", desc: " The thing people select"},
+			{name: "originlbl", label: "Origin heading", desc: " Extra info in parentheses after the selection"},
+			{name: "dfltorigin", label: "Default origin", desc: " If there's no origin, use this"},
+		],
+		colors: [
+			{name: "queuetextcolor", label: "Open/Close Queue", suffix: " Text color for the Open/Close Queue button"},
+			{name: "queuebgopen", label: "Open button", suffix: " Background color for Open Queue"},
+			{name: "queuebgclose", label: "Close button", suffix: " Background color for Close Queue"},
+		],
+	}),
 ]);
 
 //No confirmation here; if you misclick, click it again.

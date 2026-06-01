@@ -105,15 +105,12 @@ tr:nth-child(even) td {
 	justify-content: space-around;
 }
 #openqueue, #closequeue {
-	color: white;
 	font-weight: 600;
 	border: none;
 	border-radius: 8px;
 	padding: 8px 18px;
 	cursor: pointer;
 }
-button#openqueue {background: #229922;}
-button#closequeue {background: #992222;}
 </style>
 ";
 
@@ -223,7 +220,7 @@ string shorten(string title) {
 		}
 		if (mappingp(msg->panelstyle)) {
 			mapping style = ([]);
-			foreach (TEXTFORMATTING_ATTRS + ({"itemlbl", "originlbl", "dfltorigin"}), string attr)
+			foreach (TEXTFORMATTING_ATTRS + ({"itemlbl", "originlbl", "dfltorigin", "queuetextcolor", "queuebgopen", "queuebgclose"}), string attr)
 				style[attr] = msg->panelstyle[attr];
 			textformatting_validate(style);
 			style->css_text = textformatting_css(style),

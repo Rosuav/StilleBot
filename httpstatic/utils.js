@@ -116,6 +116,11 @@ textclass: Default CSS class for texts not given a class
 textlabel: Default label for texts - if omitted, "Text"
 textname: Default name for texts. Avoid duplication; if multiple texts, they should have
   explicit names.
+colors: Array of additional color inputs; this doesn't replace any of the default ones
+    cfg.colors[n].label - Human readable label
+    .prefix - Text or Choc Fac placed before the input
+    .name - Input name
+    .suffix - Text or Choc Fac placed after the input
 blank_opts: If true, every select box has an empty option (for "unspecified")
 use_preview: If true, a preview background input will be included
 */
@@ -171,6 +176,10 @@ export function TEXTFORMATTING(cfg) {
 		]),
 		LABEL([" Color: ", INPUT({name: "shadowcolor", type: "color"})]),
 	])]),
+	cfg.colors && cfg.colors.map(c => TR([
+		TH(c.label || "Alt Color"),
+		TD([c.prefix, INPUT({name: c.name || "altcolor", type: "color"}), c.suffix]),
+	])),
 	//TODO: Gradient?
 	TR([TH("Formatting"), TD([
 		SELECT({name: "whitespace"}, [
