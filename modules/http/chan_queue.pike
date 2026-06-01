@@ -70,8 +70,8 @@ table {
 	border-radius: 16px;
 }
 td, th {
-	overflow: ellipsize;
 	border-bottom: 1px solid #2a2a2a;
+	text-align: left;
 }
 th {
 	padding: 8px 6px;
