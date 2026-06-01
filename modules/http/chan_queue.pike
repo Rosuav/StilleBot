@@ -225,9 +225,9 @@ string shorten(string title) {
 		}
 		if (mappingp(msg->panelstyle)) {
 			mapping style = ([]);
-			foreach (TEXTFORMATTING_ATTRS, string attr) style[attr] = msg->panelstyle[attr];
+			foreach (TEXTFORMATTING_ATTRS + ({"itemlbl", "originlbl"}), string attr)
+				style[attr] = msg->panelstyle[attr];
 			textformatting_validate(style);
-			werror("Setting panel styles %O\n", style);
 			style->css_text = textformatting_css(style),
 			cfg->panelstyle = style;
 		}

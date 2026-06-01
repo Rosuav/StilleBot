@@ -4,12 +4,12 @@ import {simpleconfirm, simplemessage, TEXTFORMATTING, ensure_font} from "$$stati
 
 export function render(data) {
 	if (minimode === 2) {
-		if (data.panelstyle && data.panelstyle.font) ensure_font(data.panelstyle.font);
-		document.body.style.background = data.panelstyle?.bgcolor;
+		const sty = data.panelstyle || { };
+		if (sty.font) ensure_font(sty.font);
+		document.body.style.background = sty.bgcolor;
 		replace_content("#queueinfo", [
-			TABLE({style: data.panelstyle?.css_text}, [
-				//TODO: Make the labels "Song" and "Musical/Artist" configurable
-				THEAD(TR([TH("#"), TH("Song"), TH("Musical/Artist"), TH("Requestor"), TH()])),
+			TABLE({style: sty.css_text}, [
+				THEAD(TR([TH("#"), TH(sty.itemlbl || "Song"), TH(sty.originlbl || "Musical/Artist"), TH("Requestor"), TH()])),
 				TBODY(!data.queue?.length ? TR(TD({colSpan: 5}, "No requests currently."))
 				: data.queue.map((q, idx) => {
 					const item = q.title, origin = ""; //TODO: Split with the parens
@@ -70,7 +70,10 @@ export function render(data) {
 
 //Don't bother if you're not a mod, you won't be able to save it anyway
 if (is_mod && !minimode) set_content("#panelconfigs", [
-	TEXTFORMATTING({texts: []}),
+	TEXTFORMATTING({texts: [
+		{name: "itemlbl", label: "Item heading", desc: " The thing people select"},
+		{name: "originlbl", label: "Origin heading", desc: " Extra info in parentheses after the selection"},
+	]}),
 ]);
 
 //No confirmation here; if you misclick, click it again.
