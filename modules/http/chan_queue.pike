@@ -105,9 +105,7 @@ tr:nth-child(even) td {
 	justify-content: space-around;
 }
 #openqueue, #closequeue {
-	/* TODO: Secondary textformatting for these buttons */
 	color: white;
-	font-size: 13px;
 	font-weight: 600;
 	border: none;
 	border-radius: 8px;
@@ -225,7 +223,7 @@ string shorten(string title) {
 		}
 		if (mappingp(msg->panelstyle)) {
 			mapping style = ([]);
-			foreach (TEXTFORMATTING_ATTRS + ({"itemlbl", "originlbl"}), string attr)
+			foreach (TEXTFORMATTING_ATTRS + ({"itemlbl", "originlbl", "dfltorigin"}), string attr)
 				style[attr] = msg->panelstyle[attr];
 			textformatting_validate(style);
 			style->css_text = textformatting_css(style),

@@ -7,12 +7,14 @@ export function render(data) {
 		const sty = data.panelstyle || { };
 		if (sty.font) ensure_font(sty.font);
 		document.body.style.background = sty.bgcolor;
+		const btnstyle = "font-family: " + sty.font + ", " + sty.fontfamily + "; font-size: " + sty.fontsize + "px";
 		replace_content("#queueinfo", [
 			TABLE({style: sty.css_text}, [
 				THEAD(TR([TH("#"), TH(sty.itemlbl || "Song"), TH(sty.originlbl || "Musical/Artist"), TH("Requestor"), TH()])),
 				TBODY(!data.queue?.length ? TR(TD({colSpan: 5}, "No requests currently."))
 				: data.queue.map((q, idx) => {
-					const item = q.title, origin = ""; //TODO: Split with the parens
+					const m = /([^(]+) \(([^)]+)\)/.exec(q.title);
+					const item = m ? m[1] : q.title, origin = m ? m[2] : sty.dfltorigin || "";
 					return TR([
 						TD(idx + 1),
 						TD(item),
@@ -23,8 +25,8 @@ export function render(data) {
 				})),
 			]),
 			DIV({id: "bottombar"},
-				data.queue_open ? BUTTON({type: "button", id: "closequeue"}, "Close queue")
-					: BUTTON({type: "button", id: "openqueue"}, "Open queue"),
+				data.queue_open ? BUTTON({type: "button", id: "closequeue", style: btnstyle}, "Close queue")
+					: BUTTON({type: "button", id: "openqueue", style: btnstyle}, "Open queue"),
 			),
 		]);
 	}
@@ -73,6 +75,7 @@ if (is_mod && !minimode) set_content("#panelconfigs", [
 	TEXTFORMATTING({texts: [
 		{name: "itemlbl", label: "Item heading", desc: " The thing people select"},
 		{name: "originlbl", label: "Origin heading", desc: " Extra info in parentheses after the selection"},
+		{name: "dfltorigin", label: "Default origin", desc: " If there's no origin, use this"},
 	]}),
 ]);
 
