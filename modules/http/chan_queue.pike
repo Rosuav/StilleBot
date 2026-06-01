@@ -73,19 +73,14 @@ td, th {
 th {padding: 8px 6px;}
 td {padding: 6px;}
 .unchoose {
-	background: none;
+	background: #3a1f2b;
+	color: #ff4d6d;
 	border: none;
-	color: #cfcfd4;
 	font-size: 1em;
 	cursor: pointer;
 	padding: 0 6px;
 	line-height: 1;
 	border-radius: 6px;
-}
-
-.unchoose:hover {
-	background: #3a1f2b;
-	color: #ff4d6d;
 }
 
 #bottombar {
