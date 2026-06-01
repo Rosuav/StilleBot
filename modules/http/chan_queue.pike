@@ -148,9 +148,9 @@ __async__ mapping unchoose(object channel, string user) {
 }
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
-	if (req->variables->viewonly) return render(req, viewonlymode, (["vars": (["ws_group": "", "minimode": 1, "is_mod": 0, "myname": "-"])]));
+	if (req->variables->mini) return render(req, viewonlymode, (["vars": (["ws_group": "", "minimode": 1, "is_mod": 0, "myname": "-"])]));
 	if (!req->misc->session->user) return render_template("login.md", req->misc->chaninfo);
-	if (req->variables->mini) return render(req, minimode, (["vars": ([
+	if (req->variables->panel) return render(req, minimode, (["vars": ([
 		"ws_group": "",
 		"is_mod": await(modprobe(req)), //Show or hide the mod-specific things. If you hack this in the front end, you'll get a bunch of non-functional controls.
 		"myname": req->misc->session->user->display_name,
