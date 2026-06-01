@@ -65,22 +65,13 @@ main {
 	background: none;
 	padding: 0;
 }
-table {
-	width: 100%;
-}
+table {width: 100%;}
 td, th {
 	border-bottom: 1px solid #2a2a2a;
 	text-align: left;
 }
-th {
-	padding: 8px 6px;
-}
-td {
-	padding: 6px;
-}
-tr:nth-child(even) td {
-	background: #1a1a1f;
-}
+th {padding: 8px 6px;}
+td {padding: 6px;}
 .unchoose {
 	background: none;
 	border: none;
@@ -220,7 +211,7 @@ string shorten(string title) {
 		}
 		if (mappingp(msg->panelstyle)) {
 			mapping style = ([]);
-			foreach (TEXTFORMATTING_ATTRS + ({"itemlbl", "originlbl", "dfltorigin", "queuetextcolor", "queuebgopen", "queuebgclose"}), string attr)
+			foreach (TEXTFORMATTING_ATTRS + ({"itemlbl", "originlbl", "dfltorigin", "altrowcolor", "queuetextcolor", "queuebgopen", "queuebgclose"}), string attr)
 				style[attr] = msg->panelstyle[attr];
 			textformatting_validate(style);
 			style->css_text = textformatting_css(style),

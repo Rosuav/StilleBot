@@ -7,15 +7,15 @@ export function render(data) {
 		const sty = data.panelstyle || { };
 		if (sty.font) ensure_font(sty.font);
 		document.body.style.background = sty.bgcolor;
-		const btnstyle = "font-family: " + sty.font + ", " + sty.fontfamily + "; font-size: " + sty.fontsize + "px; background: ";
+		const btnstyle = "font-family: " + sty.font + ", " + sty.fontfamily + "; font-size: " + sty.fontsize + "px; color: " + sty.queuetextcolor + "; background: ";
 		replace_content("#queueinfo", [
 			TABLE({style: sty.css_text}, [
-				THEAD(TR([TH("#"), TH(sty.itemlbl || "Song"), TH(sty.originlbl || "Musical/Artist"), TH("Requestor"), TH()])),
+				THEAD(TR({style: "background: " + (sty.altrowcolor || sty.bgcolor)}, [TH("#"), TH(sty.itemlbl || "Song"), TH(sty.originlbl || "Musical/Artist"), TH("Requestor"), TH()])),
 				TBODY(!data.queue?.length ? TR(TD({colSpan: 5}, "No requests currently."))
 				: data.queue.map((q, idx) => {
 					const m = /([^(]+) \(([^)]+)\)/.exec(q.title);
 					const item = m ? m[1] : q.title, origin = m ? m[2] : sty.dfltorigin || "";
-					return TR([
+					return TR({style: "background: " + ((idx&1) && sty.altrowcolor || sty.bgcolor)}, [
 						TD(idx + 1),
 						TD(item),
 						TD(origin),
@@ -79,6 +79,7 @@ if (is_mod && !minimode) set_content("#panelconfigs", [
 			{name: "dfltorigin", label: "Default origin", desc: " If there's no origin, use this"},
 		],
 		colors: [
+			{name: "altrowcolor", label: "Even rows", suffix: " Alternating rows of the queue use this or the default"},
 			{name: "queuetextcolor", label: "Open/Close Queue", suffix: " Text color for the Open/Close Queue button"},
 			{name: "queuebgopen", label: "Open button", suffix: " Background color for Open Queue"},
 			{name: "queuebgclose", label: "Close button", suffix: " Background color for Close Queue"},
