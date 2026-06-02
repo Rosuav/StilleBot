@@ -57,10 +57,7 @@ __async__ void check_stats(object channel) {
 			}
 			//Otherwise check when the ad is scheduled to fire.
 			//We'll also get notified if an ad is explicitly run.
-			if (next > 0) {
-				werror("Scheduling next ad check for %O in %O seconds\n", channel->login, next);
-				channel_ad_callouts[channel->userid] = call_out(check_stats_by_id, next, channel->userid);
-			}
+			if (next > 0) channel_ad_callouts[channel->userid] = call_out(check_stats_by_id, next, channel->userid);
 		}
 	}
 	channel_ad_stats[channel->userid] = snooze;
@@ -75,7 +72,6 @@ void ad_fired(object channel, mapping info) {
 }
 
 @hook_channel_online: int channel_online(string chan, int uptime, int chanid) {
-	werror("snoozeads hook channel_online: %O %O %O %O\n", chan, uptime, chanid, G->G->irc->id[chanid]);
 	object channel = G->G->irc->id[chanid]; if (!channel) return 0;
 	if (channel->config->advance_warning) call_out(check_stats, 120, channel); //Twitch doesn't have the "next ad" immediately, so we'll check for it in two minutes.
 }
