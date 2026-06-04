@@ -1605,6 +1605,9 @@ mapping all_twitch_scopes = ([
 	"moderator:read:suspicious_users": "React to messages from suspicious users",
 ]);
 
+//We request these at a minimum from all channel owners. Try to keep this minimal.
+constant channel_scopes_required = "chat:read channel:bot bits:read moderator:read:followers moderation:read";
+
 class TwitchAuth
 {
 	inherit Web.Auth.OAuth2.Client;

@@ -555,8 +555,7 @@ __async__ void channel_scopes() {
 	//Audit channel permission scopes; we need all active channels to have granted these.
 	//Scope list copied from modules/http/activate.pike
 	add_constant("connect_to_channel", __async__ lambda(int uid) { });
-	string scopes_required = G->bootstrap("modules/http/activate.pike")->scopes_required;
-	array wantscopes = scopes_required / " ";
+	array wantscopes = channel_scopes_required / " ";
 	array channels = await(G->G->DB->query_ro(#"
 		select stillebot.botservice.twitchid as userid, login, display_name, coalesce(data, '{}') as creds
 		from stillebot.botservice left join stillebot.config
