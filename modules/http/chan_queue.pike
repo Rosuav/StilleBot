@@ -67,6 +67,7 @@ main {
 	background: none;
 	padding: 0;
 }
+nav {display: none;}
 table {width: 100%;}
 td, th {
 	border-bottom: 1px solid #2a2a2a;
