@@ -60,7 +60,7 @@ __async__ mapping(string:mixed) show_collection(Protocols.HTTP.Server.Request re
 	//TODO: Allow the owner to edit the collection metadata
 	array streamers = map(coll->streamers, tc->all_streamers);
 	string login_link = "";
-	array scopes = G->G->user_credentials[(int)req->misc->session->user->id]->?scopes || ({ });
+	array scopes = G->G->user_credentials[(int)req->misc->session->user->?id]->?scopes || ({ });
 	if (has_value(scopes, "user:read:follows")) foreach (coll->streamers; int i; string bcaster) {
 		//As far as I know, there's no way to check follows in bulk. So to reduce the cost,
 		//we cache them. Duplicated into chan_raidtrain.pike.
