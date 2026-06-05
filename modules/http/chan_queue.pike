@@ -13,6 +13,8 @@ constant markdown = #"# Request Queue
 
 > ### Configure panel view
 >
+> [Use this link for panel view](queue?panel)
+>
 > <div id=panelconfigs></div>
 >
 > [Apply](:#panelcfgsave .dialog_close) [Cancel](:.dialog_close)
