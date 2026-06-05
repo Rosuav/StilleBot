@@ -45,6 +45,7 @@ export function render(data) {
 		)),
 		is_mod && DETAILS([
 			SUMMARY("Moderator controls"),
+			P("Shift-pick a song if it's for someone else - you can enter the selector's name."),
 			data.queue_open ? P([
 				"The queue is open and people can make selections! ",
 				BUTTON({type: "button", id: "closequeue"}, "Close queue"),
