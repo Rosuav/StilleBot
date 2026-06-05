@@ -25,8 +25,8 @@ export function render(data) {
 				})),
 			]),
 			DIV({id: "bottombar"},
-				data.queue_open ? BUTTON({type: "button", id: "closequeue", style: btnstyle + (sty.queuebgclose||"aliceblue")}, "Close queue")
-					: BUTTON({type: "button", id: "openqueue", style: btnstyle + (sty.queuebgopen||"aliceblue")}, "Open queue"),
+				data.queue_open ? BUTTON({type: "button", id: "closequeue", style: btnstyle + (sty.queuebgclose||"aliceblue")}, "Close Queue")
+					: BUTTON({type: "button", id: "openqueue", style: btnstyle + (sty.queuebgopen||"aliceblue")}, "Open Queue"),
 			),
 		]);
 	}
