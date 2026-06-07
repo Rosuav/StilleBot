@@ -63,7 +63,7 @@ loading... | - | -
 > <label>Target time: <input name=target type=datetime-local></label> [Set counting](:#settarget)
 > <label>Countdown: <input name=delay></label> [Set paused](:#setdelay) [Set counting](:#setdelayafter) seconds, mm:ss, or hh:mm:ss
 >
-> [Close](: type=submit value=cancel)
+> [Close](:.dialog_close)
 {: tag=dialog #setcountdowndlg}
 
 [Add text monitor](:.add_monitor data-type=text) [Add goal bar](:.add_monitor data-type=goalbar)
