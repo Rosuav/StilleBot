@@ -37,7 +37,7 @@ function countdown_ticker(elem, id) {
 		fmt = styleinfo[id].textcompleted || fmt;
 		time = 0; //Leave it stuck on 00:00 after it expires
 	}
-	if (time > 3600) { //TODO: Make this boundary configurable
+	if (time > 7200) { //TODO: Make this boundary configurable
 		fmt = styleinfo[id].textinactive || fmt;
 	}
 	const parts = fmt.split(":##");
