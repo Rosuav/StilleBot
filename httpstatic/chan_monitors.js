@@ -350,6 +350,10 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 		INPUT({name: "needlesize", type: "number", min: 0, max: 1, step: "0.005", value: 0.375}),
 		"Thickness of the red indicator needle",
 	])]),
+	TR({class: "only-boss"}, [TH("Avatar"), TD([
+		INPUT({name: "avatarmargin", type: "number", min: 0}),
+		"px - Add a bit of gap around the profile pic/avatar",
+	])]),
 	TR([TH("Format"), TD([
 		SELECT({class: "not-boss", name: "format", "data-nocopy": 1}, [
 			OPTION({value: "plain"}, "plain - ordinary numbers"),

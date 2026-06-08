@@ -78,6 +78,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		if (data.thresholds) styleinfo[data.id].t = (data.thresholds_rendered || data.thresholds).split(" ").map(x => +x).filter(x => x && x === x); //Suppress any that fail to parse as numbers
 		if (data.needlesize) styleinfo[data.id].needlesize = +data.needlesize;
 		if (data.inactivetime) styleinfo[data.id].inactivetime = +data.inactivetime;
+		if (data.avatarmargin) styleinfo[data.id].avatarmargin = +data.avatarmargin;
 		["barcolor", "fillcolor", "altcolor", "format", "progressive", "infinitier", "textcompleted", "textinactive", "format_style"].forEach(
 			key => data[key] && (styleinfo[data.id][key] = data[key]));
 		ensure_font(data.font);
@@ -116,6 +117,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			}
 			if (!img) img = IMG({class: "avatar", src: avatar});
 			if (img.src !== avatar) img.src = avatar; //Avoid flicker
+			img.style.margin = t.avatarmargin ? t.avatarmargin + "px" : "0";
 			switch (t.format_style) {
 				case "gauge": {
 					//The "height" here is actually applied to two separate pieces of the overall goal bar,
