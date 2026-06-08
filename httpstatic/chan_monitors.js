@@ -256,8 +256,8 @@ set_content("#editcountdown form div", [
 		use_preview: true,
 		texts: [
 			{label: "Active"},
-			{name: "textcompleted", label: "Completed", desc: " If blank, same as Active"},
-			{name: "textinactive", label: "Inactive", desc: " If blank, same as Active"},
+			{name: "textcompleted", label: "Completed", suffix: " If blank, same as Active"},
+			{prefix: "Test prefix", name: "textinactive", label: "Inactive", suffix: " If blank, same as Active"},
 		],
 		after: [
 			TR(TH({colspan: 2}, "Automate timer based on...")),

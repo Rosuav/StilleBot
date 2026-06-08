@@ -110,8 +110,9 @@ before, after: Table row(s) to be included at the start/end of the table
 texts: Array of text input configurations. If omitted, one default input is provided.
     cfg.texts[n].class - CSS class for this input
     .label - Label for the table heading
+    .prefix - Text or Choc Fac placed before the input
     .name - Input name
-    .desc - Text or Choc Fac placed after the input
+    .suffix - Text or Choc Fac placed after the input - can also use .desc if you prefer
 textclass: Default CSS class for texts not given a class
 textlabel: Default label for texts - if omitted, "Text"
 textname: Default name for texts. Avoid duplication; if multiple texts, they should have
@@ -130,7 +131,11 @@ export function TEXTFORMATTING(cfg) {
     if (!cfg.texts) cfg.texts = [{ }];
     return TABLE({border: 1, "data-copystyles": 1}, [
 	cfg.before,
-	cfg.texts.map(t => TR({class: t.class || cfg.textclass || ""}, [TH(t.label || cfg.textlabel || "Text"), TD([INPUT({size: 40, name: t.name || cfg.textname || "text", "data-nocopy": 1}), t.desc])])),
+	cfg.texts.map(t => TR({class: t.class || cfg.textclass || ""}, [TH(t.label || cfg.textlabel || "Text"), TD([
+		t.prefix,
+		INPUT({size: 40, name: t.name || cfg.textname || "text", "data-nocopy": 1}),
+		t.desc, t.suffix, //Allow both names; there's no reason to use both though
+	])])),
 	TR([TH("Font"), TD([
 		INPUT({name: "font", size: "28"}),
 		SELECT({name: "fontweight"}, [cfg.blank_opts && OPTION(), OPTION("normal"), OPTION("bold")]),
