@@ -198,7 +198,12 @@ __async__ mapping|zero get_image_dimensions(string url) {
 //Halloween theme, and then maybe find a different asset for the default variant.
 //Sword and crown are worthless here; I invite everyone to dance. Labourers, lawyers, church, and gown,
 //all make their little prance.
-mapping crown, sword;
+mapping adornments = ([
+	//TODO: Get our own freely usable crown asset; for now, using devicatCrown.
+	"crown": "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_fc20f0ac29724b50a866b2767ff98337/static/light/3.0",
+	//TODO as above - a sword asset would be nice. This one works for the cute style (it's a hammer but who's asking).
+	"sword": "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_7034ea1bf3c14b5aaa3b5640ae0151f6/default/light/3.0",
+]);
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	mapping monitors = G->G->DB->load_cached_config(req->misc->channel->userid, "monitors");
@@ -261,23 +266,15 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			image->paste_mask(aug->image, aug->alpha);
 			alpha->paste_mask(aug->alpha, aug->alpha);
 		}
-		if (req->variables->crown) {
-			//TODO: Get our own freely usable crown asset; for now, using devicatCrown.
-			if (!crown) {
-				string raw = await(Protocols.HTTP.Promise.get_url("https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_fc20f0ac29724b50a866b2767ff98337/static/light/3.0"))->get();
-				crown = Image.ANY._decode(raw);
+		foreach (adornments; string kwd; string|mapping adorn) if (req->variables[kwd]) {
+			if (stringp(adorn)) {
+				if (has_prefix(adorn, "https:")) adorn = await(Protocols.HTTP.Promise.get_url(adorn))->get();
+				else if (has_prefix(adorn, "/static/")) adorn = Stdio.read_file("http" + adorn[1..]); //Read files from httpstatic/ even though the URLish is /static/
+				//else it's assumed to be the raw image data
+				adorn = adornments[kwd] = Image.ANY._decode(adorn);
 			}
-			image->paste_mask(crown->image, crown->alpha, (aug->xsize - crown->xsize) / 2, 0);
-			alpha->paste_mask(crown->alpha, crown->alpha, (aug->xsize - crown->xsize) / 2, 0);
-		}
-		if (req->variables->sword) {
-			//TODO as above - a sword asset would be nice. This one works for the cute style (it's a hammer but who's asking).
-			if (!sword) {
-				string raw = await(Protocols.HTTP.Promise.get_url("https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_7034ea1bf3c14b5aaa3b5640ae0151f6/default/light/3.0"))->get();
-				sword = Image.ANY._decode(raw);
-			}
-			image->paste_mask(sword->image, sword->alpha, (aug->xsize - sword->xsize) / 2, 0);
-			alpha->paste_mask(sword->alpha, sword->alpha, (aug->xsize - sword->xsize) / 2, 0);
+			image->paste_mask(adorn->image, adorn->alpha, (aug->xsize - adorn->xsize) / 2, 0);
+			alpha->paste_mask(adorn->alpha, adorn->alpha, (aug->xsize - adorn->xsize) / 2, 0);
 		}
 		return (["type": "image/png", "data": Image.PNG.encode(image, (["alpha": alpha]))]);
 	}
