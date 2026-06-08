@@ -489,7 +489,8 @@ __async__ void update_crown(object channel, mapping game) {
 			$crownholder:avatar$ = \"{avatar}\"
 		}
 		try {
-			chan_rewards(\"" + game->rewardid + #"\", \"cost\", \"" + cfg->initialprice + #"\") \"\"
+			chan_rewards(\"" + game->rewardid + #"\", \"cost\", \"" + cfg->initialprice + #"\")
+				$crownholder:cost$ = \"{newcost}\"
 		}
 		catch \"\"
 		\"Crown has been retrieved.\"
