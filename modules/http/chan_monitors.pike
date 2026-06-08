@@ -160,7 +160,7 @@ constant saveable_attributes = "previewbg applypreviewbg barcolor fillcolor altc
 constant retained_attributes = (<"boss_selfheal", "boss_giftrecipient">); //Attributes set externally, not editable with wscmd_updatemonitor.
 constant valid_types = (<"text", "goalbar", "countdown", "pile", "usershowcase">);
 
-constant AUGMENTATIONS = (<"knife", "ghost", "pumpkin", "rock", "paper", "scissors">);
+constant AUGMENTATIONS = (<"knife", "ghost", "pumpkin", "rock", "paper", "scissors", "none">);
 
 constant default_thing_type = ([
 	"id": "default", "xsize": 50,
@@ -240,7 +240,12 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			int r = (x - ctr) ** 2 + (y - ctr) ** 2;
 			if (r > rad) avatar->alpha->setpixel(x, y, 0, 0, 0);
 		}
-		mapping aug = Image.ANY._decode(Stdio.read_file("httpstatic/" + req->variables->augment + ".webp"));
+		//Most augmentations are overlays. If you don't want an overlay but just an adornment,
+		//set augment=none and then add whichever adornments are desired. Non-augmented avatars
+		//are placed on a default blank field to give room for adornments above/below.
+		mapping aug = req->variables->augment == "none"
+			? (["xsize": 306, "ysize": 448])
+			: Image.ANY._decode(Stdio.read_file("httpstatic/" + req->variables->augment + ".webp"));
 		//We need the augmentation to be on top, but the avatar is smaller. So we start with a blank canvas.
 		Image.Image image = Image.Image(aug->xsize, aug->ysize);
 		Image.Image alpha = Image.Image(aug->xsize, aug->ysize);
@@ -251,8 +256,10 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		int ypos = (aug->ysize - avatar->ysize) / 2 + 3;
 		image->paste_mask(avatar->image, avatar->alpha, xpos, ypos);
 		alpha->paste_mask(avatar->alpha, avatar->alpha, xpos, ypos);
-		image->paste_mask(aug->image, aug->alpha);
-		alpha->paste_mask(aug->alpha, aug->alpha);
+		if (aug->image) {
+			image->paste_mask(aug->image, aug->alpha);
+			alpha->paste_mask(aug->alpha, aug->alpha);
+		}
 		if (req->variables->crown) {
 			//TODO: Get our own freely usable crown asset; for now, using devicatCrown.
 			if (!crown) {
