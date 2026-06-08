@@ -122,6 +122,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 					//instead of being applied to the goal bar as a whole.
 					const height = elem.style.height ? "height: " + elem.style.height : "";
 					elem.style.height = "unset";
+					let gauge;
 					set_content(elem, [
 						img,
 						DIV({style: "display: flex; flex-direction: column; flex-grow: 1"}, [
@@ -133,12 +134,13 @@ export function update_display(elem, data) { //Used for the preview as well as t
 								SPAN({style: "flex: 0; padding-right: 0.5em"}, curhp + "/" + maxhp + "\xa0HP"),
 							]),
 							SPAN({style: height + "; margin-bottom: 4px; margin-right: " + (elem.style.borderRadius || "0")}, [
-								SPAN({class: "goalbar", style: `display: inline-block; ${height}; --oldpos: ${prevpos}%; --newpos: ${pos}%; border-radius: ${elem.style.borderRadius}`}, [
+								gauge = SPAN({class: "goalbar", style: `display: inline-block; ${height}; --oldpos: ${prevpos}%; --newpos: ${pos}%`}, [
 									SPAN({style: "padding: 2px 6px"}, "\xa0"),
 								]),
 							]),
 						]),
 					]);
+					"Style Width Color Radius".split(" ").forEach(attr => gauge.style["border" + attr] = elem.style["border" + attr]);
 					break;
 				}
 				case "wide": set_content(elem, [
