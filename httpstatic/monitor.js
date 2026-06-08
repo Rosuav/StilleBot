@@ -37,9 +37,8 @@ function countdown_ticker(elem, id) {
 		fmt = styleinfo[id].textcompleted || fmt;
 		time = 0; //Leave it stuck on 00:00 after it expires
 	}
-	if (time > 7200) { //TODO: Make this boundary configurable
+	if (time > (styleinfo[id].inactivetime || 3600))
 		fmt = styleinfo[id].textinactive || fmt;
-	}
 	const parts = fmt.split(":##");
 	//For every ":##" in the string, fracture off one sixtieth of the time (thus seconds and minutes)
 	//Then a hash in the first part of the string gets whatever's left,
@@ -78,6 +77,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		if (data.type) styleinfo[data.id] = {type: data.type}; //Reset all type-specific info when type is sent
 		if (data.thresholds) styleinfo[data.id].t = (data.thresholds_rendered || data.thresholds).split(" ").map(x => +x).filter(x => x && x === x); //Suppress any that fail to parse as numbers
 		if (data.needlesize) styleinfo[data.id].needlesize = +data.needlesize;
+		if (data.inactivetime) styleinfo[data.id].inactivetime = +data.inactivetime;
 		["barcolor", "fillcolor", "altcolor", "format", "progressive", "infinitier", "textcompleted", "textinactive", "format_style"].forEach(
 			key => data[key] && (styleinfo[data.id][key] = data[key]));
 		ensure_font(data.font);

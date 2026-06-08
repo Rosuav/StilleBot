@@ -257,7 +257,8 @@ set_content("#editcountdown form div", [
 		texts: [
 			{label: "Active"},
 			{name: "textcompleted", label: "Completed", suffix: " If blank, same as Active"},
-			{prefix: "Test prefix", name: "textinactive", label: "Inactive", suffix: " If blank, same as Active"},
+			//TODO maybe: Replace inactivetime with a drop-down?
+			{prefix: ["If over ", INPUT({name: "inactivetime", type: "number"}), " seconds: "], name: "textinactive", label: "Inactive"},
 		],
 		after: [
 			TR(TH({colspan: 2}, "Automate timer based on...")),
