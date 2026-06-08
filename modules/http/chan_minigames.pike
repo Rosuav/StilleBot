@@ -497,14 +497,10 @@ __async__ void update_crown(object channel, mapping game) {
 		", (["language": "mustard"]));
 	if (game->wantmonitor && !game->monitorid) {
 		[game->monitorid, mapping info] = G->G->websocket_types->chan_monitors->create_monitor(channel, ([
-			"type": "goalbar", "varname": "",
+			"type": "usershowcase", "vargroup": "crownholder",
 			"label": "Crown Holder",
-			"format": "hitpoints", "format_style": "nomaxhp",
-			"thresholds": "$crownholder:cost$ 1",
-			"text": "0:$crownholder:avatar$ $crownholder:name$",
-			"font": "Lexend", "fontsize": "30",
-			"fillcolor": "#ff0000", "barcolor": "#ffffdd", "color": "#000000", "altcolor": "#000000",
-			"borderwidth": "4", "bordercolor": "#00ffff",
+			"slots": ({(["id": "-", "label": "Crown"])}),
+			"font": "Lexend", "fontfamily": "sans-serif", "fontsize": "16",
 		]));
 		await(G->G->DB->mutate_config(channel->userid, "minigames") {__ARGS__[0]->crown = game;});
 		send_updates_all(channel, "");

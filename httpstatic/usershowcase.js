@@ -8,9 +8,12 @@ let state = { }; //The variable group from the server, with the name prefixes re
 function update_display() {
 	document.querySelectorAll(".box").forEach(box => {
 		const slot = box.dataset.slot;
-		box.querySelector(".profile-pic img").src = state[slot + ":avatar"] || TRANSPARENT_IMAGE;
+		//HACK: Seize the Crown uses "crownholder:name"/"crownholder:avatar" rather than "crown:holder"/"crown:holder:avatar"
+		const name = slot === "-" ? "name" : slot;
+		const av = slot === "-" ? "avatar" : slot + ":avatar";
+		box.querySelector(".profile-pic img").src = state[av] || TRANSPARENT_IMAGE;
 		let mode = state[slot + ":mode"];
-		set_content(box.querySelector(".name"), state[slot]).className = mode ? "name mode-" + mode : "name";
+		set_content(box.querySelector(".name"), state[name]).className = mode ? "name mode-" + mode : "name";
 	});
 }
 

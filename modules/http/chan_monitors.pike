@@ -515,7 +515,7 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 	]);
 	if (msg->type == "usershowcase") monitors[nonce] |= ([
 		"vargroup": msg->vargroup || "showcase", //TODO: Separate these same as with varname (showcaseA, showcaseB etc)
-		"slots": ({(["id": "first", "label": "1st"]), (["id": "second", "label": "2nd"]), (["id": "third", "label": "3rd"])}),
+		"slots": msg->slots || ({(["id": "first", "label": "1st"]), (["id": "second", "label": "2nd"]), (["id": "third", "label": "3rd"])}),
 	]);
 	mapping info = monitors[nonce];
 	//Hack: Create a new variable for a new goal bar etc.
