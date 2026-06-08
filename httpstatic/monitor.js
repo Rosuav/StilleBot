@@ -125,21 +125,21 @@ export function update_display(elem, data) { //Used for the preview as well as t
 					let gauge;
 					set_content(elem, [
 						img,
-						DIV({style: "display: flex; flex-direction: column; flex-grow: 1"}, [
+						DIV({style: "display: flex; flex-direction: column; flex-grow: 1; margin-right: " + (elem.style.borderRadius || "0")}, [
 							SPAN({style: "display: flex"}, [
 								SPAN({style: "position: relative; width: 100%; flex: 1"}, [
 									SPAN({class: prevcredit ? "bosscredit waxing" : "bosscredit", style: "text-wrap: nowrap; width: 100%; text-align: left; overflow: hidden"}, name),
 									prevcredit,
 								]),
-								SPAN({style: "flex: 0; padding-right: 0.5em"}, curhp + "/" + maxhp + "\xa0HP"),
+								SPAN({style: "flex: 0"}, curhp + "/" + maxhp + "\xa0HP"),
 							]),
-							SPAN({style: height + "; margin-bottom: 4px; margin-right: " + (elem.style.borderRadius || "0")}, [
+							SPAN({style: height + "; margin-bottom: 4px;"}, [
 								gauge = SPAN({class: "goalbar", style: `display: inline-block; ${height}; --oldpos: ${prevpos}%; --newpos: ${pos}%`}, [
 									SPAN({style: "padding: 2px 6px"}, "\xa0"),
 								]),
 							]),
 						]),
-					]);
+					]).style.alignItems = "center";
 					"Style Width Color Radius".split(" ").forEach(attr => gauge.style["border" + attr] = elem.style["border" + attr]);
 					break;
 				}

@@ -23,7 +23,7 @@ constant styles = (["monitor": #"
 #display div {width: 33%;}
 #display div:nth-of-type(2) {text-align: center;}
 #display div:nth-of-type(3) {text-align: right;}
-.avatar {max-width: 80px; max-height: 80px; padding-right: 2px; vertical-align: top; border-radius: 100%}
+.avatar {max-width: 80px; max-height: 80px; padding-right: 2px; vertical-align: top; border-radius: 100%; margin: 0.125em;}
 @property --oldpos {syntax: '<percentage>'; inherits: false; initial-value: 100%;}
 @property --newpos {syntax: '<percentage>'; inherits: false; initial-value: 100%;}
 @property --curpos {syntax: '<percentage>'; inherits: false; initial-value: 100%;}
