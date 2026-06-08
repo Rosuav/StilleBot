@@ -117,22 +117,30 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			if (!img) img = IMG({class: "avatar", src: avatar});
 			if (img.src !== avatar) img.src = avatar; //Avoid flicker
 			switch (t.format_style) {
-				case "gauge": set_content(elem, [
-					img,
-					DIV({style: "display: flex; flex-direction: column; flex-grow: 1"}, [
-						SPAN({style: "display: flex"}, [
-							SPAN({style: "position: relative; width: 100%; flex: 1"}, [
-								SPAN({class: prevcredit ? "bosscredit waxing" : "bosscredit", style: "text-wrap: nowrap; width: 100%; text-align: left; overflow: hidden"}, name),
-								prevcredit,
+				case "gauge": {
+					//The "height" here is actually applied to two separate pieces of the overall goal bar,
+					//instead of being applied to the goal bar as a whole.
+					const height = elem.style.height ? "height: " + elem.style.height : "";
+					elem.style.height = "unset";
+					set_content(elem, [
+						img,
+						DIV({style: "display: flex; flex-direction: column; flex-grow: 1"}, [
+							SPAN({style: "display: flex"}, [
+								SPAN({style: "position: relative; width: 100%; flex: 1"}, [
+									SPAN({class: prevcredit ? "bosscredit waxing" : "bosscredit", style: "text-wrap: nowrap; width: 100%; text-align: left; overflow: hidden"}, name),
+									prevcredit,
+								]),
+								SPAN({style: "flex: 0; padding-right: 0.5em"}, curhp + "/" + maxhp + "\xa0HP"),
 							]),
-							SPAN({style: "flex: 0; padding-right: 0.5em"}, curhp + "/" + maxhp + "\xa0HP"),
+							SPAN({style: height + "; margin-bottom: 4px; margin-right: " + (elem.style.borderRadius || "0")}, [
+								SPAN({class: "goalbar", style: `display: inline-block; ${height}; --oldpos: ${prevpos}%; --newpos: ${pos}%; border-radius: ${elem.style.borderRadius}`}, [
+									SPAN({style: "padding: 2px 6px"}, "\xa0"),
+								]),
+							]),
 						]),
-						DIV({class: "goalbar", style: `--oldpos: ${prevpos}%; --newpos: ${pos}%; border-radius: ${elem.style.borderRadius}`}, [
-							DIV({style: "padding: 2px 6px"}, "\xa0"),
-						]),
-					]),
-				]);
-				break;
+					]);
+					break;
+				}
 				case "wide": set_content(elem, [
 					img,
 					DIV({class: "goalbar", style: `display: flex; --oldpos: ${prevpos}%; --newpos: ${pos}%;`}, [
