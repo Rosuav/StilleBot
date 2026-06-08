@@ -203,6 +203,8 @@ mapping adornments = ([
 	"crown": "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_fc20f0ac29724b50a866b2767ff98337/static/light/3.0",
 	//TODO as above - a sword asset would be nice. This one works for the cute style (it's a hammer but who's asking).
 	"sword": "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_7034ea1bf3c14b5aaa3b5640ae0151f6/default/light/3.0",
+	//Alternative crown created by Erallie
+	"crown2": "/static/crown2.webp",
 ]);
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
