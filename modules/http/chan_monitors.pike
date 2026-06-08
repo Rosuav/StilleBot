@@ -244,16 +244,17 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		//set augment=none and then add whichever adornments are desired. Non-augmented avatars
 		//are placed on a default blank field to give room for adornments above/below.
 		mapping aug = req->variables->augment == "none"
-			? (["xsize": 306, "ysize": 448])
+			? (["xsize": 300, "ysize": 448])
 			: Image.ANY._decode(Stdio.read_file("httpstatic/" + req->variables->augment + ".webp"));
 		//We need the augmentation to be on top, but the avatar is smaller. So we start with a blank canvas.
 		Image.Image image = Image.Image(aug->xsize, aug->ysize);
 		Image.Image alpha = Image.Image(aug->xsize, aug->ysize);
+		int xpos = (aug->xsize - avatar->xsize) / 2;
+		int ypos = (aug->ysize - avatar->ysize) / 2;
 		//TODO: The current set of augmentations is slightly not centered, but consistent
 		//within the set. Will future augmentations also be offset 3px,3px or will we need
 		//to track separate paste positions for separate augmentations?
-		int xpos = (aug->xsize - avatar->xsize) / 2 + 3;
-		int ypos = (aug->ysize - avatar->ysize) / 2 + 3;
+		if (aug->image) {xpos += 3; ypos += 3;}
 		image->paste_mask(avatar->image, avatar->alpha, xpos, ypos);
 		alpha->paste_mask(avatar->alpha, avatar->alpha, xpos, ypos);
 		if (aug->image) {
