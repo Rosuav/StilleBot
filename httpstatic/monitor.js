@@ -79,6 +79,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		if (data.needlesize) styleinfo[data.id].needlesize = +data.needlesize;
 		if (data.inactivetime) styleinfo[data.id].inactivetime = +data.inactivetime;
 		if (data.avatarmargin) styleinfo[data.id].avatarmargin = +data.avatarmargin;
+		if (data.applypreviewbg) elem.style.background = data.previewbg;
 		["barcolor", "fillcolor", "altcolor", "format", "progressive", "infinitier", "textcompleted", "textinactive", "format_style"].forEach(
 			key => data[key] && (styleinfo[data.id][key] = data[key]));
 		ensure_font(data.font);

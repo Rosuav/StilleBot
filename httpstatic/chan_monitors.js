@@ -338,7 +338,12 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 			INPUT({name: "bordercolor", type: "color"}),
 			INPUT({name: "borderradius", type: "number"}), " curve",
 		]),
-		FIELDSET([LEGEND("Preview bg"), INPUT({type: "color", name: "previewbg"})]), //As per TEXTFORMATTING, should this be non-copiable?
+		FIELDSET([LEGEND("Background"),
+			INPUT({type: "color", name: "previewbg"}), " ",
+			//Not the best description, but if the background is solid, it applies to the live view,
+			//otherwise it is only for the preview and the live view is transparent.
+			LABEL([INPUT({type: "checkbox", name: "applypreviewbg"}), "Solid"]),
+		]),
 	]))]),
 	TR([TH("Bar size"), TD(DIV({className: "optionset"}, [
 		FIELDSET([LEGEND("Width"), INPUT({type: "number", name: "width"}), "px"]),
