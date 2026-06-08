@@ -125,7 +125,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 					let gauge;
 					set_content(elem, [
 						img,
-						DIV({style: "display: flex; flex-direction: column; flex-grow: 1; margin-right: " + (elem.style.borderRadius || "0")}, [
+						DIV({style: "display: flex; flex-direction: column; flex-grow: 1; margin-right: " + parseInt(elem.style.borderRadius || "0", 10)/2 + "px"}, [
 							SPAN({style: "display: flex"}, [
 								SPAN({style: "position: relative; width: 100%; flex: 1"}, [
 									SPAN({class: prevcredit ? "bosscredit waxing" : "bosscredit", style: "text-wrap: nowrap; width: 100%; text-align: left; overflow: hidden"}, name),
