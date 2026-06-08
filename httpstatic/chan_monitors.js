@@ -350,8 +350,8 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 		INPUT({name: "needlesize", type: "number", min: 0, max: 1, step: "0.005", value: 0.375}),
 		"Thickness of the red indicator needle",
 	])]),
-	TR({class: "not-boss"}, [TH("Format"), TD([
-		SELECT({name: "format", "data-nocopy": 1}, [
+	TR([TH("Format"), TD([
+		SELECT({class: "not-boss", name: "format", "data-nocopy": 1}, [
 			OPTION({value: "plain"}, "plain - ordinary numbers"),
 			OPTION({value: "currency"}, "currency - cents eg 2718 is $27.18"),
 			OPTION({value: "subscriptions"}, "subs or sub points - 500 each (roughly USD cents)"),
@@ -360,7 +360,7 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 			OPTION({value: "hitpoints", style: "display: none"}, "Bit Boss hitpoints (complex, use as directed)")]),
 		//TODO: Change the label according to the format (eg if Plain, say "scale factor")
 		LABEL([SPAN(" Style: "), INPUT({name: "format_style"})]),
-		BR(), "Select the desired display format; note that everything is managed in cents still.",
+		BR(), SPAN({class: "not-boss"}, "Select the desired display format; note that everything is managed in cents still."),
 	])]),
 	TR([TH("Auto-count"), TD([
 		"Automatically advance the goal bar based on viewer support",

@@ -116,28 +116,29 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			}
 			if (!img) img = IMG({class: "avatar", src: avatar});
 			if (img.src !== avatar) img.src = avatar; //Avoid flicker
-			/* Wide format
-			set_content(elem, [
-				img,
-				DIV({class: "goalbar", style: `display: flex; --oldpos: ${prevpos}%; --newpos: ${pos}%;`}, [
-					DIV(name), DIV(), DIV(curhp + "/" + maxhp),
-				]),
-			]);
-			*/
-			//Stacked format
-			elem.style.flexDirection = "row";
-			set_content(elem, [
-				img,
-				DIV({style: "display: flex; flex-direction: column; flex-grow: 1"}, [
-					DIV({class: "goalbar", style: `--oldpos: ${prevpos}%; --newpos: ${pos}%; border-radius: ${elem.style.borderRadius}`}, [
-						DIV({style: "padding: 2px 6px"}, curhp + (t.format_style === "nomaxhp" ? "" : "/" + maxhp)),
+			switch (t.format_style) {
+				case "wide": set_content(elem, [
+					img,
+					DIV({class: "goalbar", style: `display: flex; --oldpos: ${prevpos}%; --newpos: ${pos}%;`}, [
+						DIV(name), DIV(), DIV(curhp + "/" + maxhp),
 					]),
-					DIV({style: "position: relative; width: 100%"}, [
-						DIV({class: prevcredit ? "bosscredit waxing" : "bosscredit", style: "text-wrap: nowrap; width: 100%; text-align: left; overflow: hidden"}, name),
-						prevcredit,
-					]),
-				]),
-			]);
+				]);
+				break;
+				default: //Stacked format by default; "nomaxhp" is currently a variant of stacked but is deprecated in favour of a User Showcase
+					elem.style.flexDirection = "row";
+					set_content(elem, [
+						img,
+						DIV({style: "display: flex; flex-direction: column; flex-grow: 1"}, [
+							DIV({class: "goalbar", style: `--oldpos: ${prevpos}%; --newpos: ${pos}%; border-radius: ${elem.style.borderRadius}`}, [
+								DIV({style: "padding: 2px 6px"}, curhp + (t.format_style === "nomaxhp" ? "" : "/" + maxhp)),
+							]),
+							DIV({style: "position: relative; width: 100%"}, [
+								DIV({class: prevcredit ? "bosscredit waxing" : "bosscredit", style: "text-wrap: nowrap; width: 100%; text-align: left; overflow: hidden"}, name),
+								prevcredit,
+							]),
+						]),
+					]);
+			}
 			prevpos = pos;
 			return;
 		}
