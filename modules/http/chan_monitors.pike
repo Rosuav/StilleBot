@@ -516,7 +516,6 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 	if (msg->type == "usershowcase") monitors[nonce] |= ([
 		"vargroup": msg->vargroup || "showcase", //TODO: Separate these same as with varname (showcaseA, showcaseB etc)
 		"slots": ({(["id": "first", "label": "1st"]), (["id": "second", "label": "2nd"]), (["id": "third", "label": "3rd"])}),
-		//"use_health": 1, //TODO: If set, each slot will have a health bar. Then this can be used for bit boss.
 	]);
 	mapping info = monitors[nonce];
 	//Hack: Create a new variable for a new goal bar etc.

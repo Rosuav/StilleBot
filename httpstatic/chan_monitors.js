@@ -462,10 +462,6 @@ set_content("#editusershowcase form div", TEXTFORMATTING({
 			INPUT({name: "vargroup", size: 20, "data-nocopy": 1}),
 		])]),
 		TR([TH("Slots"), TD(TABLE({class: "slotsdisplay"}))]),
-		TR([TH("Features"), TD(UL([
-			//TODO: Where appropriate put these on the slots rather than globally
-			LI(LABEL([INPUT({type: "checkbox", name: "use_health"}), " Health (HP) bar (coming soon!)"])),
-		]))]),
 	],
 	use_preview: true,
 	texts: [],
