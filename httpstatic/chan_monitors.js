@@ -359,6 +359,7 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 			//select it unless something weird is happening.
 			OPTION({value: "hitpoints", style: "display: none"}, "Bit Boss hitpoints (complex, use as directed)")]),
 		//TODO: Change the label according to the format (eg if Plain, say "scale factor")
+		//TODO: Provide a drop-down when the format demands specific keywords
 		LABEL([SPAN(" Style: "), INPUT({name: "format_style"})]),
 		BR(), SPAN({class: "not-boss"}, "Select the desired display format; note that everything is managed in cents still."),
 	])]),

@@ -1,5 +1,5 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {DIV, IMG} = choc; //autoimport
+const {DIV, IMG, SPAN} = choc; //autoimport
 import {ensure_font} from "$$static||utils.js$$";
 
 const currency_formatter = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
@@ -117,6 +117,22 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			if (!img) img = IMG({class: "avatar", src: avatar});
 			if (img.src !== avatar) img.src = avatar; //Avoid flicker
 			switch (t.format_style) {
+				case "gauge": set_content(elem, [
+					img,
+					DIV({style: "display: flex; flex-direction: column; flex-grow: 1"}, [
+						SPAN({style: "display: flex"}, [
+							SPAN({style: "position: relative; width: 100%; flex: 1"}, [
+								SPAN({class: prevcredit ? "bosscredit waxing" : "bosscredit", style: "text-wrap: nowrap; width: 100%; text-align: left; overflow: hidden"}, name),
+								prevcredit,
+							]),
+							SPAN({style: "flex: 0; padding-right: 0.5em"}, curhp + "/" + maxhp + "\xa0HP"),
+						]),
+						DIV({class: "goalbar", style: `--oldpos: ${prevpos}%; --newpos: ${pos}%; border-radius: ${elem.style.borderRadius}`}, [
+							DIV({style: "padding: 2px 6px"}, "\xa0"),
+						]),
+					]),
+				]);
+				break;
 				case "wide": set_content(elem, [
 					img,
 					DIV({class: "goalbar", style: `display: flex; --oldpos: ${prevpos}%; --newpos: ${pos}%;`}, [
@@ -125,7 +141,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 				]);
 				break;
 				default: //Stacked format by default; "nomaxhp" is currently a variant of stacked but is deprecated in favour of a User Showcase
-					elem.style.flexDirection = "row";
+					elem.style.flexDirection = "row"; //CJA 20260608: Is this needed?
 					set_content(elem, [
 						img,
 						DIV({style: "display: flex; flex-direction: column; flex-grow: 1"}, [
