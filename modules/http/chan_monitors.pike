@@ -89,19 +89,14 @@ body.invisible {
 	flex: 0;
 	flex-basis: 40px;
 	margin: 2px;
-	position: relative;
+	aspect-ratio: 1/1;
+	border-radius: 100px;
+	overflow: hidden;
 }
-.avatar {
+img {
 	width: 100%;
 	height: 100%;
-	border-radius: 100%;
 	object-fit: cover;
-}
-.adornment {
-	position: absolute;
-	left: 50%; top: -5px;
-	transform: translateX(-50%);
-	max-width: 25px;
 }
 .text {
 	flex: 1;

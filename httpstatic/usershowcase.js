@@ -11,8 +11,7 @@ function update_display() {
 		//HACK: Seize the Crown uses "crownholder:name"/"crownholder:avatar" rather than "crown:holder"/"crown:holder:avatar"
 		const name = slot === "-" ? "name" : slot;
 		const av = slot === "-" ? "avatar" : slot + ":avatar";
-		box.querySelector(".avatar").src = state[av] || TRANSPARENT_IMAGE;
-		box.querySelector(".adornment").src = state[av + "adornment"] || TRANSPARENT_IMAGE;
+		box.querySelector(".profile-pic img").src = state[av] || TRANSPARENT_IMAGE;
 		let mode = state[slot + ":mode"];
 		set_content(box.querySelector(".name"), state[name]).className = mode ? "name mode-" + mode : "name";
 	});
@@ -24,10 +23,7 @@ export function render(data) {
 		set_content("#display", [
 			STYLE(".text {" + (data.data.text_css||"") + "}"),
 			data.data.slots.map(slot => DIV({class: "box", "data-slot": slot.id}, [
-				DIV({class: "profile-pic"}, [
-					IMG({class: "avatar", src: TRANSPARENT_IMAGE}),
-					IMG({class: "adornment", src: TRANSPARENT_IMAGE}),
-				]),
+				DIV({class: "profile-pic"}, IMG({src: TRANSPARENT_IMAGE})),
 				DIV({class: "text"}, [
 					DIV({class: "title"}, slot.label),
 					DIV({class: "name"}),
