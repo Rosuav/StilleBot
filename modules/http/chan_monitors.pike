@@ -722,6 +722,11 @@ void cheer(object channel, mapping person, int bits, mapping extra, string msg) 
 	autoadvance(channel, person, "bit", bits);
 }
 
+@hook_follower:
+void followed(object channel, mapping person) {
+	autoadvance(channel, person, "follow", 1);
+}
+
 @hook_subscription:
 int subscription(object channel, string type, mapping person, string tier, int qty, mapping extra) {
 	if (type == "subbomb") return 0; //Sometimes sub bombs come through AFTER their constituent parts :( Safer to count the parts and skip the bomb.
