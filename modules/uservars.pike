@@ -8,6 +8,7 @@ constant vars_provided = ([
 	"{name}": "Display name of the user",
 	"{avatar}": "User's avatar/profile pic",
 	"{uid}": "User's Twitch ID",
+	"{description}": "User's biographical description",
 ]);
 
 __async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
@@ -28,5 +29,6 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 		"{name}": info->display_name || "",
 		"{avatar}": info->profile_image_url || "",
 		"{uid}": info->id || "0",
+		"{description}": info->description || "",
 	]);
 }
