@@ -123,8 +123,9 @@ export function update_display(elem, data) { //Used for the preview as well as t
 				case "gauge": {
 					//The "height" here is actually applied to two separate pieces of the overall goal bar,
 					//instead of being applied to the goal bar as a whole.
-					const height = elem.style.height ? "height: " + elem.style.height : "";
+					const height = elem.dataset.savedheight || (elem.style.height ? "height: " + elem.style.height : "");
 					elem.style.height = "unset";
+					elem.dataset.savedheight = height;
 					let gauge;
 					set_content(elem, [
 						img,
