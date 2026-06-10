@@ -7,14 +7,15 @@
 
 let default_handler = null;
 let send_socket, send_sockets = { }; //If populated, send() is functional.
-const protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
+let protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
+try {protocol = ws_protocol_override;} catch (e) { }
 let pending_message = []; //Allow messages to be queued on startup (will be sent after initialization)
 let prefs = { }; //Updated from the server as needed
 const prefs_hooks = [];
 let reconnect_delay = 250;
 let redirect_host = null, redirect_xfr = null;
 const callbacks = {};
-if (window.location.host.endsWith("mustardmine.com"))
+if (window.location.host.endsWith("mustardmine.com") || window.location.host === "localhost" || window.location.host.startsWith("localhost:"))
 	try {redirect_host = ws_host;} catch (e) { } //If a global ws_host is set, use that for the initial connection. Only within the *.mustardmine.com domains.
 
 let userid = 0;
