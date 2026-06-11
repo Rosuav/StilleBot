@@ -26,7 +26,7 @@ function RELATIVETIME(time_t) {
 		//Would it be better to move the time to the front? "8pm Fri 17th" vs "Fri 17th, 8pm"?
 		when.getHours() % 12 || 12,
 		when.getMinutes() && ":" + ("0" + when.getMinutes()).slice(-2), //Won't be common; most people start streams on the hour.
-		when.getHours() > 12 ? "pm" : "am",
+		when.getHours() >= 12 ? "pm" : "am",
 	]);
 }
 
