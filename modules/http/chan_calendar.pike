@@ -373,7 +373,7 @@ __async__ mapping|zero wscmd_fetchcal(object channel, mapping(string:mixed) conn
 	string calendarid = msg->calendarid;
 	//TODO: Allow hash character in calendar ID, and properly encode. Probably not common but we should allow all valid calendar IDs.
 	//Be sure to also properly encode any use of cfg->gcal_sync in a URL too.
-	sscanf(calendarid, "%*[A-Za-z0-9@.]%s", string residue); if (residue != "") return 0;
+	sscanf(calendarid, "%*[A-Za-z0-9@._]%s", string residue); if (residue != "") return 0;
 	mapping events = await(google_api("calendar/v3/calendars/" + calendarid + "/events", "apikey", ([
 		"variables": ([
 			"singleEvents": "true", "orderBy": "startTime",
@@ -395,7 +395,7 @@ __async__ mapping|zero wscmd_fetchcal(object channel, mapping(string:mixed) conn
 
 __async__ mapping|zero wscmd_synchronize(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!stringp(msg->calendarid)) return 0;
-	sscanf(msg->calendarid, "%*[A-Za-z0-9@.]%s", string residue); if (residue != "") return 0;
+	sscanf(msg->calendarid, "%*[A-Za-z0-9@._]%s", string residue); if (residue != "") return 0;
 	string|zero token = await(G->G->DB->load_config(channel->userid, "calendar"))->oauth->?access_token;
 	if (!token) return 0;
 	string now = strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(time()));
