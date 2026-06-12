@@ -267,8 +267,3 @@
 * Get notified when credentials are revoked
   - Should this deactivate the bot?
   - Alternatively, if auth breaks but bot active, autoadd needed scopes
-* User showcase
-  - Example: Leaderboard, with names and avatars
-  - If the browser source is too small, rotate through the available options.
-  - Tell the user the minimum size, which is also the size to use if you want them to
-    simply rotate with one visible at a time.
