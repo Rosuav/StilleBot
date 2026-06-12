@@ -7,7 +7,8 @@
 
 let default_handler = null;
 let send_socket, send_sockets = { }; //If populated, send() is functional.
-let protocol = window.location.protocol == "https:" ? "wss://" : "ws://";
+const self = new URL(import.meta.url); //Connection is, by default, relative to where you got ws_sync.js from (not necessarily where the page comes from)
+let protocol = self.protocol == "https:" ? "wss://" : "ws://";
 try {protocol = ws_protocol_override;} catch (e) { }
 let pending_message = []; //Allow messages to be queued on startup (will be sent after initialization)
 let prefs = { }; //Updated from the server as needed
@@ -15,7 +16,7 @@ const prefs_hooks = [];
 let reconnect_delay = 250;
 let redirect_host = null, redirect_xfr = null;
 const callbacks = {};
-if (window.location.host.endsWith("mustardmine.com") || window.location.host === "localhost" || window.location.host.startsWith("localhost:"))
+if (self.host.endsWith("mustardmine.com") || window.location.host === "localhost" || window.location.host.startsWith("localhost:"))
 	try {redirect_host = ws_host;} catch (e) { } //If a global ws_host is set, use that for the initial connection. Only within the *.mustardmine.com domains.
 
 let userid = 0;
@@ -39,7 +40,7 @@ export function connect(group, handler)
 	const cfg = handler.ws_config || { };
 	if (!cfg.quiet) cfg.quiet = { };
 	function verbose(kwd, ...msg) {if (!cfg.quiet[kwd]) console.log(...msg)}
-	let socket = new WebSocket(protocol + (handler.ws_host || redirect_host || window.location.host) + "/ws");
+	let socket = new WebSocket(protocol + (handler.ws_host || redirect_host || self.host) + "/ws");
 	if (cfg._disconnect) cfg._disconnect();
 	cfg._disconnect = () => {
 		socket.explicit_close = true;

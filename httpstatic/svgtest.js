@@ -1,7 +1,8 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {"svg:feBlend": FE_BLEND, "svg:feFlood": FE_FLOOD, "svg:filter": FILTER, "svg:rect": RECT, "svg:svg": SVG, "svg:text": TEXT} = choc; //autoimport
-import {ensure_font} from "$$static||utils.js$$";
-import {connect} from "$$static||ws_sync.js$$";
+//Hard-coded URLs to allow this script to be hosted elsewhere. Makes it a demo of foreign access to a monitor.
+import {ensure_font} from "https://sikorsky.mustardmine.com/static/utils.js";
+import {connect} from "https://sikorsky.mustardmine.com/static/ws_sync.js";
 
 function render(data) {
 	const t = data.data;
