@@ -1,5 +1,5 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {"svg:defs": DEFS, "svg:feBlend": FE_BLEND, "svg:feFlood": FE_FLOOD, "svg:filter": FILTER, "svg:rect": RECT, "svg:svg": SVG, "svg:text": TEXT} = choc; //autoimport
+const {"svg:feBlend": FE_BLEND, "svg:feFlood": FE_FLOOD, "svg:filter": FILTER, "svg:rect": RECT, "svg:svg": SVG, "svg:text": TEXT} = choc; //autoimport
 import {ensure_font} from "$$static||utils.js$$";
 
 function render(data) {
@@ -7,28 +7,26 @@ function render(data) {
 	const mark = 48, text = "Next bug tier: 21", goal_text = "500", pos_text = "240";
 	ensure_font(data.font);
 	ensure_font('"Noto Color Emoji"'); //Hack - ensure that emojis work
-	set_content("#display", SVG({style: data.text_css, filter: "url(#fillter)"}, [
-		DEFS([
-			FILTER({
-				id: "fillter", //badumtish
-			}, [
-				//Simple inversion matrix. Works but would need a way to apply it to only the correct part
-				//FE_COLOR_MATRIX({values: "-1 0 0 0 1   0 -1 0 0 1   0 0 -1 0 1   0 0 0 1 0"}),
-				FE_FLOOD({
-					result: "fill", //Represents the filled part of the goal bar
-					x: 0, y: 0, width: data.width * mark / 100, height: data.height,
-					"flood-color": "#FFFFFF",
-					"flood-opacity": 1,
-				}),
-				FE_BLEND({
-					in: "SourceGraphic",
-					in2: "fill",
-					mode: "difference",
-				}),
-			]),
+	set_content("#display", SVG({style: data.text_css, filter: data.invertfill && "url(#fillter)"}, [
+		FILTER({
+			id: "fillter", //badumtish
+		}, [
+			//Simple inversion matrix. Works but would need a way to apply it to only the correct part
+			//FE_COLOR_MATRIX({values: "-1 0 0 0 1   0 -1 0 0 1   0 0 -1 0 1   0 0 0 1 0"}),
+			FE_FLOOD({
+				result: "fill", //Represents the filled part of the goal bar
+				x: 0, y: 0, width: data.width * mark / 100, height: data.height,
+				"flood-color": "#FFFFFF",
+				"flood-opacity": 1,
+			}),
+			FE_BLEND({
+				in: "SourceGraphic",
+				in2: "fill",
+				mode: "difference",
+			}),
 		]),
 		RECT({id: "bar", width: data.width, height: data.height, fill: data.barcolor}),
-		//RECT({id: "fill", width: data.width * mark / 100, height: data.height, fill: data.fillcolor}),
+		!data.invertfill && RECT({id: "fill", width: data.width * mark / 100, height: data.height, fill: data.fillcolor}),
 		//Text is in three pieces
 		TEXT({fill: data.color, y: data.height * .75}, text),
 		TEXT({fill: data.color, y: data.height * .75, x: "50%", "text-anchor": "middle"}, goal_text),
@@ -38,6 +36,7 @@ function render(data) {
 
 //Directly from the server
 render({
+	invertfill: 1,
 	"active": true,
 	"altcolor": "#000000",
 	"barcolor": "#9bfffd",
