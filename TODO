@@ -242,10 +242,6 @@
   - Keep the GUI for fast updates maybe? It might not even be necessary though, just use
     the web UI.
   - Does it need 2FA since that has the power to make all kinds of code changes?
-* Make a generic way to create a monitor that shows a person's avatar. Currently bit boss
-  and crown use this, but there's no general-purpose way to do it.
-  - Consider changing format from "hitpoints" to "avatar", and then having a format_style
-    to specify whether they get hitpoints.
 * It looks like IRC is not going to be the preferred way, soon. What will it take to move?
   - EVERYTHING that currently goes through irc_message() will need to be fetched via
     eventsub instead.
@@ -256,9 +252,6 @@
     reauthenticate (maybe on next channel-online)
   - If the broadcaster sees this and doesn't do anything, don't continue to spam, just flag
     the channel as inactive and probably delete most of the data at some point.
-* Goal bars: Can we make it so the text is inverted in colour, meaning that the gradient
-  behind it flips colour for the text? Make it a checkbox in place of a text colour, but
-  it'll probably need some handcrafting in the JS and CSS.
 * Consider the StreamElements API for hooking donations
   - https://dev.streamelements.com/docs/api-docs/cd02cda5171ea-o-auth2
   - Do they have a way to trigger a test dono? Otherwise it's going to be either expensive
