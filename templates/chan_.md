@@ -34,6 +34,7 @@ $$greeting||$$
 
 ## Keep you organized
 * [Stream setup](streamsetup) - prepare your title, category, tags, etc
+* [Request queue](queue) - manage song requests, game requests, etc from your community
 * [Raid finder](/raidfinder?for=$$channel$$) - can be used for recommendations too
 * [Hype Train tracker](/hypetrain?for=$$channel$$) - available to everyone if enabled
 * [Emote showcase](/emotes?broadcaster=$$channel$$)
