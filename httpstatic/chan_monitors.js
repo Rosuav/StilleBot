@@ -332,7 +332,10 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 		FIELDSET([LEGEND("Text"), INPUT({type: "color", name: "color"})]),
 		FIELDSET([LEGEND("Alt"), INPUT({type: "color", name: "altcolor"})]),
 		FIELDSET([LEGEND("Bar"), INPUT({type: "color", name: "barcolor"})]),
-		FIELDSET([LEGEND("Fill"), INPUT({type: "color", name: "fillcolor"})]),
+		FIELDSET([LEGEND("Fill"),
+			INPUT({type: "color", name: "fillcolor"}),
+			" ", LABEL([INPUT({name: "invertfill", type: "checkbox"}), "Negative"]), //Sorry Phil, gonna have to invert you
+		]),
 		FIELDSET([LEGEND("Border"),
 			INPUT({name: "borderwidth", type: "number"}), " px ",
 			INPUT({name: "bordercolor", type: "color"}),

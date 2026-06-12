@@ -1,5 +1,5 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {DIV, IMG, SPAN} = choc; //autoimport
+const {DIV, "svg:feBlend": FE_BLEND, "svg:feFlood": FE_FLOOD, "svg:filter": FILTER, IMG, "svg:rect": RECT, SPAN, "svg:svg": SVG, "svg:text": TEXT} = choc; //autoimport
 import {ensure_font} from "$$static||utils.js$$";
 
 const currency_formatter = new Intl.NumberFormat("en-US", {style: "currency", currency: "USD"});
@@ -79,6 +79,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		if (data.needlesize) styleinfo[data.id].needlesize = +data.needlesize;
 		if (data.inactivetime) styleinfo[data.id].inactivetime = +data.inactivetime;
 		if (data.avatarmargin) styleinfo[data.id].avatarmargin = +data.avatarmargin;
+		if (data.invertfill) styleinfo[data.id].invertfill = !!data.invertfill;
 		if (data.applypreviewbg) elem.style.background = data.previewbg;
 		["barcolor", "fillcolor", "altcolor", "format", "progressive", "infinitier", "textcompleted", "textinactive", "format_style"].forEach(
 			key => data[key] && (styleinfo[data.id][key] = data[key]));
@@ -203,10 +204,46 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			if (!t.progressive) pos += goal; //After blowing past the last goal, we're clearly past that goal
 		}
 		//TODO: Is it worth changing this to use CSS variables instead of interpolation? See bit boss code above for example.
-		elem.style.background = `linear-gradient(.25turn, ${t.fillcolor} ${mark-t.needlesize}%, red, ${t.barcolor} ${mark+t.needlesize}%, ${t.barcolor})`;
-		elem.style.display = "flex";
 		const f = formatters[t.format] || formatters.plain;
-		set_content(elem, [DIV(text), DIV(f(pos, t.format_style)), DIV(f(goal, t.format_style))]);
+		const pos_text = f(pos, t.format_style), goal_text = f(goal, t.format_style);
+		if (t.invertfill /* || true */) {
+			//Render the goal bar using SVG; the gradient does not support inversion.
+			//TODO: Render *all* goal bars using SVG, and remove gradient mode altogether.
+			//Will need to fix in SVG mode:
+			//- Curved borders - they apply to the outer and seem to leave a gap around the fill
+			//- Text position seems to be slightly different. How do we correctly measure position to baseline?
+			//- Anything else?
+			set_content(elem, SVG({style: "width: 100%; height: 100%", filter: t.invertfill && "url(#fillter)"}, [
+				FILTER({id: "fillter"}, [ //badumtish
+					//Simple inversion matrix. Works but would need a way to apply it to only the correct part
+					//FE_COLOR_MATRIX({values: "-1 0 0 0 1   0 -1 0 0 1   0 0 -1 0 1   0 0 0 1 0"}),
+					//So instead we make a flood-fill across the filled part, then blend that with the main graphic.
+					FE_FLOOD({
+						result: "fill", //Represents the filled part of the goal bar
+						x: 0, y: 0, width: mark + "%", height: "100%",
+						"flood-color": "#FFFFFF",
+						"flood-opacity": 1,
+					}),
+					FE_BLEND({
+						in: "SourceGraphic",
+						in2: "fill",
+						mode: "difference",
+					}),
+				]),
+				RECT({id: "bar", width: "100%", height: "100%", fill: t.barcolor}),
+				!t.invertfill && RECT({id: "fill", width: mark + "%", height: "100%", fill: t.fillcolor}),
+				RECT({id: "needle", x: (mark-t.needlesize) + "%", width: t.needlesize + "%", height: "100%", fill: "red"}),
+				//Text is in three pieces. It may be worth allowing the middle text to be omitted??
+				//Baseline of 75% is a total guess but looks kinda okayish.
+				TEXT({fill: t.color, y: "75%"}, text),
+				TEXT({fill: t.color, y: "75%", x: "50%", "text-anchor": "middle"}, goal_text),
+				TEXT({fill: t.color, y: "75%", x: "100%", "text-anchor": "end"}, pos_text),
+			]));
+		} else {
+			elem.style.background = `linear-gradient(.25turn, ${t.fillcolor} ${mark-t.needlesize}%, red, ${t.barcolor} ${mark+t.needlesize}%, ${t.barcolor})`;
+			elem.style.display = "flex";
+			set_content(elem, [DIV(text), DIV(pos_text), DIV(goal_text)]);
+		}
 	}
 	else if (type === "countdown") {
 		const m = /^([0-9]*):(.*)$/.exec(data.display);
