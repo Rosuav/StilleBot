@@ -22,7 +22,10 @@ constant markdown = #"# Request Queue
 
 <style>
 .blank {list-style-type: none; height: 1em;}
-.heading {list-style-type: none; font-weight: bold; font-size: larger;}
+.heading {list-style-type: none; font-weight: bold;}
+.heading.level1 {font-size: larger;}
+.heading.level2 { }
+.heading.level3 {font-size: smaller;}
 #flashed-message {
 	position: fixed;
 	left: 3em;
@@ -197,11 +200,14 @@ string shorten(string title) {
 			//the previous version of them so they get kept.
 			array prev = cfg->selections || ({ });
 			cfg->selections = ({ });
-			foreach (msg->selections, string sel) cfg->selections += ({
-				sel == "" ? (["gap": 1]) //
-				: sel[0] == '#' ? (["heading": String.trim(sel[1..])])
-				: (["title": String.trim(sel), "shorttitle": shorten(String.trim(sel))])
-			});
+			foreach (msg->selections, string sel) {
+				sscanf(sel, "%[# ]%s", string hdg, string title); hdg -= " ";
+				cfg->selections += ({
+					title == "" ? (["gap": 1]) //Aesthetic only; note that these will often precede headings, so make sure it looks good
+					: sizeof(hdg) ? (["heading": String.trim(title), "level": sizeof(hdg)])
+					: (["title": String.trim(title), "shorttitle": shorten(String.trim(title))])
+				});
+			}
 			//Clean off any blanks at the end
 			while (sizeof(cfg->selections) && cfg->selections[-1]->gap)
 				cfg->selections = cfg->selections[..<1];

@@ -40,7 +40,7 @@ export function render(data) {
 		!minimode && H2("Selections"),
 		!minimode && data.selections && UL(data.selections.map(sel => 
 			sel.title ? LI({"data-selection": sel.title}, [BUTTON({class: "choose"}, "Pick"), " ", sel.title])
-			: sel.heading ? LI({class: "heading"}, sel.heading)
+			: sel.heading ? LI({class: "heading level" + (sel.level||1)}, sel.heading)
 			: LI({class: "blank"}),
 		)),
 		is_mod && DETAILS([
@@ -57,7 +57,7 @@ export function render(data) {
 			FORM([
 				LABEL(["Available selections:", BR(), TEXTAREA({id: "newselections", rows: 20, cols: 60,
 					value: (data.selections||[]).map(sel =>
-						sel.title ? sel.title : sel.heading ? "# " + sel.heading : ""
+						sel.title ? sel.title : sel.heading ? "#".repeat(sel.level || 1) + " " + sel.heading : ""
 					).join("\n") + "\n",
 				})]),
 				BR(), BUTTON({type: "button", id: "editselections"}, "Save"),
