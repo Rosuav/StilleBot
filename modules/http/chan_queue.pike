@@ -22,7 +22,7 @@ constant markdown = #"# Request Queue
 
 <style>
 .blank {list-style-type: none; height: 1em;}
-.heading {list-style-type: none; font-weight: bold;}
+.heading {list-style-type: none; font-weight: bold; margin-left: -30px;}
 .heading.level1 {font-size: larger;}
 .heading.level2 { }
 .heading.level3 {font-size: smaller;}
