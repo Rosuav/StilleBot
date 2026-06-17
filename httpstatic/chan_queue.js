@@ -1,5 +1,5 @@
 import {lindt, replace_content, set_content, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DETAILS, DIV, FORM, H2, INPUT, LABEL, LI, P, SUMMARY, TABLE, TBODY, TD, TEXTAREA, TH, THEAD, TR, UL} = lindt; //autoimport
+const {BR, BUTTON, DETAILS, DIV, FORM, H1, H2, INPUT, LABEL, LI, P, SUMMARY, TABLE, TBODY, TD, TEXTAREA, TH, THEAD, TR, UL} = lindt; //autoimport
 import {simpleconfirm, simplemessage, TEXTFORMATTING, ensure_font} from "$$static||utils.js$$";
 
 export function render(data) {
@@ -9,6 +9,7 @@ export function render(data) {
 		document.body.style.background = sty.bgcolor;
 		const btnstyle = "font-family: " + sty.font + ", " + sty.fontfamily + "; font-size: " + sty.fontsize + "px; color: " + sty.queuetextcolor + "; background: ";
 		replace_content("#queueinfo", [
+			myname === "-" && [H1({style: "color: aliceblue"}, "Not logged in"), H2(BUTTON({class: "twitchlogin"}, "Log in"))],
 			TABLE({style: sty.css_text}, [
 				THEAD(TR({style: "background: " + (sty.altrowcolor || sty.bgcolor)}, [TH("#"), TH(sty.itemlbl || "Song"), TH(sty.originlbl || "Musical/Artist"), TH("Requestor"), TH()])),
 				TBODY(!data.queue?.length ? TR(TD({colSpan: 5}, "No requests currently."))
@@ -38,8 +39,11 @@ export function render(data) {
 				(is_mod || q.user === myname) && BUTTON({class: "unchoose", "data-index": idx}, "Remove"),
 			]))),
 		!minimode && H2("Selections"),
-		!minimode && data.selections && UL(data.selections.map(sel => 
-			sel.title ? LI({"data-selection": sel.title}, [BUTTON({class: "choose"}, "Pick"), " ", sel.title])
+		!minimode && data.selections && UL(data.selections.map(sel =>
+			//NOTE: The "Pick" button is secretly a login button if you're not logged in. That
+			//way, rather than "log in, now you can see buttons to pick", it's "pick, but hey,
+			//please log in". However, we don't automatically pick after the login is done.
+			sel.title ? LI({"data-selection": sel.title}, [BUTTON({class: myname === "-" ? "twitchlogin" : "choose"}, "Pick"), " ", sel.title])
 			: sel.heading ? LI({class: "heading level" + (sel.level||1)}, sel.heading)
 			: LI({class: "blank"}),
 		)),

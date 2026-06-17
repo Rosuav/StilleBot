@@ -154,19 +154,18 @@ __async__ mapping unchoose(object channel, string user) {
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (req->variables->mini) return render(req, viewonlymode, (["vars": (["ws_group": "", "minimode": 1, "is_mod": 0, "myname": "-"])]));
-	if (!req->misc->session->user) return render_template("login.md", req->misc->chaninfo);
-	if (req->variables->panel) return render(req, minimode, (["vars": ([
+	mapping vars = ([
 		"ws_group": "",
-		"is_mod": await(modprobe(req)), //Show or hide the mod-specific things. If you hack this in the front end, you'll get a bunch of non-functional controls.
-		"myname": req->misc->session->user->display_name,
-		"minimode": 2,
-	])])); //No chaninfo - suppress the sidebar
-	return render(req, (["vars": ([
-		"ws_group": "",
-		"is_mod": await(modprobe(req)), //Show or hide the mod-specific things. If you hack this in the front end, you'll get a bunch of non-functional controls.
-		"myname": req->misc->session->user->display_name,
-		"minimode": 0,
-	])]) | req->misc->chaninfo);
+		"is_mod": 0,
+		"myname": "-",
+		"minimode": req->variables->panel ? 2 : 0,
+	]);
+	if (req->misc->session->user) {
+		vars->is_mod = await(modprobe(req)); //Show or hide the mod-specific things. If you hack this in the front end, you'll get a bunch of non-functional controls.
+		vars->myname = req->misc->session->user->display_name;
+	}
+	if (req->variables->panel) return render(req, minimode, (["vars": vars])); //No chaninfo - suppress the sidebar
+	return render(req, (["vars": vars]) | req->misc->chaninfo);
 }
 
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
@@ -229,6 +228,7 @@ string shorten(string title) {
 }
 
 __async__ mapping wscmd_choose(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->session->user) return (["error": "Not logged in"]); //Shouldn't normally be seen - the front end should suppress it - but it's perhaps better not to be silent
 	//Select something. If you're a mod, you can do an "on behalf of" that changes the source name,
 	//though it'll still record the "added by".
 	mapping extra = ([]);
@@ -242,6 +242,7 @@ __async__ mapping wscmd_choose(object channel, mapping(string:mixed) conn, mappi
 }
 
 void wscmd_unchoose(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->session->user) return;
 	//Remove a selection. If you're a mod, you can remove anyone's selections. Currently
 	//this is the only way to say "done", though there may need to be a simple "next" button.
 	//Non-mods can cancel their own requests.
