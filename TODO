@@ -260,3 +260,4 @@
 * Get notified when credentials are revoked
   - Should this deactivate the bot?
   - Alternatively, if auth breaks but bot active, autoadd needed scopes
+* Make song queue available not logged in, but have a login on req attempt
