@@ -1,5 +1,5 @@
 import {lindt, replace_content, set_content, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DETAILS, DIV, FORM, H1, H2, INPUT, LABEL, LI, P, SUMMARY, TABLE, TBODY, TD, TEXTAREA, TH, THEAD, TR, UL} = lindt; //autoimport
+const {BR, BUTTON, DETAILS, DIV, FORM, H1, H2, IMG, INPUT, LABEL, LI, P, SUMMARY, TABLE, TBODY, TD, TEXTAREA, TH, THEAD, TR, UL} = lindt; //autoimport
 import {simpleconfirm, simplemessage, TEXTFORMATTING, ensure_font} from "$$static||utils.js$$";
 
 export function render(data) {
@@ -43,7 +43,12 @@ export function render(data) {
 			//NOTE: The "Pick" button is secretly a login button if you're not logged in. That
 			//way, rather than "log in, now you can see buttons to pick", it's "pick, but hey,
 			//please log in". However, we don't automatically pick after the login is done.
-			sel.title ? LI({"data-selection": sel.title}, [BUTTON({class: myname === "-" ? "twitchlogin" : "choose"}, "Pick"), " ", sel.title])
+			sel.title ? LI({"data-selection": sel.title}, [
+				BUTTON({class: myname === "-" ? "twitchlogin" : "choose"}, "Pick"), " ",
+				sel.title, " ",
+				//TODO: Get a free "New!" icon that looks good
+				sel.is_new && IMG({class: "is_new", src: "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_6699625e38c847e5be28270aecffbd4b/default/light/1.0"}),
+			])
 			: sel.heading ? LI({class: "heading level" + (sel.level||1)}, sel.heading)
 			: LI({class: "blank"}),
 		)),
@@ -61,7 +66,8 @@ export function render(data) {
 			FORM([
 				LABEL(["Available selections:", BR(), TEXTAREA({id: "newselections", rows: 20, cols: 60,
 					value: (data.selections||[]).map(sel =>
-						sel.title ? sel.title : sel.heading ? "#".repeat(sel.level || 1) + " " + sel.heading : ""
+						sel.title ? sel.title + (sel.is_new ? " [New]" : "")
+						: sel.heading ? "#".repeat(sel.level || 1) + " " + sel.heading : ""
 					).join("\n") + "\n",
 				})]),
 				BR(), BUTTON({type: "button", id: "editselections"}, "Save"),

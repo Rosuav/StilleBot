@@ -26,6 +26,7 @@ constant markdown = #"# Request Queue
 .heading.level1 {font-size: larger;}
 .heading.level2 { }
 .heading.level3 {font-size: smaller;}
+img.is_new {vertical-align: middle;}
 #flashed-message {
 	position: fixed;
 	left: 3em;
@@ -201,11 +202,13 @@ string shorten(string title) {
 			cfg->selections = ({ });
 			foreach (msg->selections, string sel) {
 				sscanf(sel, "%[# ]%s", string hdg, string title); hdg -= " ";
+				int is_new = has_value(title, "[New]"); title -= "[New]";
 				cfg->selections += ({
 					title == "" ? (["gap": 1]) //Aesthetic only; note that these will often precede headings, so make sure it looks good
 					: sizeof(hdg) ? (["heading": String.trim(title), "level": sizeof(hdg)])
 					: (["title": String.trim(title), "shorttitle": shorten(String.trim(title))])
 				});
+				if (is_new) cfg->selections[-1]->is_new = 1;
 			}
 			//Clean off any blanks at the end
 			while (sizeof(cfg->selections) && cfg->selections[-1]->gap)
