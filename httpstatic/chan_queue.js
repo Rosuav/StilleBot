@@ -70,6 +70,7 @@ export function render(data) {
 						: sel.heading ? "#".repeat(sel.level || 1) + " " + sel.heading : ""
 					).join("\n") + "\n",
 				})]),
+				BR(), "TIP: Headings start with one or more # signs and [New] marks recent additions.",
 				BR(), BUTTON({type: "button", id: "editselections"}, "Save"),
 				P(LABEL(["Queue limit per person: ", INPUT({type: "number", id: "queuelimit", minimum: 0, value: data.queuelimit || 0})])),
 			]),
