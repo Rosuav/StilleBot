@@ -235,8 +235,8 @@ export function update_display(elem, data) { //Used for the preview as well as t
 				//Text is in three pieces. It may be worth allowing the middle text to be omitted??
 				//Baseline of 75% is a total guess but looks kinda okayish.
 				TEXT({fill: t.color, y: "75%"}, text),
-				TEXT({fill: t.color, y: "75%", x: "50%", "text-anchor": "middle"}, goal_text),
-				TEXT({fill: t.color, y: "75%", x: "100%", "text-anchor": "end"}, pos_text),
+				TEXT({fill: t.color, y: "75%", x: "50%", "text-anchor": "middle"}, pos_text),
+				TEXT({fill: t.color, y: "75%", x: "100%", "text-anchor": "end"}, goal_text),
 			]));
 		} else {
 			//TODO: Is it worth changing this to use CSS variables instead of interpolation? See bit boss code above for example.
