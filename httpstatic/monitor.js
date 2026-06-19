@@ -217,7 +217,14 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			elem.style.padding = 0;
 			const padleft = t.padhoriz ? "transform: translateX(" + t.padhoriz + "em)" : "";
 			const padright = t.padhoriz ? "transform: translateX(-" + t.padhoriz + "em)" : "";
-			set_content(elem, SVG({style: "width: 100%; height: 100%; dominant-baseline: middle", filter: t.invertfill && "url(#fillter" + nonce + ")"}, [
+			let styles = "width: 100%; height: 100%; dominant-baseline: middle";
+			//If the goal bar has a curved edge, clip the SVG to that same curve (approximately).
+			//Setting "clip-path: content-box" on elem itself does something very similar, but
+			//allows the SVG to overdraw the border, which looks ugly. What I'd *really* like is
+			//a clip-path value that applies to the internal contents but not the border, and uses
+			//the border itself as the clipping path.
+			if (elem.style.borderRadius) styles += "; clip-path: inset(0 round " + elem.style.borderRadius + ")";
+			set_content(elem, SVG({style: styles, filter: t.invertfill && "url(#fillter" + nonce + ")"}, [
 				FILTER({id: "fillter" + nonce}, [ //badumtish
 					//Simple inversion matrix. Works but would need a way to apply it to only the correct part
 					//FE_COLOR_MATRIX({values: "-1 0 0 0 1   0 -1 0 0 1   0 0 -1 0 1   0 0 0 1 0"}),
