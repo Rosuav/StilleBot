@@ -203,7 +203,6 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			goal = thresholds[thresholds.length - 1];
 			if (!t.progressive) pos += goal; //After blowing past the last goal, we're clearly past that goal
 		}
-		//TODO: Is it worth changing this to use CSS variables instead of interpolation? See bit boss code above for example.
 		const f = formatters[t.format] || formatters.plain;
 		const pos_text = f(pos, t.format_style), goal_text = f(goal, t.format_style);
 		if (t.invertfill /* || true */) {
@@ -240,6 +239,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 				TEXT({fill: t.color, y: "75%", x: "100%", "text-anchor": "end"}, pos_text),
 			]));
 		} else {
+			//TODO: Is it worth changing this to use CSS variables instead of interpolation? See bit boss code above for example.
 			elem.style.background = `linear-gradient(.25turn, ${t.fillcolor} ${mark-t.needlesize}%, red, ${t.barcolor} ${mark+t.needlesize}%, ${t.barcolor})`;
 			elem.style.display = "flex";
 			set_content(elem, [DIV(text), DIV(pos_text), DIV(goal_text)]);
