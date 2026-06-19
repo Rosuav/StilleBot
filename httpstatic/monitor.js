@@ -212,7 +212,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			//- Curved borders - they apply to the outer and seem to leave a gap around the fill
 			//- Text position seems to be slightly different. How do we correctly measure position to baseline?
 			//- Anything else?
-			set_content(elem, SVG({style: "width: 100%; height: 100%", filter: t.invertfill && "url(#fillter)"}, [
+			set_content(elem, SVG({style: "width: 100%; height: 100%; dominant-baseline: middle", filter: t.invertfill && "url(#fillter)"}, [
 				FILTER({id: "fillter"}, [ //badumtish
 					//Simple inversion matrix. Works but would need a way to apply it to only the correct part
 					//FE_COLOR_MATRIX({values: "-1 0 0 0 1   0 -1 0 0 1   0 0 -1 0 1   0 0 0 1 0"}),
@@ -234,9 +234,9 @@ export function update_display(elem, data) { //Used for the preview as well as t
 				RECT({id: "needle", x: (mark-t.needlesize) + "%", width: t.needlesize + "%", height: "100%", fill: "red"}),
 				//Text is in three pieces. It may be worth allowing the middle text to be omitted??
 				//Baseline of 75% is a total guess but looks kinda okayish.
-				TEXT({fill: t.color, y: "75%"}, text),
-				TEXT({fill: t.color, y: "75%", x: "50%", "text-anchor": "middle"}, pos_text),
-				TEXT({fill: t.color, y: "75%", x: "100%", "text-anchor": "end"}, goal_text),
+				TEXT({fill: t.color, y: "50%"}, text),
+				TEXT({fill: t.color, y: "50%", x: "50%", "text-anchor": "middle"}, pos_text),
+				TEXT({fill: t.color, y: "50%", x: "100%", "text-anchor": "end"}, goal_text),
 			]));
 		} else {
 			//TODO: Is it worth changing this to use CSS variables instead of interpolation? See bit boss code above for example.
