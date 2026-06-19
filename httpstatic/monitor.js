@@ -205,7 +205,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		}
 		const f = formatters[t.format] || formatters.plain;
 		const pos_text = f(pos, t.format_style), goal_text = f(goal, t.format_style);
-		if (t.invertfill /* || true */) {
+		if (t.invertfill || location.hash === "#svg") { //Hack: Force SVG render by adding #svg to the URL
 			//Render the goal bar using SVG; the gradient does not support inversion.
 			//TODO: Render *all* goal bars using SVG, and remove gradient mode altogether.
 			//Will need to fix in SVG mode:
