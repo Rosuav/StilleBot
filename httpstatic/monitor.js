@@ -69,6 +69,8 @@ function vischange() {
 
 export function render(data) {update_display(DOM("#display"), data.data);}
 let prevpos = 100, prevname = null, prevcredit = null;
+const hack_id = "b6fKHw9zFJeTYUv5IjHu4x2pM1TsnEryxqxN"; //Demo mode - constantly increase the bar's value
+let hack_timer = 0;
 export function update_display(elem, data) { //Used for the preview as well as the live display
 	//Update styles. The server provides a single "text_css" attribute covering most of the easy
 	//stuff; all we have to do here is handle the goal bar position.
@@ -86,6 +88,11 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			key => data[key] && (styleinfo[data.id][key] = data[key]));
 		ensure_font(data.font);
 		ensure_font('"Noto Color Emoji"'); //Hack - ensure that emojis work
+		if (data.id === hack_id) {
+			let pos = 0, inc = +data.thresholds_rendered / 100, suffix = data.display.split(":")[1];
+			clearInterval(hack_timer);
+			hack_timer = setInterval(() => update_display(elem, {id: data.id, display: (++pos%100)*inc + ":" + suffix}), 100);
+		}
 	}
 	const type = styleinfo[data.id] && styleinfo[data.id].type;
 	if (elem._stillebot_countdown_interval) {
