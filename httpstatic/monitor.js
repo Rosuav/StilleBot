@@ -80,6 +80,7 @@ export function update_display(elem, data) { //Used for the preview as well as t
 		if (data.inactivetime) styleinfo[data.id].inactivetime = +data.inactivetime;
 		if (data.avatarmargin) styleinfo[data.id].avatarmargin = +data.avatarmargin;
 		if (data.invertfill) styleinfo[data.id].invertfill = !!data.invertfill;
+		if (data.padhoriz) styleinfo[data.id].padhoriz = +data.padhoriz; //Horizontal padding is used differently in SVG mode (to give the same visual effect)
 		if (data.applypreviewbg) elem.style.background = data.previewbg;
 		["barcolor", "fillcolor", "altcolor", "format", "progressive", "infinitier", "textcompleted", "textinactive", "format_style"].forEach(
 			key => data[key] && (styleinfo[data.id][key] = data[key]));
@@ -213,6 +214,9 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			//- Text position seems to be slightly different. How do we correctly measure position to baseline?
 			//- Anything else?
 			const nonce = elem.closest_data("nonce") || ""; //IDs must be unique. On the preview page, differentiate multiple monitors by adding their nonces.
+			elem.style.padding = 0;
+			const padleft = t.padhoriz ? "transform: translateX(" + t.padhoriz + "em)" : "";
+			const padright = t.padhoriz ? "transform: translateX(-" + t.padhoriz + "em)" : "";
 			set_content(elem, SVG({style: "width: 100%; height: 100%; dominant-baseline: middle", filter: t.invertfill && "url(#fillter" + nonce + ")"}, [
 				FILTER({id: "fillter" + nonce}, [ //badumtish
 					//Simple inversion matrix. Works but would need a way to apply it to only the correct part
@@ -235,9 +239,9 @@ export function update_display(elem, data) { //Used for the preview as well as t
 				RECT({/*id: "needle",*/ x: (mark-t.needlesize) + "%", width: t.needlesize + "%", height: "100%", fill: "red"}),
 				//Text is in three pieces. It may be worth allowing the middle text to be omitted??
 				//Baseline of 75% is a total guess but looks kinda okayish.
-				TEXT({fill: t.color, y: "50%"}, text),
+				TEXT({fill: t.color, y: "50%", style: padleft}, text),
 				TEXT({fill: t.color, y: "50%", x: "50%", "text-anchor": "middle"}, pos_text),
-				TEXT({fill: t.color, y: "50%", x: "100%", "text-anchor": "end"}, goal_text),
+				TEXT({fill: t.color, y: "50%", x: "100%", "text-anchor": "end", style: padright}, goal_text),
 			]));
 		} else {
 			//TODO: Is it worth changing this to use CSS variables instead of interpolation? See bit boss code above for example.
