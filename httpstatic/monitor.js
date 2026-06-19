@@ -212,8 +212,9 @@ export function update_display(elem, data) { //Used for the preview as well as t
 			//- Curved borders - they apply to the outer and seem to leave a gap around the fill
 			//- Text position seems to be slightly different. How do we correctly measure position to baseline?
 			//- Anything else?
-			set_content(elem, SVG({style: "width: 100%; height: 100%; dominant-baseline: middle", filter: t.invertfill && "url(#fillter)"}, [
-				FILTER({id: "fillter"}, [ //badumtish
+			const nonce = elem.closest_data("nonce") || ""; //IDs must be unique. On the preview page, differentiate multiple monitors by adding their nonces.
+			set_content(elem, SVG({style: "width: 100%; height: 100%; dominant-baseline: middle", filter: t.invertfill && "url(#fillter" + nonce + ")"}, [
+				FILTER({id: "fillter" + nonce}, [ //badumtish
 					//Simple inversion matrix. Works but would need a way to apply it to only the correct part
 					//FE_COLOR_MATRIX({values: "-1 0 0 0 1   0 -1 0 0 1   0 0 -1 0 1   0 0 0 1 0"}),
 					//So instead we make a flood-fill across the filled part, then blend that with the main graphic.
@@ -229,9 +230,9 @@ export function update_display(elem, data) { //Used for the preview as well as t
 						mode: "difference",
 					}),
 				]),
-				RECT({id: "bar", width: "100%", height: "100%", fill: t.barcolor}),
-				!t.invertfill && RECT({id: "fill", width: mark + "%", height: "100%", fill: t.fillcolor}),
-				RECT({id: "needle", x: (mark-t.needlesize) + "%", width: t.needlesize + "%", height: "100%", fill: "red"}),
+				RECT({/*id: "bar",*/ width: "100%", height: "100%", fill: t.barcolor}),
+				!t.invertfill && RECT({/*id: "fill",*/ width: mark + "%", height: "100%", fill: t.fillcolor}),
+				RECT({/*id: "needle",*/ x: (mark-t.needlesize) + "%", width: t.needlesize + "%", height: "100%", fill: "red"}),
 				//Text is in three pieces. It may be worth allowing the middle text to be omitted??
 				//Baseline of 75% is a total guess but looks kinda okayish.
 				TEXT({fill: t.color, y: "50%"}, text),
