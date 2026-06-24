@@ -1,5 +1,5 @@
 import {lindt, replace_content, set_content, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DETAILS, DIV, FORM, H1, H2, IMG, INPUT, LABEL, LI, P, SUMMARY, TABLE, TBODY, TD, TEXTAREA, TH, THEAD, TR, UL} = lindt; //autoimport
+const {BR, BUTTON, CAPTION, DETAILS, DIV, FORM, H1, H2, IMG, INPUT, LABEL, LI, P, SUMMARY, TABLE, TBODY, TD, TEXTAREA, TH, THEAD, TR, UL} = lindt; //autoimport
 import {simpleconfirm, simplemessage, TEXTFORMATTING, ensure_font} from "$$static||utils.js$$";
 
 export function render(data) {
@@ -62,6 +62,11 @@ export function render(data) {
 				"The queue is closed. ",
 				BUTTON({type: "button", id: "openqueue"}, "Open queue"),
 			]),
+			TABLE([
+				CAPTION("When queue is opened or closed, put the following message in chat:"),
+				TR([TH("Opened"), TD(INPUT({class: "autosave", "data-key": "openmsg", size: 80, value: data.openmsg}))]),
+				TR([TH("Closed"), TD(INPUT({class: "autosave", "data-key": "closemsg", size: 80, value: data.closemsg}))]),
+			]),
 			P(BUTTON({class: "opendlg", "data-dlg": "panelcfgdlg"}, "Configure panel view")),
 			FORM([
 				LABEL(["Available selections:", BR(), TEXTAREA({id: "newselections", rows: 20, cols: 60,
@@ -102,6 +107,8 @@ if (is_mod && !minimode) set_content("#panelconfigs", [
 //No confirmation here; if you misclick, click it again.
 on("click", "#openqueue", e => ws_sync.send({cmd: "configure", open: 1}));
 on("click", "#closequeue", e => ws_sync.send({cmd: "configure", closed: 1}));
+
+on("change", ".autosave", e => ws_sync.send({cmd: "configure", [e.match.dataset.key]: e.match.value}));
 
 const selfadd = simpleconfirm("Add this to the queue?", e => {
 	ws_sync.send({cmd: "choose", selection: e.match.closest_data("selection")});

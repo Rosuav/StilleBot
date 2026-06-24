@@ -184,8 +184,18 @@ string shorten(string title) {
 	//Configure things. Do we even HAVE a queue? If we do, is it open and accepting requests?
 	//Can people request more than one? Etc.
 	G->G->DB->mutate_config(channel->userid, "requestqueue") {mapping cfg = __ARGS__[0];
-		if (msg->open) cfg->queue_open = 1;
-		if (msg->closed) m_delete(cfg, "queue_open");
+		foreach ("openmsg closemsg" / " ", string key) //Simple strings for now, no full command editor
+			if (msg[key]) cfg[key]= (string)msg[key];
+
+		if (msg->open) {
+			cfg->queue_open = 1;
+			if (cfg->openmsg) channel->send((["{username}": channel->display_name]), cfg->openmsg);
+		}
+		if (msg->closed) {
+			m_delete(cfg, "queue_open");
+			if (cfg->closemsg) channel->send((["{username}": channel->display_name]), cfg->closemsg);
+		}
+
 		if (msg->queuelimit) {
 			//Set queuelimit to 1 or "1" to limit to one per person; but to
 			//remove the limit, set it to "0". I could use undefinedp() here
