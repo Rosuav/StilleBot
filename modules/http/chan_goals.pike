@@ -68,7 +68,6 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 @EventNotify("channel.goal.progress=1", ({"channel:read:goals"})):
 @EventNotify("channel.goal.end=1", ({"channel:read:goals"})):
 void goal_advanced(object channel, mapping info) {
-	werror("GOAL EVENT %O\n", info);
 	send_updates_all(channel, "");
 }
 
