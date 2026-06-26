@@ -1813,7 +1813,7 @@ __async__ void establish_hook_notification(string|int channelid, string hook, ma
 	])));
 	//Quick dump of failure responses. We shouldn't normally see them.
 	if (ret->status) werror("Hook not established for %O %O\n%O\n", channelid, hook, ret);
-	//FIXME: If it worked, update G->G->eventhooks???
+	else G_G_("eventhooks", hook, "")[(string)channelid] = 1; //Don't readd the same hook twice
 }
 
 @hook_database_settings: void kick_when_inactive(mapping settings) {
