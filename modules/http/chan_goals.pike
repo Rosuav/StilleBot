@@ -3,6 +3,9 @@ inherit builtin_command;
 inherit annotated;
 inherit hook;
 
+//NOTE: The page here may become irrelevant if monitors can do all the work.
+//However the builtin may continue to be useful.
+
 constant markdown = #"# Channel goals
 
 * loading...
@@ -14,7 +17,7 @@ constant markdown = #"# Channel goals
 
 constant builtin_name = "Goals";
 constant builtin_description = "Query Twitch goals";
-constant builtin_param = ({"Goal ID"});
+constant builtin_param = ({"Goal ID/type"});
 constant vars_provided = ([
 	"{goalid}": "Goal ID; if multiple available and none selected, is all goal IDs.",
 	"{type}": "Type of goal - selected, or the first available - follower, subscription, etc",
@@ -32,7 +35,7 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 	string id = info->data->id * " ";
 	if (sizeof(param) && param[0] != "") {
 		//Pick out a single goal by its ID
-		foreach (info->data, mapping g) if (g->id == param[0]) {goal = g; id = g->id; break;}
+		foreach (info->data, mapping g) if (g->id == param[0] || g->type == param[0]) {goal = g; id = g->id; break;}
 		//Not found? Fall through as if no ID specified.
 	}
 	return ([
@@ -47,6 +50,7 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 	if (string scopes = ensure_bcaster_token(req, "channel:read:goals"))
 		return render_template("login.md", (["scopes": scopes, "msg": "authentication as the broadcaster"]) | req->misc->chaninfo);
+	establish_notifications(req->misc->channel->userid);
 	return render(req, ([
 		"vars": (["ws_group": ""]),
 	]) | req->misc->chaninfo);
@@ -60,8 +64,11 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	]);
 }
 
-@EventNotify("channel.goal.progress=1"):
+@EventNotify("channel.goal.begin=1", ({"channel:read:goals"})):
+@EventNotify("channel.goal.progress=1", ({"channel:read:goals"})):
+@EventNotify("channel.goal.end=1", ({"channel:read:goals"})):
 void goal_advanced(object channel, mapping info) {
+	werror("GOAL EVENT %O\n", info);
 	send_updates_all(channel, "");
 }
 
