@@ -513,7 +513,7 @@ __async__ void update_twitch_goals(object channel, string|void check_nonce, arra
 		foreach (goals, mapping goal) if (goal_type_matches(info->goaltype, goal->type)) {
 			sscanf(info->text, "$%s$:%s", string varname, string desc);
 			string cur = channel->get_channel_variables()["$" + varname + "$"];
-			if (cur != (string)goal->current_amount) channel->set_variable(varname, (string)goal->current_amount, "set");
+			if (cur != (string)goal->current_amount) channel->set_variable(varname, (string)goal->current_amount);
 			int changed = 0;
 			if (goal->description != "" && goal->description != desc) {info->text = sprintf("$%s$:%s", varname, goal->description); changed = 1;}
 			if (info->thresholds != (string)goal->target_amount) {info->thresholds = (string)goal->target_amount; changed = 1;}
@@ -532,8 +532,16 @@ __async__ void update_twitch_goals(object channel, string|void check_nonce, arra
 void goal_changed(object channel, mapping info) {update_twitch_goals(channel, 0, ({info}));}
 
 @EventNotify("channel.goal.progress=1", ({"channel:read:goals"})):
-void goal_advanced(object channel, mapping info) {
+void goal_advanced(object channel, mapping goal) {
 	//Much-reduced checks here; the only thing we'll change is the variable.
+	//Note that the EventSub name says "progress" and my function name says "advanced",
+	//but negative progress/advancement is entirely possible (eg if someone unfollows).
+	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
+	foreach (monitors; string nonce; mapping info) {
+		if (!info->goaltype || !goal_type_matches(info->goaltype, goal->type)) continue;
+		sscanf(info->text, "$%s$:%s", string varname, string desc);
+		channel->set_variable(varname, (string)goal->current_amount);
+	}
 }
 
 //Create a new monitor. Must have a type; may have other attributes. If all goes well, returns ({nonce, cfg});
