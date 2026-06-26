@@ -375,7 +375,8 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 		LABEL([SPAN(" Style: "), INPUT({name: "format_style"})]),
 		BR(), SPAN({class: "not-boss"}, "Select the desired display format; note that everything is managed in cents still."),
 	])]),
-	TR([TH("Auto-count"), TD([
+	TR(TH({colSpan: 2}, "Automate goal bar based on...")),
+	TR([TH("Support"), TD([
 		"Automatically advance the goal bar based on viewer support",
 		//TODO: Should these be done with checkboxes instead? It would be inconsistent with the ones
 		//that can have more options than just "include" or "don't include". Or what about radio buttons?
@@ -451,6 +452,29 @@ set_content("#editgoalbar form div", TABLE({border: 1, "data-copystyles": 1}, [
 			Object.keys(presets).map(p => OPTION(p)),
 		])]),
 	])]),
+	TR([TH("Twitch goal"), TD([
+		//TODO: Figure out good wording here; this feature is NOT orthogonal with many others.
+		"Bind the goal bar to your Twitch goal. Note that not all features will work with this.", BR(),
+		goalsscopes && BUTTON({type: "button", class: "twitchlogin", "data-scopes": goalsscopes}, "Authenticate to allow this"),
+		SELECT({id: "goaltype", name: "goaltype", "data-nocopy": 1, style: goalsscopes ? "display: none" : ""}, [
+			OPTION({value: ""}, "None"),
+			OPTION({value: "follower"}, "Followers"),
+			OPTGROUP({label: "Subscribers"}, [
+				OPTION({value: "subs_any"}, "Any sub goal"),
+				OPTION({value: "subscription"}, "Sub points"),
+				OPTION({value: "subscription_count"}, "Subscribers"),
+				OPTION({value: "new_subscription"}, "New sub points"),
+				OPTION({value: "new_subscription_count"}, "New subscribers"),
+			]),
+			OPTGROUP({label: "Bits"}, [
+				OPTION({value: "bits_any"}, "Any bits goal"),
+				OPTION({value: "new_bit"}, "Bits"),
+				OPTION({value: "new_cheerer"}, "Cheerers"),
+			]),
+			OPTION({disabled: 1}, "Plus Program (unavailable)"),
+		])
+	])]),
+	TR(TH({colSpan: 2}, "\xa0")),
 	TR([TH("Leaderboard"), TD([
 		LABEL([INPUT({type: "checkbox", name: "record_leaderboard", "data-nocopy": 1}), " Track per-user contributions"]),
 		//TODO: Have a "Show" button here that gives the same info as in the Variables page

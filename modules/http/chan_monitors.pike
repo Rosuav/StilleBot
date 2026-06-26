@@ -156,7 +156,7 @@ constant saveable_attributes = "previewbg applypreviewbg barcolor fillcolor inve
 	"active bit sub_t1 sub_t2 sub_t3 exclude_gifts tip se_tip follow kofi_dono kofi_member kofi_renew kofi_shop kofi_commission "
 	"fw_dono fw_member fw_shop fw_gift textcompleted textinactive inactivetime startonscene startonscene_time record_leaderboard "
 	"twitchsched twitchsched_offset fadeouttime wall_top wall_left wall_right wall_floor autoreset clawsize "
-	"wallcolor wallalpha clawcolor clawthickness behaviour bouncemode addmode avatarmargin" / " " + TEXTFORMATTING_ATTRS;
+	"wallcolor wallalpha clawcolor clawthickness behaviour bouncemode addmode avatarmargin goaltype" / " " + TEXTFORMATTING_ATTRS;
 constant retained_attributes = (<"boss_selfheal", "boss_giftrecipient">); //Attributes set externally, not editable with wscmd_updatemonitor.
 constant valid_types = (<"text", "goalbar", "countdown", "pile", "usershowcase">);
 
@@ -286,6 +286,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			"ws_group": "",
 			"followersscopes": req->misc->channel->userid && ensure_bcaster_token(req, "moderator:read:followers"),
 			"bitsscopes": req->misc->channel->userid && ensure_bcaster_token(req, "bits:read"),
+			"goalsscopes": req->misc->channel->userid && ensure_bcaster_token(req, "channel:read:goals"),
 		]),
 		"styles": replace(styles->monitor, "#display", ".preview"),
 	]) | req->misc->chaninfo);
@@ -490,6 +491,45 @@ mapping|zero websocket_cmd_setvar(mapping(string:mixed) conn, mapping(string:mix
 	channel->set_variable(msg->varname, (string)(int)msg->val, "set");
 }
 
+int(1bit) goal_type_matches(string required, string actual) {
+	if (required == actual) return 1;
+	//The "any" goal types will match multiple actual types.
+	if (required == "subs_any" && (<"subscription", "subscription_count", "new_subscription", "new_subscription_count">)[actual]) return 1;
+	if (required == "bits_any" && (<"new_bit", "new_cheerer">)[actual]) return 1;
+}
+
+__async__ void update_twitch_goal(object channel, string nonce) {
+	mapping monitors = G->G->DB->load_cached_config(channel->userid, "monitors");
+	mapping info = monitors[nonce]; if (!info || !info->goaltype) return;
+	array havescopes = G->G->user_credentials[channel->userid]->?scopes || ({ });
+	if (!has_value(havescopes, "channel:read:goals")) return; //Normally you shouldn't get here w/o permissions, but check anyway
+	establish_notifications(channel->userid);
+	array goals = await(twitch_api_request("https://api.twitch.tv/helix/goals?broadcaster_id=" + channel->userid,
+		(["Authorization": channel->userid])))->data;
+	foreach (goals, mapping goal) if (goal_type_matches(info->goaltype, goal->type)) {
+		sscanf(info->text, "$%s$:%s", string varname, string desc);
+		string cur = channel->get_channel_variables()["$" + varname + "$"];
+		if (cur != (string)goal->current_amount) channel->set_variable(varname, (string)goal->current_amount, "set");
+		int changed = 0;
+		if (goal->description != "" && goal->description != desc) {info->text = sprintf("$%s$:%s", varname, goal->description); changed = 1;}
+		if (info->thresholds != (string)goal->target_amount) {info->thresholds = (string)goal->target_amount; changed = 1;}
+		if (changed) {
+			await(G->G->DB->save_config(channel->userid, "monitors", monitors));
+			send_updates_all(channel, nonce);
+			update_one(channel, "", nonce);
+		}
+		break;
+	}
+}
+
+@EventNotify("channel.goal.begin=1", ({"channel:read:goals"})):
+@EventNotify("channel.goal.progress=1", ({"channel:read:goals"})):
+@EventNotify("channel.goal.end=1", ({"channel:read:goals"})):
+void goal_advanced(object channel, mapping info) {
+	werror("MONITOR GOAL EVENT %O\n", info);
+	//TODO: Scan monitors for a matching one, and update its variable and/or thresholds
+}
+
 //Create a new monitor. Must have a type; may have other attributes. If all goes well, returns ({nonce, cfg});
 //otherwise returns 0 and doesn't create anything.
 array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) msg) {
@@ -538,9 +578,11 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 		}
 	}
 	foreach (saveable_attributes, string key) if (msg[key]) info[key] = msg[key];
+	if (info->goaltype == "") m_delete(info, "goaltype");
 	if (info->needlesize == "") info->needlesize = "0";
 	if (info->varname && info->varname != "") info->text = sprintf("$%s$:%s", info->varname, info->text);
 	textformatting_validate(info);
+	if (info->goaltype) update_twitch_goal(channel, nonce);
 	G->G->DB->save_config(channel->userid, "monitors", monitors)->then() {
 		send_updates_all(channel, nonce);
 		update_one(channel, "", nonce);
@@ -577,6 +619,7 @@ array(string|mapping)|zero create_monitor(object channel, mapping(string:mixed) 
 	await(G->G->DB->save_config(channel->userid, "monitors", monitors));
 	send_updates_all(channel, nonce);
 	update_one(channel, "", nonce);
+	if (info->goaltype) update_twitch_goal(channel, nonce); //Potentially delayed if Twitch is slow
 }
 
 __async__ string|mapping file_upload_prepare(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
