@@ -211,6 +211,7 @@ constant MOCKUP_builtin_param = ({
 		"title": ({"New title"}),
 		"desc": ({"New description"}),
 		"cooldown": ({"New description"}),
+		//"reset": ({ }),
 		"query": ({ }),
 		"fulfil": ({"Redemption ID"}),
 		"cancel": ({"Redemption ID"}),
@@ -231,7 +232,7 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 	if (cfg->simulate) return ([]); //In simulation mode, all this is likely to be used for is refunding or fulfilling the triggering redemption, so assume that that happened.
 	string reward_id = param[0];
 	mapping params = ([]);
-	int empty_ok = 0;
+	int empty_ok = 0, hack_reset = 1;
 	foreach (param[1..] / 2, [string cmd, string arg]) {
 		switch (cmd) {
 			case "enable": params->is_enabled = arg != "0" ? Val.true : Val.false; break;
@@ -244,6 +245,7 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 				params->global_cooldown_seconds = (int)arg;
 				params->is_global_cooldown_enabled = (int)arg ? Val.true : Val.false;
 			break;
+			case "reset": hack_reset = empty_ok = 1; break;
 			case "fulfil": case "cancel": if (arg != "") { //Not an error to attempt to mark nothing
 				complete_redemption(channel->name[1..], reward_id, arg, cmd == "fulfil" ? "FULFILLED" : "CANCELED");
 			} //fallthrough
@@ -256,6 +258,32 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 	mapping prev = await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 			+ channel->userid + "&id=" + reward_id,
 		(["Authorization": channel->userid])));
+	if (hack_reset && arrayp(prev->data) && sizeof(prev->data)) {
+		//First, find all per-stream limits and cooldowns. (Assumes that we can, in fact, query
+		//the reward; if we can't, it's probably a borked ID.) Then reset them all, then reenable.
+		//NOTE: This doesn't actually work. TODO: See if we can figure out an alternative way to
+		//clear the counts. This technique might still be useful for clearing cooldowns though?
+		mapping cur = prev->data[0];
+		mapping resets = ([]);
+		if (cur->max_per_stream_setting->?is_enabled) {
+			resets |= (["is_max_per_stream_enabled": Val.false, "max_per_stream": 0]);
+			params |= (["is_max_per_stream_enabled": Val.true, "max_per_stream": cur->max_per_stream_setting->max_per_stream]);
+		}
+		if (cur->max_per_user_per_stream_setting->?is_enabled) {
+			resets |= (["is_max_per_user_per_stream_enabled": Val.false, "max_per_user_per_stream": 0]);
+			params |= (["is_max_per_user_per_stream_enabled": Val.true, "max_per_user_per_stream": cur->max_per_user_per_stream_setting->max_per_user_per_stream]);
+		}
+		if (cur->global_cooldown_setting->?is_enabled) {
+			resets |= (["is_global_cooldown_enabled": Val.false, "global_cooldown_seconds": 0]);
+			params |= (["is_global_cooldown_enabled": Val.true, "global_cooldown_seconds": cur->global_cooldown_setting->global_cooldown_seconds]);
+		}
+		await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
+				+ channel->userid + "&id=" + reward_id,
+			(["Authorization": channel->userid]),
+			(["method": "PATCH", "json": resets, "return_errors": 1])));
+		sleep(2);
+		//Then fall through and let the params reenable the limits.
+	}
 	mapping ret = sizeof(params) ? await(twitch_api_request("https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id="
 			+ channel->userid + "&id=" + reward_id,
 		(["Authorization": channel->userid]),
