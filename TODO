@@ -242,10 +242,8 @@
   - Keep the GUI for fast updates maybe? It might not even be necessary though, just use
     the web UI.
   - Does it need 2FA since that has the power to make all kinds of code changes?
-* It looks like IRC is not going to be the preferred way, soon. What will it take to move?
-  - EVERYTHING that currently goes through irc_message() will need to be fetched via
-    eventsub instead.
-    - charity donation
+* IRC is not going to be the preferred way, soon. What still needs to move?
+  - charity donation? Need examples.
   - When IRC goes down, some channels will no longer be accessible.
   - Most of them either don't need the bot, or haven't been active on Twitch in ages
   - Put some sort of notification in chat inviting the broadcaster to go to the site and
