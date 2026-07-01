@@ -1,5 +1,5 @@
 import {lindt, replace_content, set_content, on} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, CAPTION, DETAILS, DIV, FORM, H1, H2, IMG, INPUT, LABEL, LI, P, SUMMARY, TABLE, TBODY, TD, TEXTAREA, TH, THEAD, TR, UL} = lindt; //autoimport
+const {BR, BUTTON, CAPTION, DETAILS, DIV, FORM, H1, H2, IMG, INPUT, LABEL, LI, P, SPAN, SUMMARY, TABLE, TBODY, TD, TEXTAREA, TH, THEAD, TR, UL} = lindt; //autoimport
 import {simpleconfirm, simplemessage, TEXTFORMATTING, ensure_font} from "$$static||utils.js$$";
 
 export function render(data) {
@@ -30,10 +30,10 @@ export function render(data) {
 				])),
 			]),
 			DIV({id: "bottombar"},
-				data.queue_open ? [
+				data.queue_open ? SPAN({style: sty.css_text}, [
 					BUTTON({type: "button", id: "closequeue", style: btnstyle + (sty.queuebgclose||"aliceblue")}, "Close Queue"),
 					LABEL([" after ", INPUT({id: "closeafter", type: "number", value: data.close_after || "0"})]),
-				] : BUTTON({type: "button", id: "openqueue", style: btnstyle + (sty.queuebgopen||"aliceblue")}, "Open Queue"),
+				]) : BUTTON({type: "button", id: "openqueue", style: btnstyle + (sty.queuebgopen||"aliceblue")}, "Open Queue"),
 			),
 		]);
 	}
