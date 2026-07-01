@@ -133,6 +133,13 @@ __async__ mapping choose(object channel, string selection, string user, mapping|
 			"title": ret->selection = matches[-1]->title,
 			"user": user,
 		]) | extra});
+		if (cfg->close_after && !--cfg->close_after) {
+			//Slightly odd condition - I don't want to post-decrement if there was no close_after.
+			//Duplicated close code from wscmd_configure()
+			m_delete(cfg, "queue_open");
+			if (cfg->closemsg) channel->send((["{username}": channel->display_name]), cfg->closemsg);
+		}
+			
 	});
 	if (ret->selection) send_updates_all(channel, "");
 	return ret;
@@ -148,6 +155,7 @@ __async__ mapping unchoose(object channel, string user) {
 		ret->selection = cfg->queue[idx]->title;
 		cfg->queue[idx] = 0;
 		cfg->queue -= ({0});
+		//NOTE: Currently, unchoosing doesn't increment cfg->close_after. Would need to differentiate "advance the queue" from "cancel the first song".
 	});
 	if (ret->selection) send_updates_all(channel, "");
 	return ret;
@@ -192,9 +200,11 @@ string shorten(string title) {
 			if (cfg->openmsg) channel->send((["{username}": channel->display_name]), cfg->openmsg);
 		}
 		if (msg->closed) {
+			//Duplicated into choose()
 			m_delete(cfg, "queue_open");
 			if (cfg->closemsg) channel->send((["{username}": channel->display_name]), cfg->closemsg);
 		}
+		if (msg->closeafter) cfg->close_after = (int)msg->closeafter;
 
 		if (msg->queuelimit) {
 			//Set queuelimit to 1 or "1" to limit to one per person; but to

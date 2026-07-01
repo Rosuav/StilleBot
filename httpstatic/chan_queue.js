@@ -24,10 +24,16 @@ export function render(data) {
 						TD((is_mod || q.user === myname) && BUTTON({class: "unchoose", "data-index": idx}, "\u274C")),
 					]);
 				})),
+				data.close_after && Array(data.close_after).fill(1).map((one, idx) => TR({style: "background: " + ((idx&1) && sty.altrowcolor || sty.bgcolor)}, [
+					TD(data.queue.length + idx + 1),
+					TD({colSpan: 4}, "\xa0"),
+				])),
 			]),
 			DIV({id: "bottombar"},
-				data.queue_open ? BUTTON({type: "button", id: "closequeue", style: btnstyle + (sty.queuebgclose||"aliceblue")}, "Close Queue")
-					: BUTTON({type: "button", id: "openqueue", style: btnstyle + (sty.queuebgopen||"aliceblue")}, "Open Queue"),
+				data.queue_open ? [
+					BUTTON({type: "button", id: "closequeue", style: btnstyle + (sty.queuebgclose||"aliceblue")}, "Close Queue"),
+					LABEL([" after ", INPUT({id: "closeafter", type: "number", value: data.close_after || "0"})]),
+				] : BUTTON({type: "button", id: "openqueue", style: btnstyle + (sty.queuebgopen||"aliceblue")}, "Open Queue"),
 			),
 		]);
 	}
@@ -38,6 +44,7 @@ export function render(data) {
 				q.title, " [", q.user, "] ",
 				(is_mod || q.user === myname) && BUTTON({class: "unchoose", "data-index": idx}, "Remove"),
 			]))),
+		data.close_after && UL(Array(data.close_after).fill(1).map((one, idx) => LI("- open -"))),
 		!minimode && H2("Selections"),
 		!minimode && data.selections && UL(data.selections.map(sel =>
 			//NOTE: The "Pick" button is secretly a login button if you're not logged in. That
@@ -58,6 +65,7 @@ export function render(data) {
 			data.queue_open ? P([
 				"The queue is open and people can make selections! ",
 				BUTTON({type: "button", id: "closequeue"}, "Close queue"),
+				LABEL([" after the next ", INPUT({id: "closeafter", type: "number", value: data.close_after || "0"}), " requests"]),
 			]) : P([
 				"The queue is closed. ",
 				BUTTON({type: "button", id: "openqueue"}, "Open queue"),
@@ -106,7 +114,11 @@ if (is_mod && !minimode) set_content("#panelconfigs", [
 
 //No confirmation here; if you misclick, click it again.
 on("click", "#openqueue", e => ws_sync.send({cmd: "configure", open: 1}));
-on("click", "#closequeue", e => ws_sync.send({cmd: "configure", closed: 1}));
+on("click", "#closequeue", e => {
+	const after = +DOM("#closeafter").value;
+	if (after) ws_sync.send({cmd: "configure", closeafter: after});
+	else ws_sync.send({cmd: "configure", closed: 1});
+});
 
 on("change", ".autosave", e => ws_sync.send({cmd: "configure", [e.match.dataset.key]: e.match.value}));
 
