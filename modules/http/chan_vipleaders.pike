@@ -380,6 +380,7 @@ __async__ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, 
 				send_message(channel->name, "NOTE: User " + uid + " already " + (add ? "has" : "doesn't have") + " a VIP badge");
 			}
 			else send_message(channel->name, "Error " + status + " applying VIP badge to user " + uid + ", skipping");
+			//FIXME: send_message is using the bot's intrinsic voice, should use the channel's default instead
 			await(task_sleep(2.0));
 		}
 	}
