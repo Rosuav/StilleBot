@@ -17,7 +17,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 	if (
 		!NetUtils.is_local_host(req->get_ip())
 		&& !has_prefix(req->get_ip(), "192.168.")
-		&& !has_prefix(req->get_ip(), "2403:5803:bf48:")
+		&& !has_prefix(req->get_ip(), "2403:5803:f90e:")
 		&& !has_prefix(req->get_ip(), "fe80::")
 	) return (["error": 401, "data": "Nope"]);
 	if (req->request_type == "POST") {
