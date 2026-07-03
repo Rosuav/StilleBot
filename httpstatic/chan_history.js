@@ -45,7 +45,13 @@ export function render_item(msg) {
 		TD(msg.active ? {} : {style: "font-style: italic", title: "Replaced/deleted version of this command"},
 			CODE("!" + msg.cmdname)),
 		TD(response),
-		TD(BUTTON({type: "button", class: "advview", title: "Open editor"}, "\u2699")),
+		TD([
+			BUTTON({type: "button", class: "advview", title: "Open editor"}, "\u2699"),
+			//Placeholder icons of fireworks b/c I don't have good "diff" emoji.
+			//Putting these here 2026-07-03. Let's see how long the placeholders remain.
+			!msg.is_current && BUTTON({type: "button", class: "diff", title: "Diff with latest"}, "\u{1f386}"),
+			msg.previd && BUTTON({type: "button", class: "diff", "data-previd": msg.previd, title: "Diff with previous"}, "\u{1f387}"),
+		]),
 	]);
 }
 export function render(data) {
@@ -72,3 +78,5 @@ function update_filter(e) {
 on("change", "#filter", update_filter);
 on("input", "#filter", update_filter);
 on("click", "#currentonly", e => {current_commands_only = e.match.checked; update_visibility();});
+
+on("click", ".diff", e => ws_sync.send({cmd: "diff", id: e.match.closest_data("id"), against: e.match.dataset.previd}));
