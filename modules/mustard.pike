@@ -238,6 +238,7 @@ string make_mustard(echoable_message message) {
 
 //Invoke diff(1) with FDs 0 and 3 carrying the provided strings
 //Returns 1 if there were any differences, 0 if identical (or any other return code from diff)
+//TODO: Make this return the diff instead of dumping it to stdout
 int diff(string old, string new) {
 	object|zero fdold = Stdio.File();
 	object|zero fdnew = Stdio.File();
