@@ -877,8 +877,10 @@ class channel(mapping identity) {
 	//for single-message sends, and if multiple messages are sent, it will only be
 	//called once). Example: void cb(mapping vars, mapping params) --> params->id is
 	//the message ID that just got sent.
-	Concurrent.Future send(mapping person, echoable_message message, mapping|void vars, function|void callback)
-	{
+	Concurrent.Future send(mapping|zero person, echoable_message message, mapping|void vars, function|void callback) {
+		//For convenience, system messages can be sent without an initiator - the broadcaster will do it.
+		//(This is not the same thing as using the broadcaster's voice; it's as if the bcaster ran a command.)
+		if (!person) person = (["user": login, "displayname": display_name, "uid": userid]);
 		if (!is_active) Stdio.append_file("inactivebot.log", sprintf(#"==================\n%sInactive bot sending message:\nperson %O\nmessage %O\nvars %O\n%s\n",
 			ctime(time()), person, message, vars, describe_backtrace(backtrace())));
 		vars = get_channel_variables(person->uid) | (vars || ([]));
