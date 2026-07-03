@@ -107,8 +107,8 @@ int|Concurrent.Future main(int argc,array(string) argv) {
 	if (G->args->headless) {
 		werror("Running bot in headless mode - GUI facilities disabled.\n");
 		add_constant("HEADLESS", 1);
-		signal(1) {call_out(bootstrap_all, 0);};
 	}
+	signal(1) {call_out(bootstrap_all, 0);};
 	bootstrap_all();
 	foreach ("spawn_task send_message window" / " ", string vital)
 		if (!all_constants()[vital])
