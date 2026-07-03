@@ -442,7 +442,7 @@ __async__ mapping|zero websocket_cmd_master(mapping(string:mixed) conn, mapping(
 		}
 		case "rig": {
 			giveaway_rigged[broadcaster_id] = conn->session->user->display_name;
-			channel->send((["{username}": channel->display_name]), "The giveaway has now been fully rigged, and we can draw a winner!");
+			channel->send(0, "The giveaway has now been fully rigged, and we can draw a winner!");
 			break;
 		}
 		case "pick": {

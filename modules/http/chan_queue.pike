@@ -137,7 +137,7 @@ __async__ mapping choose(object channel, string selection, string user, mapping|
 			//Slightly odd condition - I don't want to post-decrement if there was no close_after.
 			//Duplicated close code from wscmd_configure()
 			m_delete(cfg, "queue_open");
-			if (cfg->closemsg) channel->send((["{username}": channel->display_name]), cfg->closemsg);
+			if (cfg->closemsg) channel->send(0, cfg->closemsg);
 		}
 			
 	});
@@ -197,12 +197,12 @@ string shorten(string title) {
 
 		if (msg->open) {
 			cfg->queue_open = 1;
-			if (cfg->openmsg) channel->send((["{username}": channel->display_name]), cfg->openmsg);
+			if (cfg->openmsg) channel->send(0, cfg->openmsg);
 		}
 		if (msg->closed) {
 			//Duplicated into choose()
 			m_delete(cfg, "queue_open");
-			if (cfg->closemsg) channel->send((["{username}": channel->display_name]), cfg->closemsg);
+			if (cfg->closemsg) channel->send(0, cfg->closemsg);
 		}
 		if (msg->closeafter) cfg->close_after = (int)msg->closeafter;
 

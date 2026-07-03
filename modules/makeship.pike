@@ -17,7 +17,7 @@ __async__ void pingmakeship() {
 		channel->set_variable("pileA:one", digits[-1]);
 		mapping prev = await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + channel->userid,
 			(["Authorization": channel->userid])));
-		channel->send((["user": "devicat", "uid": channel->userid]), ({
+		channel->send(0, ({
 			"devicatAww Thank you! Now devicatPlush $pledges$ plushies devicatPlush will find their forever homes!! devicatBless",
 			([
 				"builtin": "chan_streamsetup",

@@ -183,7 +183,7 @@ __async__ void delete_file(object channel, string userid, string fileid) {
 	array files = await(G->G->DB->purge_ephemeral_files(channel->userid, userid, fileid));
 	if (sizeof(files)) {
 		update_one(userid + "#" + channel->userid, fileid);
-		if (string id = artshare_file_messageid[fileid]) channel->send(([]), "/deletemsg " + id);
+		if (string id = artshare_file_messageid[fileid]) channel->send(0, "/deletemsg " + id);
 	}
 }
 

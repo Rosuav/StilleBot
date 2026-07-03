@@ -513,7 +513,7 @@ __async__ void update_crown(object channel, mapping game) {
 }
 
 void wscmd_retrievecrown(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	channel->send((["{username}": channel->display_name]), channel->commands->retrievecrown || "");
+	channel->send(0, channel->commands->retrievecrown || "");
 }
 
 constant firsts = ([

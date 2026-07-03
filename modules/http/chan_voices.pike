@@ -131,7 +131,7 @@ void wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mix
 void wscmd_testvoice(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping vox = G->G->DB->load_cached_config(channel->userid, "voices")[msg->id];
 	if (!vox) return; //Voice has to have been authenticated to do a test
-	channel->send((["user": "test"]), (["voice": msg->id, "message": "Hello from " + vox->name + "!"]));
+	channel->send(0, (["voice": msg->id, "message": "Hello from " + vox->name + "!"]));
 }
 
 void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) {

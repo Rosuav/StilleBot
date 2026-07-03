@@ -6,7 +6,7 @@ __async__ void pingkickstarter() {
 	channel->set_variable("backedamount", (string)project->pledged);
 	if (channel->expand_variables("$backers$") != (string)project->backers_count) {
 		channel->set_variable("backers", (string)project->backers_count);
-		channel->send((["user": "buriedcandy"]), "Woohoo! We now have $backers$ backers for a total of $backedamount$!");
+		channel->send(0, "Woohoo! We now have $backers$ backers for a total of $backedamount$!");
 	}
 }
 

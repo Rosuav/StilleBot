@@ -128,8 +128,7 @@ void autospam(string|int chanid, string cmd) {
 	if (!mins) return; //Autocommand disabled
 	remove_call_out(autocommands[chanid + "!" + cmd]);
 	autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(mins, channel->config->timezone), chanid, cmd);
-	string me = channel->config->display_name || channel->name[1..]; //If you use $$ in an autocommand, use the broadcaster's name.
-	channel->send((["nick": me, "user": me]), response);
+	channel->send(0, response);
 }
 
 @hook_channel_online: int connected(string chan, int uptime, int chanid) {
