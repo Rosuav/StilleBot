@@ -242,7 +242,7 @@ int diff(string old, string new) {
 	object|zero fdold = Stdio.File();
 	object|zero fdnew = Stdio.File();
 	object proc = Process.Process(
-		({"diff", "-u", "-", "/dev/fd/3"}),
+		({"diff", "-u", "/dev/fd/0", "/dev/fd/3"}),
 		([
 			"stdin": fdold->pipe(Stdio.PROP_IPC|Stdio.PROP_REVERSE),
 			"fds": ({fdnew->pipe(Stdio.PROP_IPC|Stdio.PROP_REVERSE)}),
