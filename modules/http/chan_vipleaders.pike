@@ -351,18 +351,17 @@ void websocket_cmd_remvip(mapping(string:mixed) conn, mapping(string:mixed) msg)
 __async__ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, int add) {
 	[object channel, string grp] = split_channel(conn->group);
 	if (grp != "control") return 0;
-	string chan = channel->name[1..];
 	//If you're a mod, but not the broadcaster, do a dry run - put commands in chat
 	//that say what would happen, but don't actually make changes.
 	string addrem = add ? "Adding" : "Removing", tofrom = add ? "to" : "from";
 	string|zero method = add ? "POST" : "DELETE";
 	//Do I need to have this protection available but overridable? Removing it for now - mods can add and remove VIP status.
-	//if (conn->session->user->login != chan) {addrem = "Fake-" + lower_case(addrem); method = 0;}
+	//if (conn->session->user->login != channel->login) {addrem = "Fake-" + lower_case(addrem); method = 0;}
 	mapping stats = await(G->G->DB->load_config(channel->userid, "subgiftstats"));
 	[array(string) userids, [array(string) cheerers, array(string) subbers, array(string) tippers]] = collect_leaders(stats, msg->yearmonth, 1);
-	if (sizeof(cheerers)) send_message(channel->name, addrem + " VIP status " + tofrom + " cheerers: " + cheerers * ", ");
-	if (sizeof(subbers)) send_message(channel->name, addrem + " VIP status for subs: " + subbers * ", ");
-	if (sizeof(tippers)) send_message(channel->name, addrem + " VIP status for Ko-fi: " + tippers * ", ");
+	if (sizeof(cheerers)) channel->send(0, addrem + " VIP status " + tofrom + " cheerers: " + cheerers * ", ");
+	if (sizeof(subbers)) channel->send(0, addrem + " VIP status for subs: " + subbers * ", ");
+	if (sizeof(tippers)) channel->send(0, addrem + " VIP status for Ko-fi: " + tippers * ", ");
 	//The Twitch API actually limits this to 10 badge changes every 10 seconds,
 	//but we simplify this down to 1 every 2 seconds. TODO: Try this at 1 every
 	//1.25 seconds to speed it up, hopefully it won't break anything.
@@ -377,14 +376,13 @@ __async__ void addremvip(mapping(string:mixed) conn, mapping(string:mixed) msg, 
 			else if (status == 422) {
 				//TODO: If attempting to add a VIP badge to someone who already has it,
 				//maybe record that and don't remove it later?
-				send_message(channel->name, "NOTE: User " + uid + " already " + (add ? "has" : "doesn't have") + " a VIP badge");
+				channel->send(0, "NOTE: User " + uid + " already " + (add ? "has" : "doesn't have") + " a VIP badge");
 			}
-			else send_message(channel->name, "Error " + status + " applying VIP badge to user " + uid + ", skipping");
-			//FIXME: send_message is using the bot's intrinsic voice, should use the channel's default instead
+			else channel->send(0, "Error " + status + " applying VIP badge to user " + uid + ", skipping");
 			await(task_sleep(2.0));
 		}
 	}
-	send_message(channel->name, "Done " + lower_case(addrem) + " VIPs.");
+	channel->send(0, "Done " + lower_case(addrem) + " VIPs.");
 }
 
 @hook_kofi_support:
