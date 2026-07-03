@@ -5,6 +5,9 @@ import {scan_message, commands, cmd_configure, open_advanced_view} from "$$stati
 cmd_configure({
 	subscribe: "",
 	load_command: cmd => {
+		//FIXME: On load, this is getting broken/incomplete data and crashing.
+		//If the autoshow of a command based on URL fragment isn't working, it
+		//should be disabled.
 		if (cmd.cmdname[0] === "!") ; //TODO: Show specials differently
 		set_content("#advanced_view h3", [
 			"Command: ", INPUT({readonly: "true", autocomplete: "off", id: "cmdname", value: "!" + cmd.cmdname}),
