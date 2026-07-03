@@ -28,11 +28,12 @@ export function render(data) {
 		data.phase === "recruit" && ["It is ", B("that dark hour before dawn"), " and we need to know who's on what side. Share ",
 			A({href: "/mixing?game=" + data.gameid}, "the link to this page"),
 			" to recruit both friends and enemies!",
+			/* Disabled; the feature it used is deprecated. If wanted, it can be revisited and reworked in a better way.
 			data.is_host && P([
 				"Are you live-streaming? ",
 				BUTTON({class: "opendlg", "data-dlg": "chatlink"}, "I can post in chat for you"),
 				" to try to attract people!",
-			]),
+			]), */
 		],
 		data.phase === "mixpaint" && ["It is ", B("morning"), " and the paint shop is open for mixing."],
 		data.phase === "writenote" && ["It is ", B("afternoon"), " and the message board is receiving submissions."],

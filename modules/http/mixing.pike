@@ -1108,7 +1108,11 @@ void websocket_cmd_chatlink(mapping(string:mixed) conn, mapping(string:mixed) ms
 	mapping gs = diffie_hellman[game]; if (!gs) return;
 	if (gs->host != uid) return;
 	string url = G->G->instance_config->http_address + "/mixing?game=" + game;
-	send_message("#" + conn->session->user->login, replace(msg->msg, "{link}", url));
+	//NOTE: This violates the normal rules and will send to arbitrary channels, even if
+	//the bot isn't active there. (It'll only send to the logged-in user's channel.)
+	//It thus used the low-level API and sent using the bot's intrinsic name. If
+	//this is ever promoted anywhere, it should switch to MustardMine instead.
+	//send_message("#" + conn->session->user->login, replace(msg->msg, "{link}", url));
 }
 
 void websocket_cmd_postnote(mapping(string:mixed) conn, mapping(string:mixed) msg) {

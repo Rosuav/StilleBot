@@ -1940,6 +1940,9 @@ __async__ void reconnect() {
 	}
 }
 
+//DEPRECATED. This should not be used anywhere - it's a low-level tool for sending system messages as
+//the bot's intrisic voice, but to an arbitrary channel. Instead, since messages should generally only
+//be sent to channels where the bot is active, use the channel object's send() method.
 void send_message(string chan, string msg) {if (irc_connections[0]) irc_connections[0]->send(chan, msg);}
 
 __async__ void setup_http_server() {
@@ -1994,7 +1997,7 @@ __async__ void setup_http_server() {
 
 protected void create(string name) {
 	::create(name);
-	add_constant("send_message", send_message);
+	add_constant("send_message", send_message); //Deprecated.
 	G->G->establish_hook_notification = establish_hook_notification;
 	G->G->setup_conduit = setup_conduit; //Reestablish after disconnect.
 	if (!G->G->irc) G->G->irc = (["channels": ([]), "id": ([])]);

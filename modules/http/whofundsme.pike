@@ -1,3 +1,7 @@
+//GoFundMe monitor to give chat announcements.
+//Currently disabled (and the URL is likely not correct anyway).
+//If this is to be reactivated, it should be reworked into a per-channel feature
+//instead of allowing anyone to turn on notifications.
 inherit http_websocket;
 inherit annotated;
 constant markdown = #"# Who Funds Me?
@@ -20,6 +24,11 @@ mapping state = (["donations": ({ })]);
 @retain: mapping whofundsme_announce = ([]);
 
 mapping get_state(string group, string|void id) {return state;}
+
+void send_message(string chan, string msg) {
+	//Deliberately broken. If this feature is revived at all, replace this with something
+	//that links more closely to an active channel.
+}
 
 __async__ void do_check() {
 	werror("Checking whofundsme [%d clients]...\n", sizeof(websocket_groups[""]));
@@ -64,6 +73,7 @@ void check() {
 }
 
 mapping(string:mixed)|string|Concurrent.Future http_request(Protocols.HTTP.Server.Request req) {
+	return 0; //Feature disabled. If needed, it can be revived; but it will likely want changes.
 	string username = req->misc->session->?user->?login;
 	check();
 	if (req->variables->summarycolor) return render_template("monitor.html", ([
