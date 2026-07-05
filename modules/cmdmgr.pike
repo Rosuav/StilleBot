@@ -323,7 +323,10 @@ echoable_message _validate_recursive(echoable_message resp, mapping state)
 	//like a string of digits, store it as an integer to save the execution some work.
 	if (resp->delay && resp->delay != "0" && (intp(resp->delay) || stringp(resp->delay))) {
 		int|string delay = resp->delay;
-		if (stringp(delay) && sscanf(delay, "%[0-9]", string d) && d == delay) delay = (int)delay;
+		//NOTE: If you attempt to set a delay of "10-2", this check will pass, and set
+		//the delay to just the integer 10. This may look like it's discarding content,
+		//but the content would have been discarded when the command ran anyway.
+		if (stringp(delay) && sscanf(delay, "%[-0-9]", string d) && d == delay) delay = (int)delay;
 		ret->delay = delay;
 	}
 	if (int w = (int)resp->weight) {
