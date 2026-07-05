@@ -236,35 +236,6 @@ string make_mustard(echoable_message message) {
 
 //Tools for testing MustardScript and whether things properly round-trip
 
-//Invoke diff(1) with FDs 0 and 3 carrying the provided strings
-//Returns 1 if there were any differences, 0 if identical (or any other return code from diff)
-//TODO: Make this return the diff instead of dumping it to stdout
-int diff(string old, string new) {
-	object|zero fdold = Stdio.File();
-	object|zero fdnew = Stdio.File();
-	object proc = Process.Process(
-		({"diff", "-u", "/dev/fd/0", "/dev/fd/3"}),
-		([
-			"stdin": fdold->pipe(Stdio.PROP_IPC|Stdio.PROP_REVERSE),
-			"fds": ({fdnew->pipe(Stdio.PROP_IPC|Stdio.PROP_REVERSE)}),
-			"callback": lambda() {fdold = fdnew = 0;},
-		]),
-	);
-	Pike.SmallBackend backend = Pike.SmallBackend();
-	Shuffler.Shuffler shuf = Shuffler.Shuffler();
-	shuf->set_backend(backend);
-	Shuffler.Shuffle sfold = shuf->shuffle(fdold);
-	sfold->add_source(old);
-	sfold->set_done_callback() {fdold->close(); fdold = 0;};
-	sfold->start();
-	Shuffler.Shuffle sfnew = shuf->shuffle(fdnew);
-	sfnew->add_source(new);
-	sfnew->set_done_callback() {fdnew->close(); fdnew = 0;};
-	sfnew->start();
-	while (fdold || fdnew) backend(1.0);
-	return proc->wait();
-}
-
 mixed validate(mixed response, string cmd) {
 	mixed validated = G->G->cmdmgr->_validate_toplevel(response, (["cmd": cmd, "cooldowns": ([]), "retain_internal_names": 1]));
 	if (cmd == "!trigger") {
@@ -294,7 +265,9 @@ __async__ void run_test(string arg, int|void quiet) {
 					if (mappingp(trig)) m_delete(trig, "id");
 			if (cmd) {
 				write("Validated: %O\n", validated);
-				if (!diff(sprintf("%O\n", orig), sprintf("%O\n", validated))) write("Identical!\n");
+				string diff = await(unified_diff(sprintf("%O\n", orig), sprintf("%O\n", validated)));
+				if (diff == "") write("Identical!\n");
+				else write(diff);
 			} else {
 				//When testing an entire channel command set, show just a summary.
 				if (sprintf("%O", orig) == sprintf("%O", validated)) {

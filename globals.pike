@@ -69,6 +69,43 @@ class run_process {
 	void donecb(object proc) {call_out(done, 0, proc);}
 }
 
+//Invoke diff(1) with FDs 0 and 3 carrying the provided strings
+//Returns any differences - if identical, will be an empty string.
+//Output format based on "diff -u"; may be worth supporting other flags.
+class unified_diff(string old, string new) {
+	inherit Concurrent.Promise;
+	string output = "";
+	protected void create() {
+		Stdio.File fdold = Stdio.File();
+		Stdio.File fdnew = Stdio.File();
+		Stdio.File stdout = Stdio.File();
+		object proc = Process.Process(
+			({"diff", "-u", "/dev/fd/0", "/dev/fd/3"}),
+			([
+				"stdin": fdold->pipe(Stdio.PROP_IPC|Stdio.PROP_REVERSE),
+				"stdout": stdout->pipe(Stdio.PROP_IPC),
+				"fds": ({fdnew->pipe(Stdio.PROP_IPC|Stdio.PROP_REVERSE)}),
+				"callback": donecb,
+			]),
+		);
+		Shuffler.Shuffler shuf = Shuffler.Shuffler();
+		Shuffler.Shuffle sfold = shuf->shuffle(fdold);
+		sfold->add_source(old);
+		sfold->set_done_callback() {fdold->close();};
+		sfold->start();
+		Shuffler.Shuffle sfnew = shuf->shuffle(fdnew);
+		sfnew->add_source(new);
+		sfnew->set_done_callback() {fdnew->close();};
+		sfnew->start();
+		stdout->set_read_callback() {output += __ARGS__[1];};
+	}
+	void done(object proc) {
+		if (proc->status() == 2) success(output);
+	}
+	//As above, the callback is called from a signal context.
+	void donecb(object proc) {call_out(done, 0, proc);}
+}
+
 //When a builtin gets renamed, leave a redirect at the old name.
 //TODO maybe: On saving of a command, if it references any redirects, automatically
 //replace it with the new name?
