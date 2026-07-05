@@ -265,7 +265,7 @@ __async__ void run_test(string arg, int|void quiet) {
 					if (mappingp(trig)) m_delete(trig, "id");
 			if (cmd) {
 				write("Validated: %O\n", validated);
-				string diff = await(unified_diff(sprintf("%O\n", orig), sprintf("%O\n", validated)));
+				string diff = await(unified_diff(sprintf("%O\n", orig), sprintf("%O\n", validated), ({"--color=always", "-b"})));
 				if (diff == "") write("Identical!\n");
 				else write(diff);
 			} else {

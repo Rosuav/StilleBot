@@ -71,8 +71,9 @@ class run_process {
 
 //Invoke diff(1) with FDs 0 and 3 carrying the provided strings
 //Returns any differences - if identical, will be an empty string.
-//Output format based on "diff -u"; may be worth supporting other flags.
-class unified_diff(string old, string new) {
+//Output format based on "diff -u"; other flags are supported, but sadly,
+//no character diff option (as of 20260706).
+class unified_diff(string old, string new, array|void extra_flags) {
 	inherit Concurrent.Promise;
 	string output = "";
 	protected void create() {
@@ -80,7 +81,7 @@ class unified_diff(string old, string new) {
 		Stdio.File fdnew = Stdio.File();
 		Stdio.File stdout = Stdio.File();
 		object proc = Process.Process(
-			({"diff", "-u", "/dev/fd/0", "/dev/fd/3"}),
+			({"diff", "-u"}) + (extra_flags||({ })) + ({"/dev/fd/0", "/dev/fd/3"}),
 			([
 				"stdin": fdold->pipe(Stdio.PROP_IPC|Stdio.PROP_REVERSE),
 				"stdout": stdout->pipe(Stdio.PROP_IPC),
