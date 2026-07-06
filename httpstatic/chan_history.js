@@ -1,5 +1,5 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, CODE, DIV, EM, INPUT, OPTION, SPAN, TD, TR} = choc; //autoimport
+const {BR, BUTTON, CODE, DIV, EM, INPUT, OPTION, TD, TR} = choc; //autoimport
 import {scan_message, commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
 cmd_configure({
