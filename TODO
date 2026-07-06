@@ -257,9 +257,3 @@
 * Get notified when credentials are revoked
   - Should this deactivate the bot?
   - Alternatively, if auth breaks but bot active, autoadd needed scopes
-* In command history, add a "Diff" feature
-  - Compare to current (or most recent)
-  - Compare to previous
-  - Either way, diff the MustardScript version, line by line. Ignore whitespace. That way,
-    wrapping something in another layer of indirection (eg conditionals) just shows the
-    start and end changing.
