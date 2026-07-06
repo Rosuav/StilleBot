@@ -91,17 +91,17 @@ class unified_diff(string old, string new, array|void extra_flags) {
 		);
 		Shuffler.Shuffler shuf = Shuffler.Shuffler();
 		Shuffler.Shuffle sfold = shuf->shuffle(fdold);
-		sfold->add_source(old);
+		sfold->add_source(string_to_utf8(old));
 		sfold->set_done_callback() {fdold->close();};
 		sfold->start();
 		Shuffler.Shuffle sfnew = shuf->shuffle(fdnew);
-		sfnew->add_source(new);
+		sfnew->add_source(string_to_utf8(new));
 		sfnew->set_done_callback() {fdnew->close();};
 		sfnew->start();
 		stdout->set_read_callback() {output += __ARGS__[1];};
 	}
 	void done(object proc) {
-		if (proc->status() == 2) success(output);
+		if (proc->status() == 2) success(utf8_to_string(output));
 	}
 	//As above, the callback is called from a signal context.
 	void donecb(object proc) {call_out(done, 0, proc);}
