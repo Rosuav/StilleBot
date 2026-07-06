@@ -1,5 +1,5 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, CODE, EM, INPUT, OPTION, TD, TR} = choc; //autoimport
+const {BR, BUTTON, CODE, DIV, EM, INPUT, OPTION, SPAN, TD, TR} = choc; //autoimport
 import {scan_message, commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
 cmd_configure({
@@ -80,3 +80,8 @@ on("input", "#filter", update_filter);
 on("click", "#currentonly", e => {current_commands_only = e.match.checked; update_visibility();});
 
 on("click", ".diff", e => ws_sync.send({cmd: "diff", id: e.match.closest_data("id"), against: e.match.dataset.previd}));
+export function sockmsg_diff(msg) {
+	//Show a diff to the user.
+	set_content("#diff", msg.diff.map(line => DIV({class: "diff-" + line.style}, line.text)));
+	DOM("#diffdlg").showModal();
+}

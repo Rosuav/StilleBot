@@ -23,12 +23,35 @@ Created | Command | Output |
 - | - | Loading....
 {: #commandview}
 
+> ### Changes
+>
+> <div id=diff></div>
+>
+> [Close](:.dialog_close)
+{: tag=dialog #diffdlg}
+
 <style>
 #filters {
 	display: flex;
 	list-style-type: none;
 	gap: 2em;
 }
+/* One line inside the diff */
+#diff div {
+	white-space: pre;
+}
+#diff div::before {
+	display: inline-block;
+	width: 1em;
+	content: \"\\00a0\";
+}
+.diff-context { }
+.diff-removed {color: #a00;}
+#diff .diff-removed::before {content: \"-\";}
+.diff-added {color: green;}
+#diff .diff-added::before {content: \"+\";}
+.diff-location {color: #088; display: none;} /* With max context, the location markers aren't necessary */
+.diff-unknown {color: white; background: rebeccapurple;} /* Make it really obvious if something misparses */
 </style>
 ";
 
@@ -76,28 +99,53 @@ __async__ mapping wscmd_diff(object channel, mapping(string:mixed) conn, mapping
 	if (!sizeof(sel)) return (["error": "Invalid command ID"]); //Or wrong channel but don't even bother mentioning that
 	string cmdname = sel[0]->cmdname;
 	echoable_message old, new;
+	string oldid, newid;
 	if (msg->against) {
 		//Compare this against an older message
-		new = sel[0]->content;
+		new = sel[0]->content; newid = msg->id;
 		//Not worth folding these two queries into one. Also, if you fiddle with the IDs, you
 		//could make this toss an exception - I don't really care.
 		old = await(G->G->DB->query_ro("select content from stillebot.commands where twitchid = :twitchid and id = :id",
 			(["twitchid": channel->userid, "id": msg->against])))[0]->content;
+		oldid = msg->against;
 	} else {
 		//Compare current against this. The current one might be active, but might not.
 		new = channel->commands[cmdname];
+		newid = "<current>"; //TODO: Give the actual ID
 		//If it isn't on the channel object, there's no current command, but grab the most recent anyway.
 		//(Note that, in some cases, it would be more correct to say "current is nothingness" - esp special
 		//triggers - but it's more useful to compare against the latest non-empty version of the command.)
 		if (!new) new = await(G->G->DB->query_ro("select content from stillebot.commands "
 			"where twitchid = :twitchid and cmdname = :cmdname order by created desc limit 1",
 			(["twitchid": channel->userid, "cmdname": cmdname])))[0]->content;
-		old = sel[0]->content;
+		old = sel[0]->content; oldid = msg->id;
 	}
 	//Next: Synthesize MustardScript for each command
 	old = G->G->mustard->make_mustard(old);
 	new = G->G->mustard->make_mustard(new);
-	werror("Diff %O\n", G->G->mustard->diff(old, new));
+	//Finally, compare the two. We're using enormous context (commands won't usually be 100 lines, let
+	//alone thousands) so there'll be some scrolling but you should generally see the entire context.
+	//We then parse out the line prefixes and make it easy for the front end to render.
+	array(string) diff = await(unified_diff(old, new, ({"-b", "-u5000"}))) / "\n";
+	if (sizeof(diff) <= 1) return (["cmd": "diff", "oldid": oldid, "newid": newid, "diff": ({(["text": "Identical!", "style": "context"])})]);
+	diff = diff[2..]; //Rip off the first two lines which identify the "files" (actually just pipes)
+	array lines = ({ });
+	foreach (diff, string line) {
+		//Figure out what kind of line this is, and inform the front end accordingly.
+		if (line == "") continue; //Do we need interior blank lines? The diff will always end with one.
+		string style = ([
+			' ': "context",
+			'+': "added",
+			'-': "removed",
+			'@': "location",
+		])[line[0]] || "unknown";
+		if (style == "location") line = "@" + line; //Slip an extra character in there for these lines to retain the "@@" symmetry
+		lines += ({([
+			"text": line[1..],
+			"style": style,
+		])});
+	}
+	return (["cmd": "diff", "oldid": oldid, "newid": newid, "diff": lines]);
 }
 
 protected void create(string name) {::create(name);}
