@@ -90,7 +90,7 @@ void wscmd_update(object channel, mapping(string:mixed) conn, mapping(string:mix
 	G->G->DB->revert_command(channel->userid, msg->cmdname[1..], msg->original);
 }
 
-__async__ mapping wscmd_diff(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+@"demo_ok": __async__ mapping wscmd_diff(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Diff the MustardScript versions of two commands
 	//Ignores leading/trailing whitespace on the lines, and (TODO) autoreplaces deprecated
 	//builtins with the new ones to avoid spurious diffs there too.
