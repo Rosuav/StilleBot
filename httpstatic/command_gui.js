@@ -357,7 +357,21 @@ function builtin_types() {
 			typedesc: blt.desc, provides: { },
 		};
 		const add_param = (param, idx) => {
-			if (param[0] === "/") {
+			if (typeof param === "object") {
+				//Complex parameter configurations have a selection of options that map to
+				//the subsequent options for that choice.
+				let values = Object.keys(param);
+				if (values[0] === "\0") values.shift(); //If there's a label, it'll be the first entry, with the NUL key
+				const selections = { };
+				values = values.map(s => {
+					const [value, ...rest] = s.split("=");
+					selections[value] = rest.join("=");
+					return value;
+				});
+				b.params.push({attr: "builtin_param" + (idx||""), label: param["\0"] || "", values, selections, subsequent: param});
+			}
+			else if (param[0] === "/") {
+				//Simple selection parameters load up the options into a single string.
 				let split = param.split("/"); split.shift(); //Remove the empty at the start
 				const label = split.shift();
 				const selections = { };
@@ -373,6 +387,7 @@ function builtin_types() {
 				}
 				b.params.push({attr: "builtin_param" + (idx||""), label, values: split, selections});
 			}
+			//Input parameters simply ask for a value. TODO: Support checkboxes and numerics
 			else if (param !== "") b.params.push({attr: "builtin_param" + (idx||""), label: param});
 		};
 		if (typeof blt.param === "string") add_param(blt.param, "");
