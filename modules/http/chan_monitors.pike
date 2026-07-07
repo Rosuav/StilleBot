@@ -135,8 +135,8 @@ constant builtin_description = "Get information about a channel monitor";
 //but this would be an excellent feature if it can be coded up nicely.
 constant builtin_param = ({"/Monitor/monitor_id", "Advancement/action", "Time/Type", "Label", "Image"});
 constant MOCKUP_builtin_param = ({
-	"/Monitor/monitor_id",
 	([
+		"\0": "monitor_id", //Special-cased in the front end since this actually requires a validator.
 		"*goalbar": ({"Advance"}),
 		"*countdown": ({
 			"/Action",

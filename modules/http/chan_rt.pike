@@ -218,8 +218,8 @@ constant command_description = "Respawn Technician";
 constant builtin_name = "Respawn Tech";
 constant builtin_param = ({"/Action/item/trait", "Extra info"});
 constant MOCKUP_builtin_param = ({
-	"/Action",
 	([
+		"\0": "Action",
 		"item": ({"/Item/flash/stat/STR/DEX/INT/WIS/CON"}),
 		"trait": ({"Trait"}),
 	]),

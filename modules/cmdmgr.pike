@@ -653,8 +653,8 @@ constant builtin_description = "Manage channel commands";
 constant builtin_name = "Command manager";
 constant builtin_param = ({"/Action/Automate/Create/Delete/Access", "Command name", "Time/message/access type"});
 constant MOCKUP_builtin_param = ({
-	"/Action",
 	([
+		"\0": "Action",
 		"Automate": ({"Command name", "Time"}),
 		"Create": ({"Command name", "Message"}),
 		"Delete": ({"Command name"}),

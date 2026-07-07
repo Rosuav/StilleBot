@@ -203,8 +203,8 @@ constant builtin_name = "Channel points rewards";
 constant builtin_param = ({"/Reward/reward_id", "/Action/enable/disable/cost/title/desc/cooldown/query/fulfil/cancel", "Redemption ID"});
 constant MOCKUP_builtin_param = ({
 	"/Reward/reward_id",
-	"/Action",
 	([
+		"\0": "Action",
 		"enable": ({"Enabled (1/0)"}), //TODO: Boolean as a checkbox
 		"disable": ({ }), //Do we need both this and enable?
 		"cost": ({"New cost"}),

@@ -672,8 +672,8 @@ constant command_description = "Manage stream minigames";
 constant builtin_name = "Minigame";
 constant builtin_param = ({"/Game/first=First/boss=Boss", "Extra info"});
 constant MOCKUP_builtin_param = ({
-	"/Game",
 	([
+		"\0": "Game",
 		"first=First": ({"/Reward/first/second/third/last"}),
 		"boss=Boss": ({"/Action/reset/slay"}),
 	]),

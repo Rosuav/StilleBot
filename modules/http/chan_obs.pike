@@ -25,8 +25,8 @@ constant builtin_name = "OBS Studio";
 constant builtin_description = "Manage OBS Studio";
 constant builtin_param = ({"/Action/Status/Get scene/Switch scene", "Parameter"});
 constant MOCKUP_builtin_param = ({
-	"/Action",
 	([
+		"\0": "Action",
 		"Status": ({ }),
 		"Get scene": ({ }),
 		"Switch scene": ({"Scene"}),

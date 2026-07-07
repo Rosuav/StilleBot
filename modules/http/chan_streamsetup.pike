@@ -237,8 +237,8 @@ void wscmd_setchecklist(object channel, mapping(string:mixed) conn, mapping(stri
 constant builtin_name = "Stream setup";
 constant builtin_param = ({"/Action/query/title/category/tags/ccls", "New value"});
 constant MOCKUP_builtin_param = ({
-	"/Action",
 	([
+		"\0": "Action",
 		"query": ({ }),
 		({"title", "category", "tags", "ccls"}): "New value",
 	]),

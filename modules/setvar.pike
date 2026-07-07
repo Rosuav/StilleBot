@@ -16,8 +16,8 @@ constant builtin_param = ({"Variable name", "/Action/get/set/add/spend/clear/lea
 //Experimenting with a branching parameter set
 constant MOCKUP_builtin_param = ({
 	"Variable name",
-	"/Action", //Having an enum with no options triggers this behaviour
-	([ //The next array entry will have the options, mapped to their additional args.
+	([ //This will have the options, mapped to their additional args. The label is keyed with a NUL.
+		"\0": "Action",
 		"get": ({ }), //This one needs no more args
 		({"set", "add", "spend"}): ({"New value"}), //One more arg for any of these values
 		"clear": ({ }), //Can have this separately, or combine it with get, whichever makes more sense logically
