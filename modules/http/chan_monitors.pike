@@ -134,6 +134,33 @@ constant builtin_description = "Get information about a channel monitor";
 //lookup key would need to be the monitor's type (rather than using the text of the first parameter),
 //but this would be an excellent feature if it can be coded up nicely.
 constant builtin_param = ({"/Monitor/monitor_id", "Advancement/action", "Time/Type", "Label", "Image"});
+constant MOCKUP_builtin_param = ({
+	"/Monitor/monitor_id",
+	([
+		"*goalbar": ({"Advance"}),
+		"*countdown": ({
+			"/Action",
+			([
+				"start=Start": ({"Countdown time"}),
+				"pause=Pause": ({ }),
+				"resume=Resume": ({ }),
+				"extend=Extend": ({"Extra time"}),
+				"status=Status": ({ }),
+			]),
+		}),
+		"*pile": ({
+			"/Action",
+			([
+				"claw": ({ }),
+				({"shake", "rattle", "roll"}): ({"Intensity"}),
+				"merge=Merge mode": ({"/Mode/normal=Normal/contest=Contest/off=Off"}),
+				"add": ({ }), //TODO: Code up all the args to add
+				"remove": ({"Type", "Label"}),
+			]),
+		}),
+		"*": ({"/Action/status=Status"}), //Not very useful for other types
+	]),
+});
 constant vars_provided = ([
 	"{type}": "Monitor type (text, goalbar, countdown)",
 	//NOTE: Any values not applicable to the type in question will be blank/omitted.

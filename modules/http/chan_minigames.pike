@@ -670,12 +670,12 @@ __async__ void update_first(object channel, mapping game) {
 
 constant command_description = "Manage stream minigames";
 constant builtin_name = "Minigame";
-constant builtin_param = ({"/Game/first/boss", "Extra info"});
+constant builtin_param = ({"/Game/first=First/boss=Boss", "Extra info"});
 constant MOCKUP_builtin_param = ({
 	"/Game",
 	([
-		"first": ({"/Reward/first/second/third/last"}),
-		"boss": ({"/Action/reset/slay"}),
+		"first=First": ({"/Reward/first/second/third/last"}),
+		"boss=Boss": ({"/Action/reset/slay"}),
 	]),
 });
 constant vars_provided = ([
