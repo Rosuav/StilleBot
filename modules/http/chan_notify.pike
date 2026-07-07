@@ -10,6 +10,8 @@ something happens. That something is entirely under your control (as the broadca
 Note that there is (deliberately) no security, no requirement for a login. This allows
 these notifications to be received by browser sources inside OBS, or similar.
 
+(FIXME: The example assumes that we're on /demo/notify and doesn't work for other channels.)
+
 [Example page](/static/notifdemo.html :target=_blank) This can be adapted to your needs.
 Open both that page and this in separate windows, and whenever you click the 'Notify'
 button here, that page will respond. The same notification can be sent by a bot command,
