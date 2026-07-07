@@ -1,4 +1,5 @@
 //Deprecated in favour of chan_streamsetup, kept as a bouncer
+//TODO: Replace with builtin_redirect?
 inherit builtin_command;
 
 constant builtin_name = "Stream setup (deprecated)";
