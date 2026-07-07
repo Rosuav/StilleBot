@@ -92,6 +92,21 @@ void enable_feature(object channel, string kwd, int state) {
 	G->G->cmdmgr->update_command(channel, "", kwd, state ? info->response || COMPLEX_TEMPLATES[kwd] : "");
 }
 
+//When a mapping has an array as a key, it's actually a shorthand for having
+//each element of that array with the same value. Expand those to canonical.
+string|mapping|array expand_array_keys(string|mapping|array val) {
+	if (arrayp(val)) return expand_array_keys(val[*]);
+	if (mappingp(val)) {
+		mapping ret = ([]);
+		foreach (val; mixed k; mixed v) {
+			if (arrayp(k)) foreach (k, k) ret[k] = v;
+			else ret[k] = v;
+		}
+		return ret;
+	}
+	return val;
+}
+
 //Cache the set of available builtins. Needs to be called after any changes to any
 //builtin; currently, is call_out zero'd any time this file gets updated. Note that
 //this info can also be used by other things that call on the commands front end.
@@ -109,7 +124,10 @@ void find_builtins() {
 			templates += ({sprintf("%s | %s", cmd, info->_description || handler->command_description)});
 			complex_templates[cmd] = info - (<"_description", "_hidden">);
 		}
-		builtins[name] = (["desc": handler->builtin_description, "name": handler->builtin_name, "param": handler->builtin_param]) | handler->vars_provided;
+		builtins[name] = ([
+			"desc": handler->builtin_description, "name": handler->builtin_name,
+			"param": expand_array_keys(handler->builtin_param),
+		]) | handler->vars_provided;
 		if (builtins[name]->desc == "") builtins[name]->desc = handler->command_description;
 	}
 	commands_templates = templates * "\n";
