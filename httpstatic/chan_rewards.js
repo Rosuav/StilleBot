@@ -30,7 +30,7 @@ export function render_item(rew) {
 			//expects them to match the commands array, which shows eg "coinflip#rosuav".
 			//We assume that ws_group is always just the channel, no actual group.
 			rew.invocations.map(c => LI({"data-id": c}, BUTTON({class: "advview"}, "!" + c))),
-			rew.can_manage && LI(BUTTON({class: "addcmd", "data-title": rew.title, "data-reward": rew.id}, "New")),
+			rew.can_manage && LI(BUTTON({class: "addcmd", "data-title": rew.title, "data-reward": rew.id, "data-skipqueue": rew.should_redemptions_skip_request_queue ? "yes" : "no"}, "New")),
 		])),
 	]);
 }
@@ -54,8 +54,10 @@ on("click", ".addcmd", e => {
 		id: "untitled" + i, template: true, access: "none", visibility: "hidden",
 		message: [
 			"@{username}, you redeemed: " + e.match.dataset.title,
-			//TODO: Include this only if the reward doesn't skip the queue
-			{builtin: "chan_rewards", builtin_param: ["{rewardid}", "fulfil", "{redemptionid}"], message: ""},
+			//If the reward skips the queue, we don't need to fulfil it. Otherwise,
+			//assume that most reward responses will in fact mark them as done.
+			e.match.dataset.skipqueue === "yes" ? ""
+			: {builtin: "chan_rewards", builtin_param: ["{rewardid}", "fulfil", "{redemptionid}"], message: ""},
 		],
 		redemption: e.match.dataset.reward,
 	})
