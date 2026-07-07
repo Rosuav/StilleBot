@@ -166,9 +166,6 @@ void wscmd_advance_warning(object channel, mapping(string:mixed) conn, mapping(s
 
 constant builtin_name = "Snooze ads";
 constant builtin_param = ({"/Action/query/snooze"});
-constant MOCKUP_builtin_param = ({
-	"/Action",
-});
 constant scope_required = "channel:manage:ads"; //NOTE: If "run ad" were added as a builtin, it would require channel:edit:commercial instead
 constant vars_provided = ([
 	"{snoozes}": "Number of snoozes remaining",
