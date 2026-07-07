@@ -10,6 +10,8 @@ inherit builtin_command;
 
 constant builtin_description = "Manage pinned messages";
 constant builtin_name = "Pin Message";
+//TODO: Can MOCKUP_builtin_param support a drop-down combo box with "stream", "unpin", or a duration?
+//Or maybe have a few common durations and then "Other" that lets you enter a number?
 constant builtin_param = ({"Message ID", "Duration"});
 constant vars_provided = ([]);
 
