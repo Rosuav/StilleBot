@@ -261,6 +261,7 @@ __async__ mapping wscmd_choose(object channel, mapping(string:mixed) conn, mappi
 		user = msg->added_for;
 	}
 	mapping ret = await(choose(channel, msg->selection, user, extra));
+	if (ret->selection) channel->send(0, user + " added to the queue: " + ret->selection); //TODO: Make this message configurable
 	return (["cmd": "choose", "selection": ret->selection || "", "error": ret->error || ""]);
 }
 
