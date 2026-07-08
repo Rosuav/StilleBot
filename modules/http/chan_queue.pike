@@ -135,9 +135,9 @@ __async__ mapping choose(object channel, string selection, string user, mapping|
 		]) | extra});
 		if (cfg->close_after && !--cfg->close_after) {
 			//Slightly odd condition - I don't want to post-decrement if there was no close_after.
-			//Duplicated close code from wscmd_configure()
+			//Mostly-duplicated close code from wscmd_configure()
 			m_delete(cfg, "queue_open");
-			if (cfg->closemsg) channel->send(0, cfg->closemsg);
+			if (cfg->closemsg) call_out(channel->send, 0.25, 0, cfg->closemsg);
 		}
 			
 	});
@@ -200,7 +200,7 @@ string shorten(string title) {
 			if (cfg->openmsg) channel->send(0, cfg->openmsg);
 		}
 		if (msg->closed) {
-			//Duplicated into choose()
+			//Mostly-duplicated into choose()
 			m_delete(cfg, "queue_open");
 			if (cfg->closemsg) channel->send(0, cfg->closemsg);
 		}
