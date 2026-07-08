@@ -295,6 +295,77 @@ function check_monitor_params(id) {
 }
 on("change", ".monitor-selection", e => check_monitor_params(e.match.value));
 
+function build_element(param, cfg) {
+	if (param.label === null) return null; //Note that a label of undefined is probably a bug and should be visible.
+	if (!param.attr) return TR(TD({colspan: 2}, param.label)); //Descriptive text
+	let control, id = {name: "value-" + param.attr, id: "value-" + param.attr, disabled: propedit.template};
+	const values = param.values || default_handlers;
+	if (typeof values === "string" && param.attr === "builtin") {
+		//For builtins, allow a drop-down to completely change mode.
+		//NOTE: This does NOT claim focus; the first "real" attribute
+		//should be the one to get focus.
+		return TR([TD(LABEL({htmlFor: "value-" + param.attr}, "Builtin type: ")), TD(SELECT({...id, value: values},
+			Object.entries(window.cmdedit_collections.builtins)
+				.filter(([name, blt]) => !blt.name.includes("(deprecated)")) //NOTE: If one is currently in use, it will show up blank on the drop-down
+				.sort((a,b) => a[1].name.localeCompare(b[1].name))
+				.map(([name, blt]) => OPTION({value: name}, blt.name))
+		))]);
+	}
+	if (typeof values !== "object") return null; //Fixed strings and such
+	let value = cfg.value_override;
+	if (!value) {
+		value = propedit[param.attr];
+		const m = /^(builtin_param)([0-9]*)$/.exec(param.attr); //As per the other of this regex, currently restricted to builtin_param
+		if (m && Array.isArray(propedit[m[1]])) value = propedit[m[1]][m[2] || 0];
+	}
+	if (values.normalize) value = values.normalize(value);
+	if (!values.validate) {
+		//If there's no validator function, this is an array, not an object.
+		if (values.length === 3 && typeof values[0] === "number") {
+			const [min, max, step] = values;
+			control = INPUT({...id, type: "number", min, max, step, value});
+		} else if (values.length === 0) {
+			control = SELECT(id, OPTION({disabled: true}, param.if_empty || "(none)"));
+		} else {
+			if (param.subsequent) {id[".subsequent_params"] = param.subsequent; id.className = "builtin-governor";}
+			control = SELECT({...id, value}, values.map(v => OPTION({value: v}, (param.selections||{})[v] || v)));
+		}
+	}
+	else control = values.make_control(id, value, propedit);
+	if (!cfg.focus) cfg.focus = control; //TODO: What if control is an array?
+	const attr = {};
+	if (param.visible && !param.visible(propedit)) attr.hidden = true; //NOTE: This is only updated when a drop-down is changed. So the visibility check should only check drop-downs and things that don't change.
+	return TR(attr, [TD(LABEL({htmlFor: "value-" + param.attr}, param.label + ": ")), TD(control)]);
+}
+
+function update_governed_params() {
+	console.log("UPDATE GOVERNED");
+	const children = [...DOM("#params").children];
+	//NOTE: Don't for-of this as we will be mutating the array and need to continue
+	//from where we left off
+	for (let i = 0; i < children.length; ++i) {
+		const gov = children[i].querySelector(".builtin-governor");
+		if (!gov) continue;
+		console.log("Governor:", gov);
+		console.log(gov.value, gov.subsequent_params);
+		//The first param has an ID of "value-builtin_param" and an index of zero.
+		//Subsequent have "value-builtin_paramN" for index N.
+		let idx = gov.id.slice("value-builtin_param".length);
+		children.length = i + 1; //Truncate all subsequent from our array (but leave them in the DOM)
+		const buildme = gov.subsequent_params[gov.value];
+		if (buildme) for (let param of buildme) {
+			console.log("BUILD ME:", param);
+			++idx;
+			const curelem = DOM("#value-builtin_param" + idx);
+			const value = curelem ? curelem.value : propedit.builtin_param[idx];
+			children.push(build_element(param, {value_override: value}));
+		}
+	}
+	console.log("NOW CHILDREN", children);
+	set_content("#params", children);
+}
+on("change", ".builtin-governor", update_governed_params);
+
 function format_time_delay(sec) {
 	if (sec >= 3600) {
 		if (sec % 3600 === 0) return sec / 3600 + "-hour";
@@ -348,50 +419,54 @@ const builtin_label_funcs = {
 	},
 };
 builtin_label_funcs.chan_pointsrewards = builtin_label_funcs.chan_rewards; //Alias the deprecated to the new
+function reformat_param(param, idx) {
+	if (typeof param === "object") {
+		//Complex parameter configurations have a selection of options that map to
+		//the subsequent options for that choice.
+		let values = Object.keys(param);
+		if (values[0] === "\0") values.shift(); //If there's a label, it'll be the first entry, with the NUL key
+		const selections = { }, subsequent = { };
+		values = values.map(s => {
+			const [value, ...rest] = s.split("=");
+			selections[value] = rest.join("=");
+			//The subsequent values need to pick up the indices starting after the current element
+			//(which should be the last - behaviour is unpredictable otherwise)
+			subsequent[value] = param[s].map((p, i) => reformat_param(p, idx + i + 1));
+			return value;
+		});
+		return {attr: "builtin_param" + (idx||""), label: param["\0"] || "", values, selections, subsequent};
+	}
+	else if (param[0] === "/") {
+		//Simple selection parameters load up the options into a single string.
+		let split = param.split("/"); split.shift(); //Remove the empty at the start
+		const label = split.shift();
+		const selections = { };
+		if (split[0].includes("=")) split = split.map(s => {
+			//sscanf(s, "%s=%s", string value, string label);
+			const [value, ...rest] = s.split("=");
+			selections[value] = rest.join("=");
+			return value;
+		});
+		if (split.length === 1) {
+			//Special-case some to allow custom client-side code
+			split = builtin_validators[split[0]] || split;
+		}
+		return {attr: "builtin_param" + (idx||""), label, values: split, selections};
+	}
+	//Input parameters simply ask for a value. TODO: Support checkboxes and numerics
+	else if (param !== "") return {attr: "builtin_param" + (idx||""), label: param};
+	//else null? Is that okay?
+}
 function builtin_types() {
 	const ret = { };
 	Object.entries(window.cmdedit_collections.builtins).forEach(([name, blt]) => {
+		if (typeof blt.param === "string") blt.param = [blt.param];
 		const b = ret["builtin_" + name] = {...stubtypes.builtin,
 			label: builtin_label_funcs[name] || (el => blt.name),
-			params: [{attr: "builtin", values: name}],
+			params: blt.param.map(reformat_param),
 			typedesc: blt.desc, provides: { },
 		};
-		const add_param = (param, idx) => {
-			if (typeof param === "object") {
-				//Complex parameter configurations have a selection of options that map to
-				//the subsequent options for that choice.
-				let values = Object.keys(param);
-				if (values[0] === "\0") values.shift(); //If there's a label, it'll be the first entry, with the NUL key
-				const selections = { };
-				values = values.map(s => {
-					const [value, ...rest] = s.split("=");
-					selections[value] = rest.join("=");
-					return value;
-				});
-				b.params.push({attr: "builtin_param" + (idx||""), label: param["\0"] || "", values, selections, subsequent: param});
-			}
-			else if (param[0] === "/") {
-				//Simple selection parameters load up the options into a single string.
-				let split = param.split("/"); split.shift(); //Remove the empty at the start
-				const label = split.shift();
-				const selections = { };
-				if (split[0].includes("=")) split = split.map(s => {
-					//sscanf(s, "%s=%s", string value, string label);
-					const [value, ...rest] = s.split("=");
-					selections[value] = rest.join("=");
-					return value;
-				});
-				if (split.length === 1) {
-					//Special-case some to allow custom client-side code
-					split = builtin_validators[split[0]] || split;
-				}
-				b.params.push({attr: "builtin_param" + (idx||""), label, values: split, selections});
-			}
-			//Input parameters simply ask for a value. TODO: Support checkboxes and numerics
-			else if (param !== "") b.params.push({attr: "builtin_param" + (idx||""), label: param});
-		};
-		if (typeof blt.param === "string") add_param(blt.param, "");
-		else blt.param.forEach(add_param);
+		b.params.unshift({attr: "builtin", values: name});
 		for (let prov in blt) if (prov[0] === '{' && !blt[prov].includes("(deprecated)")) b.provides[prov] = blt[prov];
 	});
 	return ret;
@@ -1800,45 +1875,9 @@ function open_element_properties(el, type_override) {
 	set_content("#toggle_favourite", FAV_BUTTON_TEXT[is_favourite(el) ? 1 : 0]).disabled = type.fixed;
 	const desc = type.typedesc || el.desc;
 	set_content("#typedesc", typeof desc === "function" ? desc(el) : desc);
-	let focus = null;
-	set_content("#params", (type.params||[]).map(param => {
-		if (param.label === null) return null; //Note that a label of undefined is probably a bug and should be visible.
-		if (!param.attr) return TR(TD({colspan: 2}, param.label)); //Descriptive text
-		let control, id = {name: "value-" + param.attr, id: "value-" + param.attr, disabled: el.template};
-		const values = param.values || default_handlers;
-		if (typeof values === "string" && param.attr === "builtin") {
-			//For builtins, allow a drop-down to completely change mode.
-			//NOTE: This does NOT claim focus; the first "real" attribute
-			//should be the one to get focus.
-			return TR([TD(LABEL({htmlFor: "value-" + param.attr}, "Builtin type: ")), TD(SELECT({...id, value: values},
-				Object.entries(window.cmdedit_collections.builtins)
-					.filter(([name, blt]) => !blt.name.includes("(deprecated)")) //NOTE: If one is currently in use, it will show up blank on the drop-down
-					.sort((a,b) => a[1].name.localeCompare(b[1].name))
-					.map(([name, blt]) => OPTION({value: name}, blt.name))
-			))]);
-		}
-		if (typeof values !== "object") return null; //Fixed strings and such
-		let value = el[param.attr];
-		const m = /^(builtin_param)([0-9]*)$/.exec(param.attr); //As per the other of this regex, currently restricted to builtin_param
-		if (m && Array.isArray(el[m[1]])) value = el[m[1]][m[2] || 0];
-		if (values.normalize) value = values.normalize(value);
-		if (!values.validate) {
-			//If there's no validator function, this is an array, not an object.
-			if (values.length === 3 && typeof values[0] === "number") {
-				const [min, max, step] = values;
-				control = INPUT({...id, type: "number", min, max, step, value});
-			} else if (values.length === 0) {
-				control = SELECT(id, OPTION({disabled: true}, param.if_empty || "(none)"));
-			} else {
-				control = SELECT({...id, value}, values.map(v => OPTION({value: v}, (param.selections||{})[v] || v)));
-			}
-		}
-		else control = values.make_control(id, value, el);
-		if (!focus) focus = control; //TODO: What if control is an array?
-		const attr = {};
-		if (param.visible && !param.visible(el)) attr.hidden = true; //NOTE: This is only updated when a drop-down is changed. So the visibility check should only check drop-downs and things that don't change.
-		return TR(attr, [TD(LABEL({htmlFor: "value-" + param.attr}, param.label + ": ")), TD(control)]);
-	}));
+	const cfg = {focus: null};
+	set_content("#params", (type.params||[]).map(param => build_element(param, cfg)));
+	update_governed_params();
 	set_content("#providesdesc", Object.entries(type.provides || el.provides || {}).map(([v, d]) => LI([
 		CODE(v), ": " + d,
 	])));
@@ -1847,7 +1886,7 @@ function open_element_properties(el, type_override) {
 	const sel = DOM("#value-conditional");
 	if (sel) update_conditional(sel);
 	DOM("#properties").showModal();
-	if (focus) (focus.querySelector("[data-editme]") || focus).focus();
+	if (cfg.focus) (cfg.focus.querySelector("[data-editme]") || cfg.focus).focus();
 }
 on("change", "select#value-builtin", e => open_element_properties(propedit, "builtin_" + e.match.value));
 //Encapsulation breach: Allow the classic editor to open up an element's properties
