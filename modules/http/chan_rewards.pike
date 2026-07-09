@@ -232,7 +232,7 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 	if (cfg->simulate) return ([]); //In simulation mode, all this is likely to be used for is refunding or fulfilling the triggering redemption, so assume that that happened.
 	string reward_id = param[0];
 	mapping params = ([]);
-	int empty_ok = 0, hack_reset = 1;
+	int empty_ok = 0, hack_reset = 0;
 	foreach (param[1..] / 2, [string cmd, string arg]) {
 		switch (cmd) {
 			case "enable": params->is_enabled = arg != "0" ? Val.true : Val.false; break;
@@ -244,7 +244,7 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 				//A cooldown of zero means "no cooldown", otherwise it's enabled.
 				params->global_cooldown_seconds = (int)arg;
 				params->is_global_cooldown_enabled = (int)arg ? Val.true : Val.false;
-			break;
+				break;
 			case "reset": hack_reset = empty_ok = 1; break;
 			case "fulfil": case "cancel": if (arg != "") { //Not an error to attempt to mark nothing
 				complete_redemption(channel->name[1..], reward_id, arg, cmd == "fulfil" ? "FULFILLED" : "CANCELED");
