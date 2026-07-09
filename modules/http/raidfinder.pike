@@ -439,7 +439,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		strm->raids = Array.uniq2(strm->raids);
 		//Make recommendations based on similarity to your stream
 		if (your_stream) {
-			int you = your_stream->viewer_count, them = strm->viewer_count;
+			int you = (int)your_stream->viewer_count, them = (int)strm->viewer_count;
 			//With small viewer counts, percentages are over-emphasized. Bound to a group size.
 			if (you < 10) you = 10;
 			if (them < 10) them = 10;
