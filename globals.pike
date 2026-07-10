@@ -135,11 +135,14 @@ class builtin_command {
 	constant builtin_description = ""; //Label used in any human-readable context - one line description of purpose
 	constant command_description = ""; //Deprecated: Description for the default response
 	constant builtin_name = ""; //Short human-readable name for the drop-down
-	constant builtin_param = ""; //Array of supported parameters, or a single string if only one param. Can carry additional info about these params, see docs.
-	//Old description: Label(s) for the parameter(s), or "/Label/option/option/option" to offer specific selections. If blank, has no parameter. May be an array for multiple params.
-	//TODO: Document both the enumeration and, if MOCKUP_builtin_param happens, the branching.
+	constant builtin_param = ""; //Array of supported parameters
+	//If blank, has no parameter. A single string is equivalent to an array containing that string, ie one arg.
+	//Each argument can be a simple string for a label, or "/Label/option1/option2/option3" for a drop-down, or
+	//"/Label/special_keyword" for custom front-end handling (see command_gui.js builtin_validators). If the
+	//drop-down defines a subcommand that may or may not require more arguments, use a mapping; see modules/setvar.pike
+	//for a commented example. Whether a mapping or a string of options, "option1=Label for option 1" can give a
+	//label that's different from the keyword itself.
 	//TODO: Allow data type indications, which can be used in the front end to switch to a numeric input or a checkbox
-	//TODO: Document the way an enum can have an equals sign separating value from label
 	constant vars_provided = ([ ]); //List all available vars (it's okay if they aren't all always provided)
 	constant command_suggestions = 0; //Set this to provide some suggestions (which will show up as enableable features)
 	constant scope_required = ""; //If nonblank, will be offered as a suggestion any time this builtin is used. TODO: Make this more flexible, so some parameters can ask for scope, others not?
