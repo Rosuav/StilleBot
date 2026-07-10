@@ -12,9 +12,7 @@ in the same subtree will reveal what $foo$ would have been if not for the setvar
 inherit builtin_command;
 constant builtin_name = "Variables";
 constant builtin_description = "Manipulate variables with dynamic names";
-constant builtin_param = ({"Variable name", "/Action/get/set/add/spend/clear/leaders/lowleaders", "New value"});
-//Experimenting with a branching parameter set
-constant MOCKUP_builtin_param = ({
+constant builtin_param = ({
 	"Variable name",
 	([ //This will have the options, mapped to their additional args. The label is keyed with a NUL.
 		"\0": "Action",

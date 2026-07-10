@@ -2,12 +2,13 @@ inherit builtin_command;
 
 constant builtin_description = "View and manage channel quotes";
 constant builtin_name = "Quotes";
-constant builtin_param = ({"/Action/Get/Add/Delete", "Quote number (except Add)", "Text (for Add)"});
-constant MOCKUP_builtin_param = ({
+constant builtin_param = ({
 	([
 		"\0": "Action",
-		"Get": "Quote number (optional)",
-		"Add": ({"Quote number (must be zero)", "Text"}), //For backward compatibility, can't remove this, but can we hide it in the UI?
+		"Get": ({"Quote number (optional)"}),
+		//Changing this might be a backward compatibility break, but can we hide it in the UI,
+		//and maybe define the new params as "last arg is the text"???
+		"Add": ({"Quote number (must be zero)", "Text"}),
 		"Delete": ({"Quote number"}),
 	]),
 });
