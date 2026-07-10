@@ -200,8 +200,7 @@ constant builtin_description = "Manage channel point rewards - fulfil and cancel
 constant builtin_name = "Channel points rewards";
 //TODO: In the front end, label them as "[En/Dis]able reward", "Mark complete", "Refund points"
 //TODO: Allow setting more than one attribute, eg setting both title and desc atomically
-constant builtin_param = ({"/Reward/reward_id", "/Action/enable/disable/cost/title/desc/cooldown/query/fulfil/cancel", "Redemption ID"});
-constant MOCKUP_builtin_param = ({
+constant builtin_param = ({
 	"/Reward/reward_id",
 	([
 		"\0": "Action",
@@ -210,7 +209,7 @@ constant MOCKUP_builtin_param = ({
 		"cost": ({"New cost"}),
 		"title": ({"New title"}),
 		"desc": ({"New description"}),
-		"cooldown": ({"New description"}),
+		"cooldown": ({"Cooldown (secs)"}),
 		//"reset": ({ }),
 		"query": ({ }),
 		"fulfil": ({"Redemption ID"}),

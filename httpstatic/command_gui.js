@@ -339,29 +339,24 @@ function build_element(param, cfg) {
 }
 
 function update_governed_params() {
-	console.log("UPDATE GOVERNED");
 	const children = [...DOM("#params").children];
 	//NOTE: Don't for-of this as we will be mutating the array and need to continue
 	//from where we left off
 	for (let i = 0; i < children.length; ++i) {
 		const gov = children[i].querySelector(".builtin-governor");
 		if (!gov) continue;
-		console.log("Governor:", gov);
-		console.log(gov.value, gov.subsequent_params);
 		//The first param has an ID of "value-builtin_param" and an index of zero.
 		//Subsequent have "value-builtin_paramN" for index N.
 		let idx = gov.id.slice("value-builtin_param".length);
 		children.length = i + 1; //Truncate all subsequent from our array (but leave them in the DOM)
 		const buildme = gov.subsequent_params[gov.value];
 		if (buildme) for (let param of buildme) {
-			console.log("BUILD ME:", param);
 			++idx;
 			const curelem = DOM("#value-builtin_param" + idx);
 			const value = curelem ? curelem.value : propedit.builtin_param[idx];
 			children.push(build_element(param, {value_override: value}));
 		}
 	}
-	console.log("NOW CHILDREN", children);
 	set_content("#params", children);
 }
 on("change", ".builtin-governor", update_governed_params);
@@ -1455,7 +1450,6 @@ if (!ALLOW_DRAG) canvas.addEventListener("pointerdown", e => {
 const ELEMENT_MIME = "application/x-stillebot-command-element";
 if (ALLOW_DRAG) {
 	canvas.addEventListener("dragstart", e => {
-		console.log("Drag start");
 		const el = element_at_position(e.offsetX, e.offsetY, el => !types[el.type].fixed);
 		if (!el) return e.preventDefault();
 		const data = JSON.stringify(element_to_message(el));
@@ -1928,7 +1922,6 @@ on("input", "#properties [name]", e => set_content("#saveprops", [U("A"), "pply 
 
 function update_emote_picker(voice) {
 	const emav = emotes_available[voice];
-	console.log("Update emote picker!", emav);
 	set_content("#emotepicker h3", ["Emotes for ", emav?.voice_name || "..."]);
 	replace_content("#emotelist",
 		!emav ? "Loading..." :
@@ -2124,15 +2117,19 @@ function retrieve_attrs(dest, params) {
 			//Ultimately the server will validate, but it's ugly to let it sit around wrong.
 			if (values.normalize) value = values.normalize(value);
 			//Special case: builtin_param could be a single string, or could start an array.
-			//So if we find builtin_param1, we add it to the array.
 			//We expect to hit builtin_param before any others, so that will replace with
-			//a string; then builtin_param1 will arrayify, and others will append.
-			const m = /^(builtin_param)([0-9]+)$/.exec(param.attr); //Currently restricted to builtin_param, could expand that (but be aware that expr1/expr2 are not done like this)
+			//a one-element array; then builtin_param1 etc will be slotted in.
+			const m = /^(builtin_param)([0-9]*)$/.exec(param.attr); //Currently restricted to builtin_param, could expand that (but be aware that expr1/expr2 are not done like this)
 			if (!m) dest[param.attr] = value;
 			else {
-				if (m[2] === "1") dest[m[1]] = [dest[m[1]]]; //Arrayify with the value already stored
-				dest[m[1]][m[2]] = value; //TODO: If we've (somehow) skipped over any, fill them with empty strings.
+				if (m[2] === "") dest[m[1]] = [value]; //Arrayify even if there are no others.
+				else dest[m[1]][m[2]] = value; //TODO: If we've (somehow) skipped over any, fill them with empty strings.
 			}
+			//If this is a builtin governor, see if we have subsequent elements to retrieve too.
+			//They will have their own attribute names and will generally continue the builtin_param
+			//array immediately after the element we just added.
+			const subs = val.subsequent_params?.[value];
+			if (subs) retrieve_attrs(dest, subs);
 		}
 	}
 	return dest;
