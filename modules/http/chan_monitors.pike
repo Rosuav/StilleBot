@@ -137,10 +137,10 @@ constant builtin_param = ({"/Monitor/monitor_id", "Advancement/action", "Time/Ty
 constant MOCKUP_builtin_param = ({
 	([
 		"\0": "monitor_id", //Special-cased in the front end since this actually requires a validator.
-		"*goalbar": ({"Advance"}),
-		"*countdown": ({
-			"/Action",
+		"goalbar": ({"Advance"}),
+		"countdown": ({
 			([
+				"\0": "/Action",
 				"start=Start": ({"Countdown time"}),
 				"pause=Pause": ({ }),
 				"resume=Resume": ({ }),
@@ -148,9 +148,9 @@ constant MOCKUP_builtin_param = ({
 				"status=Status": ({ }),
 			]),
 		}),
-		"*pile": ({
-			"/Action",
+		"pile": ({
 			([
+				"\0": "/Action",
 				"claw": ({ }),
 				({"shake", "rattle", "roll"}): ({"Intensity"}),
 				"merge=Merge mode": ({"/Mode/normal=Normal/contest=Contest/off=Off"}),
@@ -158,7 +158,7 @@ constant MOCKUP_builtin_param = ({
 				"remove": ({"Type", "Label"}),
 			]),
 		}),
-		"*": ({"/Action/status=Status"}), //Not very useful for other types
+		"": ({"/Action/status=Status"}), //Not very useful for other types
 	]),
 });
 constant vars_provided = ([
