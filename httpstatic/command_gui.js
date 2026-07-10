@@ -160,11 +160,11 @@ function duration_dropdown(sel) {return (id, val, el) => {
 	else if (num >= 60 && (num % 60) === 0) {num /= 60; unit = "60";}
 	return DIV({".duration_selections": sel}, [
 		INPUT({...id, value: val, class: "actualval", type: "hidden"}), //Hidden input to store the actual value
-		SELECT({name: "cdlength_selector", value: sel[val] ? ""+val : "0"}, [
+		SELECT({name: "cdlength_selector", value: sel[val] ? ""+val : "*"}, [
 			Object.entries(sel).map(([value, label]) =>
 				OPTION({value}, label)
 			),
-			OPTION({value: 0}, "Custom..."),
+			OPTION({value: "*"}, "Custom..."),
 		]),
 		//These are visible only if Custom is selected, but always present
 		INPUT({name: "cdlength_number", value: num, size: 5, type: "number"}),
@@ -175,7 +175,6 @@ function duration_dropdown(sel) {return (id, val, el) => {
 		]),
 	]);
 }}
-//Special case: The cooldown length is a number, but is shown to the user as a series of number+unit options.
 const cooldown_length = {...default_handlers,
 	validate: val => +val === -1 || +val > 0,
 	make_control: duration_dropdown({
@@ -194,11 +193,11 @@ function set_cdlength(parent, val) {
 	if (num >= 3600 && (num % 3600) === 0) {num /= 3600; unit = "3600";}
 	else if (num >= 60 && (num % 60) === 0) {num /= 60; unit = "60";}
 	parent.querySelector(".actualval").value = val;
-	parent.querySelector("[name=cdlength_selector]").value = parent.duration_selections[val] ? ""+val : "0";
+	parent.querySelector("[name=cdlength_selector]").value = parent.duration_selections[val] ? ""+val : "*";
 	parent.querySelector("[name=cdlength_number]").value = num;
 	parent.querySelector("[name=cdlength_unit]").value = unit;
 }
-on("change", "[name=cdlength_selector]", e => +e.match.value && set_cdlength(e.match.parentElement, e.match.value));
+on("change", "[name=cdlength_selector]", e => e.match.value !== "*" && set_cdlength(e.match.parentElement, e.match.value));
 on("change", "[name=cdlength_number],[name=cdlength_unit]", e => {
 	const par = e.match.parentElement;
 	const num = +par.querySelector("[name=cdlength_number]").value;
@@ -282,7 +281,13 @@ const builtin_validators = {
 		validate: val => val === "{rewardid}" || rewards[val],
 	},
 	pin_duration: {...default_handlers,
-		make_control: cooldown_length.make_control,
+		make_control: duration_dropdown({
+			"60": "One minute",
+			"300": "Five minutes",
+			"1800": "Half hour",
+			"stream": "Till end of stream",
+			"unpin": "Unpin immediately",
+		}),
 	},
 };
 function check_monitor_params(id) {

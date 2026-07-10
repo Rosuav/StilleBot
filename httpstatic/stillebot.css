@@ -278,7 +278,7 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 [name="cdlength_selector"] ~ * {
 	display: none;
 }
-[name="cdlength_selector"]:has(option[value="0"]:checked) ~ * {
+[name="cdlength_selector"]:has(option[value="*"]:checked) ~ * {
 	display: unset;
 }
 
