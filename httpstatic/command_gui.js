@@ -432,14 +432,16 @@ function reformat_param(param, idx) {
 		//Complex parameter configurations have a selection of options that map to
 		//the subsequent options for that choice.
 		let values = Object.keys(param);
-		if (values[0] === "\0") values.shift(); //If there's a label, it'll be the first entry, with the NUL key
+		if (values[0] === "\0") values.shift(); //If there's a label (with a NUL key), it'll usually be the first entry.
+		else if (values[1] === "\0") values.splice(1, 1); //And if it's not first, it'll be second, following a "" key.
 		const selections = { }, subsequent = { };
 		values = values.map(s => {
 			const [value, ...rest] = s.split("=");
 			selections[value] = rest.join("=");
 			//The subsequent values need to pick up the indices starting after the current element
 			//(which should be the last - behaviour is unpredictable otherwise)
-			subsequent[value] = param[s].map((p, i) => reformat_param(p, idx + i + 1));
+			if (!Array.isArray(param[s])) console.warn("Bad builtin_params - sel", s, "params", param, "values", values, "meaning", param[s]);
+			else subsequent[value] = param[s].map((p, i) => reformat_param(p, idx + i + 1));
 			return value;
 		});
 		return {attr: "builtin_param" + (idx||""), label: param["\0"] || "", values, selections, subsequent};
