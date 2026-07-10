@@ -149,40 +149,44 @@ const text_message = {...default_handlers,
 		return msg.message;
 	},
 };
+//Factory function for all forms of duration dropdown eg cooldowns and delays.
+//The available selections should be an object mapping values to descriptions;
+//a "Custom" entry will automatically be added. Note that the internal IDs all
+//refer to "cd" implying the original sole use for this code, cooldowns; there
+//are now several other uses so the name is orphanned, but no need to change.
+function duration_dropdown(sel) {return (id, val, el) => {
+	let num = +val, unit = "1";
+	if (num >= 3600 && (num % 3600) === 0) {num /= 3600; unit = "3600";}
+	else if (num >= 60 && (num % 60) === 0) {num /= 60; unit = "60";}
+	return DIV({".duration_selections": sel}, [
+		INPUT({...id, value: val, class: "actualval", type: "hidden"}), //Hidden input to store the actual value
+		SELECT({name: "cdlength_selector", value: sel[val] ? ""+val : "0"}, [
+			Object.entries(sel).map(([value, label]) =>
+				OPTION({value}, label)
+			),
+			OPTION({value: 0}, "Custom..."),
+		]),
+		//These are visible only if Custom is selected, but always present
+		INPUT({name: "cdlength_number", value: num, size: 5, type: "number"}),
+		SELECT({name: "cdlength_unit", value: unit}, [
+			OPTION({value: 1}, "seconds"),
+			OPTION({value: 60}, "minutes"),
+			OPTION({value: 3600}, "hours"),
+		]),
+	]);
+}}
 //Special case: The cooldown length is a number, but is shown to the user as a series of number+unit options.
-const cdlength_selections = { //Common selections available in the drop-down
-	"-1": "Till stream reset",
-	1: "1 second",
-	30: "30 seconds",
-	60: "1 minute",
-	900: "15 minutes",
-	3600: "1 hour",
-	86400: "1 day",
-};
 const cooldown_length = {...default_handlers,
 	validate: val => +val === -1 || +val > 0,
-	make_control: (id, val, el) => {
-		const sel = cdlength_selections;
-		let num = +val, unit = "1";
-		if (num >= 3600 && (num % 3600) === 0) {num /= 3600; unit = "3600";}
-		else if (num >= 60 && (num % 60) === 0) {num /= 60; unit = "60";}
-		return DIV({".duration_selections": sel}, [
-			INPUT({...id, value: val, class: "actualval", type: "hidden"}), //Hidden input to store the actual value
-			SELECT({name: "cdlength_selector", value: sel[val] ? ""+val : "0"}, [
-				Object.entries(sel).map(([value, label]) =>
-					OPTION({value}, label)
-				),
-				OPTION({value: 0}, "Custom..."),
-			]),
-			//These are visible only if Custom is selected, but always present
-			INPUT({name: "cdlength_number", value: num, size: 5, type: "number"}),
-			SELECT({name: "cdlength_unit", value: unit}, [
-				OPTION({value: 1}, "seconds"),
-				OPTION({value: 60}, "minutes"),
-				OPTION({value: 3600}, "hours"),
-			]),
-		]);
-	},
+	make_control: duration_dropdown({
+		"-1": "Till stream reset",
+		1: "1 second",
+		30: "30 seconds",
+		60: "1 minute",
+		900: "15 minutes",
+		3600: "1 hour",
+		86400: "1 day",
+	}),
 	retrieve_value: el => +el.value,
 };
 function set_cdlength(parent, val) {
