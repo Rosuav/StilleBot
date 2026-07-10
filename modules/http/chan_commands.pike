@@ -99,8 +99,8 @@ string|mapping|array expand_array_keys(string|mapping|array val) {
 	if (mappingp(val)) {
 		mapping ret = ([]);
 		foreach (val; mixed k; mixed v) {
-			if (arrayp(k)) foreach (k, k) ret[k] = v;
-			else ret[k] = v;
+			if (arrayp(k)) foreach (k, k) ret[k] = expand_array_keys(v);
+			else ret[k] = expand_array_keys(v);
 		}
 		return ret;
 	}
