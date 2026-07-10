@@ -272,24 +272,15 @@ echoable_message _validate_recursive(echoable_message resp, mapping state)
 	if (object handler = resp->builtin && G->G->builtins[resp->builtin]) {
 		//Validated separately as the builtins aren't a constant
 		ret->builtin = resp->builtin;
-		//Simple string? Split it into words according to the number of args the builtin expects.
-		//Note that this might not always be correct (builtins can grow args in the future), but
-		//it's a start. Note also that MustardScript commands can pass any number of args they
-		//like to any builtin, so the number of them still has to be checked.
+		//Simple string? Split it into words. Note that the number of args is not checked, as
+		//this handling only matters for legacy updates, and MustardScript commands can always
+		//pass any number of args they like to any builtin, so there's little to be gained by
+		//validating them here. Should validation be desired, it will need to check the entire
+		//builtin_param tree, as some subcommands will require more or fewer args.
 		if (stringp(resp->builtin_param) && resp->builtin_param != "") {
 			if (!objectp(handler) || !arrayp(handler->builtin_param) || sizeof(handler->builtin_param) <= 1)
 				ret->builtin_param = ({resp->builtin_param}); //Default to assuming that a single arg is fine.
-			else {
-				ret->builtin_param = Process.split_quoted_string(resp->builtin_param);
-				//If the builtin is expecting 3 params, and the user provides more words
-				//than that, join the remainder into a single string.
-				//TODO: Step through the params, don't just count them; when we hit an enum, ensure
-				//that a valid value is being given. Search for MOCKUP_builtin_param to see examples
-				//of a proposed way to then change the number of args.
-				int max = sizeof(handler->builtin_param);
-				if (sizeof(ret->builtin_param) > max)
-					ret->builtin_param = ret->builtin_param[..max - 2] + ({ret->builtin_param[max - 1..] * " "});
-			}
+			else ret->builtin_param = Process.split_quoted_string(resp->builtin_param);
 		}
 		//Array of strings is also valid, but array of anything else won't be.
 		else if (arrayp(resp->builtin_param) && sizeof(resp->builtin_param)
@@ -651,8 +642,7 @@ echoable_message|zero update_command(object channel, string mode, string cmdname
 
 constant builtin_description = "Manage channel commands";
 constant builtin_name = "Command manager";
-constant builtin_param = ({"/Action/Automate/Create/Delete/Access", "Command name", "Time/message/access type"});
-constant MOCKUP_builtin_param = ({
+constant builtin_param = ({
 	([
 		"\0": "Action",
 		"Automate": ({"Command name", "Time"}),
