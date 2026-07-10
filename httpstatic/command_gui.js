@@ -162,13 +162,14 @@ const cdlength_selections = { //Common selections available in the drop-down
 const cooldown_length = {...default_handlers,
 	validate: val => +val === -1 || +val > 0,
 	make_control: (id, val, el) => {
+		const sel = cdlength_selections;
 		let num = +val, unit = "1";
 		if (num >= 3600 && (num % 3600) === 0) {num /= 3600; unit = "3600";}
 		else if (num >= 60 && (num % 60) === 0) {num /= 60; unit = "60";}
-		return DIV([
+		return DIV({".duration_selections": sel}, [
 			INPUT({...id, value: val, class: "actualval", type: "hidden"}), //Hidden input to store the actual value
-			SELECT({name: "cdlength_selector", value: cdlength_selections[val] ? ""+val : "0"}, [
-				Object.entries(cdlength_selections).map(([value, label]) =>
+			SELECT({name: "cdlength_selector", value: sel[val] ? ""+val : "0"}, [
+				Object.entries(sel).map(([value, label]) =>
 					OPTION({value}, label)
 				),
 				OPTION({value: 0}, "Custom..."),
@@ -189,7 +190,7 @@ function set_cdlength(parent, val) {
 	if (num >= 3600 && (num % 3600) === 0) {num /= 3600; unit = "3600";}
 	else if (num >= 60 && (num % 60) === 0) {num /= 60; unit = "60";}
 	parent.querySelector(".actualval").value = val;
-	parent.querySelector("[name=cdlength_selector]").value = cdlength_selections[val] ? ""+val : "0";
+	parent.querySelector("[name=cdlength_selector]").value = parent.duration_selections[val] ? ""+val : "0";
 	parent.querySelector("[name=cdlength_number]").value = num;
 	parent.querySelector("[name=cdlength_unit]").value = unit;
 }
@@ -275,7 +276,10 @@ const builtin_validators = {
 		//directly to open a command, or if the internet connection is very slow. Either way, the
 		//drop-down should be correctly populated by the time someone actually clicks on something.
 		validate: val => val === "{rewardid}" || rewards[val],
-	}
+	},
+	pin_duration: {...default_handlers,
+		make_control: cooldown_length.make_control,
+	},
 };
 function check_monitor_params(id) {
 	const mon = window.cmdedit_collections.monitors[id];
