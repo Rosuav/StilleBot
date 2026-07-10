@@ -680,7 +680,6 @@ constant MOCKUP_builtin_param = ({
 });
 constant vars_provided = ([
 	"{shame}": "1 if user should be shamed for duplicate claiming",
-	"{count}": "Number of times the user has checked in (once per stream)",
 	"{newhp}": "New boss HP if one just got slain",
 ]);
 
