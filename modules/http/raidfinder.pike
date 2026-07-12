@@ -477,7 +477,10 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			int uptime = time() - time_from_iso(strm->started_at)->unix_time();
 			recommend["Uptime"] = max(100 - uptime / 4 / 36, 0);
 		}
-		strm->recommend = `+(@values(recommend));
+		if (catch {strm->recommend = `+(@values(recommend));}) {
+			Stdio.append_file("raidfinder_recommends.log", sprintf("\n%sQuery params: %O\nRecommend: %O\n------\n", ctime(time()), req->variables, recommend));
+			werror("BOMBED CALCULATING RECOMMENDS, SEE raidfinder_recommends.log\n");
+		}
 		if (req->variables->show_magic) strm->magic_breakdown = recommend; //Hidden query variable to debug the magic
 	}
 	//List 100 most recent raids.
