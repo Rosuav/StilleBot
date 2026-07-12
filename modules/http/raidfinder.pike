@@ -194,6 +194,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	if (req->variables->login == "demo") return redirect("raidfinder?categories=mustardmine"); //Old URL for the same functionality
 	if (req->variables->raiders || req->variables->categories || req->variables->login || req->variables->train || req->variables->highlights || req->variables->team) {
 		mapping args = ([]);
+		if (req->variables->categories == "DJs") werror("RAIDFINDER ARGS %O\n", args);
 		if (req->variables->raiders) {
 			//Raiders mode (categories omitted but "?raiders" specified). Particularly useful with a for= search.
 			//List everyone who's raided you, including their timestamps
