@@ -204,12 +204,12 @@ constant builtin_param = ({
 	"/Reward/reward_id",
 	([
 		"\0": "Action",
-		"enable": ({"Enabled (1/0)"}), //TODO: Boolean as a checkbox
+		"enable": ({"?Enabled"}),
 		"disable": ({ }), //Do we need both this and enable?
-		"cost": ({"New cost"}),
+		"cost": ({"#New cost"}),
 		"title": ({"New title"}),
 		"desc": ({"New description"}),
-		"cooldown": ({"Cooldown (secs)"}),
+		"cooldown": ({"#Cooldown (secs)"}),
 		//"reset": ({ }),
 		"query": ({ }),
 		"fulfil": ({"Redemption ID"}),

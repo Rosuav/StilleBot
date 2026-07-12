@@ -136,10 +136,10 @@ constant builtin_param = ({
 		"countdown": ({
 			([
 				"\0": "Action",
-				"start=Start": ({"Countdown time"}),
+				"start=Start": ({"#Countdown time"}), //TODO: Do these with nicer time selectors
 				"pause=Pause": ({ }),
 				"resume=Resume": ({ }),
-				"extend=Extend": ({"Extra time"}),
+				"extend=Extend": ({"#Extra time"}),
 				"status=Status": ({ }),
 			]),
 		}),
@@ -147,7 +147,7 @@ constant builtin_param = ({
 			([
 				"\0": "Action",
 				"claw": ({ }),
-				({"shake", "rattle", "roll"}): ({"Intensity"}),
+				({"shake", "rattle", "roll"}): ({"#Intensity"}),
 				"merge=Merge mode": ({"/Mode/normal=Normal/contest=Contest/off=Off"}),
 				"add": ({"Type", "Label", "Image"}), //A bit clunky since label and image can have colon prefixes, but good enough for now
 				"remove": ({"Type", "Label"}),

@@ -17,9 +17,10 @@ constant builtin_param = ({
 	([ //This will have the options, mapped to their additional args. The label is keyed with a NUL.
 		"\0": "Action",
 		"get": ({ }), //This one needs no more args
-		({"set", "add", "spend"}): ({"New value"}), //One more arg for any of these values
+		"set": ({"New value"}), //One more arg for this one
+		({"add", "spend"}): ({"#New value"}), //Both of these get the same handling - numeric input
 		"clear": ({ }), //Can have this separately, or combine it with get, whichever makes more sense logically
-		({"leaders", "lowleaders"}): ({"Top N"}), //This one gets a different arg, which would display a different label in the front end
+		({"leaders", "lowleaders"}): ({"#Top N"}), //This one gets a different arg, which would display a different label in the front end
 	]),
 	//If any more args were listed here, they would happen after the additionals given above.
 });

@@ -2,7 +2,7 @@ inherit builtin_command;
 constant builtin_name = "Choose from chat";
 constant builtin_description = "Pick a random person who has chatted recently";
 //TODO maybe: Optional filter to only followers and/or only subs?
-constant builtin_param = ({"Time limit", "Number of people"});
+constant builtin_param = ({"#Time limit", "#Number of people"});
 constant vars_provided = ([
 	"{chat1name}": "Name of first selected chatter",
 	"{chat1uid}": "User ID of first selected chatter",

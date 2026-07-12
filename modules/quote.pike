@@ -5,11 +5,11 @@ constant builtin_name = "Quotes";
 constant builtin_param = ({
 	([
 		"\0": "Action",
-		"Get": ({"Quote number (optional)"}),
+		"Get": ({"#Quote number (optional)"}),
 		//Changing this might be a backward compatibility break, but can we hide it in the UI,
 		//and maybe define the new params as "last arg is the text"???
-		"Add": ({"Quote number (must be zero)", "Text"}),
-		"Delete": ({"Quote number"}),
+		"Add": ({"#Quote number (must be zero)", "Text"}),
+		"Delete": ({"#Quote number"}),
 	]),
 });
 constant vars_provided = ([
