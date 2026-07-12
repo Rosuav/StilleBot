@@ -194,7 +194,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	if (req->variables->login == "demo") return redirect("raidfinder?categories=mustardmine"); //Old URL for the same functionality
 	if (req->variables->raiders || req->variables->categories || req->variables->login || req->variables->train || req->variables->highlights || req->variables->team) {
 		mapping args = ([]);
-		if (req->variables->categories == "DJs") werror("RAIDFINDER ARGS %O\n", args);
+		if (req->variables->categories == "DJs") werror("RAIDFINDER ARGS %O\n", args); //????? This ought to be empty! But it isn't - on Gideon.
 		if (req->variables->raiders) {
 			//Raiders mode (categories omitted but "?raiders" specified). Particularly useful with a for= search.
 			//List everyone who's raided you, including their timestamps
@@ -290,7 +290,6 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			default: { //For ?categories=Art,Food%20%26%20Drink - explicit categories
 				array cats = await(get_helix_paginated("https://api.twitch.tv/helix/games", (["name": req->variables->categories / ","])));
 				if (sizeof(cats)) {
-					if (req->variables->categories == "DJs") werror("RAIDFINDER DEBUG %O\nARGS %O\nCATS %O\n", req->variables, args, cats); //The correct game ID is 1669431183, and there should be no initial args.
 					args->game_id = (array(string))cats->id;
 					title = cats->name * ", " + " streams";
 					//Include the box art. What should we do with those that don't have any?
