@@ -289,8 +289,8 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			default: { //For ?categories=Art,Food%20%26%20Drink - explicit categories
 				array cats = await(get_helix_paginated("https://api.twitch.tv/helix/games", (["name": req->variables->categories / ","])));
 				if (sizeof(cats)) {
+					if (req->variables->categories == "DJs") werror("RAIDFINDER DEBUG %O\nARGS %O\nCATS %O\n", req->variables, args, cats); //The correct game ID is 1669431183, and there should be no initial args.
 					args->game_id = (array(string))cats->id;
-					if (req->variables->categories == "DJs") werror("RAIDFINDER DEBUG %O\nARGS %O\n", req->variables, args); //The correct game ID is 1669431183
 					title = cats->name * ", " + " streams";
 					//Include the box art. What should we do with those that don't have any?
 					auxtitle = replace(sprintf("%{ ![](%s)%}", cats->box_art_url), (["{width}": "20", "{height}": "27"]));
