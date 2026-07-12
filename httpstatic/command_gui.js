@@ -959,7 +959,7 @@ const tray_tabs = [
 		{type: "builtin_tz", builtin_param: "Los Angeles"},
 	]},
 	{name: "Advanced", color: "#bbffbb", items: [
-		{type: "builtin_chan_rewards"},
+		{type: "builtin_chan_rewards", builtin_param: ["", "cost", "100"]},
 		{type: "randrot", mode: "rotate"},
 		{type: "weight", weight: 2},
 		{type: "cooldown", cdlength: "30", cdname: ""},
