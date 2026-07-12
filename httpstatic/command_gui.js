@@ -2137,6 +2137,8 @@ function retrieve_attrs(dest, params) {
 			//If this is a builtin governor, see if we have subsequent elements to retrieve too.
 			//They will have their own attribute names and will generally continue the builtin_param
 			//array immediately after the element we just added.
+			const opt = val.querySelector(":checked"); //If the selector is not simply the type of the value, a drop-down can specify it as a data attribute.
+			if (opt && opt.dataset.selector) value = opt.dataset.selector;
 			const subs = val.subsequent_params?.[value];
 			if (subs) retrieve_attrs(dest, subs);
 		}
