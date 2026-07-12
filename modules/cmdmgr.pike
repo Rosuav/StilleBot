@@ -551,7 +551,7 @@ void _save_command(object channel, string cmd, echoable_message response, mappin
 		//cooldowns no longer part of the command won't be purged; at
 		//worst, they'll linger in G->G until restart - no big deal.
 		int timeout = G->G->cooldown_timeout[cdname + channel->name] - time();
-		if (!intp(timeout) || !intp(cdlength)) werror("WARNING: cmdmgr cooldowns %O %O\n", timeout, cdlength); //Try to track down a crash on the next line
+		if (!intp(timeout) || !intp(cdlength)) werror("WARNING: cmdmgr cooldowns extra %O\n", extra); //Try to track down a crash on the next line
 		if (cdlength && timeout > cdlength) G->G->cooldown_timeout[cdname + channel->name] = cdlength + time();
 	}
 	if (mappingp(response) && response->automate && G->G->stream_online_since[channel->userid]) {
