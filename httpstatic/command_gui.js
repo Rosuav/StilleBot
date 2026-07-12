@@ -246,10 +246,10 @@ const builtin_validators = {
 		validate: val => alertcfg.loading || alertcfg.stdalerts.find(a => a.id === val) || alertcfg.personals.find(a => a.id === val),
 	},
 	monitor_id: {...default_handlers,
+		label: "Monitor",
 		make_control(id, val, el) {
 			if (!window.cmdedit_collections.monitors[val]) val = Object.keys(window.cmdedit_collections.monitors)[0]; //Select the first if nothing else selected
-			setTimeout(check_monitor_params, 0, val);
-			return SELECT({...id, class: "monitor-selection"}, [
+			return SELECT(id, [
 				//TODO: Sort these in some useful way (or at least consistent)
 				Object.entries(window.cmdedit_collections.monitors).map(([id, m]) => {
 					let label = m.text;
@@ -259,7 +259,7 @@ const builtin_validators = {
 						case "pile": label = "Pile of Pics - " + (m.label || m.varname); break; //No good inherent distinguishing features here
 						default: break; //Simple text can be displayed as-is
 					}
-					return OPTION({".selected": id === val, value: id}, label);
+					return OPTION({".selected": id === val, value: id, "data-selector": m.type}, label);
 				}),
 			])
 		},
@@ -290,23 +290,6 @@ const builtin_validators = {
 		}),
 	},
 };
-function check_monitor_params(id) {
-	const mon = window.cmdedit_collections.monitors[id];
-	if (!mon) return; //Can only happen if it's really slow or you're fast clicking on it
-	let labels = [null, null, null, null];
-	//TODO: With the "Action" options, replace the input with a select, offering the exact valid actions and no others
-	//TODO: Generalize this to allow for trees of parameter meanings. Maybe if an earlier one is a mapping????
-	//TODO: Implement MOCKUP_builtin_param in whatever form it gets made. Note that monitors is still a bit of a
-	//special case, as it switches on the type rather than the value, but it'll still all be basically here.
-	if (mon.type === "countdown") labels = ["Action", "Time (seconds)", null, null];
-	else if (mon.type === "goalbar") labels = ["Advance by", null, null, null];
-	else if (mon.type === "pile") labels = ["Action", "Thing", "Label", "Image"];
-	set_content('label[for="value-builtin_param1"]', labels[0] || "n/a").closest("tr").hidden = !labels[0];
-	set_content('label[for="value-builtin_param2"]', labels[1] || "n/a").closest("tr").hidden = !labels[1];
-	set_content('label[for="value-builtin_param3"]', labels[2] || "n/a").closest("tr").hidden = !labels[2];
-	set_content('label[for="value-builtin_param4"]', labels[3] || "n/a").closest("tr").hidden = !labels[3];
-}
-on("change", ".monitor-selection", e => check_monitor_params(e.match.value));
 
 function build_element(param, cfg) {
 	if (param.label === null) return null; //Note that a label of undefined is probably a bug and should be visible.
@@ -325,6 +308,7 @@ function build_element(param, cfg) {
 		))]);
 	}
 	if (typeof values !== "object") return null; //Fixed strings and such
+	if (param.subsequent) {id[".subsequent_params"] = param.subsequent; id.className = "builtin-governor";}
 	let value = cfg.value_override;
 	if (!value) {
 		value = propedit[param.attr];
@@ -340,7 +324,6 @@ function build_element(param, cfg) {
 		} else if (values.length === 0) {
 			control = SELECT(id, OPTION({disabled: true}, param.if_empty || "(none)"));
 		} else {
-			if (param.subsequent) {id[".subsequent_params"] = param.subsequent; id.className = "builtin-governor";}
 			control = SELECT({...id, value}, values.map(v => OPTION({value: v}, (param.selections||{})[v] || v)));
 		}
 	}
@@ -362,7 +345,12 @@ function update_governed_params() {
 		//Subsequent have "value-builtin_paramN" for index N.
 		let idx = gov.id.slice("value-builtin_param".length);
 		children.length = i + 1; //Truncate all subsequent from our array (but leave them in the DOM)
-		const buildme = gov.subsequent_params[gov.value];
+		let governor = gov.value;
+		//Drop-downs can customize their handling by giving the options a
+		//data-selector attribute. Currently this is only done for monitors.
+		const opt = gov.querySelector(":checked");
+		if (opt && opt.dataset.selector) governor = opt.dataset.selector;
+		const buildme = gov.subsequent_params[governor];
 		if (buildme) for (let param of buildme) {
 			++idx;
 			const curelem = DOM("#value-builtin_param" + idx);
@@ -444,7 +432,13 @@ function reformat_param(param, idx) {
 			else subsequent[value] = param[s].map((p, i) => reformat_param(p, idx + i + 1));
 			return value;
 		});
-		return {attr: "builtin_param" + (idx||""), label: param["\0"] || "", values, selections, subsequent};
+		let label = param["\0"] || "";
+		const validator = builtin_validators[label];
+		if (validator) {
+			values = validator;
+			label = values.label;
+		}
+		return {attr: "builtin_param" + (idx||""), label, values, selections, subsequent};
 	}
 	else if (param[0] === "/") {
 		//Simple selection parameters load up the options into a single string.

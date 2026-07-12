@@ -129,18 +129,13 @@ img {
 
 constant builtin_name = "Monitors"; //The front end may redescribe this according to the parameters
 constant builtin_description = "Get information about a channel monitor";
-//NOTE: The labels for parameters 1 and 2 will be replaced by the GUI editor based on monitor type.
-//TODO: Can this be done with MOCKUP_builtin_param somehow? It would be somewhat different, as the
-//lookup key would need to be the monitor's type (rather than using the text of the first parameter),
-//but this would be an excellent feature if it can be coded up nicely.
-constant builtin_param = ({"/Monitor/monitor_id", "Advancement/action", "Time/Type", "Label", "Image"});
-constant MOCKUP_builtin_param = ({
+constant builtin_param = ({
 	([
 		"\0": "monitor_id", //Special-cased in the front end since this actually requires a validator.
 		"goalbar": ({"Advance"}),
 		"countdown": ({
 			([
-				"\0": "/Action",
+				"\0": "Action",
 				"start=Start": ({"Countdown time"}),
 				"pause=Pause": ({ }),
 				"resume=Resume": ({ }),
@@ -150,11 +145,11 @@ constant MOCKUP_builtin_param = ({
 		}),
 		"pile": ({
 			([
-				"\0": "/Action",
+				"\0": "Action",
 				"claw": ({ }),
 				({"shake", "rattle", "roll"}): ({"Intensity"}),
 				"merge=Merge mode": ({"/Mode/normal=Normal/contest=Contest/off=Off"}),
-				"add": ({ }), //TODO: Code up all the args to add
+				"add": ({"Type", "Label", "Image"}), //A bit clunky since label and image can have colon prefixes, but good enough for now
 				"remove": ({"Type", "Label"}),
 			]),
 		}),
