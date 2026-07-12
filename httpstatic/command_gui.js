@@ -440,7 +440,7 @@ function reformat_param(param, idx) {
 		}
 		return {attr: "builtin_param" + (idx||""), label, values, selections, subsequent};
 	}
-	else if (param[0] === "/") {
+	if (param[0] === "/") {
 		//Simple selection parameters load up the options into a single string.
 		let split = param.split("/"); split.shift(); //Remove the empty at the start
 		const label = split.shift();
@@ -457,9 +457,10 @@ function reformat_param(param, idx) {
 		}
 		return {attr: "builtin_param" + (idx||""), label, values: split, selections};
 	}
-	//Input parameters simply ask for a value. TODO: Support checkboxes and numerics
-	else if (param !== "") return {attr: "builtin_param" + (idx||""), label: param};
-	//else null? Is that okay?
+	//Input parameters simply ask for a value. "#Label" and "?Label" choose different input types, but otherwise no validation.
+	if (param[0] === "#") return {attr: "builtin_param" + (idx||""), label: param.slice(1), values: numeric};
+	if (param[0] === "?") return {attr: "builtin_param" + (idx||""), label: param.slice(1), values: bool_attr};
+	return {attr: "builtin_param" + (idx||""), label: param};
 }
 function builtin_types() {
 	const ret = { };
@@ -467,7 +468,7 @@ function builtin_types() {
 		if (typeof blt.param === "string") blt.param = [blt.param];
 		const b = ret["builtin_" + name] = {...stubtypes.builtin,
 			label: builtin_label_funcs[name] || (el => blt.name),
-			params: blt.param.map(reformat_param),
+			params: blt.param.filter(p => p !== "").map(reformat_param), //Blank entries get excluded as there's nothing to input
 			typedesc: blt.desc, provides: { },
 		};
 		b.params.unshift({attr: "builtin", values: name});
