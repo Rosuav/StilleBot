@@ -132,7 +132,7 @@ constant builtin_description = "Get information about a channel monitor";
 constant builtin_param = ({
 	([
 		"\0": "monitor_id", //Special-cased in the front end since this actually requires a validator.
-		"goalbar": ({"Advance"}),
+		"goalbar": ({"#Advance"}),
 		"countdown": ({
 			([
 				"\0": "Action",
