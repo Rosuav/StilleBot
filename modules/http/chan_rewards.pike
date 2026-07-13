@@ -232,6 +232,7 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 	string reward_id = param[0];
 	mapping params = ([]);
 	int empty_ok = 0, hack_reset = 0;
+	if (sizeof(param) % 2 == 0) param += ({""}); //Easier to always have an arg
 	foreach (param[1..] / 2, [string cmd, string arg]) {
 		switch (cmd) {
 			case "enable": params->is_enabled = arg != "0" ? Val.true : Val.false; break;
