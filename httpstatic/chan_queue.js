@@ -10,7 +10,7 @@ export function render(data) {
 		const btnstyle = "font-family: " + sty.font + ", " + sty.fontfamily + "; font-size: " + sty.fontsize + "px; color: " + sty.queuetextcolor + "; background: ";
 		replace_content("#queueinfo", [
 			myname === "-" && [H1({style: "color: aliceblue"}, "Not logged in"), H2(BUTTON({class: "twitchlogin"}, "Log in"))],
-			TABLE({style: sty.css_text + "; margin-bottom: 2.5em"}, [
+			TABLE({style: sty.css_text + "; margin-bottom: 5em"}, [
 				THEAD(TR({style: "background: " + (sty.altrowcolor || sty.bgcolor)}, [TH("#"), TH(sty.itemlbl || "Song"), TH(sty.originlbl || "Musical/Artist"), TH("Requestor"), TH()])),
 				TBODY(!data.queue?.length ? TR(TD({colSpan: 5}, "No requests currently."))
 				: data.queue.map((q, idx) => {
@@ -32,7 +32,7 @@ export function render(data) {
 			DIV({id: "bottombar"},
 				data.queue_open ? SPAN({style: sty.css_text}, [
 					BUTTON({type: "button", id: "closequeue", style: btnstyle + (sty.queuebgclose||"aliceblue")}, "Close Queue"),
-					LABEL([" after ", INPUT({id: "closeafter", type: "number", value: data.close_after || "0"})]),
+					LABEL([SPAN({style: "padding: 0 0.75em"}, " after "), INPUT({id: "closeafter", type: "number", value: data.close_after || "0"})]),
 				]) : BUTTON({type: "button", id: "openqueue", style: btnstyle + (sty.queuebgopen||"aliceblue")}, "Open Queue"),
 			),
 		]);
