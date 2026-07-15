@@ -10,7 +10,7 @@ export function render(data) {
 		const btnstyle = "font-family: " + sty.font + ", " + sty.fontfamily + "; font-size: " + sty.fontsize + "px; color: " + sty.queuetextcolor + "; background: ";
 		replace_content("#queueinfo", [
 			myname === "-" && [H1({style: "color: aliceblue"}, "Not logged in"), H2(BUTTON({class: "twitchlogin"}, "Log in"))],
-			TABLE({style: sty.css_text}, [
+			TABLE({style: sty.css_text + "; margin-bottom: 2.5em"}, [
 				THEAD(TR({style: "background: " + (sty.altrowcolor || sty.bgcolor)}, [TH("#"), TH(sty.itemlbl || "Song"), TH(sty.originlbl || "Musical/Artist"), TH("Requestor"), TH()])),
 				TBODY(!data.queue?.length ? TR(TD({colSpan: 5}, "No requests currently."))
 				: data.queue.map((q, idx) => {
