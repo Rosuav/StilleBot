@@ -235,7 +235,7 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 	if (sizeof(param) % 2 == 0) param += ({""}); //Easier to always have an arg
 	foreach (param[1..] / 2, [string cmd, string arg]) {
 		switch (cmd) {
-			case "enable": params->is_enabled = arg != "0" ? Val.true : Val.false; break;
+			case "enable": params->is_enabled = arg != "0" && arg != "off" ? Val.true : Val.false; break;
 			case "disable": params->is_enabled = Val.false; break;
 			case "cost": params->cost = (int)arg; break;
 			case "title": params->title = arg; break; //With legacy form, these would be unable to set more than one word.
