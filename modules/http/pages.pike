@@ -20,7 +20,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	if (string sig = req->request_type == "POST" && req->request_headers["x-hub-signature-256"]) {
 		string hmac_key = "It's a Secret to Everybody"; //Test key as per https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries
 		object signer = Crypto.SHA256.HMAC(hmac_key || "");
-		if (sig != MIME.encode_base64(signer(req->body_raw))) {
+		if (sig != "sha256=" + String.string2hex(signer(req->body_raw))) {
 			werror("GitHub webhook - Failed check with core hmac\n");
 			return (["error": 418, "data": "My teapot thinks your signature is wrong."]);
 		}
