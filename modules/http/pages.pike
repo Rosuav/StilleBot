@@ -16,19 +16,18 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		//As in chan_integrations, not currently awaiting the promise. Should we?
 		return "Passing it along.";
 	}
-	werror("GOT A PAGES REQUEST\nHeaders %O\nBody:\n%s\n--------------\n", req->request_headers, req->body_raw);
 	if (string sig = req->request_type == "POST" && req->request_headers["x-hub-signature-256"]) {
-		string hmac_key = "It's a Secret to Everybody"; //Test key as per https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries
-		object signer = Crypto.SHA256.HMAC(hmac_key || "");
+		string hmac_key = G->G->instance_config->github_hmac || "It's a Secret to Everybody"; //Test key as per https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries
+		object signer = Crypto.SHA256.HMAC(hmac_key);
 		if (sig != "sha256=" + String.string2hex(signer(req->body_raw))) {
-			werror("GitHub webhook - Failed check with core hmac\n");
+			werror("GitHub webhook - Failed HMAC check\n");
 			return (["error": 418, "data": "My teapot thinks your signature is wrong."]);
 		}
-		mapping body = Standards.JSON.decode_utf8(req->body_raw);
-		mapping data = mappingp(body) && body->data;
+		mapping data = Standards.JSON.decode_utf8(req->body_raw);
 		if (!mappingp(data)) return (["error": 400, "data": "No data in body"]);
+		werror("DATA %O\n", data);
 	}
 	return "Okay";
 }
 
-//TODO: Get some sort of hook so we get notified on other changes, which will get pushed out on the socket
+//TODO: Use the "push" webhook to be notified of changes, which we can then push out on the websocket
