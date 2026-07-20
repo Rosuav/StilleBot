@@ -81,7 +81,17 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		werror("GITHUB HOOK %O\n", data);
 		return "Okay";
 	}
-	array repos = await(github_api_request("/orgs/mustardmine/repos"));
+	/* Create:
+	mixed repos = await(github_api_request("/orgs/mustardmine/repos", (["json": ([
+		"name": "TestRepo",
+		"description": "Test repository",
+		"visibility": "public",
+	])])));
+	*/
+	//Delete:
+	//mixed repos = await(github_api_request("/repos/mustardmine/TestRepo", (["method": "DELETE"])));
+	//List:
+	mixed repos = await(github_api_request("/orgs/mustardmine/repos"));
 	return sprintf("Repositories: %O\n", repos);
 }
 
