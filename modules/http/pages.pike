@@ -78,7 +78,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		}
 		mapping data = Standards.JSON.decode_utf8(req->body_raw);
 		if (!mappingp(data)) return (["error": 400, "data": "No data in body"]);
-		werror("DATA %O\n", data);
+		werror("GITHUB HOOK %O\n", data);
 		return "Okay";
 	}
 	array repos = await(github_api_request("/orgs/mustardmine/repos"));
