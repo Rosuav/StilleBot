@@ -1,3 +1,4 @@
 *.log
 tts-credentials.json
 instance-config.json
+github-key.pem
