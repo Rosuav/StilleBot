@@ -83,9 +83,16 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	}
 	/* Create:
 	mixed repos = await(github_api_request("/orgs/mustardmine/repos", (["json": ([
-		"name": "TestRepo",
-		"description": "Test repository",
+		"name": "Template",
+		"description": "Template for new repositories",
 		"visibility": "public",
+	])])));
+	*/
+	/* Create from template:
+	mixed repos = await(github_api_request("/repos/mustardmine/template/generate", (["json": ([
+		"owner": "mustardmine",
+		"name": "Example",
+		"description": "Example newly-made site",
 	])])));
 	*/
 	//Delete:
