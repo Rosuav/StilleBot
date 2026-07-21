@@ -2,8 +2,10 @@
 //Possibly will be able to push to other forms of hosting, for those for whom
 //GH Pages is ill-suited.
 inherit http_websocket;
+inherit annotated;
 
 constant markdown = #"# Pages\n\nloading...";
+@retain: mapping github_repo_details = ([]);
 
 //Cache the generated token until it's close to expiring
 //Not retained across code reloads as it'll never have more than ten minutes of validity anyway
@@ -58,6 +60,17 @@ __async__ mapping|array github_api_request(string endpoint, mapping|void options
 	mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
 	//TODO: error handling
 	return data;
+}
+
+__async__ void query_github_repo(string userid) {
+	mapping repo = await(github_api_request("/repos/mustardmine/" + userid));
+	if (repo->status == "404") repo = ([]); //No repo found; use empty object to show that it has been checked.
+	else if (repo->status) repo = (["_error": "Unable to load repository", "_raw": repo]);
+	repo->_last_checked = time();
+	//Whether the repo was found or not, store the status in our local cache.
+	//We don't need to repeatedly re-query just because it doesn't exist.
+	github_repo_details[userid] = repo;
+	send_updates_all("#" + userid);
 }
 
 __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req) {
@@ -152,5 +165,12 @@ __async__ mapping get_state(string group) {
 	sscanf(group, "%s#%s", string subgroup, string userid);
 	if (userid == "0") return (["self": Val.null]); //Signal the front end that you're not logged in
 	mapping user = await(get_user_info(userid, "id"));
-	return (["self": user]);
+	mapping site = github_repo_details[userid];
+	if (site->?_last_checked < time() - 3600) query_github_repo(userid);
+	return ([
+		"self": user,
+		"site": site,
+	]);
 }
+
+protected void create(string name) {::create(name);}
