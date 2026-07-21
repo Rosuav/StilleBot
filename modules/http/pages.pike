@@ -3,6 +3,8 @@
 //GH Pages is ill-suited.
 inherit http_websocket;
 
+constant markdown = #"# Pages\n\nloading...";
+
 //Cache the generated token until it's close to expiring
 //Not retained across code reloads as it'll never have more than ten minutes of validity anyway
 string|zero jwt; int jwt_expiration;
@@ -132,8 +134,23 @@ Testing out some stuff with GH Pages and the GH API.
 	//Set up GH Pages:
 	//mixed repos = await(github_api_request("/repos/mustardmine/example/pages", (["json": (["source": (["branch": "master"])])])));
 	//List:
-	mixed repos = await(github_api_request("/orgs/mustardmine/repos"));
-	return sprintf("Repositories: %O\n", repos);
+	//mixed repos = await(github_api_request("/orgs/mustardmine/repos"));
+	//return sprintf("Repositories: %O\n", repos);
+	return render(req, (["vars": (["ws_group": "#" + req->misc->session->user->?id])]));
 }
 
 //TODO: Use the "push" webhook to be notified of changes, which we can then push out on the websocket
+
+string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!stringp(msg->group)) return "String group only";
+	sscanf(msg->group, "%s#%s", string subgroup, string userid);
+	if (userid != (string)conn->session->user->?id) return "That's not you";
+	if (subgroup != "") return "Bad subgroup"; //Currently no subgroups are supported
+}
+
+__async__ mapping get_state(string group) {
+	sscanf(group, "%s#%s", string subgroup, string userid);
+	if (userid == "0") return (["self": Val.null]); //Signal the front end that you're not logged in
+	mapping user = await(get_user_info(userid, "id"));
+	return (["self": user]);
+}
