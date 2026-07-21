@@ -62,7 +62,8 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	if (string other = req->request_type == "POST" && !is_active_bot() && get_active_bot()) {
 		//POST requests are likely to be webhooks. Forward them to the active bot, including whichever
 		//of the relevant headers we spot. Add headers to this as needed.
-		constant headers = (<"x-hub-signature-256", "content-type">);
+		constant headers = (<"x-hub-signature-256", "x-github-event", "x-github-delivery", "content-type">);
+		//Possibly also of interest: x-github-hook-{id,installation-target-id,installation-target-type}
 		werror("Forwarding webhook...\n");
 		Concurrent.Future fwd = Protocols.HTTP.Promise.post_url("https://" + other + req->not_query,
 			Protocols.HTTP.Promise.Arguments((["headers": req->request_headers & headers, "data": req->body_raw])));
@@ -78,7 +79,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		}
 		mapping data = Standards.JSON.decode_utf8(req->body_raw);
 		if (!mappingp(data)) return (["error": 400, "data": "No data in body"]);
-		werror("GITHUB HOOK %O\n", data);
+		werror("GITHUB HOOK %O %O\n", req->request_headers["x-github-event"], data);
 		return "Okay";
 	}
 	/* Create:
