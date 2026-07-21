@@ -79,7 +79,24 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		}
 		mapping data = Standards.JSON.decode_utf8(req->body_raw);
 		if (!mappingp(data)) return (["error": 400, "data": "No data in body"]);
-		werror("GITHUB HOOK %O %O\n", req->request_headers["x-github-event"], data);
+		//Useful hooks:
+		switch (req->request_headers["x-github-event"]) {
+			case "push":
+				//Someone just pushed code. Send out updates on the websocket. If someone is viewing that file
+				//and hasn't changed it, replace it in their screen. If edited, pop up immediate prompt. Offer
+				//diffs as available.
+				werror("GITHUB PUSH %O\n", data->repository->name);
+				break;
+			case "workflow_run":
+				//Most likely, it's the GH Pages build. If data->action == "in_progress", mark that there's a
+				//build in progress. If it is "completed", show that your most recent edit is live. Recognize
+				//the user by data->repository->name.
+				werror("GITHUB WORKFLOW %O %O\n", data->repository->name, data->action);
+				//Maybe check if data->workflow->name == "dynamic/pages/pages-build-deployment"?
+				break;
+			default:
+				werror("GITHUB HOOK %O %O\n", req->request_headers["x-github-event"], data);
+		}
 		return "Okay";
 	}
 	/* Create:
@@ -112,6 +129,8 @@ Testing out some stuff with GH Pages and the GH API.
 	if (repos->status == "409") ; //File was edited while you were looking at it
 	repos->hack_previous_content = MIME.decode_base64(file->content);
 	// */
+	//Set up GH Pages:
+	//mixed repos = await(github_api_request("/repos/mustardmine/example/pages", (["json": (["source": (["branch": "master"])])])));
 	//List:
 	mixed repos = await(github_api_request("/orgs/mustardmine/repos"));
 	return sprintf("Repositories: %O\n", repos);
