@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {B, BUTTON, H1, IMG, P} = lindt; //autoimport
+const {A, B, BUTTON, H1, IMG, P} = lindt; //autoimport
 
 export function render(data) {
 	replace_content("main", [
@@ -18,7 +18,7 @@ export function render(data) {
 			//If there's no URL, either it hasn't loaded yet, or you don't have a repo.
 			data.site?._last_checked ? [
 				"You don't currently have a web site set up this way. Would you like to start one? ",
-				BUTTON({type: "button", id: "createsite"}, "Create site!"),
+				BUTTON({type: "button", id: "create_site"}, "Create site!"),
 			] : "Loading web site information...",
 		]) : [
 			//TODO: Show the deployed version, esp with its CNAME if present
@@ -26,3 +26,5 @@ export function render(data) {
 		],
 	]);
 }
+
+on("click", "#create_site", e => ws_sync.send({cmd: "create_site"}));

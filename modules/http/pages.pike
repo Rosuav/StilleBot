@@ -109,6 +109,14 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 				werror("GITHUB WORKFLOW %O %O\n", data->repository->name, data->action);
 				//Maybe check if data->workflow->name == "dynamic/pages/pages-build-deployment"?
 				break;
+			case "installation_repositories":
+				//Repositories have changed. Force a refresh of each. Note that we're not currently
+				//serializing these; it's unlikely there'll be lots all at once.
+				foreach (data->repositories_added + data->repositories_removed, mapping repo) {
+					m_delete(github_repo_details, repo->name);
+					query_github_repo(repo->name);
+				}
+				break;
 			default:
 				werror("GITHUB HOOK %O %O\n", req->request_headers["x-github-event"], data);
 		}
@@ -119,13 +127,6 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		"name": "Template",
 		"description": "Template for new repositories",
 		"visibility": "public",
-	])])));
-	// */
-	/* Create from template:
-	mixed repos = await(github_api_request("/repos/mustardmine/template/generate", (["json": ([
-		"owner": "mustardmine",
-		"name": "Example",
-		"description": "Example newly-made site",
 	])])));
 	// */
 	//Delete:
@@ -144,8 +145,6 @@ Testing out some stuff with GH Pages and the GH API.
 	if (repos->status == "409") ; //File was edited while you were looking at it
 	repos->hack_previous_content = MIME.decode_base64(file->content);
 	// */
-	//Set up GH Pages:
-	//mixed repos = await(github_api_request("/repos/mustardmine/example/pages", (["json": (["source": (["branch": "master"])])])));
 	//List:
 	//mixed repos = await(github_api_request("/orgs/mustardmine/repos"));
 	//return sprintf("Repositories: %O\n", repos);
@@ -171,6 +170,28 @@ __async__ mapping get_state(string group) {
 		"self": user,
 		"site": site,
 	]);
+}
+
+__async__ mapping websocket_cmd_create_site(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//Cor, what a site...
+	string userid = conn->session->user->id;
+	mapping repo = await(github_api_request("/repos/mustardmine/template/generate", (["json": ([
+		"owner": "mustardmine",
+		"name": userid,
+		"description": conn->session->user->display_name + "'s web site",
+	])])));
+	if (repo->status) {
+		//If something goes wrong, log the error, and clear out our idea of what the repo has
+		werror("REPO CREATION FAILED %O\n", repo);
+		m_delete(github_repo_details, userid);
+		query_github_repo(userid);
+		return (["cmd": "error", "error": "Unable to create site (see log)"]);
+	}
+	await(github_api_request("/repos/mustardmine/" + userid + "/pages", (["json": (["source": (["branch": "master"])])])));
+	//TODO: Error checking. What happens if Pages can't be set up?
+	repo->_last_checked = time();
+	github_repo_details[userid] = repo;
+	send_updates_all("#" + userid);
 }
 
 protected void create(string name) {::create(name);}
