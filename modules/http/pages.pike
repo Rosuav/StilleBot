@@ -64,7 +64,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		//of the relevant headers we spot. Add headers to this as needed.
 		constant headers = (<"x-hub-signature-256", "x-github-event", "x-github-delivery", "content-type">);
 		//Possibly also of interest: x-github-hook-{id,installation-target-id,installation-target-type}
-		werror("Forwarding webhook...\n");
+		//werror("Forwarding GitHub webhook...\n");
 		Concurrent.Future fwd = Protocols.HTTP.Promise.post_url("https://" + other + req->not_query,
 			Protocols.HTTP.Promise.Arguments((["headers": req->request_headers & headers, "data": req->body_raw])));
 		//As in chan_integrations, not currently awaiting the promise. Should we?
