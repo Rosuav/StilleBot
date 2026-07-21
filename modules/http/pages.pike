@@ -87,16 +87,30 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		"description": "Template for new repositories",
 		"visibility": "public",
 	])])));
-	*/
+	// */
 	/* Create from template:
 	mixed repos = await(github_api_request("/repos/mustardmine/template/generate", (["json": ([
 		"owner": "mustardmine",
 		"name": "Example",
 		"description": "Example newly-made site",
 	])])));
-	*/
+	// */
 	//Delete:
 	//mixed repos = await(github_api_request("/repos/mustardmine/TestRepo", (["method": "DELETE"])));
+	/* Edit contents:
+	mapping file = await(github_api_request("/repos/mustardmine/example/contents/index.md"));
+	mapping repos = await(github_api_request("/repos/mustardmine/example/contents/index.md", (["method": "PUT", "json": ([
+		"sha": file->sha,
+		"message": "Update web site",
+		"committer": (["name": "SomeUserName", "email": "142857@twitchuser.invalid"]),
+		"content": MIME.encode_base64(#"# My new web site
+
+Testing out some stuff with GH Pages and the GH API.
+", 1),
+	])])));
+	if (repos->status == "409") ; //File was edited while you were looking at it
+	repos->hack_previous_content = MIME.decode_base64(file->content);
+	// */
 	//List:
 	mixed repos = await(github_api_request("/orgs/mustardmine/repos"));
 	return sprintf("Repositories: %O\n", repos);
