@@ -14,15 +14,15 @@ export function render(data) {
 			],
 			BUTTON({type: "button", class: "twitchlogin", "data-force": "1"}, data.self ? "Not you?" : "Log in with Twitch"),
 		]),
-		!data.site?.url ? P([
+		!data.site.html_url ? P([
 			//If there's no URL, either it hasn't loaded yet, or you don't have a repo.
-			data.site?._last_checked ? [
+			data.site._last_checked ? [
 				"You don't currently have a web site set up this way. Would you like to start one? ",
 				BUTTON({type: "button", id: "create_site"}, "Create site!"),
 			] : "Loading web site information...",
 		]) : [
 			//TODO: Show the deployed version, esp with its CNAME if present
-			"You have a web site at ", A({href: data.site.url}, data.site.url),
+			"You have a web site at ", A({href: data.site.html_url}, data.site.html_url),
 		],
 	]);
 }

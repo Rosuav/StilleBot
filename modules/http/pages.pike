@@ -164,8 +164,8 @@ __async__ mapping get_state(string group) {
 	sscanf(group, "%s#%s", string subgroup, string userid);
 	if (userid == "0") return (["self": Val.null]); //Signal the front end that you're not logged in
 	mapping user = await(get_user_info(userid, "id"));
-	mapping site = github_repo_details[userid];
-	if (site->?_last_checked < time() - 3600) query_github_repo(userid);
+	mapping site = github_repo_details[userid] || ([]);
+	if (site->_last_checked < time() - 3600) query_github_repo(userid);
 	return ([
 		"self": user,
 		"site": site,
