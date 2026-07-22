@@ -28,3 +28,6 @@ export function render(data) {
 }
 
 on("click", "#create_site", e => ws_sync.send({cmd: "create_site"}));
+
+//TODO: Make an actual form to do this. Tell people to first create a CNAME record at DNS provider, pointing to mustardmine.github.io
+on("submit", "#set-cname-form", e => ws_sync.send({cmd: "set_cname", cname: e.match.elements.cname.value}));

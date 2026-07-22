@@ -204,9 +204,13 @@ __async__ mapping websocket_cmd_create_site(mapping(string:mixed) conn, mapping(
 	send_updates_all("#" + userid);
 }
 
-//Can set up a CNAME by updating the pages:
-//https://docs.github.com/en/rest/pages/pages?apiVersion=2026-03-10#update-information-about-a-github-pages-site
-//Then do this:
-//https://docs.github.com/en/rest/pages/pages?apiVersion=2026-03-10#get-a-dns-health-check-for-github-pages
+__async__ void websocket_cmd_set_cname(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string userid = conn->session->user->id;
+	mapping ret = await(github_api_request("/repos/mustardmine/" + userid + "/pages", (["method": "PUT", "json": (["cname": msg->cname])])));
+	//TODO: Error checking
+	//TODO: Health check: https://docs.github.com/en/rest/pages/pages?apiVersion=2026-03-10#get-a-dns-health-check-for-github-pages
+	m_delete(github_repo_details, userid);
+	query_github_repo(userid);
+}
 
 protected void create(string name) {::create(name);}
