@@ -211,6 +211,7 @@ string shorten(string title) {
 			//Mostly-duplicated into choose()
 			m_delete(cfg, "queue_open");
 			if (cfg->closemsg) channel->send(0, cfg->closemsg);
+			m_delete(cfg, "close_after"); //If there were slots remaining, but you say "close the queue now", that overrides.
 		}
 		if (msg->closeafter) cfg->close_after = (int)msg->closeafter;
 
