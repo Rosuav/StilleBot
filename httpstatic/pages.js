@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, B, BUTTON, H1, H3, IMG, LI, P, UL} = lindt; //autoimport
+const {A, B, BUTTON, DETAILS, H3, IMG, LI, P, SUMMARY, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 export function render(data) {
@@ -25,16 +25,31 @@ export function render(data) {
 			//TODO: Reword these nicely so people know "hey, you can refresh the page now"
 			data.site.build_status && " Build: " + data.site.build_status,
 		],
-		data.site.contents && [
-			H3("Files"),
+		data.site.pages && [
+			H3("Pages"), //Not a fan of calling this "pages" when the whole page is "pages". It's as bad as levels in D&D.
+			P("Most of your web site is these sorts of pages. Use Markdown syntax for styling."),
 			UL([
-				data.site.contents.map(page => LI([
-					page.name, " ",
+				data.site.pages.map(page => LI([
+					page.name.replace(/\.md$/, ""), " ",
 					BUTTON({class: "edit-file", type: "button", "data-path": page.path}, "\u{1F589}"),
 				])),
-				LI({style: "margin-top: 0.5em"}, ["Create new page ", BUTTON({id: "new-file", type: "button"}, "\u{1F589}")]),
+				LI({style: "margin-top: 0.5em"}, ["Create new page ", BUTTON({id: "new-file", type: "button", "data-extension": ".md"}, "\u{1F589}")]),
 			]),
 		],
+		["Images", "Layouts", "Scripts", "Files"].map(sec => {
+			const files = data.site[sec.toLowerCase()];
+			return files && DETAILS([
+				SUMMARY(sec === "Files" ? "Other files" : sec),
+				UL([
+					files.map(page => LI([
+						page.name, " ",
+						sec !== "Images" && BUTTON({class: "edit-file", type: "button", "data-path": page.path}, "\u{1F589}"),
+					])),
+					//TODO: Upload box
+					sec !== "Images" && LI({style: "margin-top: 0.5em"}, ["Create new file ", BUTTON({id: "new-file", type: "button"}, "\u{1F589}")]),
+				]),
+			]);
+		}),
 	]);
 }
 
@@ -46,7 +61,7 @@ on("submit", "#set-cname-form", e => ws_sync.send({cmd: "set_cname", cname: e.ma
 let editing_file = null;
 export function sockmsg_file_loaded(msg) {
 	editing_file = msg;
-	DOM("#filename").value = msg.name;
+	DOM("#filename").value = msg.name.replace(/\.md$/, "");
 	DOM("#filename").readOnly = true;
 	DOM("#filedelete").hidden = false;
 	DOM("#filecontent").value = atob(msg.content);
@@ -55,12 +70,17 @@ export function sockmsg_file_loaded(msg) {
 
 on("click", ".edit-file", e => ws_sync.send({cmd: "fetch_file", path: e.match.dataset.path}));
 on("click", "#filesave", e => {
-	ws_sync.send({cmd: "save_file", path: editing_file.path || DOM("#filename").value, content: btoa(DOM("#filecontent").value), sha: editing_file.sha});
+	ws_sync.send({
+		cmd: "save_file",
+		path: editing_file.path || (DOM("#filename").value + editing_file.extension),
+		content: btoa(DOM("#filecontent").value),
+		sha: editing_file.sha
+	});
 	DOM("#editfiledlg").close();
 });
 
 on("click", "#new-file", e => {
-	editing_file = { };
+	editing_file = {extension: e.match.dataset.extension || ""};
 	DOM("#filename").value = "";
 	DOM("#filename").readOnly = false;
 	DOM("#filedelete").hidden = true;

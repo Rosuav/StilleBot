@@ -80,6 +80,31 @@ __async__ mapping|array github_api_request(string endpoint, mapping|void options
 	return data;
 }
 
+//Categorize files into a few end-user-meaningful groups.
+//It'd be nice if GitHub gave us the file's detected MIME type, but short of actually fetching
+//the *contents* of every file, we're stuck looking at filename extensions.
+constant EXTENSION_CATEGORIES = ([
+	"md": "pages",
+	"css": "scripts", "js": "scripts",
+	"yml": "layouts", "html": "layouts",
+	"png": "images", "gif": "images", "jpg": "images", "jpeg": "images", "webp": "images",
+]);
+
+__async__ void load_directory(string userid, mapping repo, string path) {
+	array files = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + path));
+	sort(files->name, files);
+	foreach (files, mapping file) {
+		mapping f = file & (<"name", "path", "sha", "type", "size", "download_url">); //The rest is uninteresting to the front end
+		//TODO: What happens with subdirectories? When should we fetch those? What if someone has
+		//a submodule (which we won't make but could exist)? Or a symlink?
+		sscanf(file->name, "%*s.%s", string ext); //If it has more than one extension, it's not going to match any of our checks anyway
+		//Any non-files get thrown into the "files" category, which is a bit odd, but
+		//it's the "you probably don't want to edit these, at least not often" category.
+		string cat = (file->type == "file" && EXTENSION_CATEGORIES[ext]) || "files";
+		repo[cat] += ({f});
+	}
+}
+
 __async__ void query_github_repo(string userid) {
 	mapping repo = await(github_api_request("/repos/mustardmine/" + userid));
 	if (repo->status == "404") repo = ([]); //No repo found; use empty object to show that it has been checked.
@@ -90,11 +115,7 @@ __async__ void query_github_repo(string userid) {
 		mapping pages = await(github_api_request("/repos/mustardmine/" + userid + "/pages"));
 		if (pages->html_url) repo->html_url = pages->html_url;
 		//Load the site contents. (Should this be done asynchronously? It's not loading the bodies of the files, just the hashes)
-		array files = await(github_api_request("/repos/mustardmine/" + userid + "/contents/"));
-		//TODO: What happens with subdirectories? When should we fetch those? What if someone has
-		//a submodule (which we won't make but could exist)? Or a symlink?
-		repo->contents = files[*] & (<"name", "path", "sha", "type", "size", "download_url">);
-		sort(repo->contents->name, repo->contents);
+		await(load_directory(userid, repo, ""));
 	}
 	repo->_last_checked = time();
 	//Whether the repo was found or not, store the status in our local cache.
