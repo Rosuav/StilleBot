@@ -118,7 +118,6 @@ __async__ mapping choose(object channel, string selection, string user, mapping|
 			if (limit <= 0) {ret->error = "You already have requests pending."; return;}
 		}
 		//Okay. So, let's see if we can add this one.
-		//Note that we don't deduplicate with existing requests.
 		array matches = ({ }), scores = ({ });
 		string match = lower_case(selection);
 		sscanf(match, "%[^(]", string shortmatch); //If you have a parenthesized part, don't match against that when doing short matches.
@@ -131,6 +130,13 @@ __async__ mapping choose(object channel, string selection, string user, mapping|
 		}
 		if (!sizeof(matches)) {ret->error = "Couldn't find that song - check the song list"; return;} //Nothing was a good enough match
 		sort(scores, matches);
+		//Note that checking if the song is already in the queue happens way late, since we need
+		//to know exactly what song to check for. (We could search the queue for the selection,
+		//but then "think of me" while "Think Of Me (The Phantom of the Opera)" is in the queue
+		//would be accepted, even though it'll end up matching the same thing. Note that this does
+		//NOT affect the selection; an alternative would be to exclude them from the matches, and
+		//pick something similar. But that would be quite confusing.
+		if (cfg->queue && has_value(cfg->queue->title, matches[-1]->title)) {ret->error = "Song is already in the queue!"; return;}
 		cfg->queue += ({([
 			"title": ret->selection = matches[-1]->title,
 			"user": user,
