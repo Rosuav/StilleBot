@@ -66,6 +66,12 @@ __async__ void query_github_repo(string userid) {
 	mapping repo = await(github_api_request("/repos/mustardmine/" + userid));
 	if (repo->status == "404") repo = ([]); //No repo found; use empty object to show that it has been checked.
 	else if (repo->status) repo = (["_error": "Unable to load repository", "_raw": repo]);
+	else {
+		repo = (["html_url": repo->html_url]);
+		//Do we have GH Pages? If so, replace the URL with the deployed version.
+		mapping pages = await(github_api_request("/repos/mustardmine/" + userid + "/pages"));
+		if (pages->html_url) repo->html_url = pages->html_url;
+	}
 	repo->_last_checked = time();
 	//Whether the repo was found or not, store the status in our local cache.
 	//We don't need to repeatedly re-query just because it doesn't exist.
@@ -102,13 +108,17 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 				//diffs as available.
 				werror("GITHUB PUSH %O\n", data->repository->name);
 				break;
-			case "workflow_run":
+			case "workflow_run": {
 				//Most likely, it's the GH Pages build. If data->action == "in_progress", mark that there's a
 				//build in progress. If it is "completed", show that your most recent edit is live. Recognize
 				//the user by data->repository->name.
-				werror("GITHUB WORKFLOW %O %O\n", data->repository->name, data->action);
 				//Maybe check if data->workflow->name == "dynamic/pages/pages-build-deployment"?
+				mapping repo = github_repo_details[data->repository->name];
+				if (!repo) break; //If we haven't loaded the info, clearly nobody's waiting on us
+				repo->build_status = data->action;
+				send_updates_all("#" + data->repository->name);
 				break;
+			}
 			case "installation_repositories":
 				//Repositories have changed. Force a refresh of each. Note that we're not currently
 				//serializing these; it's unlikely there'll be lots all at once.
@@ -193,5 +203,10 @@ __async__ mapping websocket_cmd_create_site(mapping(string:mixed) conn, mapping(
 	github_repo_details[userid] = repo;
 	send_updates_all("#" + userid);
 }
+
+//Can set up a CNAME by updating the pages:
+//https://docs.github.com/en/rest/pages/pages?apiVersion=2026-03-10#update-information-about-a-github-pages-site
+//Then do this:
+//https://docs.github.com/en/rest/pages/pages?apiVersion=2026-03-10#get-a-dns-health-check-for-github-pages
 
 protected void create(string name) {::create(name);}

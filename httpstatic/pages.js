@@ -21,7 +21,7 @@ export function render(data) {
 				BUTTON({type: "button", id: "create_site"}, "Create site!"),
 			] : "Loading web site information...",
 		]) : [
-			//TODO: Show the deployed version, esp with its CNAME if present
+			//NOTE: The html_url will be affected by the presence of a CNAME, so it should always be the "natural" URL.
 			"You have a web site at ", A({href: data.site.html_url}, data.site.html_url),
 		],
 	]);
