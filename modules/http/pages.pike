@@ -11,12 +11,16 @@ Build simple web pages and host them on GitHub Pages. You retain full control at
 <div id=content>loading...</div>
 
 > ### Edit file
-> File: <input id=filename></code>
+> File: <input id=filename></code> [\u{1f5d1}\ufe0e](:#filedelete title=Delete)
 >
 > <textarea id=filecontent rows=15 cols=100></textarea>
 >
 > [Save](:#filesave) [Close without saving](:.dialog_close)
 {: tag=dialog #editfiledlg}
+
+<style>
+#filedelete {background: red; color: white;}
+</style>
 ";
 
 @retain: mapping github_repo_details = ([]);
@@ -225,6 +229,20 @@ __async__ mapping websocket_cmd_save_file(mapping(string:mixed) conn, mapping(st
 			"message": "Update web site",
 			"committer": (["name": conn->session->user->display_name, "email": userid + "@twitchuser.invalid"]),
 			"content": msg->content,
+		]),
+	])));
+	if (resp->status == "409") return (["cmd": "error", "error": "File was edited while you were looking at it"]);
+}
+
+__async__ mapping websocket_cmd_delete_file(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string userid = conn->session->user->id;
+	//Unusually, this is a DELETE with a body.
+	mapping resp = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + msg->path, ([
+		"method": "DELETE",
+		"json": ([
+			"sha": msg->sha,
+			"message": "Remove page from web site",
+			"committer": (["name": conn->session->user->display_name, "email": userid + "@twitchuser.invalid"]),
 		]),
 	])));
 	if (resp->status == "409") return (["cmd": "error", "error": "File was edited while you were looking at it"]);

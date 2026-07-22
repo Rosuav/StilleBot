@@ -1,5 +1,6 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {A, B, BUTTON, H1, H3, IMG, LI, P, UL} = lindt; //autoimport
+import {simpleconfirm} from "$$static||utils.js$$";
 
 export function render(data) {
 	replace_content("#content", [
@@ -47,6 +48,7 @@ export function sockmsg_file_loaded(msg) {
 	editing_file = msg;
 	DOM("#filename").value = msg.name;
 	DOM("#filename").readOnly = true;
+	DOM("#filedelete").hidden = false;
 	DOM("#filecontent").value = atob(msg.content);
 	DOM("#editfiledlg").showModal();
 }
@@ -61,6 +63,12 @@ on("click", "#new-file", e => {
 	editing_file = { };
 	DOM("#filename").value = "";
 	DOM("#filename").readOnly = false;
+	DOM("#filedelete").hidden = true;
 	DOM("#filecontent").value = "";
 	DOM("#editfiledlg").showModal();
 });
+
+on("click", "#filedelete", simpleconfirm("Delete this file? Links to it will go nowhere and the page will cease to exist.", e => {
+	ws_sync.send({cmd: "delete_file", path: editing_file.path, sha: editing_file.sha});
+	DOM("#editfiledlg").close();
+}));
