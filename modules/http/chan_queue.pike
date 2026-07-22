@@ -121,9 +121,11 @@ __async__ mapping choose(object channel, string selection, string user, mapping|
 		//Note that we don't deduplicate with existing requests.
 		array matches = ({ }), scores = ({ });
 		string match = lower_case(selection);
+		sscanf(match, "%[^(]", string shortmatch); //If you have a parenthesized part, don't match against that when doing short matches.
 		foreach (cfg->selections, mapping sel) if (sel->title) {
+			if (sel->title == selection) {matches += ({sel}); scores += ({1000}); continue;} //Exact match. Should only be one.
 			int score = String.fuzzymatch(lower_case(sel->title), match);
-			if (sel->shorttitle) score += String.fuzzymatch(lower_case(sel->shorttitle), match) * 2;
+			if (sel->shorttitle) score += String.fuzzymatch(lower_case(sel->shorttitle), shortmatch) * 2;
 			else score *= 3;
 			if (score > 100) {matches += ({sel}); scores += ({score});}
 		}
