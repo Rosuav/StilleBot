@@ -4,7 +4,21 @@
 inherit http_websocket;
 inherit annotated;
 
-constant markdown = #"# Pages\n\nloading...";
+constant markdown = #"# Pages
+
+Build simple web pages and host them on GitHub Pages. You retain full control at all times, and can take over the site, move it to other hosting, etc, as your site grows.
+
+<div id=content>loading...</div>
+
+> ### Edit file
+> File: <code id=filename></code>
+>
+> <textarea id=filecontent rows=15 cols=100></textarea>
+>
+> [Save](:#filesave) [Close without saving](:.dialog_close)
+{: tag=dialog #editfiledlg}
+";
+
 @retain: mapping github_repo_details = ([]);
 
 //Cache the generated token until it's close to expiring
@@ -71,6 +85,12 @@ __async__ void query_github_repo(string userid) {
 		//Do we have GH Pages? If so, replace the URL with the deployed version.
 		mapping pages = await(github_api_request("/repos/mustardmine/" + userid + "/pages"));
 		if (pages->html_url) repo->html_url = pages->html_url;
+		//Load the site contents. (Should this be done asynchronously? It's not loading the bodies of the files, just the hashes)
+		array files = await(github_api_request("/repos/mustardmine/" + userid + "/contents/"));
+		//TODO: What happens with subdirectories? When should we fetch those? What if someone has
+		//a submodule (which we won't make but could exist)? Or a symlink?
+		repo->contents = files[*] & (<"name", "path", "sha", "type", "size", "download_url">);
+		sort(repo->contents->name, repo->contents);
 	}
 	repo->_last_checked = time();
 	//Whether the repo was found or not, store the status in our local cache.
@@ -132,32 +152,8 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		}
 		return "Okay";
 	}
-	/* Create:
-	mixed repos = await(github_api_request("/orgs/mustardmine/repos", (["json": ([
-		"name": "Template",
-		"description": "Template for new repositories",
-		"visibility": "public",
-	])])));
-	// */
-	//Delete:
-	//mixed repos = await(github_api_request("/repos/mustardmine/TestRepo", (["method": "DELETE"])));
-	/* Edit contents:
-	mapping file = await(github_api_request("/repos/mustardmine/example/contents/index.md"));
-	mapping repos = await(github_api_request("/repos/mustardmine/example/contents/index.md", (["method": "PUT", "json": ([
-		"sha": file->sha,
-		"message": "Update web site",
-		"committer": (["name": "SomeUserName", "email": "142857@twitchuser.invalid"]),
-		"content": MIME.encode_base64(#"# My new web site
-
-Testing out some stuff with GH Pages and the GH API.
-", 1),
-	])])));
-	if (repos->status == "409") ; //File was edited while you were looking at it
-	repos->hack_previous_content = MIME.decode_base64(file->content);
-	// */
-	//List:
-	//mixed repos = await(github_api_request("/orgs/mustardmine/repos"));
-	//return sprintf("Repositories: %O\n", repos);
+	//Delete a repository:
+	//mixed repos = await(github_api_request("/repos/mustardmine/49497888", (["method": "DELETE"])));
 	return render(req, (["vars": (["ws_group": "#" + req->misc->session->user->?id])]));
 }
 
@@ -204,6 +200,33 @@ __async__ mapping websocket_cmd_create_site(mapping(string:mixed) conn, mapping(
 	send_updates_all("#" + userid);
 }
 
+__async__ mapping websocket_cmd_fetch_file(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string userid = conn->session->user->id;
+	array|mapping file = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + msg->path));
+	if (arrayp(file)) {
+		//It's a directory. Ideally, we should expand these out BEFORE sending to the front end,
+		//so that it can show the full tree interactively; this endpoint shouldn't get these requests.
+		return (["error": "Only fetch files, not directories"]);
+	}
+	if (file->status == "404") return (["cmd": "file_loaded", "path": msg->path]); //Without the "type" it indicates that the file isn't present.
+	//Is file->encoding ever *not* going to be "base64"?
+	return file & (<"content", "path", "name", "sha", "type">) | (["cmd": "file_loaded"]);
+}
+
+__async__ mapping websocket_cmd_save_file(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string userid = conn->session->user->id;
+	mapping resp = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + msg->path, ([
+		"method": "PUT",
+		"json": ([
+			"sha": msg->sha,
+			"message": "Update web site",
+			"committer": (["name": conn->session->user->display_name, "email": userid + "@twitchuser.invalid"]),
+			"content": msg->content,
+		]),
+	])));
+	if (resp->status == "409") return (["cmd": "error", "error": "File was edited while you were looking at it"]);
+}
+
 __async__ void websocket_cmd_set_cname(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	string userid = conn->session->user->id;
 	mapping ret = await(github_api_request("/repos/mustardmine/" + userid + "/pages", (["method": "PUT", "json": (["cname": msg->cname])])));
@@ -213,4 +236,10 @@ __async__ void websocket_cmd_set_cname(mapping(string:mixed) conn, mapping(strin
 	query_github_repo(userid);
 }
 
-protected void create(string name) {::create(name);}
+//whatever hackery I need at any given time
+__async__ void hack() {
+	string userid = "935215207";
+	//m_delete(github_repo_details, userid); //Force a full load on next page refresh
+}
+
+protected void create(string name) {::create(name); hack();}
