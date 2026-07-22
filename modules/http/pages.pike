@@ -11,7 +11,7 @@ Build simple web pages and host them on GitHub Pages. You retain full control at
 <div id=content>loading...</div>
 
 > ### Edit file
-> File: <code id=filename></code>
+> File: <input id=filename></code>
 >
 > <textarea id=filecontent rows=15 cols=100></textarea>
 >
@@ -127,6 +127,9 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 				//and hasn't changed it, replace it in their screen. If edited, pop up immediate prompt. Offer
 				//diffs as available.
 				werror("GITHUB PUSH %O\n", data->repository->name);
+				//HACK: For now just purge and reload. Need to actually update the file list and only if it's changed.
+				m_delete(github_repo_details, data->repository->name);
+				query_github_repo(data->repository->name);
 				break;
 			case "workflow_run": {
 				//Most likely, it's the GH Pages build. If data->action == "in_progress", mark that there's a

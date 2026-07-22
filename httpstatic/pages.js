@@ -24,10 +24,16 @@ export function render(data) {
 			//TODO: Reword these nicely so people know "hey, you can refresh the page now"
 			data.site.build_status && " Build: " + data.site.build_status,
 		],
-		data.site.contents && [H3("Files"), UL(data.site.contents.map(page => LI([
-			page.name, " ",
-			BUTTON({class: "edit-file", type: "button", "data-path": page.path}, "\u{1F589}"),
-		])))],
+		data.site.contents && [
+			H3("Files"),
+			UL([
+				data.site.contents.map(page => LI([
+					page.name, " ",
+					BUTTON({class: "edit-file", type: "button", "data-path": page.path}, "\u{1F589}"),
+				])),
+				LI({style: "margin-top: 0.5em"}, ["Create new page ", BUTTON({id: "new-file", type: "button"}, "\u{1F589}")]),
+			]),
+		],
 	]);
 }
 
@@ -39,13 +45,22 @@ on("submit", "#set-cname-form", e => ws_sync.send({cmd: "set_cname", cname: e.ma
 let editing_file = null;
 export function sockmsg_file_loaded(msg) {
 	editing_file = msg;
-	replace_content("#filename", msg.name);
+	DOM("#filename").value = msg.name;
+	DOM("#filename").readOnly = true;
 	DOM("#filecontent").value = atob(msg.content);
 	DOM("#editfiledlg").showModal();
 }
 
 on("click", ".edit-file", e => ws_sync.send({cmd: "fetch_file", path: e.match.dataset.path}));
 on("click", "#filesave", e => {
-	ws_sync.send({cmd: "save_file", path: editing_file.path, content: btoa(DOM("#filecontent").value), sha: editing_file.sha});
+	ws_sync.send({cmd: "save_file", path: editing_file.path || DOM("#filename").value, content: btoa(DOM("#filecontent").value), sha: editing_file.sha});
 	DOM("#editfiledlg").close();
+});
+
+on("click", "#new-file", e => {
+	editing_file = { };
+	DOM("#filename").value = "";
+	DOM("#filename").readOnly = false;
+	DOM("#filecontent").value = "";
+	DOM("#editfiledlg").showModal();
 });
