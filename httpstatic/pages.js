@@ -1,13 +1,13 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, B, BUTTON, DETAILS, H3, IMG, LI, P, SUMMARY, UL} = lindt; //autoimport
+const {A, B, BR, BUTTON, DETAILS, FORM, H3, IMG, INPUT, LI, P, SUMMARY, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 export function render(data) {
-	if (!data.self) replace_content("#content", P([
+	if (!data.self) return replace_content("#content", P([
 		"Your site is linked to your Twitch account. ",
 		BUTTON({type: "button", class: "twitchlogin", "data-force": "1"}, data.self ? "Not you?" : "Log in with Twitch"),
 	]));
-	else replace_content("#content", [
+	replace_content("#content", [
 		P([
 			"Your site is linked to your Twitch account. ",
 			//If you're logged in, show who you are, and allow switching. Otherwise, invite a login.
@@ -28,7 +28,7 @@ export function render(data) {
 				//TODO: Reword these nicely so people know "hey, you can refresh the page now"
 				data.site.build_status && " Build: " + data.site.build_status,
 			]),
-			P("... collaborators ..."),
+			P(["Your web site is always YOURS and Mustard Mine is always ready to hand control to you. ", BUTTON({type: "button", class: "opendlg", "data-dlg": "collabsdlg"}, "Manage ownership")]),
 		],
 		data.site.pages && [
 			H3("Pages"), //Not a fan of calling this "pages" when the whole page is "pages". It's as bad as levels in D&D.
@@ -55,6 +55,26 @@ export function render(data) {
 				]),
 			]);
 		}),
+	]);
+	if (data.site.collab) replace_content("#collaborators", [
+		P(["In order to manage your web site independently of Mustard Mine, you will need a ",
+			A({href: "https://github.com/"}, "GitHub account"), "."]),
+		data.site.collab.length && [
+			P("The following GitHub users have permission to manage your web site:"),
+			UL(data.site.collab.map(user => LI([
+				IMG({src: user.avatar, class: "avatar", style: "vertical-align: middle"}),
+				" ", B(user.username), " ",
+				BUTTON({class: "removecollab", "data-username": user.username}, "Remove"),
+			]))),
+		],
+		FORM({id: "addcollaborator"}, [
+			"Enter your GitHub user name to be given control: ",
+			BR(),
+			INPUT({name: "username", size: 30}), " ",
+			BUTTON({type: "submit"}, "Grant permission"),
+			BR(),
+			"You will receive an email with a confirmation button.",
+		]),
 	]);
 }
 
@@ -97,3 +117,12 @@ on("click", "#filedelete", simpleconfirm("Delete this file? Links to it will go 
 	ws_sync.send({cmd: "delete_file", path: editing_file.path, sha: editing_file.sha});
 	DOM("#editfiledlg").close();
 }));
+
+on("submit", "#addcollaborator", e => {
+	e.preventDefault();
+	const username = e.match.elements.username.value;
+	if (username !== "") ws_sync.send({cmd: "add_collaborator", username});
+});
+
+on("click", ".removecollab", simpleconfirm("Remove this GitHub user's access to your web site?",
+	e => ws_sync.send({cmd: "remove_collaborator", username: e.match.dataset.username})));

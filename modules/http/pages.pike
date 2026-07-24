@@ -21,6 +21,12 @@ Build simple web pages and host them on GitHub Pages. You retain full control at
 <style>
 #filedelete {background: red; color: white;}
 </style>
+
+> ### Collaborators and ownership
+> <div id=collaborators></div>
+>
+> [Close](:.dialog_close)
+{: tag=dialog #collabsdlg}
 ";
 
 @retain: mapping github_repo_details = ([]);
@@ -116,7 +122,17 @@ __async__ void load_repo_details(string userid, string which) {
 		foreach (values(EXTENSION_CATEGORIES), string cat) m_delete(repo, cat); //Remove any categories that didn't get files added to them
 		foreach (tmp; string cat; array files) repo[cat] = files;
 	}
-	//if (which == "*" || which == "collaborators") ;
+	if (which == "*" || which == "collaborators") {
+		array collab = await(github_api_request("/repos/mustardmine/" + userid + "/collaborators"));
+		repo->collab = ({ });
+		foreach (collab, mapping user) {
+			if (user->login == "Rosuav") continue; //?? I think I'm a collaborator everywhere despite not being added. Check if this is the case.
+			repo->collab += ({([
+				"username": user->login,
+				"avatar": user->avatar_url,
+			])});
+		}
+	}
 	send_updates_all("#" + userid);
 }
 
@@ -305,12 +321,22 @@ __async__ void websocket_cmd_set_cname(mapping(string:mixed) conn, mapping(strin
 	query_github_repo(userid);
 }
 
+__async__ void websocket_cmd_add_collaborator(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string userid = conn->session->user->id;
+	mapping ret = await(github_api_request("/repos/mustardmine/" + userid + "/collaborators/" + msg->username, (["method": "PUT", "json": (["permission": "admin"])])));
+	load_repo_details(userid, "collaborators");
+}
+
+__async__ void websocket_cmd_remove_collaborator(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string userid = conn->session->user->id;
+	mapping ret = await(github_api_request("/repos/mustardmine/" + userid + "/collaborators/" + msg->username, (["method": "DELETE"])));
+	load_repo_details(userid, "collaborators");
+}
+
 //whatever hackery I need at any given time
 __async__ void hack() {
 	string userid = "935215207";
 	//m_delete(github_repo_details, userid); //Force a full load on next page refresh
-	//mapping ret = await(github_api_request("/repos/mustardmine/" + userid + "/collaborators/stephenangelico", (["method": "PUT", "json": (["permission": "admin"])])));
-	//werror("Adding collaborator: %O\n", ret);
 }
 
 protected void create(string name) {::create(name); hack();}
