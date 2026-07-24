@@ -238,8 +238,6 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	return render(req, (["vars": (["ws_group": "#" + req->misc->session->user->?id])]));
 }
 
-//TODO: Use the "push" webhook to be notified of changes, which we can then push out on the websocket
-
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!stringp(msg->group)) return "String group only";
 	sscanf(msg->group, "%s#%s", string subgroup, string userid);
@@ -340,6 +338,28 @@ __async__ void websocket_cmd_remove_collaborator(mapping(string:mixed) conn, map
 	string userid = conn->session->user->id;
 	mapping ret = await(github_api_request("/repos/mustardmine/" + userid + "/collaborators/" + msg->username, (["method": "DELETE"])));
 	load_repo_details(userid, "collaborators");
+}
+
+__async__ void websocket_cmd_transfer_repository(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string userid = conn->session->user->id;
+	mapping repo = github_repo_details[userid];
+	if (!repo) {await(query_github_repo(userid)); repo = github_repo_details[userid];}
+	//Ensure that the chosen user has been added as a collaborator
+	if (!repo->collab || !has_value(repo->collab->username, msg->username)) return; //TODO: Error reporting
+	//Does the site have GH Pages?
+	string reponame = "mm-web-site";
+	if (!has_prefix(repo->html_url, "https://github.com/") && !has_prefix(repo->html_url, "https://mustardmine.github.io/")) {
+		//FIXME: Confirm the second URL pattern (for GH Pages but no CNAME)
+		//If you have a GH Pages and an associated CNAME, use the name of the site itself
+		//as the new repository name. It'll be better than the generic default.
+		sscanf(repo->html_url, "http%*[s]://%[^/]", reponame);
+	}
+	mapping ret = await(github_api_request("/repos/mustardmine/" + userid + "/transfer", (["json": ([
+		"new_owner": msg->username,
+		"new_name": reponame,
+	])])));
+	werror("GITHUB REPO TRANSFERRED: %O\n", userid);
+	Stdio.append_file("ghpages-transfers.log", sprintf("------\n%sGH Pages site transferred: Twitch %O GH %O\n%O\n", ctime(time()), userid, msg->username, ret));
 }
 
 //whatever hackery I need at any given time

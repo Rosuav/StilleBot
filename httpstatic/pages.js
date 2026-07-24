@@ -61,11 +61,14 @@ export function render(data) {
 			A({href: "https://github.com/"}, "GitHub account"), "."]),
 		data.site.collab.length && [
 			P("The following GitHub users have permission to manage your web site:"),
-			UL(data.site.collab.map(user => LI([
+			UL(data.site.collab.map(user => LI({"data-username": user.username}, [
 				IMG({src: user.avatar, class: "avatar", style: "vertical-align: middle"}),
 				" ", B(user.username), " ",
-				user.pending ? ["(awaiting confirmation) ", BUTTON({class: "removecollab", "data-username": user.username}, "Cancel invitation")]
-				: BUTTON({class: "removecollab", "data-username": user.username}, "Remove"),
+				user.pending ? ["(awaiting confirmation) ", BUTTON({class: "removecollab"}, "Cancel invitation")]
+				: [
+					BUTTON({class: "removecollab"}, "Remove"),
+					BUTTON({class: "transfer"}, "Transfer ownership"),
+				]
 			]))),
 		],
 		FORM({id: "addcollaborator"}, [
@@ -126,4 +129,7 @@ on("submit", "#addcollaborator", e => {
 });
 
 on("click", ".removecollab", simpleconfirm("Remove this GitHub user's access to your web site?",
-	e => ws_sync.send({cmd: "remove_collaborator", username: e.match.dataset.username})));
+	e => ws_sync.send({cmd: "remove_collaborator", username: e.match.closest_data("username")})));
+
+on("click", ".transfer", simpleconfirm("CAUTION: Transferring repository ownership is difficult to undo! Really transfer control?",
+	e => ws_sync.send({cmd: "transfer_repository", username: e.match.closest_data("username")})));
