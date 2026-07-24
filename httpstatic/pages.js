@@ -3,14 +3,16 @@ const {A, B, BUTTON, DETAILS, H3, IMG, LI, P, SUMMARY, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 export function render(data) {
-	replace_content("#content", [
+	if (!data.self) replace_content("#content", P([
+		"Your site is linked to your Twitch account. ",
+		BUTTON({type: "button", class: "twitchlogin", "data-force": "1"}, data.self ? "Not you?" : "Log in with Twitch"),
+	]));
+	else replace_content("#content", [
 		P([
 			"Your site is linked to your Twitch account. ",
 			//If you're logged in, show who you are, and allow switching. Otherwise, invite a login.
-			data.self && [
-				IMG({src: data.self.profile_image_url, class: "avatar", style: "vertical-align: middle"}),
-				" ", B(data.self.display_name), " ",
-			],
+			IMG({src: data.self.profile_image_url, class: "avatar", style: "vertical-align: middle"}),
+			" ", B(data.self.display_name), " ",
 			BUTTON({type: "button", class: "twitchlogin", "data-force": "1"}, data.self ? "Not you?" : "Log in with Twitch"),
 		]),
 		!data.site.html_url ? P([
