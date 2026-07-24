@@ -105,22 +105,42 @@ __async__ void load_directory(string userid, mapping repo, string path) {
 	}
 }
 
+__async__ void load_repo_details(string userid, string which) {
+	mapping repo = github_repo_details[userid];
+	if (!repo) return await(query_github_repo(userid)); //If we don't have anything loaded, freshly load everything. This will come back to load_repo_details shortly.
+	if (which == "*" || which == "contents") {
+		//Load the contents (which may take some time esp once this becomes recursive)
+		//and then replace them into the main repo mapping.
+		mapping tmp = ([]);
+		await(load_directory(userid, tmp, ""));
+		foreach (values(EXTENSION_CATEGORIES), string cat) m_delete(repo, cat); //Remove any categories that didn't get files added to them
+		foreach (tmp; string cat; array files) repo[cat] = files;
+	}
+	//if (which == "*" || which == "collaborators") ;
+	send_updates_all("#" + userid);
+}
+
 __async__ void query_github_repo(string userid) {
-	mapping repo = await(github_api_request("/repos/mustardmine/" + userid));
-	if (repo->status == "404") repo = ([]); //No repo found; use empty object to show that it has been checked.
-	else if (repo->status) repo = (["_error": "Unable to load repository", "_raw": repo]);
+	mapping repo = github_repo_details[userid];
+	if (!repo) repo = github_repo_details[userid] = ([]);
+	repo->_last_checked = time();
+	mapping raw = await(github_api_request("/repos/mustardmine/" + userid));
+	if (raw->status == "404") ; //No repo found; retain empty mapping to show that it has been checked.
+	else if (raw->status) {repo->_error = "Unable to load repository"; repo->_raw = repo;}
 	else {
-		repo = (["html_url": repo->html_url]);
+		//Immediately set some URL here if we don't have one; but if we've replaced the basic
+		//URL with a deployment URL, keep that (unless we find that it's no longer valid).
+		if (!repo->html_url) repo->html_url = raw->html_url;
 		//Do we have GH Pages? If so, replace the URL with the deployed version.
 		mapping pages = await(github_api_request("/repos/mustardmine/" + userid + "/pages"));
 		if (pages->html_url) repo->html_url = pages->html_url;
-		//Load the site contents. (Should this be done asynchronously? It's not loading the bodies of the files, just the hashes)
-		await(load_directory(userid, repo, ""));
+		else repo->html_url = raw->html_url;
+		//Asynchronously load additional information, including the repo contents.
+		//We'll push out partial info on the websocket, then get full info, which might
+		//result in minor flicker on the front end. Unideal but unavoidable, since the
+		//full load could potentially take a while.
+		load_repo_details(userid, "*");
 	}
-	repo->_last_checked = time();
-	//Whether the repo was found or not, store the status in our local cache.
-	//We don't need to repeatedly re-query just because it doesn't exist.
-	github_repo_details[userid] = repo;
 	send_updates_all("#" + userid);
 }
 
@@ -152,9 +172,17 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 				//and hasn't changed it, replace it in their screen. If edited, pop up immediate prompt. Offer
 				//diffs as available.
 				werror("GITHUB PUSH %O\n", data->repository->name);
-				//HACK: For now just purge and reload. Need to actually update the file list and only if it's changed.
-				m_delete(github_repo_details, data->repository->name);
-				query_github_repo(data->repository->name);
+				//For now unconditionally reload contents. It may be worth checking the commits to see if the
+				//list of files has changed (since the vast majority of edits won't create or delete files),
+				//but it's simpler just to reload.
+				load_repo_details(data->repository->name, "contents");
+				break;
+			case "member":
+				//Someone just pushed code. Send out updates on the websocket. If someone is viewing that file
+				//and hasn't changed it, replace it in their screen. If edited, pop up immediate prompt. Offer
+				//diffs as available.
+				werror("GITHUB COLLABORATOR %O\n", data->repository->name);
+				load_repo_details(data->repository->name, "collaborators");
 				break;
 			case "workflow_run": {
 				//Most likely, it's the GH Pages build. If data->action == "in_progress", mark that there's a
@@ -274,7 +302,6 @@ __async__ void websocket_cmd_set_cname(mapping(string:mixed) conn, mapping(strin
 	mapping ret = await(github_api_request("/repos/mustardmine/" + userid + "/pages", (["method": "PUT", "json": (["cname": msg->cname])])));
 	//TODO: Error checking
 	//TODO: Health check: https://docs.github.com/en/rest/pages/pages?apiVersion=2026-03-10#get-a-dns-health-check-for-github-pages
-	m_delete(github_repo_details, userid);
 	query_github_repo(userid);
 }
 
@@ -282,6 +309,8 @@ __async__ void websocket_cmd_set_cname(mapping(string:mixed) conn, mapping(strin
 __async__ void hack() {
 	string userid = "935215207";
 	//m_delete(github_repo_details, userid); //Force a full load on next page refresh
+	//mapping ret = await(github_api_request("/repos/mustardmine/" + userid + "/collaborators/stephenangelico", (["method": "PUT", "json": (["permission": "admin"])])));
+	//werror("Adding collaborator: %O\n", ret);
 }
 
 protected void create(string name) {::create(name); hack();}

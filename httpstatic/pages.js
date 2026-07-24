@@ -20,10 +20,13 @@ export function render(data) {
 				BUTTON({type: "button", id: "create_site"}, "Create site!"),
 			] : "Loading web site information...",
 		]) : [
-			//NOTE: The html_url will be affected by the presence of a CNAME, so it should always be the "natural" URL.
-			"You have a web site at ", A({href: data.site.html_url}, data.site.html_url),
-			//TODO: Reword these nicely so people know "hey, you can refresh the page now"
-			data.site.build_status && " Build: " + data.site.build_status,
+			P([
+				//NOTE: The html_url will be affected by the presence of a CNAME, so it should always be the "natural" URL.
+				"You have a web site at ", A({href: data.site.html_url}, data.site.html_url),
+				//TODO: Reword these nicely so people know "hey, you can refresh the page now"
+				data.site.build_status && " Build: " + data.site.build_status,
+			]),
+			P("... collaborators ..."),
 		],
 		data.site.pages && [
 			H3("Pages"), //Not a fan of calling this "pages" when the whole page is "pages". It's as bad as levels in D&D.
