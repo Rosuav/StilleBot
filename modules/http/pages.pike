@@ -124,12 +124,21 @@ __async__ void load_repo_details(string userid, string which) {
 	}
 	if (which == "*" || which == "collaborators") {
 		array collab = await(github_api_request("/repos/mustardmine/" + userid + "/collaborators"));
+		array invite = await(github_api_request("/repos/mustardmine/" + userid + "/invitations"));
 		repo->collab = ({ });
 		foreach (collab, mapping user) {
 			if (user->login == "Rosuav") continue; //?? I think I'm a collaborator everywhere despite not being added. Check if this is the case.
 			repo->collab += ({([
 				"username": user->login,
 				"avatar": user->avatar_url,
+			])});
+		}
+		foreach (invite, mapping inv) {
+			if (inv->expired) continue; //Should expired invitations be shown at all, or just pretend they don't exist?
+			repo->collab += ({([
+				"username": inv->invitee->login,
+				"avatar": inv->invitee->avatar_url,
+				"pending": inv->created_at,
 			])});
 		}
 	}

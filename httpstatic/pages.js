@@ -64,7 +64,8 @@ export function render(data) {
 			UL(data.site.collab.map(user => LI([
 				IMG({src: user.avatar, class: "avatar", style: "vertical-align: middle"}),
 				" ", B(user.username), " ",
-				BUTTON({class: "removecollab", "data-username": user.username}, "Remove"),
+				user.pending ? ["(awaiting confirmation) ", BUTTON({class: "removecollab", "data-username": user.username}, "Cancel invitation")]
+				: BUTTON({class: "removecollab", "data-username": user.username}, "Remove"),
 			]))),
 		],
 		FORM({id: "addcollaborator"}, [
