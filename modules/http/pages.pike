@@ -97,7 +97,8 @@ constant EXTENSION_CATEGORIES = ([
 ]);
 
 __async__ void load_directory(string userid, mapping repo, string path) {
-	array files = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + path));
+	array|mapping files = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + path));
+	if (mappingp(files)) return; //Probably an error. Not worth the hassle for now.
 	sort(files->name, files);
 	foreach (files, mapping file) {
 		mapping f = file & (<"name", "path", "sha", "type", "size", "download_url">); //The rest is uninteresting to the front end
@@ -169,6 +170,10 @@ __async__ void query_github_repo(string userid) {
 	send_updates_all("#" + userid);
 }
 
+//When a repo is created, the corresponding GH Pages site can't be made until the master branch
+//exists. This happens automatically (from the template) but takes a moment. When we see the
+//push notification, we can continue with creation.
+mapping pending_site_creation = ([]);
 __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req) {
 	if (string other = req->request_type == "POST" && !is_active_bot() && get_active_bot()) {
 		//POST requests are likely to be webhooks. Forward them to the active bot, including whichever
@@ -192,16 +197,24 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		if (!mappingp(data)) return (["error": 400, "data": "No data in body"]);
 		//Useful hooks:
 		switch (req->request_headers["x-github-event"]) {
-			case "push":
+			case "push": {
 				//Someone just pushed code. Send out updates on the websocket. If someone is viewing that file
 				//and hasn't changed it, replace it in their screen. If edited, pop up immediate prompt. Offer
 				//diffs as available.
-				werror("GITHUB PUSH %O\n", data->repository->name);
+				string userid = data->repository->name;
+				werror("GITHUB PUSH %O\n", userid);
 				//For now unconditionally reload contents. It may be worth checking the commits to see if the
 				//list of files has changed (since the vast majority of edits won't create or delete files),
 				//but it's simpler just to reload.
-				load_repo_details(data->repository->name, "contents");
+				load_repo_details(userid, "contents");
+				if (m_delete(pending_site_creation, userid)) {
+					mapping pg = await(github_api_request("/repos/mustardmine/" + userid + "/pages", (["json": (["source": (["branch": "master"])])])));
+					werror("Created Pages: %O\n", pg);
+					//TODO: Error checking. What happens if Pages can't be set up?
+					query_github_repo(userid);
+				}
 				break;
+			}
 			case "member":
 				//Someone just pushed code. Send out updates on the websocket. If someone is viewing that file
 				//and hasn't changed it, replace it in their screen. If edited, pop up immediate prompt. Offer
@@ -266,17 +279,13 @@ __async__ mapping websocket_cmd_create_site(mapping(string:mixed) conn, mapping(
 		"description": conn->session->user->display_name + "'s web site",
 	])])));
 	if (repo->status) {
-		//If something goes wrong, log the error, and clear out our idea of what the repo has
 		werror("REPO CREATION FAILED %O\n", repo);
 		m_delete(github_repo_details, userid);
 		query_github_repo(userid);
 		return (["cmd": "error", "error": "Unable to create site (see log)"]);
 	}
-	await(github_api_request("/repos/mustardmine/" + userid + "/pages", (["json": (["source": (["branch": "master"])])])));
-	//TODO: Error checking. What happens if Pages can't be set up?
-	repo->_last_checked = time();
-	github_repo_details[userid] = repo;
-	send_updates_all("#" + userid);
+	pending_site_creation[userid] = 1;
+	return (["cmd": "status", "message": "Creating web site, please wait..."]); //TODO: Show this in the front end
 }
 
 __async__ mapping websocket_cmd_fetch_file(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -349,7 +358,6 @@ __async__ void websocket_cmd_transfer_repository(mapping(string:mixed) conn, map
 	//Does the site have GH Pages?
 	string reponame = "mm-web-site";
 	if (!has_prefix(repo->html_url, "https://github.com/") && !has_prefix(repo->html_url, "https://mustardmine.github.io/")) {
-		//FIXME: Confirm the second URL pattern (for GH Pages but no CNAME)
 		//If you have a GH Pages and an associated CNAME, use the name of the site itself
 		//as the new repository name. It'll be better than the generic default.
 		sscanf(repo->html_url, "http%*[s]://%[^/]", reponame);
