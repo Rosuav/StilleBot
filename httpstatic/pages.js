@@ -2,6 +2,48 @@ import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory
 const {A, B, BR, BUTTON, DETAILS, FORM, H3, IMG, INPUT, LI, P, SUMMARY, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
+//Turn a flat list of files into a tree of DOM (Lindt) elements, gathering those in
+//subdirectories into nested lists. Pass a describer function to generate list items
+//(it gets the entire file object in case, but normally will just use the base name).
+//NOTE: GitHub will shorthand things if you skip directory levels. Here we don't; if
+//you go straight into /deep/path/to/files there will be individual levels to expand
+//for each one. This is unlikely to be a major issue as directory levels won't be as
+//common here.
+function build_directory_tree(files, describe, suffix) {
+	const dirs = {"": []};
+	for (let file of files) {
+		const parts = file.path.split("/");
+		let subdir = dirs;
+		let path = "";
+		while (parts.length > 1) {
+			const dir = parts.shift();
+			path += dir + "/";
+			if (!subdir[dir]) {
+				subdir[dir] = { };
+				subdir[""].push(LI({key: dir}, DETAILS([SUMMARY(dir + "/"), UL([
+					subdir[dir][""] = [],
+					LI({style: "margin-top: 0.5em"}, [
+						"Create new ",
+						BUTTON({class: "new-file", type: "button", "data-prefix": path, "data-suffix": suffix || ""}, "\u{1F589}"),
+					]),
+				])])));
+			}
+			subdir = subdir[dir];
+		}
+		subdir[""].push(LI({key: parts[0]}, [
+			describe(parts[0], file), " ",
+			BUTTON({class: "edit-file", type: "button", "data-path": file.path}, "\u{1F589}"),
+		]));
+	}
+	return UL([
+		dirs[""],
+		LI({style: "margin-top: 0.5em"}, [
+			"Create new ",
+			BUTTON({class: "new-file", type: "button", "data-prefix": "", "data-suffix": suffix || ""}, "\u{1F589}"),
+		]),
+	]);
+}
+
 export function render(data) {
 	if (!data.self) return replace_content("#content", P([
 		"Your site is linked to your Twitch account. ",
@@ -33,26 +75,13 @@ export function render(data) {
 		data.site.pages && [
 			H3("Pages"), //Not a fan of calling this "pages" when the whole page is "pages". It's as bad as levels in D&D.
 			P("Most of your web site is these sorts of pages. Use Markdown syntax for styling."),
-			UL([
-				data.site.pages.map(page => LI([
-					page.path.replace(/\.md$/, ""), " ",
-					BUTTON({class: "edit-file", type: "button", "data-path": page.path}, "\u{1F589}"),
-				])),
-				LI({style: "margin-top: 0.5em"}, ["Create new page ", BUTTON({id: "new-file", type: "button", "data-extension": ".md"}, "\u{1F589}")]),
-			]),
+			build_directory_tree(data.site.pages, fn => fn.replace(/\.md$/, ""), ".md"),
 		],
 		["Images", "Layouts", "Scripts", "Files"].map(sec => {
 			const files = data.site[sec.toLowerCase()];
 			return files && DETAILS([
 				SUMMARY(sec === "Files" ? "Other files" : sec),
-				UL([
-					files.map(page => LI([
-						page.path, " ",
-						sec !== "Images" && BUTTON({class: "edit-file", type: "button", "data-path": page.path}, "\u{1F589}"),
-					])),
-					//TODO: Upload box
-					sec !== "Images" && LI({style: "margin-top: 0.5em"}, ["Create new file ", BUTTON({id: "new-file", type: "button"}, "\u{1F589}")]),
-				]),
+				build_directory_tree(files, fn => fn),
 			]);
 		}),
 	]);
@@ -101,15 +130,15 @@ on("click", ".edit-file", e => ws_sync.send({cmd: "fetch_file", path: e.match.da
 on("click", "#filesave", e => {
 	ws_sync.send({
 		cmd: "save_file",
-		path: editing_file.path || (DOM("#filename").value + editing_file.extension),
+		path: editing_file.path || (editing_file.prefix + DOM("#filename").value + editing_file.suffix),
 		content: btoa(DOM("#filecontent").value),
 		sha: editing_file.sha
 	});
 	DOM("#editfiledlg").close();
 });
 
-on("click", "#new-file", e => {
-	editing_file = {extension: e.match.dataset.extension || ""};
+on("click", ".new-file", e => {
+	editing_file = {prefix: e.match.dataset.prefix || "", suffix: e.match.dataset.suffix || ""};
 	DOM("#filename").value = "";
 	DOM("#filename").readOnly = false;
 	DOM("#filedelete").hidden = true;
