@@ -97,18 +97,14 @@ constant EXTENSION_CATEGORIES = ([
 ]);
 
 __async__ void load_directory(string userid, mapping repo, string path) {
-	array|mapping files = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + path));
-	if (mappingp(files)) return; //Probably an error. Not worth the hassle for now.
-	sort(files->name, files);
-	foreach (files, mapping file) {
-		mapping f = file & (<"name", "path", "sha", "type", "size", "download_url">); //The rest is uninteresting to the front end
-		//TODO: What happens with subdirectories? When should we fetch those? What if someone has
-		//a submodule (which we won't make but could exist)? Or a symlink?
-		sscanf(file->name, "%*s.%s", string ext); //If it has more than one extension, it's not going to match any of our checks anyway
-		//Any non-files get thrown into the "files" category, which is a bit odd, but
-		//it's the "you probably don't want to edit these, at least not often" category.
-		string cat = (file->type == "file" && EXTENSION_CATEGORIES[ext]) || "files";
-		repo[cat] += ({f});
+	mapping files = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees/HEAD?recursive=1"));
+	if (!mappingp(files) || !arrayp(files->tree)) return; //Probably an error. Not worth the hassle for now.
+	//sort(files->tree->path, files->tree); //Do we need to enforce sort order?
+	foreach (files->tree, mapping file) {
+		if (file->type != "blob") continue; //Ignore tree elements; gathering files into directories is done by path instead.
+		mapping f = file & (<"path", "size", "sha">); //The rest is uninteresting to the front end
+		sscanf(basename(file->path), "%*s.%s", string ext); //If it has more than one extension, it's not going to match any of our checks anyway
+		repo[EXTENSION_CATEGORIES[ext] || "files"] += ({f});
 	}
 }
 

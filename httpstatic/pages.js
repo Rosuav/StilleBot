@@ -35,7 +35,7 @@ export function render(data) {
 			P("Most of your web site is these sorts of pages. Use Markdown syntax for styling."),
 			UL([
 				data.site.pages.map(page => LI([
-					page.name.replace(/\.md$/, ""), " ",
+					page.path.replace(/\.md$/, ""), " ",
 					BUTTON({class: "edit-file", type: "button", "data-path": page.path}, "\u{1F589}"),
 				])),
 				LI({style: "margin-top: 0.5em"}, ["Create new page ", BUTTON({id: "new-file", type: "button", "data-extension": ".md"}, "\u{1F589}")]),
@@ -47,7 +47,7 @@ export function render(data) {
 				SUMMARY(sec === "Files" ? "Other files" : sec),
 				UL([
 					files.map(page => LI([
-						page.name, " ",
+						page.path, " ",
 						sec !== "Images" && BUTTON({class: "edit-file", type: "button", "data-path": page.path}, "\u{1F589}"),
 					])),
 					//TODO: Upload box
