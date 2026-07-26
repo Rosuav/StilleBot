@@ -11,7 +11,7 @@ Build simple web pages and host them on GitHub Pages. You retain full control at
 <div id=content>loading...</div>
 
 > ### Edit file
-> File: <input id=filename></code> [\u{1f5d1}\ufe0e](:#filedelete title=Delete)
+> Name: <input id=filename></code> [\u{1f5d1}\ufe0e](:#filedelete title=Delete)
 >
 > <textarea id=filecontent rows=15 cols=100></textarea>
 >
