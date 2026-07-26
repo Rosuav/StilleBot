@@ -69,6 +69,7 @@ export function render(data) {
 				"You have a web site at ", A({href: data.site.html_url}, data.site.html_url),
 				//TODO: Reword these nicely so people know "hey, you can refresh the page now"
 				data.site.build_status && " Build: " + data.site.build_status,
+				" ", BUTTON({type: "button", class: "opendlg", "data-dlg": "cnamedlg"}, "Configure URL"),
 			]),
 			P(["Your web site is always YOURS and Mustard Mine is always ready to hand control to you. ", BUTTON({type: "button", class: "opendlg", "data-dlg": "collabsdlg"}, "Manage ownership")]),
 		],
@@ -112,9 +113,6 @@ export function render(data) {
 }
 
 on("click", "#create_site", e => ws_sync.send({cmd: "create_site"}));
-
-//TODO: Make an actual form to do this. Tell people to first create a CNAME record at DNS provider, pointing to mustardmine.github.io
-on("submit", "#set-cname-form", e => ws_sync.send({cmd: "set_cname", cname: e.match.elements.cname.value}));
 
 let editing_file = null;
 export function sockmsg_file_loaded(msg) {
@@ -162,3 +160,6 @@ on("click", ".removecollab", simpleconfirm("Remove this GitHub user's access to 
 
 on("click", ".transfer", simpleconfirm("CAUTION: Transferring repository ownership is difficult to undo! Really transfer control?",
 	e => ws_sync.send({cmd: "transfer_repository", username: e.match.closest_data("username")})));
+
+on("click", "#setcname", simpleconfirm("Ensure that you have created the DNS record first.",
+	e => ws_sync.send({cmd: "set_cname", cname: DOM("#cname").value})));

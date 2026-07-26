@@ -8,6 +8,17 @@ constant markdown = #"# Pages
 
 Build simple web pages and host them on GitHub Pages. You retain full control at all times, and can take over the site, move it to other hosting, etc, as your site grows.
 
+> ### Configure web site URL
+> To select a nice URL for your web site, you will need to own a domain.
+> (TODO: Link to one or more domain registrars.)
+> In your domain registrar's DNS configuration, create a CNAME record pointing to
+> mustardmine.github.io. Then type your web site's name in here:
+>
+> Site name: <input size=30 id=cname> <button type=button id=setcname>Update name</button>
+>
+> [Close](:.dialog_close)
+{: tag=dialog #cnamedlg}
+
 <div id=content>loading...</div>
 
 > ### Edit file
