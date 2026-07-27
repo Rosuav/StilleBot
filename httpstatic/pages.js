@@ -47,7 +47,7 @@ function build_directory_tree(files, describe, suffix) {
 export function render(data) {
 	if (!data.self) return replace_content("#content", P([
 		"Your site is linked to your Twitch account. ",
-		BUTTON({type: "button", class: "twitchlogin", "data-force": "1"}, data.self ? "Not you?" : "Log in with Twitch"),
+		BUTTON({type: "button", class: "twitchlogin", "data-force": "1"}, "Log in with Twitch"),
 	]));
 	replace_content("#content", [
 		P([
@@ -55,13 +55,14 @@ export function render(data) {
 			//If you're logged in, show who you are, and allow switching. Otherwise, invite a login.
 			IMG({src: data.self.profile_image_url, class: "avatar", style: "vertical-align: middle"}),
 			" ", B(data.self.display_name), " ",
-			BUTTON({type: "button", class: "twitchlogin", "data-force": "1"}, data.self ? "Not you?" : "Log in with Twitch"),
+			! data.self.fake && BUTTON({type: "button", class: "twitchlogin", "data-force": "1"}, "Not you?"),
 		]),
 		!data.site.html_url ? P([
 			//If there's no URL, either it hasn't loaded yet, or you don't have a repo.
 			data.site._last_checked ? [
 				"You don't currently have a web site set up this way. Would you like to start one? ",
 				BUTTON({type: "button", id: "create_site"}, "Create site!"),
+				" Alternatively, ", A({href: "pages?demo"}, "explore in demo mode"),
 			] : "Loading web site information...",
 		]) : [
 			P([

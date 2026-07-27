@@ -255,20 +255,33 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	}
 	//Delete a repository:
 	//mixed repos = await(github_api_request("/repos/mustardmine/49497888", (["method": "DELETE"])));
-	return render(req, (["vars": (["ws_group": "#" + req->misc->session->user->?id])]));
+	return render(req, (["vars": (["ws_group": "#" + (req->variables->demo ? "3141592653589793" : req->misc->session->user->?id)])]));
 }
 
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!stringp(msg->group)) return "String group only";
 	sscanf(msg->group, "%s#%s", string subgroup, string userid);
-	if (userid != (string)conn->session->user->?id) return "That's not you";
+	werror("Subgroup %O userid %O\n", subgroup, userid);
+	if (userid == "3141592653589793") {
+		if (!is_localhost_mod(conn->session->user->?login, conn->remote_ip)) conn->session = ([
+			"fake": 1,
+			"user": (["id": "3141592653589793", "login": "!demo"]),
+		]);
+	}
+	else if (userid != (string)conn->session->user->?id) return "That's not you";
+	conn->siteid = userid;
 	if (subgroup != "") return "Bad subgroup"; //Currently no subgroups are supported
 }
 
 __async__ mapping get_state(string group) {
 	sscanf(group, "%s#%s", string subgroup, string userid);
 	if (userid == "0") return (["self": Val.null]); //Signal the front end that you're not logged in
-	mapping user = await(get_user_info(userid, "id"));
+	//If you're the demo user, provide demo user data
+	mapping user = userid == "3141592653589793" ? ([
+		"fake": 1, "display_name": "Demo User",
+		//Use Mustard Mine's avatar
+		"profile_image_url": "https://static-cdn.jtvnw.net/jtv_user_pictures/fcfde5d1-f150-4d6b-a56b-78337762fddc-profile_image-300x300.png",
+	]) : await(get_user_info(userid));
 	mapping site = github_repo_details[userid] || ([]);
 	if (site->_last_checked < time() - 3600) query_github_repo(userid);
 	return ([
@@ -279,7 +292,8 @@ __async__ mapping get_state(string group) {
 
 __async__ mapping websocket_cmd_create_site(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	//Cor, what a site...
-	string userid = conn->session->user->id;
+	string userid = conn->siteid;
+	if (conn->session->fake) return (["cmd": "demo"]);
 	mapping repo = await(github_api_request("/repos/mustardmine/template/generate", (["json": ([
 		"owner": "mustardmine",
 		"name": userid,
@@ -296,10 +310,10 @@ __async__ mapping websocket_cmd_create_site(mapping(string:mixed) conn, mapping(
 }
 
 __async__ mapping websocket_cmd_fetch_file(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	string userid = conn->session->user->id;
+	string userid = conn->siteid;
 	array|mapping file = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + msg->path));
 	if (arrayp(file)) {
-		//It's a directory. Ideally, we should expand these out BEFORE sending to the front end,
+		//It's a directory. We should have expanded these out BEFORE sending to the front end,
 		//so that it can show the full tree interactively; this endpoint shouldn't get these requests.
 		return (["error": "Only fetch files, not directories"]);
 	}
@@ -309,7 +323,8 @@ __async__ mapping websocket_cmd_fetch_file(mapping(string:mixed) conn, mapping(s
 }
 
 __async__ mapping websocket_cmd_save_file(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	string userid = conn->session->user->id;
+	string userid = conn->siteid;
+	if (conn->session->fake) return (["cmd": "demo"]);
 	mapping resp = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + msg->path, ([
 		"method": "PUT",
 		"json": ([
@@ -323,7 +338,8 @@ __async__ mapping websocket_cmd_save_file(mapping(string:mixed) conn, mapping(st
 }
 
 __async__ mapping websocket_cmd_delete_file(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	string userid = conn->session->user->id;
+	string userid = conn->siteid;
+	if (conn->session->fake) return (["cmd": "demo"]);
 	//Unusually, this is a DELETE with a body.
 	mapping resp = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + msg->path, ([
 		"method": "DELETE",
@@ -336,32 +352,36 @@ __async__ mapping websocket_cmd_delete_file(mapping(string:mixed) conn, mapping(
 	if (resp->status == "409") return (["cmd": "error", "error": "File was edited while you were looking at it"]);
 }
 
-__async__ void websocket_cmd_set_cname(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	string userid = conn->session->user->id;
+__async__ mapping websocket_cmd_set_cname(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string userid = conn->siteid;
+	if (conn->session->fake) return (["cmd": "demo"]);
 	mapping ret = await(github_api_request("/repos/mustardmine/" + userid + "/pages", (["method": "PUT", "json": (["cname": msg->cname])])));
 	//TODO: Error checking
 	//TODO: Health check: https://docs.github.com/en/rest/pages/pages?apiVersion=2026-03-10#get-a-dns-health-check-for-github-pages
 	query_github_repo(userid);
 }
 
-__async__ void websocket_cmd_add_collaborator(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	string userid = conn->session->user->id;
+__async__ mapping websocket_cmd_add_collaborator(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string userid = conn->siteid;
+	if (conn->session->fake) return (["cmd": "demo"]);
 	mapping ret = await(github_api_request("/repos/mustardmine/" + userid + "/collaborators/" + msg->username, (["method": "PUT", "json": (["permission": "admin"])])));
 	load_repo_details(userid, "collaborators");
 }
 
-__async__ void websocket_cmd_remove_collaborator(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	string userid = conn->session->user->id;
+__async__ mapping websocket_cmd_remove_collaborator(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string userid = conn->siteid;
+	if (conn->session->fake) return (["cmd": "demo"]);
 	mapping ret = await(github_api_request("/repos/mustardmine/" + userid + "/collaborators/" + msg->username, (["method": "DELETE"])));
 	load_repo_details(userid, "collaborators");
 }
 
-__async__ void websocket_cmd_transfer_repository(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	string userid = conn->session->user->id;
+__async__ mapping websocket_cmd_transfer_repository(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string userid = conn->siteid;
+	if (conn->session->fake) return (["cmd": "demo"]);
 	mapping repo = github_repo_details[userid];
 	if (!repo) {await(query_github_repo(userid)); repo = github_repo_details[userid];}
 	//Ensure that the chosen user has been added as a collaborator
-	if (!repo->collab || !has_value(repo->collab->username, msg->username)) return; //TODO: Error reporting
+	if (!repo->collab || !has_value(repo->collab->username, msg->username)) return (["error": "Can only transfer to an existing collaborator"]);
 	//Does the site have GH Pages?
 	string reponame = "mm-web-site";
 	if (!has_prefix(repo->html_url, "https://github.com/") && !has_prefix(repo->html_url, "https://mustardmine.github.io/")) {
