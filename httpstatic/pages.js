@@ -31,7 +31,9 @@ const first_steps = {
 //you go straight into /deep/path/to/files there will be individual levels to expand
 //for each one. This is unlikely to be a major issue as directory levels won't be as
 //common here.
-function build_directory_tree(files, describe, suffix) {
+function build_directory_tree(files, options) {
+	if (!options) options = { };
+	const describe = options.describe || (fn => fn); //Default to just showing the file name; the callback is also given the entire file object if needed
 	const dirs = {"": []};
 	for (let file of files) {
 		const parts = file.path.split("/");
@@ -46,7 +48,7 @@ function build_directory_tree(files, describe, suffix) {
 					subdir[dir][""] = [],
 					LI({style: "margin-top: 0.5em"}, [
 						"Create new ",
-						BUTTON({class: "new-file", type: "button", "data-prefix": path, "data-suffix": suffix || ""}, "\u{1F589}"),
+						BUTTON({class: "new-file", type: "button", "data-prefix": path, "data-suffix": options.suffix || ""}, "\u{1F589}"),
 					]),
 				])])));
 			}
@@ -61,7 +63,7 @@ function build_directory_tree(files, describe, suffix) {
 		dirs[""],
 		LI({style: "margin-top: 0.5em"}, [
 			"Create new ",
-			BUTTON({class: "new-file", type: "button", "data-prefix": "", "data-suffix": suffix || ""}, "\u{1F589}"),
+			BUTTON({class: "new-file", type: "button", "data-prefix": "", "data-suffix": options.suffix || ""}, "\u{1F589}"),
 		]),
 	]);
 }
@@ -100,13 +102,13 @@ export function render(data) {
 		data.site.pages && [
 			H3("Pages"), //Not a fan of calling this "pages" when the whole page is "pages". It's as bad as levels in D&D.
 			P("Most of your web site is these sorts of pages. Use Markdown syntax for styling."),
-			build_directory_tree(data.site.pages, fn => fn.replace(/\.md$/, ""), ".md"),
+			build_directory_tree(data.site.pages, {describe: fn => fn.replace(/\.md$/, ""), suffix: ".md"}),
 		],
-		[["images", "Images"], ["layouts", "Design/layout"], ["files", "Other files"]].map(([sec, title]) => {
+		[["media", "Media"], ["layouts", "Design/layout"], ["files", "Other files"]].map(([sec, title]) => {
 			const files = data.site[sec];
 			return files && DETAILS([
 				SUMMARY(title),
-				build_directory_tree(files, fn => fn),
+				build_directory_tree(files),
 			]);
 		}),
 	]);

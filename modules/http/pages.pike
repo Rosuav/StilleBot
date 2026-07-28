@@ -110,7 +110,7 @@ constant EXTENSION_CATEGORIES = ([
 	"yml": "layouts", "html": "layouts",
 	"css": "layouts", "scss": "layouts",
 	"js": "layouts", "ts": "layouts",
-	"png": "images", "gif": "images", "jpg": "images", "jpeg": "images", "webp": "images",
+	"png": "media", "gif": "media", "jpg": "media", "jpeg": "media", "webp": "media",
 ]);
 
 __async__ void load_directory(string userid, mapping repo, string path) {
