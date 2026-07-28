@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, B, BR, BUTTON, DETAILS, FORM, H3, IMG, INPUT, LI, P, SUMMARY, UL} = lindt; //autoimport
+const {A, B, BR, BUTTON, DETAILS, FORM, H3, IMG, INPUT, LI, P, SPAN, SUMMARY, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 import "https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.min.js"; //Editor with syntax highlighting
 window.ace.config.set("basePath", "https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/");
@@ -66,7 +66,7 @@ export function render(data) {
 			//If you're logged in, show who you are, and allow switching. Otherwise, invite a login.
 			IMG({src: data.self.profile_image_url, class: "avatar", style: "vertical-align: middle"}),
 			" ", B(data.self.display_name), " ",
-			data.self.fake ? ["Want to create your own web site? ", A({href: "pages"}, "Go live!")]
+			data.self.fake ? [SPAN({style: "display: inline-block; width: 2em"}), "Want to create your own web site? ", A({href: "pages"}, "Go live!")]
 			: BUTTON({type: "button", class: "twitchlogin", "data-force": "1"}, "Not you?"),
 		]),
 		!data.site.html_url ? P([
@@ -91,10 +91,10 @@ export function render(data) {
 			P("Most of your web site is these sorts of pages. Use Markdown syntax for styling."),
 			build_directory_tree(data.site.pages, fn => fn.replace(/\.md$/, ""), ".md"),
 		],
-		["Images", "Layouts", "Scripts", "Files"].map(sec => {
-			const files = data.site[sec.toLowerCase()];
+		[["images", "Images"], ["layouts", "Design/layout"], ["files", "Other files"]].map(([sec, title]) => {
+			const files = data.site[sec];
 			return files && DETAILS([
-				SUMMARY(sec === "Files" ? "Other files" : sec),
+				SUMMARY(title),
 				build_directory_tree(files, fn => fn),
 			]);
 		}),

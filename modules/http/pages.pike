@@ -105,12 +105,11 @@ __async__ mapping|array github_api_request(string endpoint, mapping|void options
 //Categorize files into a few end-user-meaningful groups.
 //It'd be nice if GitHub gave us the file's detected MIME type, but short of actually fetching
 //the *contents* of every file, we're stuck looking at filename extensions.
-//TODO: Merge scripts into layouts? That would keep all the "style configs" together.
 constant EXTENSION_CATEGORIES = ([
 	"md": "pages",
-	"css": "scripts", "scss": "scripts",
-	"js": "scripts", "ts": "scripts",
 	"yml": "layouts", "html": "layouts",
+	"css": "layouts", "scss": "layouts",
+	"js": "layouts", "ts": "layouts",
 	"png": "images", "gif": "images", "jpg": "images", "jpeg": "images", "webp": "images",
 ]);
 
