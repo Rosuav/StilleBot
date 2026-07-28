@@ -1,6 +1,17 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {A, B, BR, BUTTON, DETAILS, FORM, H3, IMG, INPUT, LI, P, SUMMARY, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
+import "https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.min.js"; //Editor with syntax highlighting
+window.ace.config.set("basePath", "https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/");
+//For some reason, we need to first import, THEN require.
+import "https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ext-modelist.js";
+const getModeForPath = window.require("ace/ext/modelist").getModeForPath;
+
+const ace_editor = window.ace.edit("fileeditor", {
+	theme: "ace/theme/tomorrow",
+	selectionStyle: "text",
+});
+window.ace_editor = ace_editor; //Allow interactive tinkering
 
 //Turn a flat list of files into a tree of DOM (Lindt) elements, gathering those in
 //subdirectories into nested lists. Pass a describer function to generate list items
@@ -119,11 +130,16 @@ on("click", "#create_site", e => ws_sync.send({cmd: "create_site"}));
 let editing_file = null;
 export function sockmsg_file_loaded(msg) {
 	editing_file = msg;
+	const mode = getModeForPath(msg.name);
+	ace_editor.session.setMode(mode.mode);
+	replace_content("#filetype", mode.caption);
 	DOM("#filename").value = msg.name.replace(/\.md$/, "");
 	DOM("#filename").readOnly = true;
 	DOM("#filedelete").hidden = false;
-	DOM("#filecontent").value = atob(msg.content);
+	ace_editor.setValue(atob(msg.content));
+	ace_editor.gotoLine(1);
 	DOM("#editfiledlg").showModal();
+	ace_editor.focus();
 }
 
 on("click", ".edit-file", e => ws_sync.send({cmd: "fetch_file", path: e.match.dataset.path}));
@@ -131,7 +147,7 @@ on("click", "#filesave", e => {
 	ws_sync.send({
 		cmd: "save_file",
 		path: editing_file.path || (editing_file.prefix + DOM("#filename").value + editing_file.suffix),
-		content: btoa(DOM("#filecontent").value),
+		content: btoa(ace_editor.getValue()),
 		sha: editing_file.sha
 	});
 	DOM("#editfiledlg").close();
@@ -142,7 +158,7 @@ on("click", ".new-file", e => {
 	DOM("#filename").value = "";
 	DOM("#filename").readOnly = false;
 	DOM("#filedelete").hidden = true;
-	DOM("#filecontent").value = "";
+	ace_editor.setValue("");
 	DOM("#editfiledlg").showModal();
 });
 

@@ -22,15 +22,20 @@ Build simple web pages and host them on GitHub Pages. You retain full control at
 <div id=content>loading...</div>
 
 > ### Edit file
-> Name: <input id=filename></code> [\u{1f5d1}\ufe0e](:#filedelete title=Delete)
+> Name: <input id=filename></code> [\u{1f5d1}\ufe0e](:#filedelete title=Delete) <span id=filetype></span>
 >
-> <textarea id=filecontent rows=15 cols=100></textarea>
+> <div id=fileeditor></div>
 >
 > [Save](:#filesave) [Close without saving](:.dialog_close)
 {: tag=dialog #editfiledlg}
 
 <style>
 #filedelete {background: red; color: white;}
+#fileeditor {
+	width: 900px; height: 300px;
+	border: 1px solid black;
+	padding: 4px;
+}
 </style>
 
 > ### Collaborators and ownership
@@ -100,9 +105,11 @@ __async__ mapping|array github_api_request(string endpoint, mapping|void options
 //Categorize files into a few end-user-meaningful groups.
 //It'd be nice if GitHub gave us the file's detected MIME type, but short of actually fetching
 //the *contents* of every file, we're stuck looking at filename extensions.
+//TODO: Merge scripts into layouts? That would keep all the "style configs" together.
 constant EXTENSION_CATEGORIES = ([
 	"md": "pages",
-	"css": "scripts", "js": "scripts",
+	"css": "scripts", "scss": "scripts",
+	"js": "scripts", "ts": "scripts",
 	"yml": "layouts", "html": "layouts",
 	"png": "images", "gif": "images", "jpg": "images", "jpeg": "images", "webp": "images",
 ]);
