@@ -34,6 +34,13 @@ const first_steps = {
 function build_directory_tree(files, options) {
 	if (!options) options = { };
 	const describe = options.describe || (fn => fn); //Default to just showing the file name; the callback is also given the entire file object if needed
+	const createnew = path => LI({style: "margin-top: 0.5em"},
+		options.upload ? ["Upload..."]
+		: [
+			"Create new ",
+			BUTTON({class: "new-file", type: "button", "data-prefix": path, "data-suffix": options.suffix || ""}, "\u{1F589}"),
+		]
+	);
 	const dirs = {"": []};
 	for (let file of files) {
 		const parts = file.path.split("/");
@@ -46,10 +53,7 @@ function build_directory_tree(files, options) {
 				subdir[dir] = { };
 				subdir[""].push(LI({key: dir}, DETAILS([SUMMARY(dir + "/"), UL([
 					subdir[dir][""] = [],
-					LI({style: "margin-top: 0.5em"}, [
-						"Create new ",
-						BUTTON({class: "new-file", type: "button", "data-prefix": path, "data-suffix": options.suffix || ""}, "\u{1F589}"),
-					]),
+					createnew(path),
 				])])));
 			}
 			subdir = subdir[dir];
@@ -59,13 +63,7 @@ function build_directory_tree(files, options) {
 			BUTTON({class: "edit-file", type: "button", "data-path": file.path}, "\u{1F589}"),
 		]));
 	}
-	return UL([
-		dirs[""],
-		LI({style: "margin-top: 0.5em"}, [
-			"Create new ",
-			BUTTON({class: "new-file", type: "button", "data-prefix": "", "data-suffix": options.suffix || ""}, "\u{1F589}"),
-		]),
-	]);
+	return UL([dirs[""], createnew("")]);
 }
 
 export function render(data) {
@@ -108,7 +106,7 @@ export function render(data) {
 			const files = data.site[sec];
 			return files && DETAILS([
 				SUMMARY(title),
-				build_directory_tree(files),
+				build_directory_tree(files, {upload: sec === "media"}),
 			]);
 		}),
 	]);
