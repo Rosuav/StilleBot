@@ -261,5 +261,5 @@
   - Host elsewhere than GitHub?
     - Repo hosting probably hard since this is all based on the GH API, not git itself
     - Live site hosting? Where, what options?
-  - Rename File option? Would be nice to do as one commit, but otherwise, do it as two.
+  - Rename File currently deletes and recreates - explore tree/commit API instead
   - Encourage editing of _config.yml to remove placeholders

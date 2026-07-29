@@ -22,12 +22,23 @@ Build simple web pages and host them on GitHub Pages. You retain full control at
 <div id=content>loading...</div>
 
 > ### Edit file
-> Name: <input id=filename></code> [\u{1f5d1}\ufe0e](:#filedelete title=Delete) <span id=filetype></span>
+> Name: <input id=filename></code> [\u{1F589}](:#filerename title=Rename) [\u{1f5d1}\ufe0e](:#filedelete title=Delete) <span id=filetype></span>
 >
 > <div id=fileeditor></div><img id=fileimage hidden>
 >
 > [Save](:#filesave) [Close without saving](:.dialog_close)
 {: tag=dialog #editfiledlg}
+
+<!-- -->
+
+> ### Rename file
+> Old name: <input id=oldpath readonly></code><br>
+> New name: <input id=newpath></code>
+>
+> Move or rename a file. Directories can be created simply by putting something in them.
+>
+> [Move/rename](:type=submit) [Cancel](:.dialog_close)
+{: tag=formdialog #renamefiledlg}
 
 <style>
 #filedelete {background: red; color: white;}
@@ -342,6 +353,41 @@ __async__ mapping websocket_cmd_save_file(mapping(string:mixed) conn, mapping(st
 		]),
 	])));
 	if (resp->status == "409") return (["cmd": "error", "error": "File was edited while you were looking at it"]);
+}
+
+__async__ mapping websocket_cmd_rename_file(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string userid = conn->siteid;
+	if (conn->session->fake) return (["cmd": "demo"]);
+	//Renaming is not a simple API call. Instead, we need to either craft a commit, or do a two-step
+	//"create and delete" operation. We simply do the latter for now, but it would be nice to have a
+	//one-commit rename as this looks better in the history.
+	array|mapping file = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + msg->oldpath));
+	if (arrayp(file)) {
+		//It's a directory. Would be nice to have a "rename directory" feature, but only do that
+		//as a single commit, not as deletion and reuploading. Note that, due to how git trees
+		//work, this would actually be a simple operation.
+		return (["error": "Only rename files, not directories"]);
+	}
+	//Delete before creating. This does have a worse failure mode in the event of interruption,
+	//but it means we get confirmation that the file wasn't edited before we make the new one.
+	//The risk of file loss is mitigated by the fact that it's still in history.
+	mapping resp = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + msg->oldpath, ([
+		"method": "DELETE",
+		"json": ([
+			"sha": msg->sha,
+			"message": "Rename " + msg->oldpath + " to " + msg->newpath,
+			"committer": (["name": conn->session->user->display_name, "email": userid + "@twitchuser.invalid"]),
+		]),
+	])));
+	if (resp->status == "409") return (["cmd": "error", "error": "File was edited while you were looking at it"]);
+	await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + msg->newpath, ([
+		"method": "PUT",
+		"json": ([
+			"message": "Rename " + msg->oldpath + " to " + msg->newpath,
+			"committer": (["name": conn->session->user->display_name, "email": userid + "@twitchuser.invalid"]),
+			"content": file->content,
+		]),
+	])));
 }
 
 __async__ mapping websocket_cmd_delete_file(mapping(string:mixed) conn, mapping(string:mixed) msg) {

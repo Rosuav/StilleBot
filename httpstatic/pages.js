@@ -66,7 +66,7 @@ function build_directory_tree(files, options) {
 		}
 		subdir[""].push(LI({key: parts[0]}, [
 			describe(parts[0], file), " ",
-			BUTTON({class: "edit-file", type: "button", "data-path": file.path, "data-mode": options.upload ? "view" : "edit"},
+			BUTTON({class: "edit-file", type: "button", "data-path": file.path, "data-viewsha": options.upload ? file.sha : ""},
 				options.upload ? "\u{1F50D}" : "\u{1F589}"),
 		]));
 	}
@@ -175,13 +175,15 @@ on("click", "#create_site", e => ws_sync.send({cmd: "create_site"}));
 let editing_file = null;
 export function sockmsg_file_loaded(msg) {
 	editing_file = msg;
-	DOM("#fileeditor").hidden = false;
 	const mode = getModeForPath(msg.name);
 	ace_editor.session.setMode(mode.mode);
 	replace_content("#filetype", mode.caption);
 	DOM("#filename").value = msg.name.replace(/\.md$/, "");
 	DOM("#filename").readOnly = true;
+	DOM("#filerename").hidden = false;
 	DOM("#filedelete").hidden = false;
+	DOM("#fileeditor").hidden = false;
+	DOM("#fileimage").hidden = true;
 	ace_editor.setValue(atob(msg.content));
 	ace_editor.gotoLine(1);
 	DOM("#editfiledlg").showModal();
@@ -189,15 +191,22 @@ export function sockmsg_file_loaded(msg) {
 }
 
 on("click", ".edit-file", e => {
-	if (e.match.dataset.mode === "view") {
+	if (e.match.dataset.viewsha) {
 		//Image-type content gets displayed, but can't be edited. Also, we don't have to fetch
 		//the content in JS, we can simply reference it and have the browser load it.
+		editing_file = {
+			//Stubs to ensure that rename works - not full details
+			path: e.match.dataset.path,
+			sha: e.match.dataset.viewsha,
+		};
+		replace_content("#filetype", "Image");
 		DOM("#filename").value = e.match.dataset.path;
 		DOM("#filename").readOnly = true;
-		replace_content("#filetype", "Image");
+		DOM("#filerename").hidden = false;
+		DOM("#filedelete").hidden = false;
 		DOM("#fileeditor").hidden = true;
 		const img = DOM("#fileimage"); img.hidden = false;
-		img.src = "";
+		img.src = ""; //Hide any previous image while the new one loads
 		img.src = "https://raw.githubusercontent.com/mustardmine/" + ws_group.slice(1) + "/HEAD/" + e.match.dataset.path;
 		DOM("#editfiledlg").showModal();
 	} else ws_sync.send({cmd: "fetch_file", path: e.match.dataset.path}); //Display when we have the content
@@ -220,6 +229,7 @@ on("click", ".new-file", e => {
 	replace_content("#filetype", mode.caption);
 	DOM("#filename").value = "";
 	DOM("#filename").readOnly = false;
+	DOM("#filerename").hidden = true;
 	DOM("#filedelete").hidden = true;
 	ace_editor.setValue("");
 	DOM("#editfiledlg").showModal();
@@ -244,3 +254,18 @@ on("click", ".transfer", simpleconfirm("CAUTION: Transferring repository ownersh
 
 on("click", "#setcname", simpleconfirm("Ensure that you have created the DNS record first.",
 	e => ws_sync.send({cmd: "set_cname", cname: DOM("#cname").value})));
+
+//TODO: If you've made edits, what should we do? Offer to Save-As? Keep the unsaved changes but
+//respect the underlying rename?
+on("click", "#filerename", e => {
+	DOM("#oldpath").value = DOM("#newpath").value = editing_file.path;
+	DOM("#renamefiledlg").showModal();
+});
+
+on("submit", "#renamefiledlg form", e => {
+	const newpath = DOM("#newpath").value;
+	DOM("#renamefiledlg").close();
+	if (newpath === editing_file.path) return; //No name change, don't close the editor
+	ws_sync.send({cmd: "rename_file", oldpath: editing_file.path, newpath, sha: editing_file.sha});
+	DOM("#editfiledlg").close(); //Will discard unsaved changes. Unideal but will do for now.
+});
