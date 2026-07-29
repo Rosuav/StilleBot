@@ -24,7 +24,7 @@ Build simple web pages and host them on GitHub Pages. You retain full control at
 > ### Edit file
 > Name: <input id=filename></code> [\u{1f5d1}\ufe0e](:#filedelete title=Delete) <span id=filetype></span>
 >
-> <div id=fileeditor></div>
+> <div id=fileeditor></div><img id=fileimage hidden>
 >
 > [Save](:#filesave) [Close without saving](:.dialog_close)
 {: tag=dialog #editfiledlg}
@@ -36,6 +36,7 @@ Build simple web pages and host them on GitHub Pages. You retain full control at
 	border: 1px solid black;
 	padding: 4px;
 }
+#fileimage {max-width: 900px;}
 </style>
 
 > ### Collaborators and ownership

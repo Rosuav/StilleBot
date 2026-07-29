@@ -66,7 +66,8 @@ function build_directory_tree(files, options) {
 		}
 		subdir[""].push(LI({key: parts[0]}, [
 			describe(parts[0], file), " ",
-			BUTTON({class: "edit-file", type: "button", "data-path": file.path}, "\u{1F589}"),
+			BUTTON({class: "edit-file", type: "button", "data-path": file.path, "data-mode": options.upload ? "view" : "edit"},
+				options.upload ? "\u{1F50D}" : "\u{1F589}"),
 		]));
 	}
 	return UL([dirs[""], createnew("")]);
@@ -174,6 +175,7 @@ on("click", "#create_site", e => ws_sync.send({cmd: "create_site"}));
 let editing_file = null;
 export function sockmsg_file_loaded(msg) {
 	editing_file = msg;
+	DOM("#fileeditor").hidden = false;
 	const mode = getModeForPath(msg.name);
 	ace_editor.session.setMode(mode.mode);
 	replace_content("#filetype", mode.caption);
@@ -186,7 +188,20 @@ export function sockmsg_file_loaded(msg) {
 	ace_editor.focus();
 }
 
-on("click", ".edit-file", e => ws_sync.send({cmd: "fetch_file", path: e.match.dataset.path}));
+on("click", ".edit-file", e => {
+	if (e.match.dataset.mode === "view") {
+		//Image-type content gets displayed, but can't be edited. Also, we don't have to fetch
+		//the content in JS, we can simply reference it and have the browser load it.
+		DOM("#filename").value = e.match.dataset.path;
+		DOM("#filename").readOnly = true;
+		replace_content("#filetype", "Image");
+		DOM("#fileeditor").hidden = true;
+		const img = DOM("#fileimage"); img.hidden = false;
+		img.src = "";
+		img.src = "https://raw.githubusercontent.com/mustardmine/" + ws_group.slice(1) + "/HEAD/" + e.match.dataset.path;
+		DOM("#editfiledlg").showModal();
+	} else ws_sync.send({cmd: "fetch_file", path: e.match.dataset.path}); //Display when we have the content
+});
 on("click", "#filesave", e => {
 	ws_sync.send({
 		cmd: "save_file",
@@ -199,6 +214,7 @@ on("click", "#filesave", e => {
 
 on("click", ".new-file", e => {
 	editing_file = {prefix: e.match.dataset.prefix || "", suffix: e.match.dataset.suffix || ""};
+	DOM("#fileeditor").hidden = false;
 	const mode = getModeForPath(e.match.dataset.suffix || "");
 	ace_editor.session.setMode(mode.mode);
 	replace_content("#filetype", mode.caption);
