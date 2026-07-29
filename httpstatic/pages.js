@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, B, BR, BUTTON, DETAILS, FORM, H3, IMG, INPUT, LI, P, SPAN, SUMMARY, UL} = lindt; //autoimport
+const {A, B, BR, BUTTON, DETAILS, DIV, FORM, H3, IMG, INPUT, LI, P, SPAN, SUMMARY, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 import "https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.min.js"; //Editor with syntax highlighting
 window.ace.config.set("basePath", "https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/");
@@ -35,8 +35,14 @@ function build_directory_tree(files, options) {
 	if (!options) options = { };
 	const describe = options.describe || (fn => fn); //Default to just showing the file name; the callback is also given the entire file object if needed
 	const createnew = path => LI({style: "margin-top: 0.5em"},
-		options.upload ? ["Upload..."]
-		: [
+		options.upload ? [
+			FORM([
+				"Upload new file: ",
+				INPUT({class: "fileuploader", type: "file", multiple: 1, accept: "image/*", "data-prefix": path}),
+			]),
+			DIV({class: "filedropzone", "data-prefix": path}, "Or drop files here to upload"),
+			DIV({id: "uploaderror", class: "hidden"}),
+		] : [
 			"Create new ",
 			BUTTON({class: "new-file", type: "button", "data-prefix": path, "data-suffix": options.suffix || ""}, "\u{1F589}"),
 		]
@@ -65,6 +71,33 @@ function build_directory_tree(files, options) {
 	}
 	return UL([dirs[""], createnew("")]);
 }
+
+//NOTE: This uses the same CSS classes as the utils upload_to_library() system does, giving
+//consistent display; since the upload implementation is incompatible, this means that the
+//page cannot use both.
+function upload(f, pfx) {
+	const r = new FileReader();
+	r.onload = () => {
+		//The result is "data:TYPE/SUBTYPE;base64," followed by the base-64 data.
+		//This is easier than reading the file as binary and then base-64ing it.
+		//Since well-formed Base 64 data does not contain commas, we should be
+		//safe splitting on the comma and taking the second half.
+		const content = r.result.split(",")[1];
+		ws_sync.send({cmd: "save_file", path: pfx + f.name, content});
+	};
+	r.readAsDataURL(f);
+}
+
+//TODO: Fast skip of the actual uploading work if we're in demo mode
+on("change", ".fileuploader", e => {
+	for (let f of e.match.files) upload(f, e.match.dataset.prefix);
+	e.match.value = "";
+});
+on("dragover", ".filedropzone", e => e.preventDefault());
+on("drop", ".filedropzone", e => {
+	e.preventDefault();
+	for (let f of e.dataTransfer.items) upload(f.getAsFile(), e.match.dataset.prefix);
+});
 
 export function render(data) {
 	if (!data.self) return replace_content("#content", P([
