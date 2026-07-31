@@ -223,7 +223,6 @@ on("click", "#filesave", e => {
 
 on("click", ".new-file", e => {
 	editing_file = {prefix: e.match.dataset.prefix || "", suffix: e.match.dataset.suffix || ""};
-	DOM("#fileeditor").hidden = false;
 	const mode = getModeForPath(e.match.dataset.suffix || "");
 	ace_editor.session.setMode(mode.mode);
 	replace_content("#filetype", mode.caption);
@@ -231,8 +230,11 @@ on("click", ".new-file", e => {
 	DOM("#filename").readOnly = false;
 	DOM("#filerename").hidden = true;
 	DOM("#filedelete").hidden = true;
+	DOM("#fileeditor").hidden = false;
+	DOM("#fileimage").hidden = true;
 	ace_editor.setValue("");
 	DOM("#editfiledlg").showModal();
+	ace_editor.focus();
 });
 
 on("click", "#filedelete", simpleconfirm("Delete this file? Links to it will go nowhere and the page will cease to exist.", e => {
