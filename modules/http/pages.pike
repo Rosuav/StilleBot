@@ -125,26 +125,21 @@ constant EXTENSION_CATEGORIES = ([
 	"png": "media", "gif": "media", "jpg": "media", "jpeg": "media", "webp": "media",
 ]);
 
-__async__ void load_directory(string userid, mapping repo, string path) {
-	mapping files = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees/HEAD?recursive=1"));
-	if (!mappingp(files) || !arrayp(files->tree)) return; //Probably an error. Not worth the hassle for now.
-	//sort(files->tree->path, files->tree); //Do we need to enforce sort order?
-	foreach (files->tree, mapping file) {
-		if (file->type != "blob") continue; //Ignore tree elements; gathering files into directories is done by path instead.
-		mapping f = file & (<"path", "size", "sha">); //The rest is uninteresting to the front end
-		sscanf(basename(file->path), "%*s.%s", string ext); //If it has more than one extension, it's not going to match any of our checks anyway
-		repo[EXTENSION_CATEGORIES[ext] || "files"] += ({f});
-	}
-}
-
 __async__ void load_repo_details(string userid, string which) {
 	mapping repo = github_repo_details[userid];
 	if (!repo) return await(query_github_repo(userid)); //If we don't have anything loaded, freshly load everything. This will come back to load_repo_details shortly.
 	if (which == "*" || which == "contents") {
-		//Load the contents (which may take some time esp once this becomes recursive)
-		//and then replace them into the main repo mapping.
+		//Load the contents asynchronously, and then atomically replace them into the main repo mapping.
 		mapping tmp = ([]);
-		await(load_directory(userid, tmp, ""));
+		mapping files = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees/HEAD?recursive=1"));
+		if (!mappingp(files) || !arrayp(files->tree)) return; //Probably an error. Not worth the hassle for now.
+		//sort(files->tree->path, files->tree); //Do we need to enforce sort order?
+		foreach (files->tree, mapping file) {
+			if (file->type != "blob") continue; //Ignore tree elements; gathering files into directories is done by path instead.
+			mapping f = file & (<"path", "size", "sha">); //The rest is uninteresting to the front end
+			sscanf(basename(file->path), "%*s.%s", string ext); //If it has more than one extension, it's not going to match any of our checks anyway
+			tmp[EXTENSION_CATEGORIES[ext] || "files"] += ({f});
+		}
 		foreach (values(EXTENSION_CATEGORIES), string cat) m_delete(repo, cat); //Remove any categories that didn't get files added to them
 		foreach (tmp; string cat; array files) repo[cat] = files;
 	}
@@ -179,6 +174,7 @@ __async__ void query_github_repo(string userid) {
 	if (raw->status == "404") ; //No repo found; retain empty mapping to show that it has been checked.
 	else if (raw->status) {repo->_error = "Unable to load repository"; repo->_raw = repo;}
 	else {
+		repo->default_branch = raw->default_branch;
 		//Immediately set some URL here if we don't have one; but if we've replaced the basic
 		//URL with a deployment URL, keep that (unless we find that it's no longer valid).
 		if (!repo->html_url) repo->html_url = raw->html_url;
@@ -186,11 +182,13 @@ __async__ void query_github_repo(string userid) {
 		mapping pages = await(github_api_request("/repos/mustardmine/" + userid + "/pages"));
 		if (pages->html_url) repo->html_url = pages->html_url;
 		else repo->html_url = raw->html_url;
-		//Asynchronously load additional information, including the repo contents.
-		//We'll push out partial info on the websocket, then get full info, which might
-		//result in minor flicker on the front end. Unideal but unavoidable, since the
-		//full load could potentially take a while.
-		load_repo_details(userid, "*");
+		//Before loading everything else there is to know, push out what we have. There
+		//is a chance that this will happen quickly, resulting in front end flicker;
+		//but there's also a good chance it'll take too long to wait, and it would be
+		//better to send what we know.
+		send_updates_all("#" + userid);
+		await(load_repo_details(userid, "*"));
+		return; //load_repo_details will already send out updates, so we don't need to again.
 	}
 	send_updates_all("#" + userid);
 }
@@ -279,7 +277,6 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!stringp(msg->group)) return "String group only";
 	sscanf(msg->group, "%s#%s", string subgroup, string userid);
-	werror("Subgroup %O userid %O\n", subgroup, userid);
 	if (userid == "3141592653589793") {
 		if (!is_localhost_mod(conn->session->user->?login, conn->remote_ip)) conn->session = ([
 			"fake": 1,
