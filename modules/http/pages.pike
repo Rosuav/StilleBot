@@ -134,9 +134,11 @@ __async__ void load_repo_details(string userid, string which) {
 		mapping files = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees/HEAD?recursive=1"));
 		if (!mappingp(files) || !arrayp(files->tree)) return; //Probably an error. Not worth the hassle for now.
 		//sort(files->tree->path, files->tree); //Do we need to enforce sort order?
+		tmp->trees = (["": files->sha]); //Note that this is probably the SHA of the commit, not the tree per se; but this is fine for where it's needed.
 		foreach (files->tree, mapping file) {
-			if (file->type != "blob") continue; //Ignore tree elements; gathering files into directories is done by path instead.
-			mapping f = file & (<"path", "size", "sha">); //The rest is uninteresting to the front end
+			if (file->type == "tree") {tmp->trees[file->path] = file->sha;}
+			if (file->type != "blob") continue; //Ignore non-files; trees are only interesting for their SHAs, and symlinks etc will be hard to edit.
+			mapping f = file & (<"path", "size", "sha", "mode">); //The rest is uninteresting to the front end
 			sscanf(basename(file->path), "%*s.%s", string ext); //If it has more than one extension, it's not going to match any of our checks anyway
 			tmp[EXTENSION_CATEGORIES[ext] || "files"] += ({f});
 		}
@@ -451,6 +453,110 @@ __async__ mapping websocket_cmd_transfer_repository(mapping(string:mixed) conn, 
 __async__ void hack() {
 	string userid = "935215207";
 	//m_delete(github_repo_details, userid); //Force a full load on next page refresh
+	//await(query_github_repo(userid));
+	/*
+	mapping ret = await(github_api_request("/graphql", (["json": ([
+		"query": sprintf(#[mutation {
+			createCommitOnBranch(input:{
+				branch:{repositoryNameWithOwner:"mustardmine/%s", branchName: "master"},
+				message:{headline:"Rename Rose (it still smells as sweet)"},
+				fileChanges
+			}) {commit { url } }
+		}#], userid);
+	])])));
+	werror("GQL result: %O\n", ret);
+	*/
+	mapping repo = github_repo_details[userid];
+	if (!repo->?default_branch) {
+		werror("Querying default branch...\n");
+		await(query_github_repo(userid));
+		repo = github_repo_details[userid];
+		if (!repo->?default_branch) return; //Maybe the repo doesn't actually exist
+	}
+	array(string) oldpath = "asdf/qwer/zxcv/somefile" / "/", newpath = "asdf/1234/somefile" / "/";
+	//array(string) oldpath = "img/Small_Red_Rose.jpeg" / "/", newpath = "img/small_red_rose.jpeg" / "/";
+	//Renaming a file requires deleting it from one location and creating it in another.
+	//This involves updating one or more common trees, and zero or more diverse trees.
+	//If the file is being renamed within its current directory (eg "/path/to/file1" -> "/path/to/file2"),
+	//all the trees will be common: the root, and any subdirectories ("path" and "path/to").
+	//If the file is being moved from one location to another, there will be a common prefix
+	//(which will always include the root), after which the trees diverge.
+	//We need to update the diverse trees (if any) individually, then make our way back up
+	//until we reach the root, making both changes at once.
+	//OPEN QUESTION: What happens if I leave a tree empty?
+
+	//TODO: Get the SHA and mode more efficiently, possibly retaining them somewhere useful
+	//(this is actually checking more than once per cat, very inefficient)
+	mapping oldfile;
+	foreach (values(EXTENSION_CATEGORIES), string cat) foreach (repo[cat] || ({ }), mapping f) if (f->path == oldpath * "/") oldfile = f;
+	foreach (repo->files || ({ }), mapping f) if (f->path == oldpath * "/") oldfile = f;
+	if (!oldfile) return; //File does not exist (TODO: return error to front end)
+	//How many path components are common to both? Could be zero. (The root is not counted here.)
+	int common = 0;
+	while (common < sizeof(oldpath) && common < sizeof(newpath) && oldpath[common] == newpath[common]) ++common;
+	string|zero oldsha = 0, newsha = 0;
+	for (int i = sizeof(oldpath) - 2; i >= common; --i) {
+		string tree = oldpath[..i] * "/";
+		if (oldsha) werror("Tree %s [%s] replace %s\n", tree, repo->trees[tree], oldpath[i+1]);
+		else werror("Tree %s [%s] remove %s\n", tree, repo->trees[tree], oldpath[i+1]);
+		/*mapping newtree = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees", (["json": ([
+			"base_tree": oldsha,
+			"tree": ({
+				oldfile | (["sha": Val.null]),
+				oldfile | (["path": newname]),
+			}),
+		])])));*/
+		oldsha = "(todo)";
+	}
+	for (int i = sizeof(newpath) - 2; i >= common; --i) {
+		string tree = newpath[..i] * "/";
+		if (newsha) werror("Tree %s [%s] replace %s\n", tree, repo->trees[tree] || "new", newpath[i+1]);
+		else werror("Tree %s [%s] add %s\n", tree, repo->trees[tree] || "new", newpath[i+1]);
+		newsha = "(todo)";
+	}
+	for (int i = common - 1; i >= 0; --i) {
+		string tree = newpath[..i] * "/";
+		if (oldsha) werror("Tree %s [%s] replace %s\n", tree, repo->trees[tree], oldpath[i+1]);
+		else werror("Tree %s [%s] remove %s\n", tree, repo->trees[tree], oldpath[i+1]);
+		if (newsha) werror("Tree %s [%s] replace %s\n", tree, repo->trees[tree] || "new", newpath[i+1]);
+		else werror("Tree %s [%s] add %s\n", tree, repo->trees[tree] || "new", newpath[i+1]);
+		newsha = oldsha = "(todo)";
+	}
+	return;
+	string oldname = oldpath[-1], newname = newpath[-1];
+	mapping head = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees/HEAD"));
+	//mapping oldfile;
+	foreach (head->tree, mapping f) if (f->path == oldname) {oldfile = f; break;}
+	if (!oldfile) {werror("Didn't find %O\n", oldname); return;}
+	mapping tree = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees", (["json": ([
+		"base_tree": head->sha,
+		"tree": ({
+			oldfile | (["sha": Val.null]),
+			oldfile | (["path": newname]),
+		}),
+	])])));
+	werror("Tree created %O\n", tree->sha);
+	mapping commit = await(github_api_request("/repos/mustardmine/" + userid + "/git/commits", (["json": ([
+		"message": "Rename " + oldname + " to " + newname,
+		"tree": tree->sha,
+		//"parents": ({head->sha}),
+		"parents": ({"c557c3c616398b93d53ea960c792b4214fe746b5"}),
+		//NOTE: When using the repository contents API, set the committer and the author will default to it.
+		//But when using the git commits API, set the author and the committer will default to it instead.
+		"author": (["name": "31415926535789793" /* FIXME */, "email": userid + "@twitchuser.invalid"]),
+	])])));
+	werror("Commit created: %O\n", commit->sha);
+	/*mapping ref = await(github_api_request("/repos/mustardmine/" + userid + "/git/refs/heads/" + repo->default_branch, (["json": ([
+		"sha": commit->sha,
+	])])));*/
+	mapping ref = await(github_api_request("/repos/mustardmine/" + userid + "/git/refs", (["json": ([
+		"sha": commit->sha,
+		"ref": "refs/tags/renamed",
+	])])));
+	/*mapping ref = await(github_api_request("/repos/mustardmine/" + userid + "/git/refs/tags/renamed", (["json": ([
+		"sha": commit->sha,
+	])])));*/
+	werror("Branch updated: %O\n", ref);
 }
 
 protected void create(string name) {::create(name); hack();}
