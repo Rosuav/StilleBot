@@ -264,3 +264,7 @@
   - Rename File currently deletes and recreates - explore tree/commit API instead
     - Or GQL https://docs.github.com/en/graphql/reference/commits#mutation-createcommitonbranch
   - Encourage editing of _config.yml to remove placeholders
+  - If you upload something to img/, and gallery.md exists, suggest automatically adding it to
+    your gallery. Will likely be the case. (Prompt for a caption.)
+    - Can this be generalized (maybe in _config.yml) so that people with multiple gallery
+      subdivisions can still take advantage of this?
