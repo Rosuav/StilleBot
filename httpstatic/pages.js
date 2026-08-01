@@ -223,7 +223,7 @@ on("click", "#filesave", e => {
 
 on("click", ".new-file", e => {
 	editing_file = {prefix: e.match.dataset.prefix || "", suffix: e.match.dataset.suffix || ""};
-	const mode = getModeForPath(e.match.dataset.suffix || "");
+	const mode = getModeForPath(editing_file.suffix);
 	ace_editor.session.setMode(mode.mode);
 	replace_content("#filetype", mode.caption);
 	DOM("#filename").value = "";
