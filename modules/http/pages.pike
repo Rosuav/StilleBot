@@ -134,16 +134,15 @@ __async__ void load_repo_details(string userid, string which) {
 		mapping files = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees/HEAD?recursive=1"));
 		if (!mappingp(files) || !arrayp(files->tree)) return; //Probably an error. Not worth the hassle for now.
 		//sort(files->tree->path, files->tree); //Do we need to enforce sort order?
-		tmp->trees = (["": files->sha]); //Note that this is probably the SHA of the commit, not the tree per se; but this is fine for where it's needed.
 		foreach (files->tree, mapping file) {
-			if (file->type == "tree") {tmp->trees[file->path] = file->sha;}
-			if (file->type != "blob") continue; //Ignore non-files; trees are only interesting for their SHAs, and symlinks etc will be hard to edit.
+			if (file->type != "blob") continue; //Ignore non-files; symlinks etc will be hard to edit, and trees are not inherently relevant.
 			mapping f = file & (<"path", "size", "sha", "mode">); //The rest is uninteresting to the front end
 			sscanf(basename(file->path), "%*s.%s", string ext); //If it has more than one extension, it's not going to match any of our checks anyway
 			tmp[EXTENSION_CATEGORIES[ext] || "files"] += ({f});
 		}
 		foreach (values(EXTENSION_CATEGORIES), string cat) m_delete(repo, cat); //Remove any categories that didn't get files added to them
 		foreach (tmp; string cat; array files) repo[cat] = files;
+		repo->sha = files->sha; //Commit hash as of the last query
 	}
 	if (which == "*" || which == "collaborators") {
 		array collab = await(github_api_request("/repos/mustardmine/" + userid + "/collaborators"));
@@ -483,7 +482,7 @@ __async__ void hack() {
 	foreach (repo->files || ({ }), mapping f) if (f->path == oldpath) oldfile = f;
 	if (!oldfile) return; //File does not exist (TODO: return error to front end)
 	mapping tree = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees", (["json": ([
-		"base_tree": repo->trees[""],
+		"base_tree": repo->sha,
 		"tree": ({
 			oldfile | (["sha": Val.null]),
 			oldfile | (["path": newpath]),
@@ -493,7 +492,7 @@ __async__ void hack() {
 	mapping commit = await(github_api_request("/repos/mustardmine/" + userid + "/git/commits", (["json": ([
 		"message": "Rename " + oldpath + " to " + newpath,
 		"tree": tree->sha,
-		"parents": ({repo->trees[""]}),
+		"parents": ({repo->sha}),
 		//NOTE: When using the repository contents API, set the committer and the author will default to it.
 		//But when using the git commits API, set the author and the committer will default to it instead.
 		"author": (["name": "31415926535789793" /* FIXME */, "email": userid + "@twitchuser.invalid"]),
