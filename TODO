@@ -269,3 +269,9 @@
     - Can this be generalized (maybe in _config.yml) so that people with multiple gallery
       subdivisions can still take advantage of this?
     - Pike doesn't have a YAML parser so I may need to make my own.
+  - Mustard Mine collaborators?
+    - Not automatically allowing mods to help as per the rest of MM, but allow the site owner
+      to grant permission to another Twitch user
+    - Go to /pages?for=OTHERUSERNAME to manage that person's site
+    - Maybe (internally and invisibly) redirect /pages?demo to /pages?for=0 and have everyone
+      be a collaborator
