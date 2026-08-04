@@ -473,104 +473,33 @@ __async__ void hack() {
 		repo = github_repo_details[userid];
 		if (!repo->?default_branch) return; //Maybe the repo doesn't actually exist
 	}
-	array(string) oldpath = "asdf/qwer/zxcv/somefile" / "/", newpath = "asdf/1234/somefile" / "/";
-	//array(string) oldpath = "img/Small_Red_Rose.jpeg" / "/", newpath = "img/small_red_rose.jpeg" / "/";
-	//Renaming a file requires deleting it from one location and creating it in another.
-	//This involves updating one or more common trees, and zero or more diverse trees.
-	//If the file is being renamed within its current directory (eg "/path/to/file1" -> "/path/to/file2"),
-	//all the trees will be common: the root, and any subdirectories ("path" and "path/to").
-	//If the file is being moved from one location to another, there will be a common prefix
-	//(which will always include the root), after which the trees diverge.
-	//We need to update the diverse trees (if any) individually, then make our way back up
-	//until we reach the root, making both changes at once.
-	//OPEN QUESTION: What happens if I leave a tree empty?
+	string oldpath = "asdf/qwer/zxcv/somefile", newpath = "asdf/1234/somefile";
+	//string oldpath = "img/Small_Red_Rose.jpeg", newpath = "img/small_red_rose.jpeg";
 
 	//TODO: Get the SHA and mode more efficiently, possibly retaining them somewhere useful
 	//(this is actually checking more than once per cat, very inefficient)
 	mapping oldfile;
-	foreach (values(EXTENSION_CATEGORIES), string cat) foreach (repo[cat] || ({ }), mapping f) if (f->path == oldpath * "/") oldfile = f;
-	foreach (repo->files || ({ }), mapping f) if (f->path == oldpath * "/") oldfile = f;
+	foreach (values(EXTENSION_CATEGORIES), string cat) foreach (repo[cat] || ({ }), mapping f) if (f->path == oldpath) oldfile = f;
+	foreach (repo->files || ({ }), mapping f) if (f->path == oldpath) oldfile = f;
 	if (!oldfile) return; //File does not exist (TODO: return error to front end)
-	#if 0
-	//How many path components are common to both? Could be zero. (The root is not counted here.)
-	int common = 0;
-	while (common < sizeof(oldpath) && common < sizeof(newpath) && oldpath[common] == newpath[common]) ++common;
-	string|zero oldsha = 0, newsha = 0;
-	for (int i = sizeof(oldpath) - 2; i >= common; --i) {
-		string tree = oldpath[..i] * "/";
-		if (oldsha) werror("Tree %s [%s] replace %s\n", tree, repo->trees[tree], oldpath[i+1]);
-		else werror("Tree %s [%s] remove %s\n", tree, repo->trees[tree], oldpath[i+1]);
-		werror("Old file %O\n", oldfile);
-		mapping newtree = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees", (["json": ([
-			"base_tree": repo->trees[tree], //Should always exist
-			"tree": ({
-				oldfile | (["sha": Val.null]),
-			}),
-		])])));
-		werror("NEW TREE %O\n", newtree);
-		oldsha = "(todo)";
-	}
-	for (int i = sizeof(newpath) - 2; i >= common; --i) {
-		string tree = newpath[..i] * "/";
-		if (newsha) werror("Tree %s [%s] replace %s\n", tree, repo->trees[tree] || "new", newpath[i+1]);
-		else werror("Tree %s [%s] add %s\n", tree, repo->trees[tree] || "new", newpath[i+1]);
-		/*mapping newtree = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees", (["json": ([
-			"base_tree": repo->trees[tree], //Should always exist
-			"tree": ({
-				oldfile | (["path": newname]),
-			}),
-		])])));*/
-		newsha = "(todo)";
-	}
-	for (int i = common - 1; i >= -1; --i) { //Yeah, go all the way to -1; that way, we catch the root too
-		string tree = newpath[..i] * "/";
-		if (oldsha) werror("Tree %s [%s] replace %s\n", tree, repo->trees[tree], oldpath[i+1]);
-		else werror("Tree %s [%s] remove %s\n", tree, repo->trees[tree], oldpath[i+1]);
-		if (newsha) werror("Tree %s [%s] replace %s\n", tree, repo->trees[tree] || "new", newpath[i+1]);
-		else werror("Tree %s [%s] add %s\n", tree, repo->trees[tree] || "new", newpath[i+1]);
-		/*
-		mapping newtree = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees", (["json": ([
-			"base_tree": repo->trees[tree], //Should always exist
-			"tree": ({
-				oldfile | (["sha": Val.null]),
-				oldfile | (["path": newname]),
-			}),
-		])])));*/
-		newsha = oldsha = "(todo)";
-	}
-	return;
-	string oldname = oldpath[-1], newname = newpath[-1];
-	mapping head = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees/HEAD"));
-	//mapping oldfile;
-	foreach (head->tree, mapping f) if (f->path == oldname) {oldfile = f; break;}
-	if (!oldfile) {werror("Didn't find %O\n", oldname); return;}
-	#endif
 	mapping tree = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees", (["json": ([
 		"base_tree": repo->trees[""],
 		"tree": ({
 			oldfile | (["sha": Val.null]),
-			oldfile | (["path": newpath * "/"]),
+			oldfile | (["path": newpath]),
 		}),
 	])])));
 	werror("Tree created %O\n", tree->sha);
 	mapping commit = await(github_api_request("/repos/mustardmine/" + userid + "/git/commits", (["json": ([
-		"message": "Rename " + oldpath * "/" + " to " + newpath * "/",
+		"message": "Rename " + oldpath + " to " + newpath,
 		"tree": tree->sha,
 		"parents": ({repo->trees[""]}),
-		//"parents": ({"c557c3c616398b93d53ea960c792b4214fe746b5"}),
 		//NOTE: When using the repository contents API, set the committer and the author will default to it.
 		//But when using the git commits API, set the author and the committer will default to it instead.
 		"author": (["name": "31415926535789793" /* FIXME */, "email": userid + "@twitchuser.invalid"]),
 	])])));
 	werror("Commit created: %O\n", commit->sha);
-	/*mapping ref = await(github_api_request("/repos/mustardmine/" + userid + "/git/refs/heads/" + repo->default_branch, (["json": ([
-		"sha": commit->sha,
-	])])));*/
-	/*mapping ref = await(github_api_request("/repos/mustardmine/" + userid + "/git/refs", (["json": ([
-		"sha": commit->sha,
-		"ref": "refs/tags/renamed",
-	])])));*/
-	mapping ref = await(github_api_request("/repos/mustardmine/" + userid + "/git/refs/tags/renamed", (["json": ([
+	mapping ref = await(github_api_request("/repos/mustardmine/" + userid + "/git/refs/heads/" + repo->default_branch, (["json": ([
 		"sha": commit->sha,
 	])])));
 	werror("Branch updated: %O\n", ref);
