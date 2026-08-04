@@ -491,6 +491,7 @@ __async__ void hack() {
 	foreach (values(EXTENSION_CATEGORIES), string cat) foreach (repo[cat] || ({ }), mapping f) if (f->path == oldpath * "/") oldfile = f;
 	foreach (repo->files || ({ }), mapping f) if (f->path == oldpath * "/") oldfile = f;
 	if (!oldfile) return; //File does not exist (TODO: return error to front end)
+	#if 0
 	//How many path components are common to both? Could be zero. (The root is not counted here.)
 	int common = 0;
 	while (common < sizeof(oldpath) && common < sizeof(newpath) && oldpath[common] == newpath[common]) ++common;
@@ -499,27 +500,42 @@ __async__ void hack() {
 		string tree = oldpath[..i] * "/";
 		if (oldsha) werror("Tree %s [%s] replace %s\n", tree, repo->trees[tree], oldpath[i+1]);
 		else werror("Tree %s [%s] remove %s\n", tree, repo->trees[tree], oldpath[i+1]);
-		/*mapping newtree = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees", (["json": ([
-			"base_tree": oldsha,
+		werror("Old file %O\n", oldfile);
+		mapping newtree = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees", (["json": ([
+			"base_tree": repo->trees[tree], //Should always exist
 			"tree": ({
 				oldfile | (["sha": Val.null]),
-				oldfile | (["path": newname]),
 			}),
-		])])));*/
+		])])));
+		werror("NEW TREE %O\n", newtree);
 		oldsha = "(todo)";
 	}
 	for (int i = sizeof(newpath) - 2; i >= common; --i) {
 		string tree = newpath[..i] * "/";
 		if (newsha) werror("Tree %s [%s] replace %s\n", tree, repo->trees[tree] || "new", newpath[i+1]);
 		else werror("Tree %s [%s] add %s\n", tree, repo->trees[tree] || "new", newpath[i+1]);
+		/*mapping newtree = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees", (["json": ([
+			"base_tree": repo->trees[tree], //Should always exist
+			"tree": ({
+				oldfile | (["path": newname]),
+			}),
+		])])));*/
 		newsha = "(todo)";
 	}
-	for (int i = common - 1; i >= 0; --i) {
+	for (int i = common - 1; i >= -1; --i) { //Yeah, go all the way to -1; that way, we catch the root too
 		string tree = newpath[..i] * "/";
 		if (oldsha) werror("Tree %s [%s] replace %s\n", tree, repo->trees[tree], oldpath[i+1]);
 		else werror("Tree %s [%s] remove %s\n", tree, repo->trees[tree], oldpath[i+1]);
 		if (newsha) werror("Tree %s [%s] replace %s\n", tree, repo->trees[tree] || "new", newpath[i+1]);
 		else werror("Tree %s [%s] add %s\n", tree, repo->trees[tree] || "new", newpath[i+1]);
+		/*
+		mapping newtree = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees", (["json": ([
+			"base_tree": repo->trees[tree], //Should always exist
+			"tree": ({
+				oldfile | (["sha": Val.null]),
+				oldfile | (["path": newname]),
+			}),
+		])])));*/
 		newsha = oldsha = "(todo)";
 	}
 	return;
@@ -528,19 +544,20 @@ __async__ void hack() {
 	//mapping oldfile;
 	foreach (head->tree, mapping f) if (f->path == oldname) {oldfile = f; break;}
 	if (!oldfile) {werror("Didn't find %O\n", oldname); return;}
+	#endif
 	mapping tree = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees", (["json": ([
-		"base_tree": head->sha,
+		"base_tree": repo->trees[""],
 		"tree": ({
 			oldfile | (["sha": Val.null]),
-			oldfile | (["path": newname]),
+			oldfile | (["path": newpath * "/"]),
 		}),
 	])])));
 	werror("Tree created %O\n", tree->sha);
 	mapping commit = await(github_api_request("/repos/mustardmine/" + userid + "/git/commits", (["json": ([
-		"message": "Rename " + oldname + " to " + newname,
+		"message": "Rename " + oldpath * "/" + " to " + newpath * "/",
 		"tree": tree->sha,
-		//"parents": ({head->sha}),
-		"parents": ({"c557c3c616398b93d53ea960c792b4214fe746b5"}),
+		"parents": ({repo->trees[""]}),
+		//"parents": ({"c557c3c616398b93d53ea960c792b4214fe746b5"}),
 		//NOTE: When using the repository contents API, set the committer and the author will default to it.
 		//But when using the git commits API, set the author and the committer will default to it instead.
 		"author": (["name": "31415926535789793" /* FIXME */, "email": userid + "@twitchuser.invalid"]),
@@ -549,13 +566,13 @@ __async__ void hack() {
 	/*mapping ref = await(github_api_request("/repos/mustardmine/" + userid + "/git/refs/heads/" + repo->default_branch, (["json": ([
 		"sha": commit->sha,
 	])])));*/
-	mapping ref = await(github_api_request("/repos/mustardmine/" + userid + "/git/refs", (["json": ([
+	/*mapping ref = await(github_api_request("/repos/mustardmine/" + userid + "/git/refs", (["json": ([
 		"sha": commit->sha,
 		"ref": "refs/tags/renamed",
-	])])));
-	/*mapping ref = await(github_api_request("/repos/mustardmine/" + userid + "/git/refs/tags/renamed", (["json": ([
-		"sha": commit->sha,
 	])])));*/
+	mapping ref = await(github_api_request("/repos/mustardmine/" + userid + "/git/refs/tags/renamed", (["json": ([
+		"sha": commit->sha,
+	])])));
 	werror("Branch updated: %O\n", ref);
 }
 
