@@ -134,11 +134,13 @@ __async__ void load_repo_details(string userid, string which) {
 		mapping files = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees/HEAD?recursive=1"));
 		if (!mappingp(files) || !arrayp(files->tree)) return; //Probably an error. Not worth the hassle for now.
 		//sort(files->tree->path, files->tree); //Do we need to enforce sort order?
+		tmp->filemodes = ([]); //Doesn't need to be sent to the front end but it's fine
 		foreach (files->tree, mapping file) {
 			if (file->type != "blob") continue; //Ignore non-files; symlinks etc will be hard to edit, and trees are not inherently relevant.
-			mapping f = file & (<"path", "size", "sha", "mode">); //The rest is uninteresting to the front end
+			mapping f = file & (<"path", "size", "sha">); //The rest is uninteresting to the front end
 			sscanf(basename(file->path), "%*s.%s", string ext); //If it has more than one extension, it's not going to match any of our checks anyway
 			tmp[EXTENSION_CATEGORIES[ext] || "files"] += ({f});
+			tmp->filemodes[file->path] = file->mode;
 		}
 		foreach (values(EXTENSION_CATEGORIES), string cat) m_delete(repo, cat); //Remove any categories that didn't get files added to them
 		foreach (tmp; string cat; array files) repo[cat] = files;
@@ -356,36 +358,37 @@ __async__ mapping websocket_cmd_save_file(mapping(string:mixed) conn, mapping(st
 __async__ mapping websocket_cmd_rename_file(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	string userid = conn->siteid;
 	if (conn->session->fake) return (["cmd": "demo"]);
-	//Renaming is not a simple API call. Instead, we need to either craft a commit, or do a two-step
-	//"create and delete" operation. We simply do the latter for now, but it would be nice to have a
-	//one-commit rename as this looks better in the history.
-	array|mapping file = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + msg->oldpath));
-	if (arrayp(file)) {
-		//It's a directory. Would be nice to have a "rename directory" feature, but only do that
-		//as a single commit, not as deletion and reuploading. Note that, due to how git trees
-		//work, this would actually be a simple operation.
-		return (["error": "Only rename files, not directories"]);
+	mapping repo = github_repo_details[userid];
+	if (!repo) {
+		werror("Querying repository...\n");
+		await(query_github_repo(userid));
+		repo = github_repo_details[userid];
+		if (!repo) return (["error": "Bad repository"]); //Maybe the repo doesn't actually exist
 	}
-	//Delete before creating. This does have a worse failure mode in the event of interruption,
-	//but it means we get confirmation that the file wasn't edited before we make the new one.
-	//The risk of file loss is mitigated by the fact that it's still in history.
-	mapping resp = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + msg->oldpath, ([
-		"method": "DELETE",
-		"json": ([
-			"sha": msg->sha,
-			"message": "Rename " + msg->oldpath + " to " + msg->newpath,
-			"committer": (["name": conn->session->user->display_name, "email": userid + "@twitchuser.invalid"]),
-		]),
-	])));
-	if (resp->status == "409") return (["cmd": "error", "error": "File was edited while you were looking at it"]);
-	await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + msg->newpath, ([
-		"method": "PUT",
-		"json": ([
-			"message": "Rename " + msg->oldpath + " to " + msg->newpath,
-			"committer": (["name": conn->session->user->display_name, "email": userid + "@twitchuser.invalid"]),
-			"content": file->content,
-		]),
-	])));
+	string mode = repo->filemodes[msg->oldpath];
+	if (!mode) return (["error": "File " + msg->oldpath + " not found for rename"]);
+	mapping tree = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees", (["json": ([
+		"base_tree": repo->sha,
+		"tree": ({
+			(["path": msg->oldpath, "sha": Val.null, "mode": mode]),
+			(["path": msg->newpath, "sha": msg->sha, "mode": mode]),
+		}),
+	])])));
+	//TODO: If (!tree->sha), report error
+	mapping commit = await(github_api_request("/repos/mustardmine/" + userid + "/git/commits", (["json": ([
+		"message": "Rename " + msg->oldpath + " to " + msg->newpath,
+		"tree": tree->sha,
+		"parents": ({repo->sha}),
+		//NOTE: When using the repository contents API, set the committer and the author will default to it.
+		//But when using the git commits API, set the author and the committer will default to it instead.
+		"author": (["name": conn->session->user->display_name, "email": userid + "@twitchuser.invalid"]),
+	])])));
+	//Ditto if (!commit->sha)
+	mapping ref = await(github_api_request("/repos/mustardmine/" + userid + "/git/refs/heads/" + repo->default_branch, (["json": ([
+		"sha": commit->sha,
+	])])));
+	//Ditto if not successful
+	//Note: This should be followed shortly by a PUSH that will update the front end
 }
 
 __async__ mapping websocket_cmd_delete_file(mapping(string:mixed) conn, mapping(string:mixed) msg) {
@@ -453,55 +456,6 @@ __async__ void hack() {
 	string userid = "935215207";
 	//m_delete(github_repo_details, userid); //Force a full load on next page refresh
 	//await(query_github_repo(userid));
-	/*
-	mapping ret = await(github_api_request("/graphql", (["json": ([
-		"query": sprintf(#[mutation {
-			createCommitOnBranch(input:{
-				branch:{repositoryNameWithOwner:"mustardmine/%s", branchName: "master"},
-				message:{headline:"Rename Rose (it still smells as sweet)"},
-				fileChanges
-			}) {commit { url } }
-		}#], userid);
-	])])));
-	werror("GQL result: %O\n", ret);
-	*/
-	mapping repo = github_repo_details[userid];
-	if (!repo->?default_branch) {
-		werror("Querying default branch...\n");
-		await(query_github_repo(userid));
-		repo = github_repo_details[userid];
-		if (!repo->?default_branch) return; //Maybe the repo doesn't actually exist
-	}
-	string oldpath = "asdf/qwer/zxcv/somefile", newpath = "asdf/1234/somefile";
-	//string oldpath = "img/Small_Red_Rose.jpeg", newpath = "img/small_red_rose.jpeg";
-
-	//TODO: Get the SHA and mode more efficiently, possibly retaining them somewhere useful
-	//(this is actually checking more than once per cat, very inefficient)
-	mapping oldfile;
-	foreach (values(EXTENSION_CATEGORIES), string cat) foreach (repo[cat] || ({ }), mapping f) if (f->path == oldpath) oldfile = f;
-	foreach (repo->files || ({ }), mapping f) if (f->path == oldpath) oldfile = f;
-	if (!oldfile) return; //File does not exist (TODO: return error to front end)
-	mapping tree = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees", (["json": ([
-		"base_tree": repo->sha,
-		"tree": ({
-			oldfile | (["sha": Val.null]),
-			oldfile | (["path": newpath]),
-		}),
-	])])));
-	werror("Tree created %O\n", tree->sha);
-	mapping commit = await(github_api_request("/repos/mustardmine/" + userid + "/git/commits", (["json": ([
-		"message": "Rename " + oldpath + " to " + newpath,
-		"tree": tree->sha,
-		"parents": ({repo->sha}),
-		//NOTE: When using the repository contents API, set the committer and the author will default to it.
-		//But when using the git commits API, set the author and the committer will default to it instead.
-		"author": (["name": "31415926535789793" /* FIXME */, "email": userid + "@twitchuser.invalid"]),
-	])])));
-	werror("Commit created: %O\n", commit->sha);
-	mapping ref = await(github_api_request("/repos/mustardmine/" + userid + "/git/refs/heads/" + repo->default_branch, (["json": ([
-		"sha": commit->sha,
-	])])));
-	werror("Branch updated: %O\n", ref);
 }
 
 protected void create(string name) {::create(name); hack();}
