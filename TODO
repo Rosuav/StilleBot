@@ -268,3 +268,4 @@
     your gallery. Will likely be the case. (Prompt for a caption.)
     - Can this be generalized (maybe in _config.yml) so that people with multiple gallery
       subdivisions can still take advantage of this?
+    - Pike doesn't have a YAML parser so I may need to make my own.
