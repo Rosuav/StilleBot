@@ -284,3 +284,4 @@
     - If there are any pending changes, set banner to blue "Saving..." with click for list of files
     - Otherwise, if build_status is anything other than "completed", show blue banner "Building..."
     - When build_status becomes "completed", show green banner "Saved" for 30 seconds, then fade.
+  - Rename directory. Can "Create a Tree" move/rename a whole directory? Also needs a UI.
