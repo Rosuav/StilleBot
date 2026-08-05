@@ -354,7 +354,7 @@ function update_governed_params() {
 		if (buildme) for (let param of buildme) {
 			++idx;
 			const curelem = DOM("#value-builtin_param" + idx);
-			const value = curelem ? curelem.value : propedit.builtin_param[idx];
+			const value = curelem ? curelem.value : propedit.builtin_param?.[idx];
 			children.push(build_element(param, {value_override: value}));
 		}
 	}
