@@ -252,7 +252,7 @@ const builtin_validators = {
 			return SELECT(id, [
 				//TODO: Sort these in some useful way (or at least consistent)
 				Object.entries(window.cmdedit_collections.monitors).map(([id, m]) => {
-					let label = m.text;
+					let label = m.label || m.text;
 					switch (m.type) {
 						case "goalbar": label = "Goal bar - " + (m.label || /:(.*)$/.exec(m.text)[1]); break;
 						case "countdown": label = "Countdown - " + (m.label || /:(.*)$/.exec(m.text)[1]); break;
