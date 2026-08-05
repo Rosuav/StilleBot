@@ -51,13 +51,19 @@ Concurrent.Future task_sleep(int|float delay) {
 }
 
 //Run a subprocess and yield (["rc": returncode, "stdout": bytes sent to stdout])
-//Similar to Process.run() but doesn't do stderr or stdin (and should only be used with small data).
+//Similar to Process.run() but doesn't do stderr (and should only be used with small data).
 class run_process {
 	inherit Concurrent.Promise;
 	Stdio.File stdout = Stdio.File();
 	protected void create(array(string) command, mapping|void modifiers) {
-		Process.create_process(command, (modifiers || ([]))
-			| (["callback": donecb, "stdout": stdout->pipe(Stdio.PROP_IPC)]));
+		modifiers = (modifiers || ([])) | (["callback": donecb, "stdout": stdout->pipe(Stdio.PROP_IPC)]);
+		if (stringp(modifiers->stdin)) {
+			Stdio.File stdin = Stdio.File();
+			string data = modifiers->stdin;
+			modifiers->stdin = stdin->pipe(Stdio.PROP_IPC|Stdio.PROP_REVERSE);
+			stdin->write(data);
+		}
+		Process.create_process(command, modifiers);
 	}
 	void done(object proc) {
 		if (proc->status() == 2) success((["rc": proc->wait(), "stdout": stdout->read()]));
