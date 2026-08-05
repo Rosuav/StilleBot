@@ -58,6 +58,7 @@ Build simple web pages and host them on GitHub Pages. You retain full control at
 ";
 
 @retain: mapping github_repo_details = ([]);
+@retain: mapping yaml_decode_cache = ([]); //Map a SHA1 to the decoded version of it - can be purged at any time, just reduces duplicated work
 
 //Cache the generated token until it's close to expiring
 //Not retained across code reloads as it'll never have more than ten minutes of validity anyway
@@ -142,10 +143,22 @@ __async__ void load_repo_details(string userid, string which) {
 			sscanf(basename(file->path), "%*s.%s", string ext); //If it has more than one extension, it's not going to match any of our checks anyway
 			tmp[EXTENSION_CATEGORIES[ext] || "files"] += ({f});
 			tmp->filemodes[file->path] = file->mode;
+			if (f->path == "_config.yml") repo->config_hash = f->sha;
 		}
 		foreach (values(EXTENSION_CATEGORIES), string cat) m_delete(repo, cat); //Remove any categories that didn't get files added to them
 		foreach (tmp; string cat; array files) repo[cat] = files;
 		repo->sha = files->sha; //Commit hash as of the last query
+		//Note that deleting or renaming _config.yml may cause a lot of confusion as I'll keep using the old config for a while.
+		//Don't do that.
+		if (!yaml_decode_cache[repo->config_hash]) { //Most of the time we won't need to re-fetch
+			string config = await(github_api_request("/repos/mustardmine/" + userid + "/git/blobs/" + repo->config_hash,
+				(["raw": 1])));
+			//I don't have a Pike YAML parser. It's easier to cheat and ask Python to parse it for me.
+			mapping proc = await(run_process(({"python3", "-c", "import sys, yaml, json; json.dump(yaml.safe_load(sys.stdin), sys.stdout)"}),
+				(["stdin": config])));
+			yaml_decode_cache[repo->config_hash] = Standards.JSON.decode_utf8(proc->stdout);
+		}
+		repo->_config = yaml_decode_cache[repo->config_hash];
 	}
 	if (which == "*" || which == "collaborators") {
 		array collab = await(github_api_request("/repos/mustardmine/" + userid + "/collaborators"));
