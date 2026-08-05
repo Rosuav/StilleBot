@@ -76,11 +76,11 @@ string github_jwt() {
 }
 
 string|zero install_token; int install_token_expiration;
-__async__ mapping|array github_api_request(string endpoint, mapping|void options) {
+__async__ mapping|array|string github_api_request(string endpoint, mapping|void options) {
 	if (!options) options = ([]);
 	//In API requests, send headers:
 	mapping headers = ([
-		"Accept": "application/vnd.github+json",
+		"Accept": options->raw ? "application/vnd.github.raw+json" : "application/vnd.github+json",
 		"X-GitHub-Api-Version": "2026-03-10",
 		"User-Agent": "Mustard-Mine",
 	]);
@@ -108,6 +108,7 @@ __async__ mapping|array github_api_request(string endpoint, mapping|void options
 	string method = options->method || (body ? "POST" : "GET");
 	Protocols.HTTP.Promise.Result res = await(Protocols.HTTP.Promise.do_method(method, "https://api.github.com" + endpoint,
 			Protocols.HTTP.Promise.Arguments((["headers": headers, "data": body]))));
+	if (options->raw) return res->get();
 	if (res->status == 204 && res->get() == "") return ([]);
 	mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
 	//TODO: error handling
