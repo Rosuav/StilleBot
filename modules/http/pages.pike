@@ -243,6 +243,20 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 				//diffs as available.
 				string userid = data->repository->name;
 				werror("GITHUB PUSH %O\n", userid);
+				//So, what actually changed?
+				mapping changes = await(github_api_request("/repos/mustardmine/" + userid + "/compare/" + data->before + "..." + data->after));
+				//werror("CHANGES %O\n", changes->files);
+				foreach (changes->files, mapping file) {
+					//TODO.
+					//file->filename, file->sha
+					//If file->status == "added", check the configs (make sure they're loaded first)
+					//to see if there's anything in autogallery that matches the start of the name.
+					//Note that autogallery is keyed by gallery, and each one is a space-separated
+					//list of path prefixes. I don't know what I'd do about potential conflicts.
+					//If autogallery matches, fetch the contents of the corresponding Markdown file
+					//and immediately make the requisite change.
+				}
+
 				//For now unconditionally reload contents. It may be worth checking the commits to see if the
 				//list of files has changed (since the vast majority of edits won't create or delete files),
 				//but it's simpler just to reload.

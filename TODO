@@ -275,3 +275,12 @@
     - Go to /pages?for=OTHERUSERNAME to manage that person's site
     - Maybe (internally and invisibly) redirect /pages?demo to /pages?for=0 and have everyone
       be a collaborator
+  - Put a banner in the top right corner
+    - On receipt of a cmd="error" message, replace banner with red "Error" with click for details
+    - Whenever a change is made (websocket_cmd_save_file), record the file name in a "pending
+      changes" list, and set build_status to "awaiting" or something.
+    - When GH Push goes through, remove "pending changes" for any files listed (it's unlikely that
+      there'll be two or more queued changes for the same file)
+    - If there are any pending changes, set banner to blue "Saving..." with click for list of files
+    - Otherwise, if build_status is anything other than "completed", show blue banner "Building..."
+    - When build_status becomes "completed", show green banner "Saved" for 30 seconds, then fade.
