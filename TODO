@@ -285,3 +285,26 @@
     - Otherwise, if build_status is anything other than "completed", show blue banner "Building..."
     - When build_status becomes "completed", show green banner "Saved" for 30 seconds, then fade.
   - Rename directory. Can "Create a Tree" move/rename a whole directory? Also needs a UI.
+* Port in the battle grid as a mockup system
+  - Canvas.
+  - Require a Twitch login to create a brand new mockup
+  - URL to access incl read-write, no login, an existing mockup
+  - Build tiles with pixels as per battle grid
+  - Build backgrounds (grid lines optional) - requires Twitch login
+  - Load background into mockup
+  - Pop-over toolbox of available elements
+  - Anyone can move or add elements
+  - Pop-over list of existing elements, on hover, highlight element
+  - Click in list of elements to open dialog for renaming and maybe commenting; delete only from here
+  - Multi-scene support
+    - Some things are per-mockup (ie shared), others are per-scene
+    - Have a way to clone a mockup (requires Twitch login) which would allow "now let's do country show"
+    - Anyone can create a scene
+    - Current scene defines the positions of all elements, but elements are themselves shared
+  - Have a permanent read-only mode and an initial read-only mode
+    - In permanent, you have a different URL and you will never get full access
+    - Longer endpoint name for read-write
+    - Initial loading of the page will be read-only. You can click a button to enable mutation.
+    - Possibly have a localStorage marker to say "always enable mutation"?
+  - Export entire mockup as a series of PNGs (one per scene)
+  - Export as PDF??
