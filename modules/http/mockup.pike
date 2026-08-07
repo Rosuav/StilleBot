@@ -3,6 +3,8 @@ inherit annotated;
 
 constant markdown = #"# Mockups
 
+Scene: <select id=sceneselector><option disabled>loading...</select> <span id=scenebuttons></span>
+
 <canvas></canvas>
 
 > ### Edit element
@@ -127,10 +129,17 @@ mapping|zero wsedit_example(mapping mock, mapping(string:mixed) conn, mapping(st
 }
 
 mapping|zero wsedit_update_element(mapping mock, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mapping target = msg->id == "" ? mock : mock->elements[msg->id];
+	if (!(<"mockup", "scenes", "elements">)[msg->cat]) return (["error": "Bad cat"]); //I would say "shouldn't happen", but everyone who lives with a cat knows that they can be bad. But we love 'em anyway.
+	mapping target = msg->cat == "mockup" ? mock : mock[msg->cat][msg->id];
 	if (!target) return 0;
 	foreach ("title description" / " ", string key)
 		if (msg[key]) target[key] = msg[key];
+}
+
+mapping|zero wsedit_new_scene(mapping mock, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	int i; for (i = 2; mock->scenes["s" + i]; ++i);
+	mock->scenes["s" + i] = (["title": "Scene " + i]);
+	return (["cmd": "select_scene", "id": "s" + i]);
 }
 
 //TODO: Have a way for the owner to set the password. This should send to all connected clients
