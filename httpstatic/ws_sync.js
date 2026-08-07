@@ -60,7 +60,7 @@ export function connect(group, handler)
 		//permitted, etc. There's currently no way to be 100% sure that you have a connection until
 		//you receive some sort of message (most sockets will send cmd:update on startup).
 		if (handler.socket_connected) handler.socket_connected(socket);
-		else if (handler.ws_sendid) send_sockets[handler.ws_sendid] = socket;
+		if (handler.ws_sendid) send_sockets[handler.ws_sendid] = socket;
 		else send_socket = socket; //Don't activate send() until we're initialized
 		while (pending_message.length) socket.send(JSON.stringify(pending_message.shift()));
 		window.__socket__ = socket; window.__handler__ = handler;
