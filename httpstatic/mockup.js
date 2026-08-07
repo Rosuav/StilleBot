@@ -22,7 +22,7 @@ function EDITBUTTON(cat, id) {
 
 export function render(data) {
 	if (data.allmocks) return replace_content("#allmockups", [
-		data.allmocks.map(m => LI(A({href: "mockup?view=" + m.id, target: "_blank"}, m.title))), //TODO: Show creation date?
+		data.allmocks.map(m => LI(A({href: "mockup?view=" + m.id + "&edit=", target: "_blank"}, m.title))), //TODO: Show creation date?
 		!data.allmocks.length && LI("(none)"),
 	]);
 	state = data; //Yes, this will include state.cmd == "update", no big deal
