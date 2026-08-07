@@ -293,6 +293,8 @@
   - Build backgrounds (grid lines optional) - requires Twitch login
   - Load background into mockup
   - Pop-over toolbox of available elements
+    - Colour selection within an element type??
+    - Apply transparency/opacity to individual elements?
   - Anyone can move or add elements
   - Pop-over list of existing elements, on hover, highlight element
   - Click in list of elements to open dialog for renaming and maybe commenting; delete only from here

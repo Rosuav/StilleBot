@@ -48,13 +48,13 @@ export function render(data) {
 	DOM("#elementtitle").readOnly = !mutation_allowed;
 	DOM("#elementdesc").readOnly = !mutation_allowed;
 	if (state.title) replace_content("#mockups", [ //This is the "# Mockups" default heading :)
-		state.title, " ", EDITBUTTON("mockup", ""),
+		state.title, " ", EDITBUTTON("mockup", "*"),
 	]);
 	replace_content("#elementlist", [
 		UL(Object.entries(state.elements).map(e => [e[0], e[1].title])
 			.sort((a, b) => a[1].localeCompare(b[1]))
-			.map(e => LI({"data-id": e[0]}, e[1]))),
-		DIV(BUTTON({id: "addelement"}, "Add\xa0element")),
+			.map(e => LI({"data-id": e[0]}, [e[1], " ", EDITBUTTON("elements", e[0])]))),
+		mutation_allowed && DIV(BUTTON({class: "editelement", "data-cat": "elements", "data-element": ""}, "Add\xa0element")),
 	]);
 	//repaint(); //when we have a canvas
 }
@@ -72,10 +72,15 @@ on("click", ".editelement", e => {
 	editing_element = e.match.dataset.element;
 	const elem =
 		editing_cat === "mockup" ? state //Category "mockup" has no ID, you are editing the mockup as a whole
+		: editing_element === "" ? { } //Blank means "create new". Should there be defaults?
 		: state[editing_cat][editing_element]; //Otherwise the cat is a key within the state, eg "elements" or "scenes"
 	//Hide the delete button when you're looking at the overall mockup but you
 	//aren't the creator. The back end only allows the creator to delete it.
-	DOM("#deleteelement").hidden = !mutation_allowed || (editing_cat === "mockup" && ws_sync.get_userid() !== +state.created_by);
+	//(You also, unsurprisingly, can't delete if you can't mutate, nor can you
+	//delete something that's new and not yet saved.)
+	DOM("#deleteelement").hidden = !mutation_allowed || editing_element === "" || (editing_cat === "mockup" && ws_sync.get_userid() !== +state.created_by);
+	DOM("#typeselect").hidden = editing_cat !== "elements";
+	if (elem.type) DOM("#typeselector").value = elem.type;
 	DOM("#elementtitle").value = elem.title || "";
 	DOM("#elementdesc").value = elem.description || "";
 	DOM("#editelementdlg").showModal();
@@ -83,6 +88,7 @@ on("click", ".editelement", e => {
 
 on("submit", "#editelementdlg form", e => ws_sync.send({cmd: "update_element",
 	cat: editing_cat, id: editing_element,
+	type: DOM("#typeselector").value, //Irrelevant unless cat is "elements"
 	title: DOM("#elementtitle").value,
 	description: DOM("#elementdesc").value,
 }));

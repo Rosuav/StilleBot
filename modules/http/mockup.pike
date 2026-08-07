@@ -10,6 +10,7 @@ Scene: <select id=sceneselector><option disabled>loading...</select> <span id=sc
 <div id=sidebyside><div id=canvasscroll><canvas width=2700 height=1500></canvas></div><div id=elementlist></div></div>
 
 > ### Edit element
+> <p id=typeselect>Type: <select id=typeselector><option value=minecart>Minecart</select></p>
 > Name: <input id=elementtitle>
 > <textarea id=elementdesc rows=5 cols=80></textarea>
 >
@@ -31,6 +32,7 @@ Scene: <select id=sceneselector><option disabled>loading...</select> <span id=sc
 	flex-grow: 1;
 	overflow: auto;
 }
+#elementlist li {text-wrap: nowrap;}
 </style>
 ";
 
@@ -167,10 +169,20 @@ mapping|zero wsedit_update_element(mapping mock, mapping(string:mixed) conn, map
 			mock->scenes["default"] = (["title": "New Scene"]);
 		return 0;
 	}
+	if (msg->id == "" && msg->cat == "elements") {
+		//Blank ID means create; maybe this should subsume wsedit_new_scene?
+		int i; for (i = 2; mock[msg->cat]["e" + i]; ++i);
+		string type = msg->type;
+		mock[msg->cat][msg->id = "e" + i] = ([]);
+	}
 	mapping target = msg->cat == "mockup" ? mock : mock[msg->cat][msg->id];
 	if (!target) return 0;
 	foreach ("title description" / " ", string key)
 		if (msg[key]) target[key] = msg[key];
+	if (msg->cat == "elements") {
+		//TODO: Validate the type, if not, set some sort of default
+		if (msg->type) target->type = msg->type;
+	}
 }
 
 mapping|zero wsedit_new_scene(mapping mock, mapping(string:mixed) conn, mapping(string:mixed) msg) {
