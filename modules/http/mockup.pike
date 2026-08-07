@@ -80,7 +80,7 @@ __async__ mapping websocket_cmd_create_mockup(mapping(string:mixed) conn, mappin
 	if (!conn->landing) return (["error": "Only create mockups from your landing page"]);
 	string id;
 	await(G->G->DB->mutate_config(0, "mockup") {mapping mocks = __ARGS__[0];
-		do {id = MIME.encode_base64(random_string(12));} while (mocks[id]);
+		do {id = MIME.encode_base64(replace(random_string(12), (["/": "q", "+": "X"])));} while (mocks[id]);
 		mocks[id] = ([
 			"created_at": time(),
 			"created_by": conn->session->user->id,
