@@ -298,6 +298,8 @@
     - Have a Clone button on element properties
   - Multi-scene support
     - Oopsie. Fix up how element positions are done so that the scene retains that info.
+      - Have a separate message for "set element position in scene" and "element position in scene
+        has changed" to avoid sending full updates on these common operations.
     - Some things are per-mockup (ie shared), others are per-scene
     - Have a way to clone a mockup (requires Twitch login) which would allow "now let's do country show"
     - Anyone can create a scene
