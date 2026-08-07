@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, BUTTON, LI, OPTION} = lindt; //autoimport
+const {A, BUTTON, DIV, LI, OPTION, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 let curscene = "";
@@ -49,6 +49,12 @@ export function render(data) {
 	DOM("#elementdesc").readOnly = !mutation_allowed;
 	if (state.title) replace_content("#mockups", [ //This is the "# Mockups" default heading :)
 		state.title, " ", EDITBUTTON("mockup", ""),
+	]);
+	replace_content("#elementlist", [
+		UL(Object.entries(state.elements).map(e => [e[0], e[1].title])
+			.sort((a, b) => a[1].localeCompare(b[1]))
+			.map(e => LI({"data-id": e[0]}, e[1]))),
+		DIV(BUTTON({id: "addelement"}, "Add\xa0element")),
 	]);
 	//repaint(); //when we have a canvas
 }

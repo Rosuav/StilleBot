@@ -7,7 +7,7 @@ constant markdown = #"# Mockups
 
 Scene: <select id=sceneselector><option disabled>loading...</select> <span id=scenebuttons></span>
 
-<canvas></canvas>
+<div id=sidebyside><div id=canvasscroll><canvas width=2700 height=1500></canvas></div><div id=elementlist></div></div>
 
 > ### Edit element
 > Name: <input id=elementtitle>
@@ -21,6 +21,15 @@ Scene: <select id=sceneselector><option disabled>loading...</select> <span id=sc
 	background: red;
 	color: yellow;
 	margin-left: 1em;
+}
+#sidebyside {
+	display: flex;
+	gap: 0.5em;
+	max-height: 800px; /* Or should main be made flex so this gets all remaining space? */
+}
+#canvasscroll {
+	flex-grow: 1;
+	overflow: auto;
 }
 </style>
 ";
