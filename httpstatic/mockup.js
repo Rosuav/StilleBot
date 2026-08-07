@@ -1,5 +1,6 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {A, BUTTON, LI, OPTION} = lindt; //autoimport
+import {simpleconfirm} from "$$static||utils.js$$";
 
 let curscene = "";
 let state = { };
@@ -25,6 +26,7 @@ export function render(data) {
 		!data.allmocks.length && LI("(none)"),
 	]);
 	state = data; //Yes, this will include state.cmd == "update", no big deal
+	if (state.deleted) return replace_content("#status", "Mockup deleted.");
 	if (state.scenes && !state.scenes[curscene]) {
 		//You aren't on any scene. Pick one. TODO: Have a "default scene" selector somewhere.
 		curscene = Object.keys(state.scenes)[0];
@@ -41,6 +43,7 @@ export function render(data) {
 		mutation_allowed && BUTTON({id: "new_scene", title: "Add new scene"}, "+"),
 	]);
 	DOM("#editelementdlg [type=submit]").hidden = !mutation_allowed;
+	//Note that #deleteelement isn't hidden/unhidden here as it's done dynamically by category
 	replace_content("#editelementdlg h3", mutation_allowed ? "Edit element" : "Element details");
 	DOM("#elementtitle").readOnly = !mutation_allowed;
 	DOM("#elementdesc").readOnly = !mutation_allowed;
@@ -64,6 +67,9 @@ on("click", ".editelement", e => {
 	const elem =
 		editing_cat === "mockup" ? state //Category "mockup" has no ID, you are editing the mockup as a whole
 		: state[editing_cat][editing_element]; //Otherwise the cat is a key within the state, eg "elements" or "scenes"
+	//Hide the delete button when you're looking at the overall mockup but you
+	//aren't the creator. The back end only allows the creator to delete it.
+	DOM("#deleteelement").hidden = !mutation_allowed || (editing_cat === "mockup" && ws_sync.get_userid() !== +state.created_by);
 	DOM("#elementtitle").value = elem.title || "";
 	DOM("#elementdesc").value = elem.description || "";
 	DOM("#editelementdlg").showModal();
@@ -77,3 +83,15 @@ on("submit", "#editelementdlg form", e => ws_sync.send({cmd: "update_element",
 
 on("click", "#new_scene", e => ws_sync.send({cmd: "new_scene"}));
 export function sockmsg_select_scene(msg) {curscene = msg.id;} //Will take effect next update (which should be following shortly)
+
+//This is capable of deleting a lot of different things. It may need a special case for the biggest
+//things (scenes and the mockup itself) to have the user key in a thing.
+on("click", "#deleteelement", simpleconfirm(
+	e => editing_cat === "mockup" ? "Are you sure you want to delete THE ENTIRE MOCKUP? This is irreversible!"
+		: editing_cat === "scenes" ? "Are you sure you want to delete the scene '" + state.scenes[editing_element].title + "'? This is irreversible!"
+		: "Are you sure you want to delete this? This is irreversible.",
+	e => {
+		ws_sync.send({cmd: "update_element", cat: editing_cat, id: editing_element, "_delete": 1});
+		DOM("#editelementdlg").close();
+	})
+);

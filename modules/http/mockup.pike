@@ -3,6 +3,8 @@ inherit annotated;
 
 constant markdown = #"# Mockups
 
+<p id=status></p>
+
 Scene: <select id=sceneselector><option disabled>loading...</select> <span id=scenebuttons></span>
 
 <canvas></canvas>
@@ -11,10 +13,15 @@ Scene: <select id=sceneselector><option disabled>loading...</select> <span id=sc
 > Name: <input id=elementtitle>
 > <textarea id=elementdesc rows=5 cols=80></textarea>
 >
-> [Save](:type=submit) [Close](:.dialog_close)
+> [Save](:type=submit) [Close](:.dialog_close) [Delete](:#deleteelement)
 {: tag=formdialog #editelementdlg}
 
 <style>
+#deleteelement {
+	background: red;
+	color: yellow;
+	margin-left: 1em;
+}
 </style>
 ";
 
@@ -75,14 +82,16 @@ __async__ mapping get_state(string group) {
 		mapping yourmocks = await(G->G->DB->load_config(uid, "mockup"));
 		return (["allmocks": describe_mock(mocks, (yourmocks->allmocks || ({ }))[*])]);
 	}
-	return mocks[group] || ([]);
+	mapping mock = mocks[group] || ([]);
+	if (mock->deleted) return (["deleted": 1]); //When it's deleted, you can't see anything else about it. It's secretly maintained though.
+	return mock;
 }
 
 __async__ mapping websocket_cmd_create_mockup(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->landing) return (["error": "Only create mockups from your landing page"]);
 	string id;
 	await(G->G->DB->mutate_config(0, "mockup") {mapping mocks = __ARGS__[0];
-		do {id = MIME.encode_base64(replace(random_string(12), (["/": "q", "+": "X"])));} while (mocks[id]);
+		do {id = replace(MIME.encode_base64(random_string(12)), (["/": "q", "+": "X"]));} while (mocks[id]);
 		mocks[id] = ([
 			"created_at": time(),
 			"created_by": conn->session->user->id,
@@ -90,6 +99,7 @@ __async__ mapping websocket_cmd_create_mockup(mapping(string:mixed) conn, mappin
 			"description": "Describe the purpose of your mockup here.",
 			"mutate": "",
 			"scenes": (["default": (["title": "New Scene"])]),
+			"elements": ([]),
 		]);
 	});
 	await(G->G->DB->mutate_config(conn->session->user->id, "mockup") {mapping mocks = __ARGS__[0];
@@ -130,6 +140,24 @@ mapping|zero wsedit_example(mapping mock, mapping(string:mixed) conn, mapping(st
 
 mapping|zero wsedit_update_element(mapping mock, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!(<"mockup", "scenes", "elements">)[msg->cat]) return (["error": "Bad cat"]); //I would say "shouldn't happen", but everyone who lives with a cat knows that they can be bad. But we love 'em anyway.
+	if (msg->_delete) {
+		if (msg->cat == "mockup") {
+			if (conn->session->user->?id != mock->created_by) return (["error": "Only the owner can delete a mockup"]);
+			//Technically I lie on the front end when I say that it's irreversible.
+			//But I'm a smidge paranoid... so I'm leaving a 404 marker behind.
+			mock->deleted = time();
+			//Remove it from the user's list. This happens AFTER the current mutate_config is done.
+			G->G->DB->mutate_config(mock->created_by, "mockup") {
+				__ARGS__[0]->allmocks -= ({conn->group});
+			}->then() {send_updates_all("uid-" + mock->created_by);};
+		}
+		//For everything other than the mockup, it _is_ irreversible though.
+		else m_delete(mock[msg->cat], msg->id);
+		//Ensure that there's always at least one scene
+		if (msg->cat == "scenes" && !sizeof(mock->scenes))
+			mock->scenes["default"] = (["title": "New Scene"]);
+		return 0;
+	}
 	mapping target = msg->cat == "mockup" ? mock : mock[msg->cat][msg->id];
 	if (!target) return 0;
 	foreach ("title description" / " ", string key)
