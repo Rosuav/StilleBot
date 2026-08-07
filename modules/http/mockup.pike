@@ -97,6 +97,13 @@ __async__ mapping websocket_cmd_create_mockup(mapping(string:mixed) conn, mappin
 	return (["cmd": "mockup_created", "id": id]);
 }
 
+__async__ mapping websocket_mutate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping mock = await(G->G->DB->load_config(0, "mockup"))[conn->group];
+	if (msg->mutate != mock->mutate) return (["cmd": "error", "error": "Incorrect password"]);
+	conn->mutate = msg->mutate;
+	return (["cmd": "mutation", "allowed": 1]);
+}
+
 //Handle all mutators generically; they all need very similar handling.
 //Note that the mutator itself must be synchronous; if it requires asynchronicity,
 //don't use this shorthand (and probably don't use DB->mutate_config)
@@ -118,5 +125,10 @@ __async__ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) m
 mapping wsedit_example(mapping mock, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mock->counter += (int)msg->increment || 1;
 }
+
+//TODO: Have a way for the owner to set the password. This should send to all connected clients
+//a message saying (["cmd": "mutation", "allowed": 0]) so they reset to read-only display; if
+//a hacked-on client ignores this message, mutators will fail (since the password is rechecked
+//inside websocket_msg(), but the UI elements will still all be there, which would be confusing.
 
 protected void create(string name) {::create(name);}

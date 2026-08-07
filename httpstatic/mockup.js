@@ -3,6 +3,16 @@ const {A, B, BR, BUTTON, DETAILS, DIV, FORM, H3, IMG, INPUT, LI, P, SPAN, SUMMAR
 
 let curscene = "";
 let state = { };
+let mutation_allowed = false; //If true, show buttons etc for read/write access, since the server's told us we're allowed to
+export function sockmsg_mutation(msg) {mutation_allowed = msg.allowed; render(state);}
+
+//Use &edit= to enable editing automatically. If a password has been set, this won't work.
+//TODO: Allow the user to enter a password, which then gets saved here - on socket reconnect,
+//the same password will be re-sent.
+let mutate = new URLSearchParams(location.search).get("edit");
+export function socket_connected(sock) {
+	if (typeof mutate === "string") sock.send(JSON.stringify({cmd: "mutate", mutate}));
+}
 
 export function render(data) {
 	if (data.allmocks) return replace_content("#allmockups", [
