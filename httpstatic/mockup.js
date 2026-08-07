@@ -16,7 +16,7 @@ export function socket_connected(sock) {
 
 export function render(data) {
 	if (data.allmocks) return replace_content("#allmockups", [
-		data.allmocks.map(m => LI(A({href: "mockup?view=" + m.id}, m.title))), //TODO: Show creation date?
+		data.allmocks.map(m => LI(A({href: "mockup?view=" + m.id, target: "_blank"}, m.title))), //TODO: Show creation date?
 		!data.allmocks.length && LI("(none)"),
 	]);
 	state = data; //Yes, this will include state.cmd == "update", no big deal
@@ -28,3 +28,6 @@ export function render(data) {
 }
 
 on("click", "#create_mockup", e => ws_sync.send({cmd: "create_mockup"}));
+export function sockmsg_mockup_created(msg) {
+	window.open("/mockup?view=" + msg.id + "&edit=", "_blank");
+}
