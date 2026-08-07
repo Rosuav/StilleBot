@@ -15,6 +15,39 @@ export function socket_connected(sock) {
 	if (typeof mutate === "string") sock.send(JSON.stringify({cmd: "mutate", mutate}));
 }
 
+//TODO: Get this from the server. The image URLs will probably end up being data URLs.
+const element_types = {
+	minecart: {url: "/static/MustardMineSquavatar.png", xsize: 50, ysize: 50},
+}
+const image_cache = { };
+function preload_icon(url, needed) {
+	image_cache[url] = choc.IMG({src: url, crossOrigin: "anonymous", onload: needed && repaint});
+}
+preload_icon("/static/MustardMineSquavatar.png");
+
+const canvas = DOM("canvas");
+const ctx = canvas.getContext("2d");
+let dragging = null;
+function draw_element(ctx, el) {
+	const type = element_types[el.type];
+	if (!type) {console.error("UNKNOWN ELEMENT TYPE", el); return;}
+	const img = image_cache[type.url];
+	if (!img) {preload_icon(type.url, 1); return;}
+	if (!img.naturalWidth) return; //Probably not loaded yet
+	ctx.drawImage(img, el.x || 0, el.y || 0, el.xsize || type.xsize || img.naturalWidth, el.ysize || type.ysize || img.naturalHeight);
+}
+
+function repaint() {
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	const elem = Object.entries(state.elements).sort((a, b) => a[0].localeCompare(b[0])); //Sort by ID. May need a way to explicitly reorder them.
+	//Parent-child relationships not currently implemented, but maybe.
+	//If an element is a child of another, it will always be drawn after its parent
+	//and before any of its parent's siblings, and it will be positioned relative to
+	//its parent rather than absolutely on the canvas.
+	elem.forEach(([id, el]) => el.parent || el === dragging || draw_element(ctx, el));
+	if (dragging) draw_element(ctx, dragging); //Anything being dragged gets drawn last, ensuring it is at the top of z-order.
+}
+
 function EDITBUTTON(cat, id) {
 	return BUTTON({class: "editelement", "data-cat": cat, "data-element": id},
 		mutation_allowed ? "🖉" : "📄"); //It's the same button, but if mutation's not allowed, don't imply the potential to edit
@@ -56,7 +89,7 @@ export function render(data) {
 			.map(e => LI({"data-id": e[0]}, [e[1], " ", EDITBUTTON("elements", e[0])]))),
 		mutation_allowed && DIV(BUTTON({class: "editelement", "data-cat": "elements", "data-element": ""}, "Add\xa0element")),
 	]);
-	//repaint(); //when we have a canvas
+	repaint();
 }
 
 on("change", "#sceneselector", e => {curscene = e.match.value; render(state);});
