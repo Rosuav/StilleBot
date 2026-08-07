@@ -4,6 +4,8 @@ import {simpleconfirm} from "$$static||utils.js$$";
 
 const clientid = Math.random() + "." + Math.random(); //If an update is caused by us, we ignore it
 
+const SNAP_DISTANCE = 10; //Distance to permit snapping (pixels)
+const SNAP_RANGE = SNAP_DISTANCE * SNAP_DISTANCE; //The distance squared is more useful in arithmetic
 let curscene = "";
 let state = { };
 let element_position = { }; //Shorthand: element_position <=> state.scenes[curscene].elements
@@ -111,18 +113,54 @@ canvas.addEventListener("pointerdown", e => {
 	dragging = el; dragbasex = e.offsetX - pos.x; dragbasey = e.offsetY - pos.y;
 });
 
+//Corners and middles defined as proportions of the width/height
+const corners = [
+	[0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
+	[0.0, 0.5], [0.5, 0.5], [1.0, 0.5],
+	[0.0, 1.0], [0.5, 1.0], [1.0, 1.0],
+];
 function snap_to_elements(baseelem, xpos, ypos) {
-	//TODO: Snap any corner or middle of the current element to any corner
-	//or middle of the target
-	/*for (let el of [...actives, ...specials]) {
-		const path = element_path(el);
-		for (let conn of path.connections || []) {
-			if (el[conn.name][conn.index] !== "") continue;
-			const snapx = el.x + conn.x, snapy = el.y + conn.y;
-			if (((snapx - xpos) ** 2 + (snapy - ypos) ** 2) <= SNAP_RANGE)
-				return [snapx, snapy, el, conn]; //First match locks it in. No other snapping done.
+	//Start by defining the "search rectangle". If the base element is rotated, this should be the
+	//axis-aligned bounding box.
+	const left = xpos - SNAP_DISTANCE, top = ypos - SNAP_DISTANCE;
+	const right = xpos + baseelem.xsize + SNAP_DISTANCE, bottom = ypos + baseelem.ysize + SNAP_DISTANCE;
+	for (let el of elements_by_zorder) {
+		if (el.id === baseelem.id) continue; //Don't snap to yourself
+		const pos = element_position[el.id];
+		//If the right edge of this element is to the left of the left edge of our bounding box,
+		//there's no way that it's within snap range (since the bounding box includes snap size).
+		if (pos.x + el.xsize < left || pos.x > right || pos.y + el.ysize < top || pos.y > bottom) continue;
+		//Okay. So we have at least the plausibility of overlap.
+		//I could, in theory, make this more efficient. For now I won't bother. Let's go through some
+		//possible snapping arrangements.
+		for (let c1 of corners) for (let c2 of corners) {
+			//Go through all nine corners and middles of each element. See if there's a good
+			//snap to be found.
+			const x1 = xpos + c1[0] * baseelem.xsize, y1 = ypos + c1[1] * baseelem.ysize;
+			const x2 = pos.x + c2[0] * el.xsize, y2 = pos.y + c2[1] * el.ysize;
+			if ((x1 - x2) ** 2 + (y1 - y2) ** 2 <= SNAP_RANGE) {
+				//Alright! Let's snap to that. So, how do we need to move in order
+				//to place (x1, y1) onto (x2, y2)? Move the base position that far.
+				return [xpos + x2 - x1, ypos + y2 - y1];
+			}
 		}
-	}*/
+		//If we didn't find a corner to snap to, try snapping to an edge instead.
+		//There are four edges, but each one only snaps to two (you don't snap the
+		//top of one thing to the left of another).
+		for (let e1 = 0; e1 <= 1; ++e1) for (let e2 = 0; e2 <= 1; ++e2) {
+			//e1 is 0 for left/top of the base element, 1 for right/bottom.
+			//e2 is the corresponding for the test element.
+			const x1 = xpos + e1 * baseelem.xsize, y1 = ypos + e1 * baseelem.ysize;
+			const x2 = pos.x + e2 * el.xsize, y2 = pos.y + e2 * baseelem.ysize;
+			//if (x1 - x2 <= SNAP_DISTANCE && x2 - x1 <= SNAP_DISTANCE) //Is it better to do two comparisons, to call Math.abs(), or to square the number?
+			if ((x1 - x2) ** 2 <= SNAP_RANGE) //Going with squaring for consistency with the corner snaps.
+				//Horizontal snapping (to a vertical edge)
+				return [xpos + x2 - x1, ypos];
+			if ((y1 - y2) ** 2 <= SNAP_RANGE)
+				//Vertical snapping (to a horizontal edge)
+				return [xpos, ypos + y2 - y1];
+		}
+	}
 	return [xpos, ypos];
 }
 
