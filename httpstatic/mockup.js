@@ -2,8 +2,11 @@ import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory
 const {A, BUTTON, DIV, LI, OPTION, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
+const clientid = Math.random() + "." + Math.random(); //If an update is caused by us, we ignore it
+
 let curscene = "";
 let state = { };
+let element_position = { }; //Shorthand: element_position <=> state.scenes[curscene].elements
 let mutation_allowed = false; //If true, show buttons etc for read/write access, since the server's told us we're allowed to
 export function sockmsg_mutation(msg) {mutation_allowed = msg.allowed; render(state);}
 
@@ -38,17 +41,18 @@ function draw_element(ctx, el) {
 	if (!img.naturalWidth) return; //Probably not loaded yet
 	//If the element has not had its size/pos recorded, set it to the default,
 	//but allow it to be changed later by rescaling.
-	if (!el.x) el.x = 0; if (!el.y) el.y = 0;
+	let pos = element_position[el.id];
+	if (!pos) element_position[el.id] = pos = {x: 0, y: 0};
 	el.xsize = el.xsize || type.xsize || img.naturalWidth;
 	el.ysize = el.ysize || type.ysize || img.naturalHeight;
-	ctx.drawImage(img, el.x, el.y, el.xsize, el.ysize);
+	ctx.drawImage(img, pos.x, pos.y, el.xsize, el.ysize);
 	if (dragging) {
-		ctx.strokeRect(el.x, el.y, el.xsize, el.ysize);
+		ctx.strokeRect(pos.x, pos.y, el.xsize, el.ysize);
 		//TODO: Do partial circles for the corners, only drawing the part outside
 		for (let x = 0; x < 3; ++x) {
 			for (let y = 0; y < 3; ++y) {
 				ctx.beginPath();
-				ctx.arc(el.x + el.xsize * x / 2, el.y + el.ysize * y / 2, 3, 0, 2 * Math.PI);
+				ctx.arc(pos.x + el.xsize * x / 2, pos.y + el.ysize * y / 2, 3, 0, 2 * Math.PI);
 				ctx.fill();
 			}
 		}
@@ -78,7 +82,8 @@ function element_at_position(x, y, filter) {
 	for (let i = elements_by_zorder.length - 1; i >= 0; --i) {
 		//TODO: Handle rotated clipping rectangles
 		const el = elements_by_zorder[i];
-		if (x >= el.x && y >= el.y && x < el.x + el.xsize && y < el.y + el.ysize) return el;
+		const pos = element_position[el.id];
+		if (x >= pos.x && y >= pos.y && x < pos.x + el.xsize && y < pos.y + el.ysize) return el;
 	}
 }
 
@@ -94,7 +99,8 @@ canvas.addEventListener("pointerdown", e => {
 		//TODO: Hold Ctrl to take a copy of the element and start dragging that
 		//el = clone_element(el);
 	}
-	dragging = el; dragbasex = e.offsetX - el.x; dragbasey = e.offsetY - el.y;
+	const pos = element_position[el.id];
+	dragging = el; dragbasex = e.offsetX - pos.x; dragbasey = e.offsetY - pos.y;
 });
 
 function snap_to_elements(baseelem, xpos, ypos) {
@@ -116,7 +122,8 @@ canvas.addEventListener("pointermove", e => {
 	let cursor = "default";
 	if (dragging) {
 		cursor = "grabbing";
-		[dragging.x, dragging.y] = snap_to_elements(dragging, e.offsetX - dragbasex, e.offsetY - dragbasey);
+		const pos = element_position[dragging.id];
+		[pos.x, pos.y] = snap_to_elements(dragging, e.offsetX - dragbasex, e.offsetY - dragbasey);
 		repaint();
 	}
 	else if (e.ctrlKey) {
@@ -129,8 +136,9 @@ canvas.addEventListener("pointermove", e => {
 canvas.addEventListener("pointerup", e => {
 	if (!dragging) return;
 	e.target.releasePointerCapture(e.pointerId);
-	[dragging.x, dragging.y] = snap_to_elements(dragging, e.offsetX - dragbasex, e.offsetY - dragbasey);
-	ws_sync.send({cmd: "update_element", cat: "elements", id: dragging.id, x: dragging.x, y: dragging.y});
+	const pos = element_position[dragging.id];
+	[pos.x, pos.y] = snap_to_elements(dragging, e.offsetX - dragbasex, e.offsetY - dragbasey);
+	ws_sync.send({cmd: "move_element", scene: curscene, id: dragging.id, x: pos.x, y: pos.y, clientid});
 	dragging = null;
 	repaint();
 });
@@ -145,12 +153,22 @@ export function render(data) {
 		data.allmocks.map(m => LI(A({href: "mockup?view=" + m.id + "&edit=", target: "_blank"}, m.title))), //TODO: Show creation date?
 		!data.allmocks.length && LI("(none)"),
 	]);
+	if (data.move_element) {
+		//Reduced update that just moves one element.
+		if (data.cause === clientid) return; //It's our own message. Ignore it (avoids rubberbanding if you drop and regrab an element).
+		if (!state.scenes) return; //We don't have everything loaded yet, we'll get data soon
+		element_position[data.id] = data.move_element;
+		if (data.scene === curscene) repaint();
+		return;
+	}
 	state = data; //Yes, this will include state.cmd == "update", no big deal
 	if (state.deleted) return replace_content("#status", "Mockup deleted.");
 	if (state.scenes && !state.scenes[curscene]) {
 		//You aren't on any scene. Pick one. TODO: Have a "default scene" selector somewhere.
 		curscene = Object.keys(state.scenes)[0];
 	}
+	element_position = state.scenes[curscene].elements;
+	if (!element_position) element_position = state.scenes[curscene].elements = { };
 	//This feels inefficient. Doing all this work every time anything changes, when it only
 	//needs to be updated when a scene is added/removed/renamed, seems like overkill. *sigh*
 	replace_content("#sceneselector",

@@ -296,14 +296,7 @@
   - List of existing elements
     - On hover, highlight element
     - Have a Clone button on element properties
-  - Multi-scene support
-    - Oopsie. Fix up how element positions are done so that the scene retains that info.
-      - Have a separate message for "set element position in scene" and "element position in scene
-        has changed" to avoid sending full updates on these common operations.
-    - Some things are per-mockup (ie shared), others are per-scene
-    - Have a way to clone a mockup (requires Twitch login) which would allow "now let's do country show"
-    - Anyone can create a scene
-    - Current scene defines the positions of all elements, but elements are themselves shared
+  - Have a way to clone a mockup (requires Twitch login) which would allow "now let's do country show"
   - Page loads in read-only mode, but send the right password to get full access
     - Possibly have a localStorage marker to say "always enable mutation"?
     - Add a button to send the password - currently only done if it's in the URL

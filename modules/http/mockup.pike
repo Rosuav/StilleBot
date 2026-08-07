@@ -177,7 +177,7 @@ mapping|zero wsedit_update_element(mapping mock, mapping(string:mixed) conn, map
 	}
 	mapping target = msg->cat == "mockup" ? mock : mock[msg->cat][msg->id];
 	if (!target) return 0;
-	foreach ("title description x y" / " ", string key) //FIXME: Have different key sets for different cats (x/y only relevant to elements)
+	foreach ("title description" / " ", string key)
 		if (!undefinedp(msg[key])) target[key] = msg[key];
 	if (msg->cat == "elements") {
 		//TODO: Validate the type, if not, set some sort of default
@@ -190,6 +190,23 @@ mapping|zero wsedit_new_scene(mapping mock, mapping(string:mixed) conn, mapping(
 	mock->scenes["s" + i] = (["title": "Scene " + i]);
 	return (["cmd": "select_scene", "id": "s" + i]);
 }
+
+//Not run through wsedit_* as we do a cut-down update message - these will be common messages
+__async__ void websocket_cmd_move_element(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->landing || !conn->mutate) return;
+	mapping|zero update;
+	await(G->G->DB->mutate_config(0, "mockup") {mapping mock = __ARGS__[0][conn->group];
+		if (!mock || conn->mutate != mock->mutate) return;
+		mapping scene = mock->scenes[msg->scene]; if (!scene) return;
+		if (!mock->elements[msg->id]) return;
+		if (!scene->elements) scene->elements = ([]);
+		if (!scene->elements[msg->id]) scene->elements[msg->id] = ([]);
+		scene->elements[msg->id] |= (["x": (float)msg->x, "y": (float)msg->y]);
+		update = (["scene": msg->scene, "id": msg->id, "move_element": scene->elements[msg->id], "cause": msg->clientid]);
+	});
+	if (update) send_updates_all(conn->group, update);
+}
+
 
 //TODO: Have a way for the owner to set the password. This should send to all connected clients
 //a message saying (["cmd": "mutation", "allowed": 0]) so they reset to read-only display; if
