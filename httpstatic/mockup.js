@@ -9,6 +9,7 @@ let state = { };
 let element_position = { }; //Shorthand: element_position <=> state.scenes[curscene].elements
 let mutation_allowed = false; //If true, show buttons etc for read/write access, since the server's told us we're allowed to
 export function sockmsg_mutation(msg) {mutation_allowed = msg.allowed; render(state);}
+let hoverelement = null;
 
 //Use &edit= to enable editing automatically. If a password has been set, this won't work.
 //TODO: Allow the user to enter a password, which then gets saved here - on socket reconnect,
@@ -56,6 +57,13 @@ function draw_element(ctx, el) {
 				ctx.fill();
 			}
 		}
+	}
+	if (el.id === hoverelement) {
+		ctx.save();
+		ctx.setLineDash([1, 1]);
+		ctx.strokeStyle = "rebeccapurple";
+		ctx.strokeRect(pos.x, pos.y, el.xsize, el.ysize);
+		ctx.restore();
 	}
 	//If parent-child relationships are implemented, draw all this element's children
 }
@@ -126,9 +134,10 @@ canvas.addEventListener("pointermove", e => {
 		[pos.x, pos.y] = snap_to_elements(dragging, e.offsetX - dragbasex, e.offsetY - dragbasey);
 		repaint();
 	}
-	else if (e.ctrlKey) {
+	else {
 		const el = element_at_position(e.offsetX, e.offsetY);
-		if (el) cursor = "copy";
+		//if (e.ctrlKey && el) cursor = "copy"; //If copy is implemented, show it via the cursor
+		canvas.title = el?.title || "";
 	}
 	canvas.style.cursor = cursor;
 });
@@ -245,3 +254,6 @@ on("click", "#deleteelement", simpleconfirm(
 		DOM("#editelementdlg").close();
 	})
 );
+
+on("mouseover", "#elementlist [data-id]", e => {hoverelement = e.match.dataset.id; repaint();});
+on("mouseout", "#elementlist", e => {hoverelement = null; repaint();});
