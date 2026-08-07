@@ -298,6 +298,7 @@
   - Anyone can move or add elements
   - Pop-over list of existing elements, on hover, highlight element
   - Click in list of elements to open dialog for renaming and maybe commenting; delete only from here
+    - Also have a Clone button
   - Multi-scene support
     - Some things are per-mockup (ie shared), others are per-scene
     - Have a way to clone a mockup (requires Twitch login) which would allow "now let's do country show"

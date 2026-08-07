@@ -27,26 +27,101 @@ preload_icon("/static/MustardMineSquavatar.png");
 
 const canvas = DOM("canvas");
 const ctx = canvas.getContext("2d");
-let dragging = null;
+let dragging = null, dragbasex = 50, dragbasey = 10;
+const elements_by_zorder = [];
 function draw_element(ctx, el) {
+	elements_by_zorder.push(el);
 	const type = element_types[el.type];
 	if (!type) {console.error("UNKNOWN ELEMENT TYPE", el); return;}
 	const img = image_cache[type.url];
 	if (!img) {preload_icon(type.url, 1); return;}
 	if (!img.naturalWidth) return; //Probably not loaded yet
-	ctx.drawImage(img, el.x || 0, el.y || 0, el.xsize || type.xsize || img.naturalWidth, el.ysize || type.ysize || img.naturalHeight);
+	//If the element has not had its size/pos recorded, set it to the default,
+	//but allow it to be changed later by rescaling.
+	if (!el.x) el.x = 0; if (!el.y) el.y = 0;
+	el.xsize = el.xsize || type.xsize || img.naturalWidth;
+	el.ysize = el.ysize || type.ysize || img.naturalHeight;
+	ctx.drawImage(img, el.x, el.y, el.xsize, el.ysize);
+	//If parent-child relationships are implemented, draw all this element's children
 }
 
 function repaint() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	elements_by_zorder.length = 0;
 	const elem = Object.entries(state.elements).sort((a, b) => a[0].localeCompare(b[0])); //Sort by ID. May need a way to explicitly reorder them.
 	//Parent-child relationships not currently implemented, but maybe.
 	//If an element is a child of another, it will always be drawn after its parent
 	//and before any of its parent's siblings, and it will be positioned relative to
 	//its parent rather than absolutely on the canvas.
-	elem.forEach(([id, el]) => el.parent || el === dragging || draw_element(ctx, el));
+	elem.forEach(([id, el]) => {
+		el.id = id;
+		if (!el.parent && el !== dragging) draw_element(ctx, el);
+	});
 	if (dragging) draw_element(ctx, dragging); //Anything being dragged gets drawn last, ensuring it is at the top of z-order.
 }
+
+function element_at_position(x, y, filter) {
+	//Iterate through all elements, starting at the top of the z-order stack and going
+	//to the bottom; the first one found containing the given position is returned.
+	for (let i = elements_by_zorder.length - 1; i >= 0; --i) {
+		//TODO: Handle rotated clipping rectangles
+		const el = elements_by_zorder[i];
+		if (x >= el.x && y >= el.y && x < el.x + el.xsize && y < el.y + el.ysize) return el;
+	}
+}
+
+canvas.addEventListener("pointerdown", e => {
+	if (e.button) return; //Only left clicks
+	if (!mutation_allowed) return;
+	e.preventDefault();
+	dragging = null;
+	const el = element_at_position(e.offsetX, e.offsetY);
+	if (!el) return;
+	e.target.setPointerCapture(e.pointerId);
+	if (e.ctrlKey) {
+		//TODO: Hold Ctrl to take a copy of the element and start dragging that
+		//el = clone_element(el);
+	}
+	dragging = el; dragbasex = e.offsetX - el.x; dragbasey = e.offsetY - el.y;
+});
+
+function snap_to_elements(baseelem, xpos, ypos) {
+	//TODO: Snap any corner or middle of the current element to any corner
+	//or middle of the target
+	/*for (let el of [...actives, ...specials]) {
+		const path = element_path(el);
+		for (let conn of path.connections || []) {
+			if (el[conn.name][conn.index] !== "") continue;
+			const snapx = el.x + conn.x, snapy = el.y + conn.y;
+			if (((snapx - xpos) ** 2 + (snapy - ypos) ** 2) <= SNAP_RANGE)
+				return [snapx, snapy, el, conn]; //First match locks it in. No other snapping done.
+		}
+	}*/
+	return [xpos, ypos];
+}
+
+canvas.addEventListener("pointermove", e => {
+	let cursor = "default";
+	if (dragging) {
+		cursor = "grabbing";
+		[dragging.x, dragging.y] = snap_to_elements(dragging, e.offsetX - dragbasex, e.offsetY - dragbasey);
+		repaint();
+	}
+	else if (e.ctrlKey) {
+		const el = element_at_position(e.offsetX, e.offsetY);
+		if (el) cursor = "copy";
+	}
+	canvas.style.cursor = cursor;
+});
+
+canvas.addEventListener("pointerup", e => {
+	if (!dragging) return;
+	e.target.releasePointerCapture(e.pointerId);
+	[dragging.x, dragging.y] = snap_to_elements(dragging, e.offsetX - dragbasex, e.offsetY - dragbasey);
+	ws_sync.send({cmd: "update_element", cat: "elements", id: dragging.id, x: dragging.x, y: dragging.y});
+	dragging = null;
+	repaint();
+});
 
 function EDITBUTTON(cat, id) {
 	return BUTTON({class: "editelement", "data-cat": cat, "data-element": id},

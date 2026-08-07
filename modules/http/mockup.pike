@@ -177,8 +177,8 @@ mapping|zero wsedit_update_element(mapping mock, mapping(string:mixed) conn, map
 	}
 	mapping target = msg->cat == "mockup" ? mock : mock[msg->cat][msg->id];
 	if (!target) return 0;
-	foreach ("title description" / " ", string key)
-		if (msg[key]) target[key] = msg[key];
+	foreach ("title description x y" / " ", string key) //FIXME: Have different key sets for different cats (x/y only relevant to elements)
+		if (!undefinedp(msg[key])) target[key] = msg[key];
 	if (msg->cat == "elements") {
 		//TODO: Validate the type, if not, set some sort of default
 		if (msg->type) target->type = msg->type;
