@@ -42,6 +42,17 @@ function draw_element(ctx, el) {
 	el.xsize = el.xsize || type.xsize || img.naturalWidth;
 	el.ysize = el.ysize || type.ysize || img.naturalHeight;
 	ctx.drawImage(img, el.x, el.y, el.xsize, el.ysize);
+	if (dragging) {
+		ctx.strokeRect(el.x, el.y, el.xsize, el.ysize);
+		//TODO: Do partial circles for the corners, only drawing the part outside
+		for (let x = 0; x < 3; ++x) {
+			for (let y = 0; y < 3; ++y) {
+				ctx.beginPath();
+				ctx.arc(el.x + el.xsize * x / 2, el.y + el.ysize * y / 2, 3, 0, 2 * Math.PI);
+				ctx.fill();
+			}
+		}
+	}
 	//If parent-child relationships are implemented, draw all this element's children
 }
 
@@ -49,6 +60,7 @@ function repaint() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	elements_by_zorder.length = 0;
 	const elem = Object.entries(state.elements).sort((a, b) => a[0].localeCompare(b[0])); //Sort by ID. May need a way to explicitly reorder them.
+	ctx.strokeStyle = ctx.fillStyle = "blue"; //Draw the frames around elements in blue
 	//Parent-child relationships not currently implemented, but maybe.
 	//If an element is a child of another, it will always be drawn after its parent
 	//and before any of its parent's siblings, and it will be positioned relative to
