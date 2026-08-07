@@ -294,7 +294,6 @@
     - Apply transparency/opacity to individual elements?
   - Anyone can move or add elements
   - List of existing elements
-    - On hover, highlight element
     - Have a Clone button on element properties
   - Have a way to clone a mockup (requires Twitch login) which would allow "now let's do country show"
   - Page loads in read-only mode, but send the right password to get full access
