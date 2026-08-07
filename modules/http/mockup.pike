@@ -97,7 +97,7 @@ __async__ mapping websocket_cmd_create_mockup(mapping(string:mixed) conn, mappin
 	return (["cmd": "mockup_created", "id": id]);
 }
 
-__async__ mapping websocket_mutate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ mapping websocket_cmd_mutate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping mock = await(G->G->DB->load_config(0, "mockup"))[conn->group];
 	if (msg->mutate != mock->mutate) return (["cmd": "error", "error": "Incorrect password"]);
 	conn->mutate = msg->mutate;
