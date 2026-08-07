@@ -6,10 +6,10 @@ constant markdown = #"# Mockups
 <canvas></canvas>
 
 > ### Edit element
-> Name: <input id=name>
-> <textarea></textarea>
+> Name: <input id=elementtitle>
+> <textarea id=elementdesc rows=5 cols=80></textarea>
 >
-> [Save](:type=submit) [Cancel](:.dialog_close)
+> [Save](:type=submit) [Close](:.dialog_close)
 {: tag=formdialog #editelementdlg}
 
 <style>
@@ -122,8 +122,15 @@ __async__ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) m
 
 //Will handle (["cmd": "example"]) as a mutator.
 //Must NOT be asynchronous. Is allowed to return a response.
-mapping wsedit_example(mapping mock, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+mapping|zero wsedit_example(mapping mock, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mock->counter += (int)msg->increment || 1;
+}
+
+mapping|zero wsedit_update_element(mapping mock, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping target = msg->id == "" ? mock : mock->elements[msg->id];
+	if (!target) return 0;
+	foreach ("title description" / " ", string key)
+		if (msg[key]) target[key] = msg[key];
 }
 
 //TODO: Have a way for the owner to set the password. This should send to all connected clients
