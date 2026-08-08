@@ -50,10 +50,18 @@ You have the following mockups:
 
 constant markdown_pixelart = #"# Mockups - Pixel Art
 
-<table id=palette></table>
+<table border=1><tr><td id=curcolor>Current</td><td class=pickcolor style=\"background-color: transparent\">Transparent</td></tr></table>
+<table border=1 id=palette></table>
 
-<table id=grid></table>
+<table border=1 id=grid></table>
 
+<style>
+#grid {margin-top: 1em;}
+td {
+	width: 23px;
+	height: 23px;
+}
+</style>
 ";
 
 constant markdown_guest = #"# Mockups
