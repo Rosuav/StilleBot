@@ -50,12 +50,19 @@ You have the following mockups:
 
 constant markdown_pixelart = #"# Mockups - Pixel Art
 
+> ### Load image
+> * loading...
+> {:#imagelist}
+>
+> [Close](:.dialog_close)
+{: tag=dialog #loadimagedlg}
+
 <table border=1 id=selections><tr><td id=curcolor>Current</td><td class=pickcolor data-color=>Transparent</td></tr></table>
 <table border=1 id=palette></table>
 
 <table border=1 id=grid></table>
 
-[Save](:.opendlg data-dlg=saveimagedlg) [Load](:#load)
+[Save](:.opendlg data-dlg=saveimagedlg) [Load](:.opendlg data-dlg=loadimagedlg)
 
 > ### Save image
 > Image name: <input name=savename required>
@@ -72,6 +79,13 @@ td {
 	height: 23px;
 }
 </style>
+
+> ### Manage tiles
+> TODO: Create tile from existing image, setting its xsize/ysize,
+> or edit a tile's dimensions.
+>
+> [Save](:type=submit) [Close](:.dialog_close)
+{: tag=formdialog #tilesdlg}
 ";
 
 constant markdown_guest = #"# Mockups
@@ -280,6 +294,26 @@ __async__ void websocket_cmd_save_pixelart(mapping(string:mixed) conn, mapping(s
 	foreach (values(websocket_groups), array group)
 		foreach (group, object sock)
 			if (sock && sock->state == 1) sock->send_text(text);
+}
+
+__async__ mapping websocket_cmd_load_pixelart(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->landing) return 0;
+	if (!meta_cache) meta_cache = await(G->G->DB->load_config(1, "mockup"));
+	mapping img = meta_cache->images[msg->id];
+	if (!img) return (["error": "Image not found"]);
+	sscanf(img->url, "data:image/png;base64,%s", string raw);
+	if (!raw) return (["error": "Non-local images cannot be loaded"]);
+	mapping image = Image.PNG._decode(MIME.decode_base64(raw));
+	array grid = ({ });
+	for (int y = 0; y < image->ysize; ++y) {
+		array row = ({ });
+		for (int x = 0; x < image->xsize; ++x) {
+			if (image->alpha && image->alpha->getpixel(x, y)[0] < 64) row += ({""});
+			else row += ({sprintf("#%02x%02x%02x", @image->image->getpixel(x, y))});
+		}
+		grid += ({row});
+	}
+	return (["cmd": "pixelart_loaded", "grid": grid]);
 }
 
 //TODO: Have a way for the owner to set the password. This should send to all connected clients

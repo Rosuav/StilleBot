@@ -1,7 +1,6 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {TD, TR} = lindt; //autoimport
+const {BUTTON, LI, TD, TIME, TR} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
-export function sockmsg_update_meta(msg) {meta = msg;}
 
 //TODO: Store this in localStorage
 const colors = [
@@ -10,8 +9,8 @@ const colors = [
 ];
 
 let curcolor = "#000000"; DOM("#curcolor").style.backgroundColor = curcolor;
-const grid = [];
-const xsize = 25, ysize = 25;
+let grid = [];
+let xsize = 25, ysize = 25;
 let dragging = null, line = { };
 function repaint() {
 	replace_content("#palette", colors.map(row => TR(row.map(col => TD({class: "pickcolor", "data-color": col, style: "background-color: " + col})))));
@@ -102,3 +101,45 @@ on("submit", "#saveimagedlg form", e => {
 	});
 	e.match.reset();
 });
+
+function DATE(d) {
+	if (!d) return "(unknown)";
+	const date = new Date(d * 1000);
+	let day = date.getDate();
+	switch (day) {
+		case 1: case 21: day += "st"; break;
+		case 2: case 22: day += "nd"; break;
+		case 3: case 23: day += "rd"; break;
+		default: day += "th";
+	}
+	return TIME({datetime: date.toISOString(), title: date.toLocaleString()}, [
+		//This abbreviated format assumes English and shows just the date. The hover uses your locale.
+		"Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[date.getMonth()] + " " + day,
+	]);
+}
+
+export function sockmsg_update_meta(msg) {
+	meta = msg;
+	replace_content("#imagelist", Object.entries(meta.images)
+		.sort((a, b) => a[0].localeCompare(b[0]))
+		.map(([id, img]) => LI([
+			id, " ",
+			//TODO: Check img.created_by, show if it was created by you
+			//Maybe show the user name that created it? Would need serverside help.
+			"(", DATE(img.created_at), ") ",
+			BUTTON({"data-id": id, class: "loadimg"}, "Load"),
+		]))
+	);
+}
+sockmsg_update_meta(meta);
+
+//We do have the data URL for the image already, but it's easier to let Pike decode it and
+//turn it into a nice collection of pixel colours for us.
+on("click", ".loadimg", e => ws_sync.send({cmd: "load_pixelart", id: e.match.dataset.id}));
+export function sockmsg_pixelart_loaded(msg) {
+	DOM("#loadimagedlg").close();
+	grid = msg.grid;
+	xsize = grid[0].length;
+	ysize = grid.length;
+	repaint();
+}
