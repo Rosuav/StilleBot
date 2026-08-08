@@ -4,24 +4,24 @@ import {simpleconfirm} from "$$static||utils.js$$";
 
 //TODO: Store this in localStorage
 const colors = [
-	["000", "00f", "0f0", "f00", "0ff", "f0f", "ff0", "fff"],
-	["000", "007", "070", "700", "077", "707", "770", "777"],
+	["#000000", "#0000ff", "#00ff00", "#ff0000", "#00ffff", "#ff00ff", "#ffff00", "#ffffff"],
+	["#666666", "#000077", "#007700", "#770000", "#007777", "#770077", "#777700", "#cccccc"],
 ];
 
-let curcolor = "000"; DOM("#curcolor").style.backgroundColor = "#" + curcolor;
+let curcolor = "#000000"; DOM("#curcolor").style.backgroundColor = curcolor;
 const grid = [];
 const xsize = 25, ysize = 25;
 let dragging = null, line = { };
 function repaint() {
-	replace_content("#palette", colors.map(row => TR(row.map(col => TD({class: "pickcolor", "data-color": col, style: "background-color: #" + col})))));
+	replace_content("#palette", colors.map(row => TR(row.map(col => TD({class: "pickcolor", "data-color": col, style: "background-color: " + col})))));
 	if (grid.length > ysize) grid.length = ysize;
 	while (grid.length < ysize) grid.push([]);
 	for (let row of grid) {
 		if (row.length > xsize) row.length = xsize;
-		while (row.length < xsize) row.push({ });
+		while (row.length < xsize) row.push("");
 	}
 	replace_content("#grid", grid.map((row, y) => TR(row.map((cell, x) => TD({
-		style: "background-color: #" + (line[x+","+y] ? curcolor : (cell.color || "fff"))
+		style: "background-color: " + (line[x + "," + y] ? curcolor : cell || "transparent")
 	})))));
 }
 
@@ -62,7 +62,7 @@ export function render(data) {
 	repaint();
 }
 
-on("click", ".pickcolor", e => DOM("#curcolor").style.backgroundColor = "#" + (curcolor = e.match.dataset.color));
+on("click", ".pickcolor", e => DOM("#curcolor").style.backgroundColor = (curcolor = e.match.dataset.color) || "transparent");
 
 on("pointerdown", "#grid", e => {
 	if (e.button) return; //Only left clicks
@@ -89,7 +89,15 @@ on("pointerup", "#grid", e => {
 	e.target.releasePointerCapture(e.pointerId);
 	if (!dragging) return;
 	//"Harden" the line into being real.
-	grid.forEach((row, y) => row.forEach((cell, x) => line[x+","+y] && (cell.color = curcolor)));
+	grid.forEach((row, y) => row.forEach((cell, x) => line[x + "," + y] && (row[x] = curcolor)));
 	dragging = null;
 	update_line();
+});
+
+on("submit", "#saveimagedlg form", e => {
+	ws_sync.send({cmd: "save_pixelart",
+		name: e.match.elements.savename.value,
+		grid,
+	});
+	e.match.reset();
 });

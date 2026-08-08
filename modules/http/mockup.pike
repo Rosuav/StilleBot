@@ -50,12 +50,22 @@ You have the following mockups:
 
 constant markdown_pixelart = #"# Mockups - Pixel Art
 
-<table border=1><tr><td id=curcolor>Current</td><td class=pickcolor style=\"background-color: transparent\">Transparent</td></tr></table>
+<table border=1 id=selections><tr><td id=curcolor>Current</td><td class=pickcolor data-color=>Transparent</td></tr></table>
 <table border=1 id=palette></table>
 
 <table border=1 id=grid></table>
 
+[Save](:.opendlg data-dlg=saveimagedlg) [Load](:#load)
+
+> ### Save image
+> Image name: <input name=savename required>
+>
+> [Save](:type=submit) [Cancel](:.dialog_close)
+{: tag=formdialog #saveimagedlg}
+
 <style>
+#selections {cursor: default;}
+/* TODO: Put a background on #grid so transparent pixels aren't the same as any single colour */
 #grid {margin-top: 1em;}
 td {
 	width: 23px;
@@ -72,7 +82,9 @@ to create a new mockup, you will need to [log in with a Twitch account](:.twitch
 
 ";
 
+mapping meta_cache;
 __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req) {
+	if (!meta_cache) meta_cache = await(G->G->DB->load_config(1, "mockup"));
 	if (string id = req->variables->view) {
 		//Ensure that the requested ID actually exists. This is not checked inside
 		//websocket_validate as it doesn't allow asynchronicity, so if we didn't
@@ -80,7 +92,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		//very user-friendly. Note that this does not require authentication, even
 		//for read-write functionality.
 		mapping mock = await(G->G->DB->load_config(0, "mockup"))[id];
-		if (mock) return render(req, (["vars": (["ws_group": id])]));
+		if (mock) return render(req, (["vars": (["ws_group": id, "meta": meta_cache])]));
 		//Otherwise fall through and show the landing page
 	}
 	if (string uid = req->misc->session->user->?id) {
@@ -90,7 +102,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		return render(req, pa ? markdown_pixelart : markdown_landing, (["vars": ([
 			"ws_group": "uid-" + uid,
 			"ws_code": pa ? "mockup_pixelart.js" : "mockup_landing.js",
-			"mode": pa ? "pixelart" : "landing",
+			"meta": meta_cache,
 		])]));
 	}
 	return render_template(markdown_guest, ([]));
@@ -230,6 +242,45 @@ __async__ void websocket_cmd_move_element(mapping(string:mixed) conn, mapping(st
 	if (update) send_updates_all(conn->group, update);
 }
 
+__async__ void websocket_cmd_save_pixelart(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->landing) return;
+	//The front end sends us a 2D array of colour identifiers given in six digit hex.
+	//Let's make, yaknow, an actual image. In PNG.
+	if (!arrayp(msg->grid) || !sizeof(msg->grid) || !arrayp(msg->grid[0]) || !sizeof(msg->grid[0])) return;
+	int xsize = sizeof(msg->grid[0]), ysize = sizeof(msg->grid);
+	Image.Image image = Image.Image(xsize, ysize);
+	Image.Image alpha = Image.Image(xsize, ysize);
+	foreach (msg->grid; int y; array row) foreach (row; int x; string cell) {
+		if (cell == "") continue; //Leave it transparent
+		//Currently we don't support a full alpha channel, so any non-transparent cell is fully opaque.
+		alpha->setpixel(x, y, 255, 255, 255);
+		sscanf(cell, "#%2x%2x%2x", int r, int g, int b);
+		image->setpixel(x, y, r, g, b);
+	}
+	string png = Image.PNG.encode(image, (["alpha": alpha]));
+	string url = "data:image/png;base64," + MIME.encode_base64(png, 1);
+	mapping meta;
+	await(G->G->DB->mutate_config(1, "mockup") {meta = __ARGS__[0];
+		if (!meta->images) meta->images = ([]);
+		if (!meta->tiles) meta->tiles = ([]);
+		meta->images[msg->name] = ([
+			"url": url,
+			"created_at": time(),
+			"created_by": conn->session->user->id,
+		]);
+		meta->tiles[msg->name] = ([
+			"image": msg->name,
+			"xsize": xsize, "ysize": ysize,
+		]);
+	});
+	meta_cache = meta;
+	//This is a relatively rare thing to change, so we send it out with a dedicated message
+	//to all connected clients (regardless of group).
+	string text = Standards.JSON.encode((["cmd": "update_meta"]) | meta, 4);
+	foreach (values(websocket_groups), array group)
+		foreach (group, object sock)
+			if (sock && sock->state == 1) sock->send_text(text);
+}
 
 //TODO: Have a way for the owner to set the password. This should send to all connected clients
 //a message saying (["cmd": "mutation", "allowed": 0]) so they reset to read-only display; if
