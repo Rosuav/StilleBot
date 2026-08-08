@@ -44,6 +44,16 @@ You have the following mockups:
 {:#allmockups}
 
 [Create new](:#create_mockup)
+
+[Edit pixel art](mockup?pixelart)
+";
+
+constant markdown_pixelart = #"# Mockups - Pixel Art
+
+<table id=palette></table>
+
+<table id=grid></table>
+
 ";
 
 constant markdown_guest = #"# Mockups
@@ -67,8 +77,13 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	}
 	if (string uid = req->misc->session->user->?id) {
 		//If you're logged in, show your owned mockups.
-		//mapping mocks = await(G->G->DB->load_config(uid, "mockup"));
-		return render(req, markdown_landing, (["vars": (["ws_group": "uid-" + uid])]));
+		//Pixel art editing uses the same socket group as the landing page for simplicity
+		int pa = !!req->variables->pixelart;
+		return render(req, pa ? markdown_pixelart : markdown_landing, (["vars": ([
+			"ws_group": "uid-" + uid,
+			"ws_code": pa ? "mockup_pixelart.js" : "mockup_landing.js",
+			"mode": pa ? "pixelart" : "landing",
+		])]));
 	}
 	return render_template(markdown_guest, ([]));
 }

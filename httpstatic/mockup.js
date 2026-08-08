@@ -1,5 +1,8 @@
+//NOTE: This file only handles the actual mockup rendering.
+//For the landing page and pixel art, both of which are also on /mockup,
+//see mockup_landing.js and mockup_pixelart.js respectively.
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, BUTTON, DIV, LI, OPTION, UL} = lindt; //autoimport
+const {BUTTON, DIV, LI, OPTION, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 const clientid = Math.random() + "." + Math.random(); //If an update is caused by us, we ignore it
@@ -196,10 +199,6 @@ function EDITBUTTON(cat, id) {
 }
 
 export function render(data) {
-	if (data.allmocks) return replace_content("#allmockups", [
-		data.allmocks.map(m => LI(A({href: "mockup?view=" + m.id + "&edit=", target: "_blank"}, m.title))), //TODO: Show creation date?
-		!data.allmocks.length && LI("(none)"),
-	]);
 	if (data.move_element) {
 		//Reduced update that just moves one element.
 		if (data.cause === clientid) return; //It's our own message. Ignore it (avoids rubberbanding if you drop and regrab an element).
@@ -245,11 +244,6 @@ export function render(data) {
 }
 
 on("change", "#sceneselector", e => {curscene = e.match.value; render(state);});
-
-on("click", "#create_mockup", e => ws_sync.send({cmd: "create_mockup"}));
-export function sockmsg_mockup_created(msg) {
-	window.open("/mockup?view=" + msg.id + "&edit=", "_blank");
-}
 
 let editing_cat = null, editing_element = null;
 on("click", ".editelement", e => {
