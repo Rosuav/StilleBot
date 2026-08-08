@@ -24,15 +24,20 @@ export function socket_connected(sock) {
 	if (typeof mutate === "string") sock.send(JSON.stringify({cmd: "mutate", mutate}));
 }
 
-//TODO: Get this from the server. The image URLs will probably end up being data URLs.
-const element_types = {
-	minecart: {url: "/static/MustardMineSquavatar.png", xsize: 50, ysize: 50},
+export function sockmsg_update_meta(msg) {
+	meta = msg;
+	replace_content("#typeselector", Object.entries(meta.tiles)
+		.map(([id, t]) => [t.title || id, id])
+		.sort((a, b) => a[0].localeCompare(b[0]))
+		.map(([title, id]) => OPTION({value: id}, title))
+	);
 }
+sockmsg_update_meta(meta);
+
 const image_cache = { };
 function preload_icon(url, needed) {
 	image_cache[url] = choc.IMG({src: url, crossOrigin: "anonymous", onload: needed && repaint});
 }
-preload_icon("/static/MustardMineSquavatar.png");
 
 const canvas = DOM("canvas");
 const ctx = canvas.getContext("2d");
@@ -40,10 +45,12 @@ let dragging = null, dragbasex = 50, dragbasey = 10;
 const elements_by_zorder = [];
 function draw_element(ctx, el) {
 	elements_by_zorder.push(el);
-	const type = element_types[el.type];
+	const type = meta.tiles[el.type];
 	if (!type) {console.error("UNKNOWN ELEMENT TYPE", el); return;}
-	const img = image_cache[type.url];
-	if (!img) {preload_icon(type.url, 1); return;}
+	const url = type.url || meta.images[type.image]?.url;
+	if (!url) return; //??? Should probably never happen.
+	const img = image_cache[url];
+	if (!img) {preload_icon(url, 1); return;}
 	if (!img.naturalWidth) return; //Probably not loaded yet
 	//If the element has not had its size/pos recorded, set it to the default,
 	//but allow it to be changed later by rescaling.

@@ -1,6 +1,7 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {TD, TR} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
+export function sockmsg_update_meta(msg) {meta = msg;}
 
 //TODO: Store this in localStorage
 const colors = [

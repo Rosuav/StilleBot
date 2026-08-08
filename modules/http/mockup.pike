@@ -10,7 +10,7 @@ Scene: <select id=sceneselector><option disabled>loading...</select> <span id=sc
 <div id=sidebyside><div id=canvasscroll><canvas width=2700 height=1500></canvas></div><div id=elementlist></div></div>
 
 > ### Edit element
-> <p id=typeselect>Type: <select id=typeselector><option value=minecart>Minecart</select></p>
+> <p id=typeselect>Type: <select id=typeselector></select></p>
 > Name: <input id=elementtitle>
 > <textarea id=elementdesc rows=5 cols=80></textarea>
 >

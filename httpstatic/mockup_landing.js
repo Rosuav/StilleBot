@@ -1,6 +1,7 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {A, LI} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
+export function sockmsg_update_meta(msg) {meta = msg;}
 
 export function render(data) {
 	replace_content("#allmockups", [
