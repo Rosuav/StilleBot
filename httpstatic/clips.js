@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, B, DATE, DIV, FIELDSET, IMG, LEGEND, LI, OPTION, P, SELECT, SPAN, STYLE, UL} = lindt; //autoimport
+const {A, B, DIV, FIELDSET, IMG, LEGEND, LI, OPTION, P, SELECT, SPAN, STYLE, TIME, UL} = lindt; //autoimport
 
 //TODO: Sorting
 //Let CathyCat_TV know when it's done-ish, she's excited for it!
@@ -94,7 +94,7 @@ function render_clips() {
 				UL([
 					LI({className: "cliptitle"}, clip.title),
 					LI(B(state.games[clip.game_id]?.name)),
-					LI([clip.creator_name, " on ", DATE({datetime: clip.created_at}, new Date(clip.created_at).toLocaleDateString())]),
+					LI([clip.creator_name, " on ", TIME({datetime: clip.created_at}, new Date(clip.created_at).toLocaleDateString())]),
 					LI(clip.view_count + " views"),
 				]),
 				GAMETILE(clip.game_id),
