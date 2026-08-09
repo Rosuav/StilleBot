@@ -20,6 +20,8 @@ function repaint() {
 		if (row.length > xsize) row.length = xsize;
 		while (row.length < xsize) row.push("");
 	}
+	DOM("#xsize").value = xsize;
+	DOM("#ysize").value = ysize;
 	replace_content("#grid", grid.map((row, y) => TR(row.map((cell, x) => TD({
 		style: "background-color: " + (line[x + "," + y] ? curcolor : cell || "transparent")
 	})))));
@@ -136,10 +138,28 @@ sockmsg_update_meta(meta);
 //We do have the data URL for the image already, but it's easier to let Pike decode it and
 //turn it into a nice collection of pixel colours for us.
 on("click", ".loadimg", e => ws_sync.send({cmd: "load_pixelart", id: e.match.dataset.id}));
-export function sockmsg_pixelart_loaded(msg) {
+export function sockmsg_pixelart_loaded(msg) { //Also, curiously, triggered by a rescale request :)
 	DOM("#loadimagedlg").close();
 	grid = msg.grid;
 	xsize = grid[0].length;
 	ysize = grid.length;
 	repaint();
 }
+
+on("submit", "#resizedlg form", e => {
+	if (DOM("#simple").checked) {
+		//Simple resize - crop or add transparency
+		xsize = +DOM("#xsize").value;
+		ysize = +DOM("#ysize").value;
+		repaint();
+	} else {
+		//Rescale. So, I could implement a nice complicated algorithm to rescale an
+		//image.... or.... I could sing out "hey Pike, can you rescale this for me?"
+		//Yes, that does introduce network latency, but that's a whole lot easier.
+		ws_sync.send({cmd: "rescale",
+			xsize: +DOM("#xsize").value,
+			ysize: +DOM("#ysize").value,
+			grid,
+		});
+	}
+});

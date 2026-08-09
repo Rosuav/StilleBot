@@ -60,9 +60,16 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 <table border=1 id=selections><tr><td id=curcolor>Current</td><td class=pickcolor data-color=>Transparent</td></tr></table>
 <table border=1 id=palette></table>
 
+> ### Resize image
+> Resize to: <input type=number id=xsize> x <input type=number id=ysize><br>
+> <label><input type=radio checked name=mode id=simple> Crop/position</label> <label><input type=radio name=mode> Rescale</label>
+>
+> [Resize](:type=submit) [Cancel](:.dialog_close)
+{: tag=formdialog #resizedlg}
+
 <table border=1 id=grid></table>
 
-[Save](:.opendlg data-dlg=saveimagedlg) [Load](:.opendlg data-dlg=loadimagedlg)
+[Save](:.opendlg data-dlg=saveimagedlg) [Load](:.opendlg data-dlg=loadimagedlg) [Resize](:.opendlg data-dlg=resizedlg)
 
 > ### Save image
 > Image name: <input name=savename required>
@@ -256,21 +263,27 @@ __async__ void websocket_cmd_move_element(mapping(string:mixed) conn, mapping(st
 	if (update) send_updates_all(conn->group, update);
 }
 
-__async__ void websocket_cmd_save_pixelart(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!conn->landing) return;
-	//The front end sends us a 2D array of colour identifiers given in six digit hex.
-	//Let's make, yaknow, an actual image. In PNG.
-	if (!arrayp(msg->grid) || !sizeof(msg->grid) || !arrayp(msg->grid[0]) || !sizeof(msg->grid[0])) return;
-	int xsize = sizeof(msg->grid[0]), ysize = sizeof(msg->grid);
+array(Image.Image) load_image(array(array(string)) grid) {
+	if (!arrayp(grid) || !sizeof(grid) || !arrayp(grid[0]) || !sizeof(grid[0])) return ({0, 0});
+	int xsize = sizeof(grid[0]), ysize = sizeof(grid);
 	Image.Image image = Image.Image(xsize, ysize);
 	Image.Image alpha = Image.Image(xsize, ysize);
-	foreach (msg->grid; int y; array row) foreach (row; int x; string cell) {
+	foreach (grid; int y; array row) foreach (row; int x; string cell) {
 		if (cell == "") continue; //Leave it transparent
 		//Currently we don't support a full alpha channel, so any non-transparent cell is fully opaque.
 		alpha->setpixel(x, y, 255, 255, 255);
 		sscanf(cell, "#%2x%2x%2x", int r, int g, int b);
 		image->setpixel(x, y, r, g, b);
 	}
+	return ({image, alpha});
+}
+
+__async__ void websocket_cmd_save_pixelart(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->landing) return;
+	//The front end sends us a 2D array of colour identifiers given in six digit hex.
+	//Let's make, yaknow, an actual image. In PNG.
+	[Image.Image image, Image.Image alpha] = load_image(msg->grid);
+	if (!image) return;
 	string png = Image.PNG.encode(image, (["alpha": alpha]));
 	string url = "data:image/png;base64," + MIME.encode_base64(png, 1);
 	mapping meta;
@@ -284,7 +297,7 @@ __async__ void websocket_cmd_save_pixelart(mapping(string:mixed) conn, mapping(s
 		]);
 		meta->tiles[msg->name] = ([
 			"image": msg->name,
-			"xsize": xsize, "ysize": ysize,
+			"xsize": image->xsize(), "ysize": image->ysize(),
 		]);
 	});
 	meta_cache = meta;
@@ -296,6 +309,19 @@ __async__ void websocket_cmd_save_pixelart(mapping(string:mixed) conn, mapping(s
 			if (sock && sock->state == 1) sock->send_text(text);
 }
 
+array(array(string)) decode_image(Image.Image image, Image.Image alpha) {
+	array grid = ({ });
+	for (int y = 0; y < image->ysize(); ++y) {
+		array row = ({ });
+		for (int x = 0; x < image->xsize(); ++x) {
+			if (alpha->getpixel(x, y)[0] < 64) row += ({""});
+			else row += ({sprintf("#%02x%02x%02x", @image->getpixel(x, y))});
+		}
+		grid += ({row});
+	}
+	return grid;
+}
+
 __async__ mapping websocket_cmd_load_pixelart(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->landing) return 0;
 	if (!meta_cache) meta_cache = await(G->G->DB->load_config(1, "mockup"));
@@ -304,16 +330,18 @@ __async__ mapping websocket_cmd_load_pixelart(mapping(string:mixed) conn, mappin
 	sscanf(img->url, "data:image/png;base64,%s", string raw);
 	if (!raw) return (["error": "Non-local images cannot be loaded"]);
 	mapping image = Image.PNG._decode(MIME.decode_base64(raw));
-	array grid = ({ });
-	for (int y = 0; y < image->ysize; ++y) {
-		array row = ({ });
-		for (int x = 0; x < image->xsize; ++x) {
-			if (image->alpha && image->alpha->getpixel(x, y)[0] < 64) row += ({""});
-			else row += ({sprintf("#%02x%02x%02x", @image->image->getpixel(x, y))});
-		}
-		grid += ({row});
-	}
-	return (["cmd": "pixelart_loaded", "grid": grid]);
+	return (["cmd": "pixelart_loaded", "grid": decode_image(image->image, image->alpha)]);
+}
+
+//The front end can't be bothered doing the work of rescaling, so it hands us a grid of colours,
+//asks us to do the rescaling, and accepts whatever we give it.
+mapping|zero websocket_cmd_rescale(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->landing) return 0;
+	[Image.Image image, Image.Image alpha] = load_image(msg->grid);
+	if (!image) return 0;
+	image = image->scale((int)msg->xsize, (int)msg->ysize);
+	alpha = alpha->scale((int)msg->xsize, (int)msg->ysize);
+	return (["cmd": "pixelart_loaded", "grid": decode_image(image, alpha)]);
 }
 
 //TODO: Have a way for the owner to set the password. This should send to all connected clients
