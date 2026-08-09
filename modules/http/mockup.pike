@@ -24,6 +24,7 @@ Scene: <select id=sceneselector><option disabled>loading...</select> <span id=sc
 	margin-left: 1em;
 }
 #sidebyside {
+	border: 1px solid black;
 	display: flex;
 	gap: 0.5em;
 	max-height: 800px; /* Or should main be made flex so this gets all remaining space? */
