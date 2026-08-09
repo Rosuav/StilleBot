@@ -116,11 +116,17 @@ function show_banner(text, cls, fade) {
 
 export function sockmsg_error(msg) {show_banner(msg.error, "error", 30);}
 
+let last_build_status = "completed";
 export function render(data) {
 	if (!data.self) return replace_content("#content", P([
 		"Your site is linked to your Twitch account. ",
 		BUTTON({type: "button", class: "twitchlogin", "data-force": "1"}, "Log in with Twitch"),
 	]));
+	if (data.site.build_status && data.site.build_status !== last_build_status) {
+		if (data.site.build_status === "completed") show_banner("Build complete!", "done", 10);
+		else show_banner("Build " + data.site.build_status.replace("_", " ") + "...", "pending");
+		last_build_status = data.site.build_status;
+	}
 	replace_content("#content", [
 		P([
 			"Your site is linked to your Twitch account. ",
@@ -142,7 +148,6 @@ export function render(data) {
 				//NOTE: The html_url will be affected by the presence of a CNAME, so it should always be the "natural" URL.
 				"You have a web site at ", A({href: data.site.html_url}, data.site.html_url),
 				//TODO: Reword these nicely so people know "hey, you can refresh the page now"
-				data.site.build_status && " Build: " + data.site.build_status,
 				" ", BUTTON({type: "button", class: "opendlg", "data-dlg": "cnamedlg"}, "Configure URL"),
 			]),
 			P(["Your web site is always YOURS and Mustard Mine is always ready to hand control to you. ", BUTTON({type: "button", class: "opendlg", "data-dlg": "collabsdlg"}, "Manage ownership")]),
