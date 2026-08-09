@@ -287,26 +287,69 @@ __async__ void websocket_cmd_move_element(mapping(string:mixed) conn, mapping(st
 	if (update) send_updates_all(conn->group, update);
 }
 
-array(Image.Image) load_image(array(array(string)) grid) {
+//Supported parameters:
+//xtra->cellsize = ({x, y}) - make a grid of tiles, not a bitmap of pixels, where each cell is that size
+//xtra->gridborder = 1 - draw a border between the tiles
+//xtra->gridcolor = "#000000" - color for that border (if omitted or "", will be transparent)
+array(Image.Image) load_image(array(array(string)) grid, mapping|void xtra) {
 	if (!arrayp(grid) || !sizeof(grid) || !arrayp(grid[0]) || !sizeof(grid[0])) return ({0, 0});
-	int xsize = sizeof(grid[0]), ysize = sizeof(grid);
+	int cellx = 1, celly = 1, gridborder = 0;
+	array(int) gridcolor;
+	if (arrayp(xtra->cellsize) && sizeof(xtra->cellsize) == 2) [cellx, celly] = xtra->cellsize;
+	if (cellx > 1 || celly > 1) {
+		//Cell mode. Enables the border if requested.
+		gridborder = (int)xtra->gridborder;
+		if (sscanf(xtra->gridcolor || "??", "#%2x%2x%2x", int r, int g, int b)) gridcolor = ({r, g, b});
+	}
+	int xsize = sizeof(grid[0]) * (cellx + gridborder) - gridborder;
+	int ysize = sizeof(grid)    * (celly + gridborder) - gridborder;
 	Image.Image image = Image.Image(xsize, ysize);
 	Image.Image alpha = Image.Image(xsize, ysize);
+	//Draw the entire grid first, then apply the actual selection of colours or images
+	if (gridborder && gridcolor) {
+		for (int x = 1; x < sizeof(grid[0]); ++x) {
+			int xpos = x * (cellx + gridborder) - gridborder;
+			image->line(xpos, 0, xpos, ysize, @gridcolor);
+			alpha->line(xpos, 0, xpos, ysize, 255, 255, 255);
+		}
+		for (int y = 1; y < sizeof(grid); ++y) {
+			int ypos = y * (celly + gridborder) - gridborder;
+			image->line(0, ypos, ysize, ypos, @gridcolor);
+			alpha->line(0, ypos, ysize, ypos, 255, 255, 255);
+		}
+	}
+	mapping image_cache = ([]);
 	foreach (grid; int y; array row) foreach (row; int x; string cell) {
 		if (cell == "") continue; //Leave it transparent
-		//Currently we don't support a full alpha channel, so any non-transparent cell is fully opaque.
-		alpha->setpixel(x, y, 255, 255, 255);
-		sscanf(cell, "#%2x%2x%2x", int r, int g, int b);
-		image->setpixel(x, y, r, g, b);
+		int xpos = x * (cellx + gridborder), ypos = y * (celly + gridborder);
+		if (cell[0] == '#') {
+			//Currently we don't support a full alpha channel, so any non-transparent cell is fully opaque.
+			//If cellx and celly are both 1, this could be simplified to just a setpixel() call, but this works too
+			alpha->box(xpos, ypos, xpos + cellx - 1, ypos + celly - 1, 255, 255, 255);
+			sscanf(cell, "#%2x%2x%2x", int r, int g, int b);
+			image->box(xpos, ypos, xpos + cellx - 1, ypos + celly - 1, r, g, b);
+		} else if (mapping img = meta_cache->images[cell]) { //TODO: What if meta_cache isn't loaded? Currently ensuring it in every caller.
+			//Note that we don't here ensure that it matches its cell size.
+			if (!image_cache[img->url]) {
+				sscanf(img->url, "data:image/png;base64,%s", string raw);
+				if (!raw) continue;
+				image_cache[img->url] = Image.PNG._decode(MIME.decode_base64(raw));
+			}
+			img = image_cache[img->url];
+			alpha->paste_mask(img->alpha, img->alpha, xpos, ypos);
+			image->paste_mask(img->image, img->alpha, xpos, ypos);
+		}
 	}
 	return ({image, alpha});
 }
 
+//Saves both images and grids
 __async__ void websocket_cmd_save_pixelart(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->landing) return;
+	if (!meta_cache) meta_cache = await(G->G->DB->load_config(1, "mockup"));
 	//The front end sends us a 2D array of colour identifiers given in six digit hex.
 	//Let's make, yaknow, an actual image. In PNG.
-	[Image.Image image, Image.Image alpha] = load_image(msg->grid);
+	[Image.Image image, Image.Image alpha] = load_image(msg->grid, msg);
 	if (!image) return;
 	string png = Image.PNG.encode(image, (["alpha": alpha]));
 	string url = "data:image/png;base64," + MIME.encode_base64(png, 1);
@@ -388,8 +431,9 @@ __async__ mapping websocket_cmd_load_pixelart(mapping(string:mixed) conn, mappin
 
 //The front end can't be bothered doing the work of rescaling, so it hands us a grid of colours,
 //asks us to do the rescaling, and accepts whatever we give it.
-mapping|zero websocket_cmd_rescale(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ mapping|zero websocket_cmd_rescale(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->landing) return 0;
+	if (!meta_cache) meta_cache = await(G->G->DB->load_config(1, "mockup"));
 	[Image.Image image, Image.Image alpha] = load_image(msg->grid);
 	if (!image) return 0;
 	image = image->scale((int)msg->xsize, (int)msg->ysize);

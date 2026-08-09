@@ -2,9 +2,6 @@ import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory
 const {BUTTON, INPUT, LI, OPTION, TD, TIME, TR} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
-//Grid mode is an incomplete WIP, normal work happens in tile mode
-document.body.classList.add("tilemode");
-
 //Set the order for core colours, shown in bright and dark forms
 const core_colors = ["#000000", "#000011", "#001100", "#110000", "#001111", "#110011", "#111100", "#111111"];
 let hue = "#111111";
@@ -13,9 +10,14 @@ const shades = [["0", "1", "2", "3", "4", "5", "6", "7"], ["8", "9", "a", "b", "
 let custom_colors = ["#a0f0c0"];
 try {custom_colors = JSON.parse(localStorage.getItem("mockup_custom_colors") || '["#a0f0c0"]');} catch (e) {}
 
-let curcolor = "#000000"; DOM("#curcolor").style.background = curcolor;
+//let curcolor = "#000000";
+let curcolor = "";
 let grid = [];
-let xsize = 25, ysize = 25;
+let xsize = 25, ysize = 25; //Grid size
+let cellsize = [1, 1];
+//let cellsize = [25, 25]; //Size of an individual cell. If [1, 1], we're making an image out of pixels; if larger, we're making a grid.
+let gridborder = 1; //Applicable only in grid mode, defines the thickness of the lines between cells
+let gridcolor = "#000000";
 let dragging = null, line = { };
 function color(hue, brightness) {
 	//Special-case a couple.
@@ -30,7 +32,9 @@ function color_to_background(col) {
 	if (img) return "url(" + img.url + ")"
 	return "transparent";
 }
+DOM("#curcolor").style.background = color_to_background(curcolor);
 function repaint() {
+	document.body.classList = (cellsize[0] === 1 && cellsize[1] === 1) ? "tilemode" : "gridmode";
 	replace_content("#palette", [
 		//Bright and dark colors
 		shaderows.map(s => TR(core_colors.map(col => TD({
@@ -133,7 +137,7 @@ on("pointerup", "#grid", e => {
 on("submit", "#saveimagedlg form", e => {
 	ws_sync.send({cmd: "save_pixelart",
 		name: e.match.elements.savename.value,
-		grid,
+		grid, cellsize, gridborder, gridcolor,
 	});
 	e.match.reset();
 });
@@ -213,7 +217,6 @@ on("submit", "#resizedlg form", e => {
 		let ypos = 0.5;
 		const g = [];
 		for (let y = 0; y < ys; ++y, ypos += dy) {
-			console.log("y", y, ypos, y * dy);
 			const row = [];
 			let xpos = 0.5;
 			for (let x = 0; x < xs; ++x, xpos += dx)
