@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, LI, TD, TIME, TR} = lindt; //autoimport
+const {BUTTON, LI, OPTION, TD, TIME, TR} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 //TODO: Store this in localStorage
@@ -122,16 +122,22 @@ function DATE(d) {
 
 export function sockmsg_update_meta(msg) {
 	meta = msg;
-	replace_content("#imagelist", Object.entries(meta.images)
+	const images = Object.entries(meta.images).sort((a, b) => a[0].localeCompare(b[0]));
+	replace_content("#imagelist", images.map(([id, img]) => LI([
+		id, " ",
+		//TODO: Check img.created_by, show if it was created by you
+		//Maybe show the user name that created it? Would need serverside help.
+		"(", DATE(img.created_at), ") ",
+		BUTTON({"data-id": id, class: "loadimg"}, "Load"),
+	])));
+	replace_content("#alltiles", Object.entries(meta.tiles)
 		.sort((a, b) => a[0].localeCompare(b[0]))
-		.map(([id, img]) => LI([
-			id, " ",
-			//TODO: Check img.created_by, show if it was created by you
-			//Maybe show the user name that created it? Would need serverside help.
-			"(", DATE(img.created_at), ") ",
-			BUTTON({"data-id": id, class: "loadimg"}, "Load"),
+		.map(([id, tile]) => LI([
+			tile.title || id, " (" + tile.xsize + "x" + tile.ysize + ") ",
+			BUTTON({type: "button", class: "deletetile", title: "Delete", "data-id": id}, "🗑"),
 		]))
 	);
+	replace_content("#allimages", images.map(([id, img]) => OPTION({value: id}, img.title || id)));
 }
 sockmsg_update_meta(meta);
 
@@ -163,3 +169,16 @@ on("submit", "#resizedlg form", e => {
 		});
 	}
 });
+
+on("submit", "#newtile", e => {
+	e.preventDefault(); //This is not a formdialog and should not close the form (or navigate)
+	ws_sync.send({cmd: "new_tile",
+		name: e.match.elements.name.value,
+		image: DOM("#allimages").value,
+		xsize: e.match.elements.xsize.value,
+		ysize: e.match.elements.ysize.value,
+	});
+});
+
+on("click", ".deletetile", simpleconfirm("Delete this tile? The corresponding image will be retained.",
+	e => ws_sync.send({cmd: "delete_tile", id: e.match.dataset.id})));

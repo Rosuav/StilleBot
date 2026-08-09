@@ -69,7 +69,7 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 
 <table border=1 id=grid></table>
 
-[Save](:.opendlg data-dlg=saveimagedlg) [Load](:.opendlg data-dlg=loadimagedlg) [Resize](:.opendlg data-dlg=resizedlg)
+[Save](:.opendlg data-dlg=saveimagedlg) [Load](:.opendlg data-dlg=loadimagedlg) [Resize](:.opendlg data-dlg=resizedlg) [Manage tiles](:.opendlg data-dlg=tilesdlg)
 
 > ### Save image
 > Image name: <input name=savename required>
@@ -88,11 +88,14 @@ td {
 </style>
 
 > ### Manage tiles
-> TODO: Create tile from existing image, setting its xsize/ysize,
-> or edit a tile's dimensions.
+> Create additional tile types using existing images, giving alternative
+> sizes for deployable objects.
 >
-> [Save](:type=submit) [Close](:.dialog_close)
-{: tag=formdialog #tilesdlg}
+> <ul id=alltiles></ul>
+> <form id=newtile>Add tile: <input name=name> <select id=allimages></select> <input type=number name=xsize> x <input type=number name=ysize> <button type=submit>Add</button></form>
+>
+> [Close](:.dialog_close)
+{: tag=dialog #tilesdlg}
 ";
 
 constant markdown_guest = #"# Mockups
@@ -301,12 +304,40 @@ __async__ void websocket_cmd_save_pixelart(mapping(string:mixed) conn, mapping(s
 		]);
 	});
 	meta_cache = meta;
+	update_meta();
+}
+
+void update_meta() {
 	//This is a relatively rare thing to change, so we send it out with a dedicated message
 	//to all connected clients (regardless of group).
-	string text = Standards.JSON.encode((["cmd": "update_meta"]) | meta, 4);
+	string text = Standards.JSON.encode((["cmd": "update_meta"]) | meta_cache, 4);
 	foreach (values(websocket_groups), array group)
 		foreach (group, object sock)
 			if (sock && sock->state == 1) sock->send_text(text);
+}
+
+__async__ void websocket_cmd_new_tile(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->landing) return;
+	mapping meta;
+	await(G->G->DB->mutate_config(1, "mockup") {meta = __ARGS__[0];
+		if (!meta->images[msg->image]) return;
+		meta->tiles[msg->name] = ([
+			"image": msg->image,
+			"xsize": +msg->xsize, "ysize": +msg->ysize,
+		]);
+	});
+	meta_cache = meta;
+	update_meta();
+}
+
+__async__ void websocket_cmd_delete_tile(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->landing) return;
+	mapping meta;
+	await(G->G->DB->mutate_config(1, "mockup") {meta = __ARGS__[0];
+		m_delete(meta->tiles, msg->id);
+	});
+	meta_cache = meta;
+	update_meta();
 }
 
 array(array(string)) decode_image(Image.Image image, Image.Image alpha) {
