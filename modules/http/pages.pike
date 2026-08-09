@@ -269,18 +269,14 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 				string userid = data->repository->name;
 				werror("GITHUB PUSH %O\n", userid);
 				//So, what actually changed?
+				/*
 				mapping changes = await(github_api_request("/repos/mustardmine/" + userid + "/compare/" + data->before + "..." + data->after));
 				//werror("CHANGES %O\n", changes->files);
 				foreach (changes->files, mapping file) {
 					//TODO.
 					//file->filename, file->sha
-					//If file->status == "added", check the configs (make sure they're loaded first)
-					//to see if there's anything in autogallery that matches the start of the name.
-					//Note that autogallery is keyed by gallery, and each one is a space-separated
-					//list of path prefixes. I don't know what I'd do about potential conflicts.
-					//If autogallery matches, fetch the contents of the corresponding Markdown file
-					//and immediately make the requisite change.
 				}
+				*/
 
 				//For now unconditionally reload contents. It may be worth checking the commits to see if the
 				//list of files has changed (since the vast majority of edits won't create or delete files),
@@ -406,6 +402,38 @@ __async__ mapping websocket_cmd_save_file(mapping(string:mixed) conn, mapping(st
 		]),
 	])));
 	if (resp->status == "409") return (["cmd": "error", "error": "File was edited while you were looking at it"]);
+	mapping repo = github_repo_details[userid];
+	if (!repo->?_config) await(query_github_repo(userid));
+	//Look to see if the file just saved was being uploaded into an autogallery directory.
+	if (msg->sha) return; //Only newly-created files get auto-added.
+	string autogallery;
+	foreach (repo->?_config->?autogallery || ([]); string gallery; string paths) {
+		//TODO maybe: If multiple matches, pick the longest? Would allow subdirectory
+		//segregation but with a top-level catch-all.
+		foreach (paths / " ", string path)
+			if (has_prefix(msg->path, path)) autogallery = gallery;
+	}
+	if (autogallery) {
+		array|mapping file = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + autogallery + ".md"));
+		if (!mappingp(file) || file->status == "404") return (["error": "File uploaded, autogallery not found"]);
+		string content = MIME.decode_base64(file->content);
+		sscanf(content, "%s<div%spaginated-gallery%s</div>%s", string initial, string tag, string body, string trailer);
+		//Try to make a reasonably plausible default title. Obviously the user can
+		//edit this afterwards.
+		sscanf(basename(msg->path), "%[^.]", string title);
+		title = replace(title, "_", " ");
+		body += sprintf("![%s](%s)\n", title, msg->path);
+		content = sprintf("%s<div%spaginated-gallery%s</div>%s", initial, tag, body, trailer);
+		await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + autogallery + ".md", ([
+			"method": "PUT",
+			"json": ([
+				"sha": file->sha,
+				"message": "Add image to gallery",
+				"committer": (["name": conn->session->user->display_name, "email": userid + "@twitchuser.invalid"]),
+				"content": MIME.encode_base64(content, 1),
+			]),
+		])));
+	}
 }
 
 __async__ mapping websocket_cmd_rename_file(mapping(string:mixed) conn, mapping(string:mixed) msg) {
