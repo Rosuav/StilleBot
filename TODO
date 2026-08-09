@@ -298,3 +298,10 @@
     - Add a button to send the password - currently only done if it's in the URL
   - Export entire mockup as a series of PNGs (one per scene)
   - Export as PDF??
+  - Background editor
+    - Same as pixel art but different palette
+    - Config: tile size (x, y), grid thickness (one option, applies to both x and y),
+      grid colour (allow transparent ("None"))
+    - Palette will be every existing pixel art of the correct tile size
+      - Maybe allow smaller tiles???
+    - Automatically update backgrounds when any of their tiles get edited
