@@ -233,11 +233,12 @@ on("click", ".edit-file", e => {
 	} else ws_sync.send({cmd: "fetch_file", path: e.match.dataset.path}); //Display when we have the content
 });
 on("click", "#filesave", e => {
+	show_banner("Saving file...", "pending");
 	ws_sync.send({
 		cmd: "save_file",
 		path: editing_file.path || (editing_file.prefix + DOM("#filename").value + editing_file.suffix),
 		content: btoa(ace_editor.getValue()),
-		sha: editing_file.sha
+		sha: editing_file.sha,
 	});
 	DOM("#editfiledlg").close();
 });
