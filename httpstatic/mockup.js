@@ -41,7 +41,7 @@ function preload_icon(url, needed) {
 
 const canvas = DOM("canvas");
 const ctx = canvas.getContext("2d");
-let dragging = null, dragbasex = 50, dragbasey = 10;
+let dragging = null, dragbasex = 50, dragbasey = 10, dragorigx, dragorigy;
 const elements_by_zorder = [];
 function draw_element(ctx, el) {
 	elements_by_zorder.push(el);
@@ -65,6 +65,7 @@ function draw_element(ctx, el) {
 		for (let x = 0; x < 3; ++x) {
 			for (let y = 0; y < 3; ++y) {
 				ctx.beginPath();
+				ctx.fillStyle = ctx.strokeStyle = x === 1 && y === 1 ? "cyan" : "blue"
 				ctx.arc(pos.x + el.xsize * x / 2, pos.y + el.ysize * y / 2, 3, 0, 2 * Math.PI);
 				ctx.fill();
 			}
@@ -121,15 +122,17 @@ canvas.addEventListener("pointerdown", e => {
 	}
 	const pos = element_position[el.id];
 	dragging = el; dragbasex = e.offsetX - pos.x; dragbasey = e.offsetY - pos.y;
+	dragorigx = pos.x; dragorigy = pos.y;
 });
 
 //Corners and middles defined as proportions of the width/height
+//[x fraction, y fraction, affinity]
 const corners = [
-	[0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
-	[0.0, 0.5], [0.5, 0.5], [1.0, 0.5],
-	[0.0, 1.0], [0.5, 1.0], [1.0, 1.0],
+	[0.0, 0.0, 1], [0.5, 0.0, 1], [1.0, 0.0, 1],
+	[0.0, 0.5, 1], [0.5, 0.5, 2], [1.0, 0.5, 1],
+	[0.0, 1.0, 1], [0.5, 1.0, 1], [1.0, 1.0, 1],
 ];
-function snap_to_elements(baseelem, xpos, ypos) {
+function snap_to_elements(baseelem, xpos, ypos, moresnap) {
 	//Start by defining the "search rectangle". If the base element is rotated, this should be the
 	//axis-aligned bounding box.
 	const left = xpos - SNAP_DISTANCE, top = ypos - SNAP_DISTANCE;
@@ -146,6 +149,10 @@ function snap_to_elements(baseelem, xpos, ypos) {
 		for (let c1 of corners) for (let c2 of corners) {
 			//Go through all nine corners and middles of each element. See if there's a good
 			//snap to be found.
+			//Normal snapping: The center only snaps to another center, but corners and
+			//edge middles all snap to each other.
+			//If any-snapping is active, affinities are ignored
+			if (!moresnap && c1[2] !== c2[2]) continue;
 			const x1 = xpos + c1[0] * baseelem.xsize, y1 = ypos + c1[1] * baseelem.ysize;
 			const x2 = pos.x + c2[0] * el.xsize, y2 = pos.y + c2[1] * el.ysize;
 			if ((x1 - x2) ** 2 + (y1 - y2) ** 2 <= SNAP_RANGE) {
@@ -161,7 +168,7 @@ function snap_to_elements(baseelem, xpos, ypos) {
 			//e1 is 0 for left/top of the base element, 1 for right/bottom.
 			//e2 is the corresponding for the test element.
 			const x1 = xpos + e1 * baseelem.xsize, y1 = ypos + e1 * baseelem.ysize;
-			const x2 = pos.x + e2 * el.xsize, y2 = pos.y + e2 * baseelem.ysize;
+			const x2 = pos.x + e2 * el.xsize, y2 = pos.y + e2 * el.ysize;
 			//if (x1 - x2 <= SNAP_DISTANCE && x2 - x1 <= SNAP_DISTANCE) //Is it better to do two comparisons, to call Math.abs(), or to square the number?
 			if ((x1 - x2) ** 2 <= SNAP_RANGE) //Going with squaring for consistency with the corner snaps.
 				//Horizontal snapping (to a vertical edge)
@@ -179,7 +186,7 @@ canvas.addEventListener("pointermove", e => {
 	if (dragging) {
 		cursor = "grabbing";
 		const pos = element_position[dragging.id];
-		[pos.x, pos.y] = snap_to_elements(dragging, e.offsetX - dragbasex, e.offsetY - dragbasey);
+		[pos.x, pos.y] = snap_to_elements(dragging, e.offsetX - dragbasex, e.offsetY - dragbasey, e.shiftKey);
 		repaint();
 	}
 	else {
@@ -189,12 +196,27 @@ canvas.addEventListener("pointermove", e => {
 	}
 	canvas.style.cursor = cursor;
 });
+document.onkeydown = document.onkeyup = e => {
+	if (dragging) {
+		if (e.key === "Escape") {
+			//Note that we don't release pointer capture until pointer up
+			const pos = element_position[dragging.id];
+			dragging = null; pos.x = dragorigx; pos.y = dragorigy;
+			repaint();
+		}
+		else if (e.key === "Shift") {
+			const pos = element_position[dragging.id];
+			[pos.x, pos.y] = snap_to_elements(dragging, pos.x, pos.y, e.shiftKey);
+			repaint();
+		}
+	}
+}
 
 canvas.addEventListener("pointerup", e => {
 	if (!dragging) return;
 	e.target.releasePointerCapture(e.pointerId);
 	const pos = element_position[dragging.id];
-	[pos.x, pos.y] = snap_to_elements(dragging, e.offsetX - dragbasex, e.offsetY - dragbasey);
+	[pos.x, pos.y] = snap_to_elements(dragging, e.offsetX - dragbasex, e.offsetY - dragbasey, e.shiftKey);
 	ws_sync.send({cmd: "move_element", scene: curscene, id: dragging.id, x: pos.x, y: pos.y, clientid});
 	dragging = null;
 	repaint();
