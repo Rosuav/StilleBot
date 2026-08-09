@@ -29,7 +29,8 @@ Commonly-used emoji
 -------------------
 
 * Gear: BUTTON({type: "button", title: "Configure"}, "\u2699")
-* Pencil: BUTTON({class: "editbtn", type: "button"}, "\u{1F589}") or U+270D WRITING HAND
+* Pencil: BUTTON({type: "button", class: "editbtn"}, "\u{1F589}") or U+270D WRITING HAND
+* Trashcan: BUTTON({type: "button", class: "confirmdelete", title: "Delete"}, "🗑"),
 
 
 Hopping the Bot
