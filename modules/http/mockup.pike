@@ -307,6 +307,7 @@ __async__ void websocket_cmd_save_pixelart(mapping(string:mixed) conn, mapping(s
 			"url": url,
 			"created_at": time(),
 			"created_by": conn->session->user->id,
+			"xsize": image->xsize(), "ysize": image->ysize(),
 		]);
 		meta->tiles[msg->name] = ([
 			"image": msg->name,

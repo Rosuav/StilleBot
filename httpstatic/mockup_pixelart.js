@@ -161,7 +161,7 @@ export function sockmsg_update_meta(msg) {
 			BUTTON({type: "button", class: "deletetile", title: "Delete", "data-id": id}, "🗑"),
 		]))
 	);
-	replace_content("#allimages", images.map(([id, img]) => OPTION({value: id}, img.title || id)));
+	replace_content("#allimages", images.map(([id, img]) => OPTION({value: id}, [img.title || id, " (" + img.xsize + "x" + img.ysize + ")"])));
 }
 sockmsg_update_meta(meta);
 
