@@ -58,7 +58,7 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 > [Close](:.dialog_close)
 {: tag=dialog #loadimagedlg}
 
-<table border=1 id=selections><tr><td id=curcolor>Current</td><td class=pickcolor data-color=>Transparent</td></tr></table>
+<table border=1 id=selections><tr><td>Current</td><td id=curcolor></td><td class=pickcolor data-color=>Transparent</td></tr></table>
 
 > ### Custom Colors
 > <ul id=colorlist></ul>
@@ -88,7 +88,7 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 {: tag=formdialog #saveimagedlg}
 
 <style>
-#selections {cursor: default;}
+#selections {cursor: default; font-size: small;}
 /* TODO: Put a background on #grid so transparent pixels aren't the same as any single colour */
 #grid {margin-top: 1em;}
 td {
