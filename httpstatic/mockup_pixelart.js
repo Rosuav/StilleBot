@@ -153,12 +153,7 @@ export function sockmsg_pixelart_loaded(msg) { //Also, curiously, triggered by a
 }
 
 on("submit", "#resizedlg form", e => {
-	if (DOM("#simple").checked) {
-		//Simple resize - crop or add transparency
-		xsize = +DOM("#xsize").value;
-		ysize = +DOM("#ysize").value;
-		repaint();
-	} else {
+	if (DOM("#antialias").checked) {
 		//Rescale. So, I could implement a nice complicated algorithm to rescale an
 		//image.... or.... I could sing out "hey Pike, can you rescale this for me?"
 		//Yes, that does introduce network latency, but that's a whole lot easier.
@@ -167,6 +162,28 @@ on("submit", "#resizedlg form", e => {
 			ysize: +DOM("#ysize").value,
 			grid,
 		});
+	} else if (DOM("#scale").checked) {
+		//Multiplicative rescale. Much simpler than antialiasing and retains the
+		//color palette, but introduces jaggedness when you do small adjustments.
+		const xs = +DOM("#xsize").value, ys = +DOM("#ysize").value;
+		const dx = xsize / xs, dy = (ysize + 1) / (ys + 1);
+		let ypos = 0.5;
+		const g = [];
+		for (let y = 0; y < ys; ++y, ypos += dy) {
+			console.log("y", y, ypos, y * dy);
+			const row = [];
+			let xpos = 0.5;
+			for (let x = 0; x < xs; ++x, xpos += dx)
+				row.push(grid[ypos|0][xpos|0]);
+			g.push(row);
+		}
+		grid = g; xsize = xs; ysize = ys;
+		repaint();
+	} else {
+		//Simple resize - crop or add transparency
+		xsize = +DOM("#xsize").value;
+		ysize = +DOM("#ysize").value;
+		repaint();
 	}
 });
 

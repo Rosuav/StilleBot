@@ -62,7 +62,9 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 
 > ### Resize image
 > Resize to: <input type=number id=xsize> x <input type=number id=ysize><br>
-> <label><input type=radio checked name=mode id=simple> Crop/position</label> <label><input type=radio name=mode> Rescale</label>
+> <label><input type=radio checked name=mode> Crop/position</label>
+> <label><input type=radio name=mode id=scale> Rescale</label>
+> <label><input type=radio name=mode id=antialias> Antialias</label>
 >
 > [Resize](:type=submit) [Cancel](:.dialog_close)
 {: tag=formdialog #resizedlg}
