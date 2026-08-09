@@ -114,6 +114,7 @@ function show_banner(text, cls, fade) {
 //show_banner("Something's happening", "pending");
 //show_banner("Something's happened", "done", 10);
 
+export function sockmsg_status(msg) {show_banner(msg.message, "pending", 30);}
 export function sockmsg_error(msg) {show_banner(msg.error, "error", 30);}
 
 let last_build_status = "completed";

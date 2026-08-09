@@ -373,7 +373,7 @@ __async__ mapping websocket_cmd_create_site(mapping(string:mixed) conn, mapping(
 		return (["cmd": "error", "error": "Unable to create site (see log)"]);
 	}
 	pending_site_creation[userid] = 1;
-	return (["cmd": "status", "message": "Creating web site, please wait..."]); //TODO: Show this in the front end
+	return (["cmd": "status", "message": "Creating web site, please wait..."]);
 }
 
 __async__ mapping websocket_cmd_fetch_file(mapping(string:mixed) conn, mapping(string:mixed) msg) {
