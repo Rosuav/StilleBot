@@ -66,7 +66,15 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 > [Save](:type=submit) [Cancel](:.dialog_close)
 {: tag=formdialog #customcolordlg}
 
-<table border=1 id=palette></table>
+<table border=1 id=palette class=tileonly></table>
+
+> ### Configure
+> TODO: Grid tile size, default 25x25
+>
+> [Save](:type=submit) [Cancel](:.dialog_close)
+{: tag=formdialog #gridcfgdlg}
+
+<table border=1 id=toolbox class=gridonly></table>
 
 > ### Resize image
 > Resize to: <input type=number id=xsize> x <input type=number id=ysize><br>
@@ -79,7 +87,8 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 
 <table border=1 id=grid></table>
 
-[Save](:.opendlg data-dlg=saveimagedlg) [Load](:.opendlg data-dlg=loadimagedlg) [Resize](:.opendlg data-dlg=resizedlg) [Manage tiles](:.opendlg data-dlg=tilesdlg)
+[Save](:.opendlg data-dlg=saveimagedlg) [Load](:.opendlg data-dlg=loadimagedlg) [Resize](:.opendlg data-dlg=resizedlg)
+[Manage tiles](:.opendlg data-dlg=tilesdlg .tileonly) [Configure](:.opendlg data-dlg=gridcfgdlg .gridonly)
 
 > ### Save image
 > Image name: <input name=savename required>
@@ -88,6 +97,8 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 {: tag=formdialog #saveimagedlg}
 
 <style>
+.tilemode .gridonly {display: none;}
+.gridmode .tileonly {display: none;}
 #selections {cursor: default; font-size: small;}
 /* TODO: Put a background on #grid so transparent pixels aren't the same as any single colour */
 #grid {margin-top: 1em;}

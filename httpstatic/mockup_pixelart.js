@@ -2,6 +2,9 @@ import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory
 const {BUTTON, INPUT, LI, OPTION, TD, TIME, TR} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
+//Grid mode is an incomplete WIP, normal work happens in tile mode
+document.body.classList.add("tilemode");
+
 //Set the order for core colours, shown in bright and dark forms
 const core_colors = ["#000000", "#000011", "#001100", "#110000", "#001111", "#110011", "#111100", "#111111"];
 let hue = "#111111";
@@ -10,7 +13,7 @@ const shades = [["0", "1", "2", "3", "4", "5", "6", "7"], ["8", "9", "a", "b", "
 let custom_colors = ["#a0f0c0"];
 try {custom_colors = JSON.parse(localStorage.getItem("mockup_custom_colors") || '["#a0f0c0"]');} catch (e) {}
 
-let curcolor = "#000000"; DOM("#curcolor").style.backgroundColor = curcolor;
+let curcolor = "#000000"; DOM("#curcolor").style.background = curcolor;
 let grid = [];
 let xsize = 25, ysize = 25;
 let dragging = null, line = { };
@@ -20,18 +23,25 @@ function color(hue, brightness) {
 	if (hue === "#ffffff" && brightness === "7") return "#cccccc";
 	return hue.replace(/1/g, brightness);
 }
+function color_to_background(col) {
+	if (!col) return "transparent";
+	if (col[0] === "#") return col;
+	const img = meta.images[col];
+	if (img) return "url(" + img.url + ")"
+	return "transparent";
+}
 function repaint() {
 	replace_content("#palette", [
 		//Bright and dark colors
 		shaderows.map(s => TR(core_colors.map(col => TD({
 			class: "pickcolor",
 			"data-hue": col === "#000000" ? "#111111" : col,
-			"data-color": color(col, s), style: "background-color: " + color(col, s),
+			"data-color": color(col, s), style: "background: " + color(col, s),
 		})))),
 		//Shades of the selected hue
-		shades.map(row => TR(row.map(s => TD({class: "pickcolor", "data-color": hue.replace(/1/g, s), style: "background-color: " + hue.replace(/1/g, s)})))),
+		shades.map(row => TR(row.map(s => TD({class: "pickcolor", "data-color": hue.replace(/1/g, s), style: "background: " + hue.replace(/1/g, s)})))),
 		TR([
-			custom_colors.map(col => TD({class: "pickcolor", "data-color": col, style: "background-color: " + col})),
+			custom_colors.map(col => TD({class: "pickcolor", "data-color": col, style: "background: " + col})),
 			TD({style: "padding: 0 0 0 8px", colSpan: 8 - custom_colors.length}, BUTTON({type: "button", id: "pickcustoms", title: "Pick custom colors"}, "\u2699")),
 		]),
 	]);
@@ -44,7 +54,7 @@ function repaint() {
 	DOM("#xsize").value = xsize;
 	DOM("#ysize").value = ysize;
 	replace_content("#grid", grid.map((row, y) => TR(row.map((cell, x) => TD({
-		style: "background-color: " + (line[x + "," + y] ? curcolor : cell || "transparent")
+		style: "background: " + color_to_background(line[x + "," + y] ? curcolor : cell)
 	})))));
 }
 
@@ -86,7 +96,7 @@ export function render(data) {
 }
 
 on("click", ".pickcolor", e => {
-	DOM("#curcolor").style.backgroundColor = (curcolor = e.match.dataset.color) || "transparent";
+	DOM("#curcolor").style.background = color_to_background(curcolor = e.match.dataset.color);
 	if (e.match.dataset.hue) {hue = e.match.dataset.hue; repaint();}
 });
 
@@ -162,6 +172,15 @@ export function sockmsg_update_meta(msg) {
 		]))
 	);
 	replace_content("#allimages", images.map(([id, img]) => OPTION({value: id}, [img.title || id, " (" + img.xsize + "x" + img.ysize + ")"])));
+	let row = [], toolbox = [];
+	for (let [id, img] of images) {
+		if (img.xsize !== 25 || img.ysize !== 25) continue; //TODO: Use the configured tile size, not hard-coded 25x25
+		if (row.length >= 10) {toolbox.push(TR(row)); row = [];}
+		row.push(TD({class: "pickcolor", "data-color": id, style: "background: url(" + img.url + ")"}));
+	}
+	if (!row.length) row.push(TD("(none)"));
+	toolbox.push(TR(row));
+	replace_content("#toolbox", toolbox);
 }
 sockmsg_update_meta(meta);
 
