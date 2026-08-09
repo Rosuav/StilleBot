@@ -45,7 +45,6 @@ function build_directory_tree(files, options) {
 		] : [
 			"Create new ",
 			BUTTON({class: "new-file", type: "button", "data-prefix": path, "data-suffix": options.suffix || ""}, "\u{1F589}"),
-			BUTTON({class: "edit-file", type: "button", "data-path": path}, "Load"),
 		]
 	);
 	const dirs = {"": []};
