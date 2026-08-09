@@ -29,7 +29,7 @@ Build simple web pages and host them on GitHub Pages. You retain full control at
 > [Save](:#filesave) [Close without saving](:.dialog_close)
 {: tag=dialog #editfiledlg}
 
-<!-- -->
+<div id=banner></div>
 
 > ### Rename file
 > Old name: <input id=oldpath readonly></code><br>
@@ -48,6 +48,31 @@ Build simple web pages and host them on GitHub Pages. You retain full control at
 	padding: 4px;
 }
 #fileimage {max-width: 900px;}
+#banner {
+	position: fixed;
+	top: 10px; right: 10px;
+	opacity: 0;
+	transition: opacity 60s;
+	background: aliceblue;
+	border: 1px solid rebeccapurple;
+	padding: 0.5em 2em;
+}
+#banner.visible {
+	transition: opacity 0.5s;
+	opacity: 1;
+}
+#banner.error {
+	background: #fee;
+	border-color: red;
+}
+#banner.pending {
+	background: #eef;
+	border-color: darkblue;
+}
+#banner.done {
+	background: #efe;
+	border-color: darkgreen;
+}
 </style>
 
 > ### Collaborators and ownership
@@ -92,7 +117,7 @@ __async__ mapping|array|string github_api_request(string endpoint, mapping|void 
 			if (install_token_expiration < time() + 60) {
 				//FIXME: How are we supposed to know the correct installation ID? Should that go into instance_config?
 				mapping token = await(github_api_request("/app/installations/147687849/access_tokens", (["method": "POST", "authtype": "JWT"])));
-				if (!token->token) return (["error": "Unable to get token", "raw": token]);
+				if (!token->token) return (["cmd": "error", "error": "Unable to get token", "raw": token]);
 				install_token_expiration = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", token->expires_at)->unix_time();
 				install_token = token->token;
 			}
@@ -361,7 +386,7 @@ __async__ mapping websocket_cmd_fetch_file(mapping(string:mixed) conn, mapping(s
 	if (arrayp(file)) {
 		//It's a directory. We should have expanded these out BEFORE sending to the front end,
 		//so that it can show the full tree interactively; this endpoint shouldn't get these requests.
-		return (["error": "Only fetch files, not directories"]);
+		return (["cmd": "error", "error": "Only fetch files, not directories"]);
 	}
 	if (file->status == "404") return (["cmd": "file_loaded", "path": msg->path]); //Without the "type" it indicates that the file isn't present.
 	//Is file->encoding ever *not* going to be "base64"?
@@ -391,10 +416,10 @@ __async__ mapping websocket_cmd_rename_file(mapping(string:mixed) conn, mapping(
 		werror("Querying repository...\n");
 		await(query_github_repo(userid));
 		repo = github_repo_details[userid];
-		if (!repo) return (["error": "Bad repository"]); //Maybe the repo doesn't actually exist
+		if (!repo) return (["cmd": "error", "error": "Bad repository"]); //Maybe the repo doesn't actually exist
 	}
 	string mode = repo->filemodes[msg->oldpath];
-	if (!mode) return (["error": "File " + msg->oldpath + " not found for rename"]);
+	if (!mode) return (["cmd": "error", "error": "File " + msg->oldpath + " not found for rename"]);
 	mapping tree = await(github_api_request("/repos/mustardmine/" + userid + "/git/trees", (["json": ([
 		"base_tree": repo->sha,
 		"tree": ({
@@ -463,7 +488,7 @@ __async__ mapping websocket_cmd_transfer_repository(mapping(string:mixed) conn, 
 	mapping repo = github_repo_details[userid];
 	if (!repo) {await(query_github_repo(userid)); repo = github_repo_details[userid];}
 	//Ensure that the chosen user has been added as a collaborator
-	if (!repo->collab || !has_value(repo->collab->username, msg->username)) return (["error": "Can only transfer to an existing collaborator"]);
+	if (!repo->collab || !has_value(repo->collab->username, msg->username)) return (["cmd": "error", "error": "Can only transfer to an existing collaborator"]);
 	//Does the site have GH Pages?
 	string reponame = "mm-web-site";
 	if (!has_prefix(repo->html_url, "https://github.com/") && !has_prefix(repo->html_url, "https://mustardmine.github.io/")) {

@@ -45,6 +45,7 @@ function build_directory_tree(files, options) {
 		] : [
 			"Create new ",
 			BUTTON({class: "new-file", type: "button", "data-prefix": path, "data-suffix": options.suffix || ""}, "\u{1F589}"),
+			BUTTON({class: "edit-file", type: "button", "data-path": path}, "Load"),
 		]
 	);
 	const dirs = {"": []};
@@ -99,6 +100,21 @@ on("drop", ".filedropzone", e => {
 	e.preventDefault();
 	for (let f of e.dataTransfer.items) upload(f.getAsFile(), e.match.dataset.prefix);
 });
+
+let banner_fade = 0;
+function show_banner(text, cls, fade) {
+	clearTimeout(banner_fade);
+	if (cls) DOM("#banner").className = cls;
+	replace_content("#banner", [
+		P(text),
+	]).classList.add("visible");
+	if (fade) banner_fade = setTimeout(() => DOM("#banner").classList.remove("visible"), fade * 1000);
+}
+//show_banner("Something's wrong", "error");
+//show_banner("Something's happening", "pending");
+//show_banner("Something's happened", "done", 10);
+
+export function sockmsg_error(msg) {show_banner(msg.error, "error", 30);}
 
 export function render(data) {
 	if (!data.self) return replace_content("#content", P([
