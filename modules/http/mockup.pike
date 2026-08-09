@@ -59,6 +59,13 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 {: tag=dialog #loadimagedlg}
 
 <table border=1 id=selections><tr><td id=curcolor>Current</td><td class=pickcolor data-color=>Transparent</td></tr></table>
+
+> ### Custom Colors
+> <ul id=colorlist></ul>
+>
+> [Save](:type=submit) [Cancel](:.dialog_close)
+{: tag=formdialog #customcolordlg}
+
 <table border=1 id=palette></table>
 
 > ### Resize image

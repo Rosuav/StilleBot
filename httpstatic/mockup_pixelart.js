@@ -1,19 +1,40 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, LI, OPTION, TD, TIME, TR} = lindt; //autoimport
+const {BUTTON, INPUT, LI, OPTION, TD, TIME, TR} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
-//TODO: Store this in localStorage
-const colors = [
-	["#000000", "#0000ff", "#00ff00", "#ff0000", "#00ffff", "#ff00ff", "#ffff00", "#ffffff"],
-	["#666666", "#000077", "#007700", "#770000", "#007777", "#770077", "#777700", "#cccccc"],
-];
+//Set the order for core colours, shown in bright and dark forms
+const core_colors = ["#000000", "#000011", "#001100", "#110000", "#001111", "#110011", "#111100", "#111111"];
+let hue = "#111111";
+const shaderows = ["f", "7"]; //Bright and dark initially (also used for selecting hue for the next two rows)
+const shades = [["0", "1", "2", "3", "4", "5", "6", "7"], ["8", "9", "a", "b", "c", "d", "e", "f"]];
+let custom_colors = ["#a0f0c0"];
+try {custom_colors = JSON.parse(localStorage.getItem("mockup_custom_colors") || '["#a0f0c0"]');} catch (e) {}
 
 let curcolor = "#000000"; DOM("#curcolor").style.backgroundColor = curcolor;
 let grid = [];
 let xsize = 25, ysize = 25;
 let dragging = null, line = { };
+function color(hue, brightness) {
+	//Special-case a couple.
+	if (hue === "#000000" && brightness === "7") return "#666666";
+	if (hue === "#ffffff" && brightness === "7") return "#cccccc";
+	return hue.replace(/1/g, brightness);
+}
 function repaint() {
-	replace_content("#palette", colors.map(row => TR(row.map(col => TD({class: "pickcolor", "data-color": col, style: "background-color: " + col})))));
+	replace_content("#palette", [
+		//Bright and dark colors
+		shaderows.map(s => TR(core_colors.map(col => TD({
+			class: "pickcolor",
+			"data-hue": col === "#000000" ? "#111111" : col,
+			"data-color": color(col, s), style: "background-color: " + color(col, s),
+		})))),
+		//Shades of the selected hue
+		shades.map(row => TR(row.map(s => TD({class: "pickcolor", "data-color": hue.replace(/1/g, s), style: "background-color: " + hue.replace(/1/g, s)})))),
+		TR([
+			custom_colors.map(col => TD({class: "pickcolor", "data-color": col, style: "background-color: " + col})),
+			TD({style: "padding: 0 0 0 8px", colSpan: 8 - custom_colors.length}, BUTTON({type: "button", id: "pickcustoms", title: "Pick custom colors"}, "\u2699")),
+		]),
+	]);
 	if (grid.length > ysize) grid.length = ysize;
 	while (grid.length < ysize) grid.push([]);
 	for (let row of grid) {
@@ -64,7 +85,10 @@ export function render(data) {
 	repaint();
 }
 
-on("click", ".pickcolor", e => DOM("#curcolor").style.backgroundColor = (curcolor = e.match.dataset.color) || "transparent");
+on("click", ".pickcolor", e => {
+	DOM("#curcolor").style.backgroundColor = (curcolor = e.match.dataset.color) || "transparent";
+	if (e.match.dataset.hue) {hue = e.match.dataset.hue; repaint();}
+});
 
 on("pointerdown", "#grid", e => {
 	if (e.button) return; //Only left clicks
@@ -199,3 +223,31 @@ on("submit", "#newtile", e => {
 
 on("click", ".deletetile", simpleconfirm("Delete this tile? The corresponding image will be retained.",
 	e => ws_sync.send({cmd: "delete_tile", id: e.match.dataset.id})));
+
+function update_custom_colors(colors) {
+	replace_content("#colorlist", [
+		colors.map(col => LI([INPUT({type: "color", value: col}), BUTTON({type: "button", class: "deletecolor", title: "Delete"}, "🗑")])),
+		LI(BUTTON({type: "button", id: "addcolor"}, "Add")),
+	]);
+}
+on("click", "#pickcustoms", e => {
+	update_custom_colors(custom_colors);
+	DOM("#customcolordlg").showModal();
+});
+function fetch_custom_colors() {
+	const colors = [];
+	document.querySelectorAll("#colorlist input[type=color]").forEach(el => colors.push(el.value));
+	return colors;
+}
+
+on("click", "#addcolor", e => {
+	const colors = fetch_custom_colors();
+	colors.push("#ffffff");
+	update_custom_colors(colors);
+});
+
+on("submit", "#customcolordlg form", e => {
+	custom_colors = fetch_custom_colors();
+	repaint();
+	localStorage.setItem("mockup_custom_colors", JSON.stringify(custom_colors));
+});
