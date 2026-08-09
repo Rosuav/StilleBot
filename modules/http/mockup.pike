@@ -323,7 +323,7 @@ __async__ void websocket_cmd_new_tile(mapping(string:mixed) conn, mapping(string
 		if (!meta->images[msg->image]) return;
 		meta->tiles[msg->name] = ([
 			"image": msg->image,
-			"xsize": +msg->xsize, "ysize": +msg->ysize,
+			"xsize": (int)msg->xsize, "ysize": (int)msg->ysize,
 		]);
 	});
 	meta_cache = meta;

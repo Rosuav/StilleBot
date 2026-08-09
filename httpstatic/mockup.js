@@ -96,7 +96,7 @@ function repaint() {
 	if (dragging) draw_element(ctx, dragging); //Anything being dragged gets drawn last, ensuring it is at the top of z-order.
 }
 
-function element_at_position(x, y, filter) {
+function element_at_position(x, y) {
 	//Iterate through all elements, starting at the top of the z-order stack and going
 	//to the bottom; the first one found containing the given position is returned.
 	for (let i = elements_by_zorder.length - 1; i >= 0; --i) {
