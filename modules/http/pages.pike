@@ -235,6 +235,26 @@ __async__ void query_github_repo(string userid) {
 	send_updates_all("#" + userid);
 }
 
+//Handle automated editing of a file. Pass a mutator; it will be given the current contents
+//as a string, or 0 if the file doesn't exist. If it returns non-zero, the file will be
+//updated to that content.
+__async__ void edit_file(string userid, string filename, string commitmsg, function mutator) {
+	mapping user = await(get_user_info(userid));
+	array|mapping file = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + filename));
+	string content;
+	if (!mappingp(file) || file->status == "404") content = mutator(0);
+	else content = mutator(MIME.decode_base64(file->content));
+	if (content) await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + filename, ([
+		"method": "PUT",
+		"json": ([
+			"sha": file->sha,
+			"message": commitmsg,
+			"committer": (["name": user->display_name, "email": userid + "@twitchuser.invalid"]),
+			"content": MIME.encode_base64(content, 1),
+		]),
+	])));
+}
+
 //When a repo is created, the corresponding GH Pages site can't be made until the master branch
 //exists. This happens automatically (from the template) but takes a moment. When we see the
 //push notification, we can continue with creation.
@@ -268,6 +288,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 				//diffs as available.
 				string userid = data->repository->name;
 				werror("GITHUB PUSH %O\n", userid);
+
 				//So, what actually changed?
 				/*
 				mapping changes = await(github_api_request("/repos/mustardmine/" + userid + "/compare/" + data->before + "..." + data->after));
@@ -277,12 +298,19 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 					//file->filename, file->sha
 				}
 				*/
-
 				//For now unconditionally reload contents. It may be worth checking the commits to see if the
 				//list of files has changed (since the vast majority of edits won't create or delete files),
 				//but it's simpler just to reload.
 				load_repo_details(userid, "contents");
+
 				if (m_delete(pending_site_creation, userid)) {
+					mapping user = await(get_user_info(userid));
+					edit_file(userid, "_layouts/default.html", "Set Twitch username") {
+						return replace(__ARGS__[0], ([
+							"$$login$$": user->login,
+							"$$displayname$$": user->display_name,
+						]));
+					};
 					mapping pg = await(github_api_request("/repos/mustardmine/" + userid + "/pages", (["json": (["source": (["branch": "master"])])])));
 					werror("Created Pages: %O\n", pg);
 					//TODO: Error checking. What happens if Pages can't be set up?
@@ -389,7 +417,7 @@ __async__ mapping websocket_cmd_fetch_file(mapping(string:mixed) conn, mapping(s
 	return file & (<"content", "path", "name", "sha", "type">) | (["cmd": "file_loaded"]);
 }
 
-__async__ mapping websocket_cmd_save_file(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ mapping|zero websocket_cmd_save_file(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	string userid = conn->siteid;
 	if (conn->session->fake) return (["cmd": "demo"]);
 	mapping resp = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + msg->path, ([
@@ -405,7 +433,7 @@ __async__ mapping websocket_cmd_save_file(mapping(string:mixed) conn, mapping(st
 	mapping repo = github_repo_details[userid];
 	if (!repo->?_config) await(query_github_repo(userid));
 	//Look to see if the file just saved was being uploaded into an autogallery directory.
-	if (msg->sha) return; //Only newly-created files get auto-added.
+	if (msg->sha) return 0; //Only newly-created files get auto-added.
 	string autogallery;
 	foreach (repo->?_config->?autogallery || ([]); string gallery; string paths) {
 		//TODO maybe: If multiple matches, pick the longest? Would allow subdirectory
@@ -413,27 +441,17 @@ __async__ mapping websocket_cmd_save_file(mapping(string:mixed) conn, mapping(st
 		foreach (paths / " ", string path)
 			if (has_prefix(msg->path, path)) autogallery = gallery;
 	}
-	if (autogallery) {
-		array|mapping file = await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + autogallery + ".md"));
-		if (!mappingp(file) || file->status == "404") return (["error": "File uploaded, autogallery not found"]);
-		string content = MIME.decode_base64(file->content);
+	if (autogallery) edit_file(userid, autogallery + ".md", "Add image to gallery") {
+		if (!__ARGS__[0]) {send_msg(conn, (["error": "File uploaded, autogallery not found"])); return 0;}
+		string content = __ARGS__[0];
 		sscanf(content, "%s<div%spaginated-gallery%s</div>%s", string initial, string tag, string body, string trailer);
 		//Try to make a reasonably plausible default title. Obviously the user can
 		//edit this afterwards.
 		sscanf(basename(msg->path), "%[^.]", string title);
 		title = replace(title, "_", " ");
 		body += sprintf("![%s](%s)\n", title, msg->path);
-		content = sprintf("%s<div%spaginated-gallery%s</div>%s", initial, tag, body, trailer);
-		await(github_api_request("/repos/mustardmine/" + userid + "/contents/" + autogallery + ".md", ([
-			"method": "PUT",
-			"json": ([
-				"sha": file->sha,
-				"message": "Add image to gallery",
-				"committer": (["name": conn->session->user->display_name, "email": userid + "@twitchuser.invalid"]),
-				"content": MIME.encode_base64(content, 1),
-			]),
-		])));
-	}
+		return sprintf("%s<div%spaginated-gallery%s</div>%s", initial, tag, body, trailer);
+	};
 }
 
 __async__ mapping websocket_cmd_rename_file(mapping(string:mixed) conn, mapping(string:mixed) msg) {
