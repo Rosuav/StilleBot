@@ -675,6 +675,11 @@ constant builtin_param = ({
 		"\0": "Game",
 		"first=First": ({"/Reward/first/second/third/last"}),
 		"boss=Boss": ({"/Action/reset/slay"}),
+		"rps=RPS": ({([
+			"\0": "Action",
+			"predict": ({"Window (secs)"}),
+			"complete": ({"Winner"}),
+		])}),
 	]),
 });
 constant vars_provided = ([
@@ -685,6 +690,7 @@ constant vars_provided = ([
 //Should this be stored somewhere other than ephemeral memory? If the bot hops, this gets lost, with the (tragic) result
 //that people can claim an additional reward that stream without getting shamed for it.
 @retain: mapping already_claimed = ([]);
+@retain: mapping rps_predictions_pending = ([]); //No big deal if this is lost, just means the prediction won't autocomplete
 __async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
 	if (cfg->simulate) return ([]); //This doesn't really simulate well. There are better ways of testing.
 	mapping game = await(G->G->DB->load_config(channel->userid, "minigames"))[param[0]];
@@ -745,6 +751,38 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 					//Stable or simple increase. Add a fixed value (maybe zero) to the existing HP.
 					return (["{newhp}": (string)((int)channel->expand_variables("$bossmaxhp$") + hpgrowth)]);
 			}
+		}
+	} else if (param[0] == "rps") {
+		mapping cfg = sections->rps | game;
+		switch (param[1]) {
+			case "predict": {
+				mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/predictions",
+					(["Authorization": channel->userid]),
+					(["json": ([
+						"broadcaster_id": channel->userid,
+						"title": "Who will win the rock-paper-scissors?",
+						"outcomes": (["title": String.capitalize(indices(rps_commands[cfg->theme])[*])[*]]),
+						"prediction_window": (int)param[2],
+					])])));
+				rps_predictions_pending[channel->userid] = ret->data[0];
+				break;
+			}
+			case "complete": {
+				mapping pred = m_delete(rps_predictions_pending, channel->userid);
+				if (!pred) break;
+				string winner = lower_case(param[2]), winnerid;
+				foreach (pred->outcomes, mapping o) if (lower_case(o->title) == winner) winnerid = o->id;
+				if (!winnerid) break;
+				mapping ret = await(twitch_api_request("https://api.twitch.tv/helix/predictions",
+					(["Authorization": channel->userid]),
+					(["method": "PATCH", "json": ([
+						"broadcaster_id": channel->userid,
+						"id": pred->id,
+						"status": "RESOLVED",
+						"winning_outcome_id": winnerid,
+					])])));
+			}
+			default: break;
 		}
 	}
 	return ([]);
