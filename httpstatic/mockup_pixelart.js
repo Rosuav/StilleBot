@@ -14,8 +14,7 @@ try {custom_colors = JSON.parse(localStorage.getItem("mockup_custom_colors") || 
 let curcolor = "";
 let grid = [];
 let xsize = 25, ysize = 25; //Grid size
-let cellsize = [1, 1];
-//let cellsize = [25, 25]; //Size of an individual cell. If [1, 1], we're making an image out of pixels; if larger, we're making a grid.
+let cellsize = [1, 1]; //Size of an individual cell. If [1, 1], we're making an image out of pixels; if larger, we're making a grid.
 let gridborder = 1; //Applicable only in grid mode, defines the thickness of the lines between cells
 let gridcolor = "#000000";
 let dragging = null, line = { };
@@ -272,4 +271,23 @@ on("submit", "#customcolordlg form", e => {
 	custom_colors = fetch_custom_colors();
 	repaint();
 	localStorage.setItem("mockup_custom_colors", JSON.stringify(custom_colors));
+});
+
+on("click", "#configurebtn", e => {
+	const tilemode = cellsize[0] === 1 && cellsize[1] === 1;
+	DOM("#cellxsize").value = tilemode ? 25 : cellsize[0];
+	DOM("#cellysize").value = tilemode ? 25 : cellsize[1];
+	DOM("#tilemode").checked = tilemode;
+	DOM("#gridmode").checked = !tilemode;
+	DOM("#cellxsize").disabled = DOM("#cellysize").disabled = tilemode;
+	DOM("#gridcfgdlg").showModal();
+});
+
+on("click", "#tilemode", e => DOM("#cellxsize").disabled = DOM("#cellysize").disabled = true);
+on("click", "#gridmode", e => DOM("#cellxsize").disabled = DOM("#cellysize").disabled = false);
+
+on("submit", "#gridcfgdlg form", e => {
+	if (DOM("#tilemode").checked) cellsize = [1, 1];
+	else cellsize = [+DOM("#cellxsize").value, +DOM("#cellysize").value];
+	repaint();
 });

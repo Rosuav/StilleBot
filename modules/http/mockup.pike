@@ -69,7 +69,9 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 <table border=1 id=palette class=tileonly></table>
 
 > ### Configure
-> TODO: Grid tile size, default 25x25
+> Mode: <label><input type=radio name=mode id=tilemode> Tile</label> <label><input type=radio name=mode id=gridmode> Grid</label>
+>
+> Cell size: <input type=number id=cellxsize> x <input type=number id=cellysize>
 >
 > [Save](:type=submit) [Cancel](:.dialog_close)
 {: tag=formdialog #gridcfgdlg}
@@ -88,7 +90,7 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 <table border=1 id=grid></table>
 
 [Save](:.opendlg data-dlg=saveimagedlg) [Load](:.opendlg data-dlg=loadimagedlg) [Resize](:.opendlg data-dlg=resizedlg)
-[Manage tiles](:.opendlg data-dlg=tilesdlg .tileonly) [Configure](:.opendlg data-dlg=gridcfgdlg .gridonly)
+[Manage tiles](:.opendlg data-dlg=tilesdlg .tileonly) [Configure](:#configurebtn)
 
 > ### Save image
 > Image name: <input name=savename required>
@@ -291,8 +293,9 @@ __async__ void websocket_cmd_move_element(mapping(string:mixed) conn, mapping(st
 //xtra->cellsize = ({x, y}) - make a grid of tiles, not a bitmap of pixels, where each cell is that size
 //xtra->gridborder = 1 - draw a border between the tiles
 //xtra->gridcolor = "#000000" - color for that border (if omitted or "", will be transparent)
-array(Image.Image) load_image(array(array(string)) grid, mapping|void xtra) {
-	if (!arrayp(grid) || !sizeof(grid) || !arrayp(grid[0]) || !sizeof(grid[0])) return ({0, 0});
+array(Image.Image|mapping) load_image(array(array(string)) grid, mapping|void xtra) {
+	if (!arrayp(grid) || !sizeof(grid) || !arrayp(grid[0]) || !sizeof(grid[0])) return ({0, 0, ([])});
+	mapping features = ([]);
 	int cellx = 1, celly = 1, gridborder = 0;
 	array(int) gridcolor;
 	if (arrayp(xtra->cellsize) && sizeof(xtra->cellsize) == 2) [cellx, celly] = xtra->cellsize;
@@ -300,6 +303,12 @@ array(Image.Image) load_image(array(array(string)) grid, mapping|void xtra) {
 		//Cell mode. Enables the border if requested.
 		gridborder = (int)xtra->gridborder;
 		if (sscanf(xtra->gridcolor || "??", "#%2x%2x%2x", int r, int g, int b)) gridcolor = ({r, g, b});
+		features->cellx = cellx; features->celly = celly;
+		features->gridborder = gridborder;
+		if (gridcolor) features->gridcolor = gridcolor;
+		//Note: Only put things back into the grid when they are guaranteed safe.
+		//Reconstitute if possible, or whitelist.
+		features->grid = allocate(sizeof(grid), allocate(sizeof(grid[0]), ""));
 	}
 	int xsize = sizeof(grid[0]) * (cellx + gridborder) - gridborder;
 	int ysize = sizeof(grid)    * (celly + gridborder) - gridborder;
@@ -328,6 +337,7 @@ array(Image.Image) load_image(array(array(string)) grid, mapping|void xtra) {
 			alpha->box(xpos, ypos, xpos + cellx - 1, ypos + celly - 1, 255, 255, 255);
 			sscanf(cell, "#%2x%2x%2x", int r, int g, int b);
 			image->box(xpos, ypos, xpos + cellx - 1, ypos + celly - 1, r, g, b);
+			if (features->grid) features->grid[y][x] = sprintf("#%2x%2x%2x", r, g, b);
 		} else if (mapping img = meta_cache->images[cell]) { //TODO: What if meta_cache isn't loaded? Currently ensuring it in every caller.
 			//Note that we don't here ensure that it matches its cell size.
 			if (!image_cache[img->url]) {
@@ -338,9 +348,10 @@ array(Image.Image) load_image(array(array(string)) grid, mapping|void xtra) {
 			img = image_cache[img->url];
 			alpha->paste_mask(img->alpha, img->alpha, xpos, ypos);
 			image->paste_mask(img->image, img->alpha, xpos, ypos);
+			if (features->grid) features->grid[y][x] = cell;
 		}
 	}
-	return ({image, alpha});
+	return ({image, alpha, features});
 }
 
 //Saves both images and grids
@@ -349,7 +360,7 @@ __async__ void websocket_cmd_save_pixelart(mapping(string:mixed) conn, mapping(s
 	if (!meta_cache) meta_cache = await(G->G->DB->load_config(1, "mockup"));
 	//The front end sends us a 2D array of colour identifiers given in six digit hex.
 	//Let's make, yaknow, an actual image. In PNG.
-	[Image.Image image, Image.Image alpha] = load_image(msg->grid, msg);
+	[Image.Image image, Image.Image alpha, mapping xtra] = load_image(msg->grid, msg);
 	if (!image) return;
 	string png = Image.PNG.encode(image, (["alpha": alpha]));
 	string url = "data:image/png;base64," + MIME.encode_base64(png, 1);
@@ -362,7 +373,7 @@ __async__ void websocket_cmd_save_pixelart(mapping(string:mixed) conn, mapping(s
 			"created_at": time(),
 			"created_by": conn->session->user->id,
 			"xsize": image->xsize(), "ysize": image->ysize(),
-		]);
+		]) | xtra;
 		meta->tiles[msg->name] = ([
 			"image": msg->name,
 			"xsize": image->xsize(), "ysize": image->ysize(),
@@ -423,18 +434,20 @@ __async__ mapping websocket_cmd_load_pixelart(mapping(string:mixed) conn, mappin
 	if (!meta_cache) meta_cache = await(G->G->DB->load_config(1, "mockup"));
 	mapping img = meta_cache->images[msg->id];
 	if (!img) return (["error": "Image not found"]);
+	if (img->grid) return (["cmd": "pixelart_loaded", "grid": img->grid]); //For grid backgrounds, we retain a viable grid rather than decoding the PNG.
 	sscanf(img->url, "data:image/png;base64,%s", string raw);
 	if (!raw) return (["error": "Non-local images cannot be loaded"]);
 	mapping image = Image.PNG._decode(MIME.decode_base64(raw));
 	return (["cmd": "pixelart_loaded", "grid": decode_image(image->image, image->alpha)]);
 }
 
-//The front end can't be bothered doing the work of rescaling, so it hands us a grid of colours,
-//asks us to do the rescaling, and accepts whatever we give it.
+//The front end can't be bothered doing antialiased rescaling, so it hands us a grid of colours,
+//asks us to do the rescaling, and accepts whatever we give it. Not suitable for grid mode - that
+//is all done on the front end for simplicity and reduced latency.
 __async__ mapping|zero websocket_cmd_rescale(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->landing) return 0;
 	if (!meta_cache) meta_cache = await(G->G->DB->load_config(1, "mockup"));
-	[Image.Image image, Image.Image alpha] = load_image(msg->grid);
+	[Image.Image image, Image.Image alpha, mapping xtra] = load_image(msg->grid);
 	if (!image) return 0;
 	image = image->scale((int)msg->xsize, (int)msg->ysize);
 	alpha = alpha->scale((int)msg->xsize, (int)msg->ysize);
