@@ -261,6 +261,12 @@
   - Host elsewhere than GitHub?
     - Repo hosting probably hard since this is all based on the GH API, not git itself
     - Live site hosting? Where, what options?
+  - Currently, there's a bunch of relative references to pages, CSS, JS, etc. This works for
+    the initial site creation where the URL ends /userid/ but restricts the user from creating
+    pages in subdirectories. Once a CNAME is set, switching to absolute references will be far
+    superior, as the default URL ceases to be relevant, and subdirectories become much more
+    important. Is there a clean way to do this in Jekyll, maybe getting info from GH about the
+    destination URL?
   - Encourage editing of _config.yml to remove placeholders
   - Mustard Mine collaborators?
     - Not automatically allowing mods to help as per the rest of MM, but allow the site owner
