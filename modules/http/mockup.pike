@@ -374,7 +374,7 @@ __async__ void websocket_cmd_save_pixelart(mapping(string:mixed) conn, mapping(s
 			"created_by": conn->session->user->id,
 			"xsize": image->xsize(), "ysize": image->ysize(),
 		]) | xtra;
-		meta->tiles[msg->name] = ([
+		if (!xtra->cellx) meta->tiles[msg->name] = ([ //For images (but not grids), automatically make a corresponding tile type.
 			"image": msg->name,
 			"xsize": image->xsize(), "ysize": image->ysize(),
 		]);
