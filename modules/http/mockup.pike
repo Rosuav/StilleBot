@@ -58,6 +58,7 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 > [Close](:.dialog_close)
 {: tag=dialog #loadimagedlg}
 
+[Configure](:#configurebtn)
 <table border=1 id=selections><tr><td>Current</td><td id=curcolor></td><td class=pickcolor data-color=>Transparent</td></tr></table>
 
 > ### Custom Colors
@@ -90,7 +91,7 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 <table border=1 id=grid></table>
 
 [Save](:.opendlg data-dlg=saveimagedlg) [Load](:.opendlg data-dlg=loadimagedlg) [Resize](:.opendlg data-dlg=resizedlg)
-[Manage tiles](:.opendlg data-dlg=tilesdlg .tileonly) [Configure](:#configurebtn)
+[Manage tiles](:.opendlg data-dlg=tilesdlg)
 
 > ### Save image
 > Image name: <input name=savename required>
