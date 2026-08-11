@@ -13,16 +13,16 @@ const ace_editor = window.ace.edit("fileeditor", {
 });
 window.ace_editor = ace_editor; //Allow interactive tinkering
 
-//FIXME: Make a hover piece in the corner that shows some good first steps.
-//As they get completed, detect this and put a pretty green check mark against them.
-//For each one, let the user click to see more information, and then have a pencil
-//button to take them where they need to go.
-const first_steps = {
-	edit_config: "Set up basic title etc",
-	edit_index: "Build out your landing page",
-	new_page: "Create a new page",
-	upload_images: "Upload some artwork!",
-};
+function UPLOADFORM(path) {
+	if (path !== "" && !path.endsWith("/")) path += "/";
+	return [
+		FORM([
+			"Upload new file: ",
+			INPUT({class: "fileuploader", type: "file", multiple: 1, accept: "image/*", "data-prefix": path}),
+		]),
+		DIV({class: "filedropzone", "data-prefix": path}, "Or drop files here to upload"),
+	];
+}
 
 //Turn a flat list of files into a tree of DOM (Lindt) elements, gathering those in
 //subdirectories into nested lists. Pass a describer function to generate list items
@@ -36,12 +36,7 @@ function build_directory_tree(files, options) {
 	const describe = options.describe || (fn => fn); //Default to just showing the file name; the callback is also given the entire file object if needed
 	const createnew = path => LI({style: "margin-top: 0.5em"},
 		options.upload ? [
-			FORM([
-				"Upload new file: ",
-				INPUT({class: "fileuploader", type: "file", multiple: 1, accept: "image/*", "data-prefix": path}),
-			]),
-			DIV({class: "filedropzone", "data-prefix": path}, "Or drop files here to upload"),
-			DIV({id: "uploaderror", class: "hidden"}),
+			UPLOADFORM(path),
 		] : [
 			"Create new ",
 			BUTTON({class: "new-file", type: "button", "data-prefix": path, "data-suffix": options.suffix || ""}, "\u{1F589}"),
@@ -190,6 +185,11 @@ export function render(data) {
 			P("Most of your web site is these sorts of pages. Use Markdown syntax for styling."),
 			build_directory_tree(data.site.pages, {describe: fn => fn.replace(/\.md$/, ""), suffix: ".md"}),
 		],
+		data.site._config && data.site._config.upload_to && P([
+			"Gallery files are kept in ", CODE("img/"), BR(),
+			UPLOADFORM(data.site._config.upload_to),
+		]),
+		DIV({id: "uploaderror", class: "hidden"}),
 		[["media", "Media"], ["layouts", "Design/layout"], ["files", "Other files"]].map(([sec, title]) => {
 			const files = data.site[sec];
 			return files && DETAILS([
