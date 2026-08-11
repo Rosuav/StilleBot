@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, B, BR, BUTTON, DETAILS, DIV, FORM, H3, IMG, INPUT, LI, P, SPAN, SUMMARY, UL} = lindt; //autoimport
+const {A, B, BR, BUTTON, CODE, DETAILS, DIV, FORM, H3, IMG, INPUT, LI, P, SPAN, SUMMARY, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 import "https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.min.js"; //Editor with syntax highlighting
 window.ace.config.set("basePath", "https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/");
@@ -127,6 +127,18 @@ export function render(data) {
 		else show_banner("Build " + data.site.build_status.replace("_", " ") + "...", "pending");
 		last_build_status = data.site.build_status;
 	}
+	const nextsteps = [
+		JSON.stringify(data.site._config || "").includes("FIXME") && LI([
+			"Edit site-wide config ",
+			BUTTON({class: "edit-file", type: "button", "data-path": "_config.yml"}, "\u{1F589}"),
+			" ", CODE("_config.yml"),
+		]),
+	].filter(x => x);
+	replace_content("#nextsteps", [
+		BUTTON({class: "dismiss", type: "button"}, "x"),
+		H3("Next steps"),
+		UL(nextsteps),
+	]).hidden = nextsteps.length === 0;
 	replace_content("#content", [
 		P([
 			"Your site is linked to your Twitch account. ",
@@ -293,3 +305,5 @@ on("submit", "#renamefiledlg form", e => {
 	ws_sync.send({cmd: "rename_file", oldpath: editing_file.path, newpath, sha: editing_file.sha});
 	DOM("#editfiledlg").close(); //Will discard unsaved changes. Unideal but will do for now.
 });
+
+on("click", ".dismiss", e => DOM("#nextsteps").classList.add("dismissed"));

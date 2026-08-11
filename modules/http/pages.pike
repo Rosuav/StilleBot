@@ -29,6 +29,7 @@ Build simple web pages and host them on GitHub Pages. You retain full control at
 > [Save](:#filesave) [Close without saving](:.dialog_close)
 {: tag=dialog #editfiledlg}
 
+<div id=nextsteps hidden></div>
 <div id=banner></div>
 
 > ### Rename file
@@ -73,6 +74,21 @@ Build simple web pages and host them on GitHub Pages. You retain full control at
 	background: #efe;
 	border-color: darkgreen;
 }
+#nextsteps {
+	position: fixed;
+	top: 10px; left: 10px;
+	background: aliceblue;
+	border: 1px solid rebeccapurple;
+	padding: 0.5em 2em;
+}
+#nextsteps.dismissed {
+	transform: scale(0,0) translateX(25%);
+	transition: all 0.5s;
+}
+#nextsteps .dismiss {
+	position: absolute;
+	right: 8px; top: 8px;
+}
 </style>
 
 > ### Collaborators and ownership
@@ -106,7 +122,7 @@ __async__ mapping|array|string github_api_request(string endpoint, mapping|void 
 	if (!options) options = ([]);
 	//In API requests, send headers:
 	mapping headers = ([
-		"Accept": options->raw ? "application/vnd.github.raw+json" : "application/vnd.github+json",
+		"Accept": options->raw ? "application/vnd.github.raw+json" : options->accepttype || "application/vnd.github+json",
 		"X-GitHub-Api-Version": "2026-03-10",
 		"User-Agent": "Mustard-Mine",
 	]);
