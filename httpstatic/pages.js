@@ -72,6 +72,7 @@ function build_directory_tree(files, options) {
 //consistent display; since the upload implementation is incompatible, this means that the
 //page cannot use both.
 function upload(f, pfx) {
+	show_banner("Uploading file...", "pending");
 	const r = new FileReader();
 	r.onload = () => {
 		//The result is "data:TYPE/SUBTYPE;base64," followed by the base-64 data.
