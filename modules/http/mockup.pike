@@ -68,15 +68,6 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 {: tag=formdialog #customcolordlg}
 
 <table border=1 id=palette class=tileonly></table>
-
-> ### Configure
-> Mode: <label><input type=radio name=mode id=tilemode> Tile</label> <label><input type=radio name=mode id=gridmode> Grid</label>
->
-> Cell size: <input type=number id=cellxsize> x <input type=number id=cellysize>
->
-> [Save](:type=submit) [Cancel](:.dialog_close)
-{: tag=formdialog #gridcfgdlg}
-
 <table border=1 id=toolbox class=gridonly></table>
 
 > ### Resize image
@@ -91,7 +82,6 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 <table border=1 id=grid></table>
 
 [Save](:.opendlg data-dlg=saveimagedlg) [Load](:.opendlg data-dlg=loadimagedlg) [Resize](:.opendlg data-dlg=resizedlg)
-[Manage tiles](:.opendlg data-dlg=tilesdlg)
 
 > ### Save image
 > Image name: <input name=savename required>
@@ -109,17 +99,31 @@ td {
 	width: 23px;
 	height: 23px;
 }
+#management {width: 100%;}
+#management td {vertical-align: top;}
+#allimages,#alltiles {
+	max-height: 8em;
+	overflow-y: auto;
+}
 </style>
 
-> ### Manage tiles
+> ### Configuration and management
+> Mode: <label><input type=radio name=mode id=tilemode> Tile</label> <label><input type=radio name=mode id=gridmode> Grid</label>
+>
+> Cell size: <input type=number id=cellxsize> x <input type=number id=cellysize>
+>
+> Manage images | Manage tiles
+> --------------|--------------
+> <ul id=allimages></ul> | <ul id=alltiles></ul>
+> {:#management}
+>
 > Create additional tile types using existing images, giving alternative
 > sizes for deployable objects.
 >
-> <ul id=alltiles></ul>
-> <form id=newtile>Add tile: <input name=name> <select id=allimages></select> <input type=number name=xsize> x <input type=number name=ysize> <button type=submit>Add</button></form>
+> <form id=newtile>Add tile: <input name=name> <select id=imagesel></select> <input type=number name=xsize> x <input type=number name=ysize> <button type=submit>Add</button></form>
 >
-> [Close](:.dialog_close)
-{: tag=dialog #tilesdlg}
+> [Configure](:type=submit) [Close](:.dialog_close)
+{: tag=formdialog #configuredlg}
 ";
 
 constant markdown_guest = #"# Mockups
@@ -412,6 +416,19 @@ __async__ void websocket_cmd_delete_tile(mapping(string:mixed) conn, mapping(str
 	mapping meta;
 	await(G->G->DB->mutate_config(1, "mockup") {meta = __ARGS__[0];
 		m_delete(meta->tiles, msg->id);
+	});
+	meta_cache = meta;
+	update_meta();
+}
+
+__async__ void websocket_cmd_delete_image(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!conn->landing) return;
+	mapping meta;
+	await(G->G->DB->mutate_config(1, "mockup") {meta = __ARGS__[0];
+		m_delete(meta->images, msg->id);
+		array purge = ({ });
+		foreach (meta->tiles; string id; mapping tile) if (tile->image == msg->id) purge += ({id});
+		m_delete(meta->tiles, purge[*]);
 	});
 	meta_cache = meta;
 	update_meta();

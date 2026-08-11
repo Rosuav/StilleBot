@@ -167,6 +167,13 @@ export function sockmsg_update_meta(msg) {
 		"(", DATE(img.created_at), ") ",
 		BUTTON({"data-id": id, class: "loadimg"}, "Load"),
 	])));
+	replace_content("#allimages", Object.entries(meta.images)
+		.sort((a, b) => a[0].localeCompare(b[0]))
+		.map(([id, img]) => LI([
+			img.title || id, " (" + img.xsize + "x" + img.ysize + ") ",
+			BUTTON({type: "button", class: "deleteimage", title: "Delete", "data-id": id}, "🗑"),
+		]))
+	);
 	replace_content("#alltiles", Object.entries(meta.tiles)
 		.sort((a, b) => a[0].localeCompare(b[0]))
 		.map(([id, tile]) => LI([
@@ -174,7 +181,7 @@ export function sockmsg_update_meta(msg) {
 			BUTTON({type: "button", class: "deletetile", title: "Delete", "data-id": id}, "🗑"),
 		]))
 	);
-	replace_content("#allimages", images.map(([id, img]) => OPTION({value: id}, [img.title || id, " (" + img.xsize + "x" + img.ysize + ")"])));
+	replace_content("#imagesel", images.map(([id, img]) => OPTION({value: id}, [img.title || id, " (" + img.xsize + "x" + img.ysize + ")"])));
 	let row = [], toolbox = [];
 	for (let [id, img] of images) {
 		if (img.xsize !== 25 || img.ysize !== 25) continue; //TODO: Use the configured tile size, not hard-coded 25x25
@@ -236,11 +243,14 @@ on("submit", "#newtile", e => {
 	e.preventDefault(); //This is not a formdialog and should not close the form (or navigate)
 	ws_sync.send({cmd: "new_tile",
 		name: e.match.elements.name.value,
-		image: DOM("#allimages").value,
+		image: DOM("#imagesel").value,
 		xsize: e.match.elements.xsize.value,
 		ysize: e.match.elements.ysize.value,
 	});
 });
+
+on("click", ".deleteimage", simpleconfirm("Delete this image? Any tiles built from it will also be deleted.",
+	e => ws_sync.send({cmd: "delete_image", id: e.match.dataset.id})));
 
 on("click", ".deletetile", simpleconfirm("Delete this tile? The corresponding image will be retained.",
 	e => ws_sync.send({cmd: "delete_tile", id: e.match.dataset.id})));
@@ -280,7 +290,7 @@ on("click", "#configurebtn", e => {
 	DOM("#tilemode").checked = tilemode;
 	DOM("#gridmode").checked = !tilemode;
 	DOM("#cellxsize").disabled = DOM("#cellysize").disabled = tilemode;
-	DOM("#gridcfgdlg").showModal();
+	DOM("#configuredlg").showModal();
 });
 
 on("click", "#tilemode", e => DOM("#cellxsize").disabled = DOM("#cellysize").disabled = true);
