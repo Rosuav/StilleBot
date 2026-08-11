@@ -296,7 +296,7 @@ on("click", ".editelement", e => {
 	DOM("#typeselect").hidden = editing_cat !== "elements";
 	if (elem.type) DOM("#typeselector").value = elem.type;
 	DOM("#bgselect").hidden = editing_cat !== "mockup";
-	if (elem.bg) DOM("#bgselector").value = bg.type;
+	if (elem.bg) DOM("#bgselector").value = elem.bg;
 	DOM("#elementtitle").value = elem.title || "";
 	DOM("#elementdesc").value = elem.description || "";
 	DOM("#editelementdlg").showModal();
