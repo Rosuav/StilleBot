@@ -89,6 +89,12 @@ function draw_element(ctx, el) {
 
 function repaint() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	const url = meta.images[state.bg]?.url;
+	if (url) {
+		const img = image_cache[url];
+		if (!img) preload_icon(url, 1);
+		else ctx.drawImage(img, 0, 0);
+	}
 	elements_by_zorder.length = 0;
 	const elem = Object.entries(state.elements).sort((a, b) => a[0].localeCompare(b[0])); //Sort by ID. May need a way to explicitly reorder them.
 	ctx.strokeStyle = ctx.fillStyle = "blue"; //Draw the frames around elements in blue
