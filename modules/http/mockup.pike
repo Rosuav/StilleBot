@@ -11,6 +11,7 @@ Scene: <select id=sceneselector><option disabled>loading...</select> <span id=sc
 
 > ### Edit element
 > <p id=typeselect>Type: <select id=typeselector></select></p>
+> <p id=bgselect>Background: <select id=bgselector></select></p>
 > Name: <input id=elementtitle>
 > <textarea id=elementdesc rows=5 cols=80></textarea>
 >
@@ -122,8 +123,8 @@ td {
 >
 > <form id=newtile>Add tile: <input name=name> <select id=imagesel></select> <input type=number name=xsize> x <input type=number name=ysize> <button type=submit>Add</button></form>
 >
-> [Configure](:type=submit) [Close](:.dialog_close)
-{: tag=formdialog #configuredlg}
+> [Configure](:#reconfigure) [Close](:.dialog_close)
+{: tag=dialog #configuredlg}
 ";
 
 constant markdown_guest = #"# Mockups
@@ -269,6 +270,10 @@ mapping|zero wsedit_update_element(mapping mock, mapping(string:mixed) conn, map
 	if (msg->cat == "elements") {
 		//TODO: Validate the type, if not, set some sort of default
 		if (msg->type) target->type = msg->type;
+	}
+	if (msg->cat == "mockup") {
+		//TODO: Validate the bg image, if not, blank it
+		if (msg->bg) target->bg = msg->bg;
 	}
 }
 

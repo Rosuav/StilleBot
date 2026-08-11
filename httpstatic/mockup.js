@@ -31,6 +31,12 @@ export function sockmsg_update_meta(msg) {
 		.sort((a, b) => a[0].localeCompare(b[0]))
 		.map(([title, id]) => OPTION({value: id}, title))
 	);
+	replace_content("#bgselector", Object.entries(meta.images)
+		.filter(([id, t]) => t.grid)
+		.map(([id, t]) => [t.title || id, id])
+		.sort((a, b) => a[0].localeCompare(b[0]))
+		.map(([title, id]) => OPTION({value: id}, title))
+	);
 }
 sockmsg_update_meta(meta);
 
@@ -289,6 +295,8 @@ on("click", ".editelement", e => {
 	DOM("#deleteelement").hidden = !mutation_allowed || editing_element === "" || (editing_cat === "mockup" && ws_sync.get_userid() !== +state.created_by);
 	DOM("#typeselect").hidden = editing_cat !== "elements";
 	if (elem.type) DOM("#typeselector").value = elem.type;
+	DOM("#bgselect").hidden = editing_cat !== "mockup";
+	if (elem.bg) DOM("#bgselector").value = bg.type;
 	DOM("#elementtitle").value = elem.title || "";
 	DOM("#elementdesc").value = elem.description || "";
 	DOM("#editelementdlg").showModal();
@@ -297,6 +305,7 @@ on("click", ".editelement", e => {
 on("submit", "#editelementdlg form", e => ws_sync.send({cmd: "update_element",
 	cat: editing_cat, id: editing_element,
 	type: DOM("#typeselector").value, //Irrelevant unless cat is "elements"
+	bg: DOM("#bgselector").value, //Irrelevant unless cat is "mockup"
 	title: DOM("#elementtitle").value,
 	description: DOM("#elementdesc").value,
 }));

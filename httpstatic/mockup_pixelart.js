@@ -296,8 +296,9 @@ on("click", "#configurebtn", e => {
 on("click", "#tilemode", e => DOM("#cellxsize").disabled = DOM("#cellysize").disabled = true);
 on("click", "#gridmode", e => DOM("#cellxsize").disabled = DOM("#cellysize").disabled = false);
 
-on("submit", "#gridcfgdlg form", e => {
+on("click", "#reconfigure", e => {
 	if (DOM("#tilemode").checked) cellsize = [1, 1];
 	else cellsize = [+DOM("#cellxsize").value, +DOM("#cellysize").value];
 	repaint();
+	DOM("#configuredlg").close();
 });
