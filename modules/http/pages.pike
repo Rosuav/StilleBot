@@ -89,6 +89,12 @@ Build simple web pages and host them on GitHub Pages. You retain full control at
 	position: absolute;
 	right: 8px; top: 8px;
 }
+#nextsteps h3 {
+	margin-top: 0; margin-bottom: 0;
+}
+#nextsteps ul {
+	margin-bottom: 0;
+}
 </style>
 
 > ### Collaborators and ownership
@@ -367,7 +373,15 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	}
 	//Delete a repository:
 	//mixed repos = await(github_api_request("/repos/mustardmine/49497888", (["method": "DELETE"])));
-	return render(req, (["vars": (["ws_group": "#" + (req->variables->demo ? "3141592653589793" : req->misc->session->user->?id)])]));
+
+	//Provide the SHA1s of the pages as they exist in the template. The front end uses this to
+	//hint "this file would be worth customizing".
+	if (!github_repo_details->Template) await(query_github_repo("Template"));
+	array pages = github_repo_details->Template->pages;
+	return render(req, (["vars": ([
+		"ws_group": "#" + (req->variables->demo ? "3141592653589793" : req->misc->session->user->?id),
+		"template_pages": mkmapping(pages->path, pages->sha),
+	])]));
 }
 
 string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {

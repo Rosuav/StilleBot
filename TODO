@@ -267,10 +267,7 @@
     superior, as the default URL ceases to be relevant, and subdirectories become much more
     important. Is there a clean way to do this in Jekyll, maybe getting info from GH about the
     destination URL?
-  - Encourage editing of _config.yml to remove placeholders
-    - Even better - locate all FIXME in the site, and encourage editing of any such file. This
-      will allow user-specific FIXME references which will also show up the same way.
-    - Tweak ACE to highlight FIXME (and maybe TODO)
+  - Tweak ACE to highlight FIXME (and maybe TODO)?
   - Mustard Mine collaborators?
     - Not automatically allowing mods to help as per the rest of MM, but allow the site owner
       to grant permission to another Twitch user

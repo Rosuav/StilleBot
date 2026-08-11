@@ -127,18 +127,39 @@ export function render(data) {
 		else show_banner("Build " + data.site.build_status.replace("_", " ") + "...", "pending");
 		last_build_status = data.site.build_status;
 	}
+	//Zip over the pages and see which ones are the same as in the template
+	const page_unchanged = { };
+	if (data.site.pages) data.site.pages.forEach(pg => pg.sha === template_pages[pg.path] && (page_unchanged[pg.path] = 1));
 	const nextsteps = [
 		JSON.stringify(data.site._config || "").includes("FIXME") && LI([
 			"Edit site-wide config ",
 			BUTTON({class: "edit-file", type: "button", "data-path": "_config.yml"}, "\u{1F589}"),
 			" ", CODE("_config.yml"),
 		]),
+		page_unchanged["index.md"] && LI([
+			"Edit the home page ",
+			BUTTON({class: "edit-file", type: "button", "data-path": "index.md"}, "\u{1F589}"),
+			" ", CODE("index.md"),
+		]),
+		page_unchanged["about.md"] && LI([
+			"Edit your About Me page ",
+			BUTTON({class: "edit-file", type: "button", "data-path": "about.md"}, "\u{1F589}"),
+			" ", CODE("about.md"),
+		]),
+		page_unchanged["gallery.md"] && LI([
+			"Upload an image to ", CODE("img/"), " or edit your gallery ",
+			BUTTON({class: "edit-file", type: "button", "data-path": "gallery.md"}, "\u{1F589}"),
+			" ", CODE("gallery.md"),
+		]),
+		(!data.site.files || !data.site.files.find(f => f.path === "CNAME")) && LI([
+			"Register a custom domain name",
+		]),
 	].filter(x => x);
 	replace_content("#nextsteps", [
 		BUTTON({class: "dismiss", type: "button"}, "x"),
 		H3("Next steps"),
 		UL(nextsteps),
-	]).hidden = nextsteps.length === 0;
+	]).hidden = !data.site.html_url || nextsteps.length === 0;
 	replace_content("#content", [
 		P([
 			"Your site is linked to your Twitch account. ",
