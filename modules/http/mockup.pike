@@ -28,7 +28,7 @@ Scene: <select id=sceneselector><option disabled>loading...</select> <span id=sc
 	border: 1px solid black;
 	display: flex;
 	gap: 0.5em;
-	max-height: 800px; /* Or should main be made flex so this gets all remaining space? */
+	max-height: 800px; /* FIXME: main needs to be made flex so this gets all remaining space instead of a fixed arbitrary height */
 }
 #canvasscroll {
 	flex-grow: 1;
@@ -97,8 +97,8 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 /* TODO: Put a background on #grid so transparent pixels aren't the same as any single colour */
 #grid {margin-top: 1em;}
 td {
-	width: 23px;
-	height: 23px;
+	width: 25px;
+	height: 25px;
 }
 #management {width: 100%;}
 #management td {vertical-align: top;}
@@ -110,8 +110,6 @@ td {
 
 > ### Configuration and management
 > Mode: <label><input type=radio name=mode id=tilemode> Tile</label> <label><input type=radio name=mode id=gridmode> Grid</label>
->
-> Cell size: <input type=number id=cellxsize> x <input type=number id=cellysize>
 >
 > Manage images | Manage tiles
 > --------------|--------------

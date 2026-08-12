@@ -285,20 +285,14 @@ on("submit", "#customcolordlg form", e => {
 
 on("click", "#configurebtn", e => {
 	const tilemode = cellsize[0] === 1 && cellsize[1] === 1;
-	DOM("#cellxsize").value = tilemode ? 25 : cellsize[0];
-	DOM("#cellysize").value = tilemode ? 25 : cellsize[1];
 	DOM("#tilemode").checked = tilemode;
 	DOM("#gridmode").checked = !tilemode;
-	DOM("#cellxsize").disabled = DOM("#cellysize").disabled = tilemode;
 	DOM("#configuredlg").showModal();
 });
 
-on("click", "#tilemode", e => DOM("#cellxsize").disabled = DOM("#cellysize").disabled = true);
-on("click", "#gridmode", e => DOM("#cellxsize").disabled = DOM("#cellysize").disabled = false);
-
 on("click", "#reconfigure", e => {
 	if (DOM("#tilemode").checked) cellsize = [1, 1];
-	else cellsize = [+DOM("#cellxsize").value, +DOM("#cellysize").value];
+	else cellsize = [25, 25]; //Currently non-configurable; all grids use 25x25 cells.
 	repaint();
 	DOM("#configuredlg").close();
 });
