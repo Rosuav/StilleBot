@@ -324,6 +324,9 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 				//list of files has changed (since the vast majority of edits won't create or delete files),
 				//but it's simpler just to reload.
 				load_repo_details(userid, "contents");
+				//If CNAME changes, be sure to call query_github_repo(userid) as this will update the shown URL.
+				//This could be done by checking the change list; for now, doing it unconditionally (and inefficiently).
+				query_github_repo(userid);
 
 				if (m_delete(pending_site_creation, userid)) {
 					mapping user = await(get_user_info(userid));
