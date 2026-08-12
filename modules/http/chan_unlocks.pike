@@ -3,14 +3,14 @@ inherit hook;
 
 constant markdown = #"# Unlocks!
 
+[Manage unlocks](:.opendlg data-dlg=managedlg .modonly hidden=true)
+
 <p id=nextunlock></p>
 
 Click to view these gorgeous pics fullscreen.
 
 * loading...
 {:#unlocks}
-
-[Manage unlocks](:.opendlg data-dlg=managedlg .modonly hidden=true)
 
 > ### Manage unlocks
 >
