@@ -380,7 +380,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	//Provide the SHA1s of the pages as they exist in the template. The front end uses this to
 	//hint "this file would be worth customizing".
 	if (!github_repo_details->Template) await(query_github_repo("Template"));
-	array pages = github_repo_details->Template->pages;
+	array pages = github_repo_details->Template->pages || ({ });
 	return render(req, (["vars": ([
 		"ws_group": "#" + (req->variables->demo ? "3141592653589793" : req->misc->session->user->?id),
 		"template_pages": mkmapping(pages->path, pages->sha),
