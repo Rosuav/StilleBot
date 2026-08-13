@@ -137,13 +137,12 @@ on("pointerup", "#grid", e => {
 	update_line();
 });
 
-on("submit", "#saveimagedlg form", e => {
+on("submit", "#saveimage", e => {
 	ws_sync.send({cmd: "save_image",
 		type: image_type,
 		name: e.match.elements.savename.value,
 		grid, cellsize, gridborder, gridcolor,
 	});
-	e.match.reset();
 });
 
 function DATE(d) {
@@ -195,7 +194,8 @@ sockmsg_update_meta(meta);
 on("click", ".loadimg", e => ws_sync.send({cmd: "load_image", type: e.match.dataset.type, id: e.match.dataset.id}));
 export function sockmsg_image_loaded(msg) { //Also, curiously, triggered by a rescale request :)
 	DOM("#configuredlg").close();
-	image_type = msg.type;
+	if (msg.type) image_type = msg.type;
+	if (msg.id) DOM("#saveimage [name=savename]").value = msg.id;
 	grid = msg.grid;
 	xsize = grid[0].length;
 	ysize = grid.length;

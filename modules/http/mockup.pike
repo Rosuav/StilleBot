@@ -95,13 +95,7 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 
 <table border=1 id=grid></table>
 
-[Save](:.opendlg data-dlg=saveimagedlg) [Resize](:.opendlg data-dlg=resizedlg)
-
-> ### Save image
-> Image name: <input name=savename required>
->
-> [Save](:type=submit) [Cancel](:.dialog_close)
-{: tag=formdialog #saveimagedlg}
+[Resize](:.opendlg data-dlg=resizedlg)
 
 <style>
 /* Note that 'tile mode' also includes icons */
@@ -130,6 +124,8 @@ td {
 > #### Images
 > {:#mgmtheading}
 > <ul id=imagelist></ul>
+>
+> <form id=saveimage>Save as: <input name=savename required> <button type=submit>Save</button></form>
 >
 > [Configure](:#reconfigure) [Close](:.dialog_close)
 {: tag=dialog #configuredlg}
@@ -448,11 +444,11 @@ __async__ mapping websocket_cmd_load_image(mapping(string:mixed) conn, mapping(s
 	if (!meta_cache) meta_cache = await(G->G->DB->load_config(1, "mockup"));
 	mapping img = meta_cache[msg->type + "s"][msg->id];
 	if (!img) return (["error": "Image not found"]);
-	if (img->grid) return (["cmd": "image_loaded", "type": msg->type, "grid": img->grid]); //For grid backgrounds, we retain a viable grid rather than decoding the PNG.
+	if (img->grid) return (["cmd": "image_loaded", "id": msg->id, "type": msg->type, "grid": img->grid]); //For grid backgrounds, we retain a viable grid rather than decoding the PNG.
 	sscanf(img->url, "data:image/png;base64,%s", string raw);
 	if (!raw) return (["error": "Non-local images cannot be loaded"]);
 	mapping image = Image.PNG._decode(MIME.decode_base64(raw));
-	return (["cmd": "image_loaded", "type": msg->type, "grid": decode_image(image->image, image->alpha)]);
+	return (["cmd": "image_loaded", "id": msg->id, "type": msg->type, "grid": decode_image(image->image, image->alpha)]);
 }
 
 //The front end can't be bothered doing antialiased rescaling, so it hands us a grid of colours,
