@@ -1,7 +1,7 @@
 inherit http_websocket;
 inherit annotated;
 
-//Terminology note: Pixel art ("images") comes in three varieties.
+//Terminology note: Images (pixel art) come in three varieties.
 //- An *icon* is used to create an *element* on a mockup. It can be any size, and the element can also resize that.
 //- A *tile* is placed on a *grid* to form a background for the mockup. It is always 25x25.
 //- A *grid* generally consists only of tiles and transparent cells, though colour cells are also valid.
@@ -104,10 +104,11 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 {: tag=formdialog #saveimagedlg}
 
 <style>
+/* Note that 'tile mode' also includes icons */
 .tilemode .gridonly {display: none;}
 .gridmode .tileonly {display: none;}
 #selections {cursor: default; font-size: small;}
-/* TODO: Put a background on #grid so transparent pixels aren't the same as any single colour */
+/* TODO: Put a checkerboard background on #grid so transparent pixels aren't the same as any single colour */
 #grid {margin-top: 1em;}
 td {
 	width: 25px;
@@ -124,7 +125,7 @@ td {
 </style>
 
 > ### Configuration and management
-> Mode: <label><input type=radio name=mode id=tilemode> Tile</label> <label><input type=radio name=mode id=gridmode> Grid</label>
+> Mode: <label><input type=radio name=mode id=tilemode> Tile</label> <label><input type=radio name=mode id=iconmode> Icon</label> <label><input type=radio name=mode id=gridmode> Grid</label>
 >
 > #### Images
 > {:#mgmtheading}
@@ -308,15 +309,22 @@ __async__ void websocket_cmd_move_element(mapping(string:mixed) conn, mapping(st
 }
 
 //Supported parameters:
-//xtra->cellsize = ({x, y}) - make a grid of tiles, not a bitmap of pixels, where each cell is that size
+//xtra->type = "icon", "tile", "grid"
+//  - "icon" or "tile" - bitmap of pixels (same behaviour)
+//  - "grid" - grid of tiles, where each cell is (25,25) unless overridden
+//xtra->cellsize = ({x, y}) - override the cell size; must be larger than (1,1)
 //xtra->gridborder = 1 - draw a border between the tiles
 //xtra->gridcolor = "#000000" - color for that border (if omitted or "", will be transparent)
+//NOTE: Before calling this, ensure that meta_cache has been populated. If this function is ever made async,
+//it could ensure that it's loaded, but currently it depends on the caller.
 array(Image.Image|mapping) load_image(array(array(string)) grid, mapping|void xtra) {
 	if (!arrayp(grid) || !sizeof(grid) || !arrayp(grid[0]) || !sizeof(grid[0])) return ({0, 0, ([])});
+	if (!mappingp(xtra)) xtra = ([]);
 	mapping features = ([]);
 	int cellx = 1, celly = 1, gridborder = 0;
 	array(int) gridcolor;
-	if (arrayp(xtra->cellsize) && sizeof(xtra->cellsize) == 2) [cellx, celly] = xtra->cellsize;
+	if (xtra->type == "grid" && arrayp(xtra->cellsize) && sizeof(xtra->cellsize) == 2) [cellx, celly] = xtra->cellsize;
+	else if (xtra->type == "grid") cellx = celly = 25;
 	if (cellx > 1 || celly > 1) {
 		//Cell mode. Enables the border if requested.
 		gridborder = (int)xtra->gridborder;
@@ -333,6 +341,7 @@ array(Image.Image|mapping) load_image(array(array(string)) grid, mapping|void xt
 	Image.Image image = Image.Image(xsize, ysize);
 	Image.Image alpha = Image.Image(xsize, ysize);
 	//Draw the entire grid first, then apply the actual selection of colours or images
+	//Note that an over-size tile will overlay the grid slightly.
 	if (gridborder && gridcolor) {
 		for (int x = 1; x < sizeof(grid[0]); ++x) {
 			int xpos = x * (cellx + gridborder) - gridborder;
@@ -356,7 +365,7 @@ array(Image.Image|mapping) load_image(array(array(string)) grid, mapping|void xt
 			sscanf(cell, "#%2x%2x%2x", int r, int g, int b);
 			image->box(xpos, ypos, xpos + cellx - 1, ypos + celly - 1, r, g, b);
 			if (features->grid) features->grid[y][x] = sprintf("#%2x%2x%2x", r, g, b);
-		} else if (mapping img = meta_cache->images[cell]) { //TODO: What if meta_cache isn't loaded? Currently ensuring it in every caller.
+		} else if (mapping img = meta_cache->tiles[cell]) {
 			//Note that we don't here ensure that it matches its cell size.
 			if (!image_cache[img->url]) {
 				sscanf(img->url, "data:image/png;base64,%s", string raw);
@@ -369,12 +378,14 @@ array(Image.Image|mapping) load_image(array(array(string)) grid, mapping|void xt
 			if (features->grid) features->grid[y][x] = cell;
 		}
 	}
+	//TODO: If gridcolor but not gridborder, draw the overlay dots
 	return ({image, alpha, features});
 }
 
-//Saves both images and grids
-__async__ void websocket_cmd_save_pixelart(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+//Saves all kinds of image - icons, tiles, and grids
+__async__ void websocket_cmd_save_image(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->landing) return;
+	if (!(<"icon", "tile", "grid">)[msg->type]) return;
 	if (!meta_cache) meta_cache = await(G->G->DB->load_config(1, "mockup"));
 	//The front end sends us a 2D array of colour identifiers given in six digit hex.
 	//Let's make, yaknow, an actual image. In PNG.
@@ -384,9 +395,10 @@ __async__ void websocket_cmd_save_pixelart(mapping(string:mixed) conn, mapping(s
 	string url = "data:image/png;base64," + MIME.encode_base64(png, 1);
 	mapping meta;
 	await(G->G->DB->mutate_config(1, "mockup") {meta = __ARGS__[0];
-		if (!meta->images) meta->images = ([]);
+		if (!meta->icons) meta->icons = ([]);
 		if (!meta->tiles) meta->tiles = ([]);
-		meta->images[msg->name] = ([
+		if (!meta->grids) meta->grids = ([]);
+		meta[msg->type + "s"][msg->name] = ([
 			"url": url,
 			"created_at": time(),
 			"created_by": conn->session->user->id,
@@ -408,9 +420,10 @@ void update_meta() {
 
 __async__ void websocket_cmd_delete_image(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->landing) return;
+	if (!(<"icon", "tile", "grid">)[msg->type]) return;
 	mapping meta;
 	await(G->G->DB->mutate_config(1, "mockup") {meta = __ARGS__[0];
-		m_delete(meta->images, msg->id);
+		m_delete(meta[msg->type + "s"], msg->id);
 	});
 	meta_cache = meta;
 	update_meta();
@@ -429,16 +442,17 @@ array(array(string)) decode_image(Image.Image image, Image.Image alpha) {
 	return grid;
 }
 
-__async__ mapping websocket_cmd_load_pixelart(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ mapping websocket_cmd_load_image(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->landing) return 0;
+	if (!(<"icon", "tile", "grid">)[msg->type]) return 0;
 	if (!meta_cache) meta_cache = await(G->G->DB->load_config(1, "mockup"));
-	mapping img = meta_cache->images[msg->id];
+	mapping img = meta_cache[msg->type + "s"][msg->id];
 	if (!img) return (["error": "Image not found"]);
-	if (img->grid) return (["cmd": "pixelart_loaded", "grid": img->grid]); //For grid backgrounds, we retain a viable grid rather than decoding the PNG.
+	if (img->grid) return (["cmd": "image_loaded", "type": msg->type, "grid": img->grid]); //For grid backgrounds, we retain a viable grid rather than decoding the PNG.
 	sscanf(img->url, "data:image/png;base64,%s", string raw);
 	if (!raw) return (["error": "Non-local images cannot be loaded"]);
 	mapping image = Image.PNG._decode(MIME.decode_base64(raw));
-	return (["cmd": "pixelart_loaded", "grid": decode_image(image->image, image->alpha)]);
+	return (["cmd": "image_loaded", "type": msg->type, "grid": decode_image(image->image, image->alpha)]);
 }
 
 //The front end can't be bothered doing antialiased rescaling, so it hands us a grid of colours,
@@ -451,7 +465,7 @@ __async__ mapping|zero websocket_cmd_rescale(mapping(string:mixed) conn, mapping
 	if (!image) return 0;
 	image = image->scale((int)msg->xsize, (int)msg->ysize);
 	alpha = alpha->scale((int)msg->xsize, (int)msg->ysize);
-	return (["cmd": "pixelart_loaded", "grid": decode_image(image, alpha)]);
+	return (["cmd": "image_loaded", "grid": decode_image(image, alpha)]);
 }
 
 //TODO: Have a way for the owner to set the password. This should send to all connected clients

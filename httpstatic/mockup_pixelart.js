@@ -13,6 +13,9 @@ try {custom_colors = JSON.parse(localStorage.getItem("mockup_custom_colors") || 
 //let curcolor = "#000000";
 let curcolor = "";
 let grid = [];
+let image_type = "icon"; //TODO: Block UI elements inappropriate to the type
+//Grids shouldn't get antialias resized
+//Tiles should be locked to 25x25
 let xsize = 25, ysize = 25; //Grid size
 let cellsize = [1, 1]; //Size of an individual cell. If [1, 1], we're making an image out of pixels; if larger, we're making a grid.
 let gridborder = 1; //Applicable only in grid mode, defines the thickness of the lines between cells
@@ -27,12 +30,13 @@ function color(hue, brightness) {
 function color_to_background(col) {
 	if (!col) return "transparent";
 	if (col[0] === "#") return col;
-	const img = meta.images[col];
+	const img = meta.tiles[col];
 	if (img) return "url(" + img.url + ")"
 	return "transparent";
 }
 DOM("#curcolor").style.background = color_to_background(curcolor);
 function repaint() {
+	//Note that "tile mode" also covers icons
 	document.body.classList = (cellsize[0] === 1 && cellsize[1] === 1) ? "tilemode" : "gridmode";
 	replace_content("#palette", [
 		//Bright and dark colors
@@ -134,7 +138,8 @@ on("pointerup", "#grid", e => {
 });
 
 on("submit", "#saveimagedlg form", e => {
-	ws_sync.send({cmd: "save_pixelart",
+	ws_sync.send({cmd: "save_image",
+		type: image_type,
 		name: e.match.elements.savename.value,
 		grid, cellsize, gridborder, gridcolor,
 	});
@@ -159,20 +164,22 @@ function DATE(d) {
 
 export function sockmsg_update_meta(msg) {
 	meta = msg;
-	const images = Object.entries(meta.images).sort((a, b) => a[0].localeCompare(b[0]));
-	replace_content("#imagelist", Object.entries(meta.images)
+	const tiles = Object.entries(meta.tiles).sort((a, b) => a[0].localeCompare(b[0]));
+	//FIXME: Load all three image types, and hide the ones that aren't selected, so that
+	//the list updates instantly when the radio button is clicked. Also change the heading.
+	replace_content("#imagelist", Object.entries(meta[image_type + "s"])
 		.sort((a, b) => a[0].localeCompare(b[0]))
 		.map(([id, img]) => LI([
 			img.title || id, " (" + img.xsize + "x" + img.ysize + ") ",
 			"(", DATE(img.created_at), ") ",
 			//TODO: Check img.created_by, show if it was created by you
 			//Maybe show the user name that created it? Would need serverside help.
-			BUTTON({"data-id": id, class: "loadimg"}, "Load"),
+			BUTTON({"data-id": id, "data-type": image_type, class: "loadimg"}, "Load"),
 			BUTTON({type: "button", class: "deleteimage", title: "Delete", "data-id": id}, "🗑"),
 		]))
 	);
 	let row = [], toolbox = [];
-	for (let [id, img] of images) {
+	for (let [id, img] of tiles) {
 		if (img.xsize !== 25 || img.ysize !== 25) continue; //TODO: Use the configured tile size, not hard-coded 25x25
 		if (row.length >= 10) {toolbox.push(TR(row)); row = [];}
 		row.push(TD({class: "pickcolor", "data-color": id, style: "background: url(" + img.url + ")"}));
@@ -185,9 +192,10 @@ sockmsg_update_meta(meta);
 
 //We do have the data URL for the image already, but it's easier to let Pike decode it and
 //turn it into a nice collection of pixel colours for us.
-on("click", ".loadimg", e => ws_sync.send({cmd: "load_pixelart", id: e.match.dataset.id}));
-export function sockmsg_pixelart_loaded(msg) { //Also, curiously, triggered by a rescale request :)
+on("click", ".loadimg", e => ws_sync.send({cmd: "load_image", type: e.match.dataset.type, id: e.match.dataset.id}));
+export function sockmsg_image_loaded(msg) { //Also, curiously, triggered by a rescale request :)
 	DOM("#configuredlg").close();
+	image_type = msg.type;
 	grid = msg.grid;
 	xsize = grid[0].length;
 	ysize = grid.length;
@@ -228,11 +236,8 @@ on("submit", "#resizedlg form", e => {
 	}
 });
 
-on("click", ".deleteimage", simpleconfirm("Delete this image? Any tiles built from it will also be deleted.",
-	e => ws_sync.send({cmd: "delete_image", id: e.match.dataset.id})));
-
-on("click", ".deletetile", simpleconfirm("Delete this tile? The corresponding image will be retained.",
-	e => ws_sync.send({cmd: "delete_tile", id: e.match.dataset.id})));
+on("click", ".deleteimage", simpleconfirm("Delete this image? This cannot be undone!",
+	e => ws_sync.send({cmd: "delete_image", type: image_type, id: e.match.dataset.id})));
 
 function update_custom_colors(colors) {
 	replace_content("#colorlist", [
@@ -263,15 +268,17 @@ on("submit", "#customcolordlg form", e => {
 });
 
 on("click", "#configurebtn", e => {
-	const tilemode = cellsize[0] === 1 && cellsize[1] === 1;
-	DOM("#tilemode").checked = tilemode;
-	DOM("#gridmode").checked = !tilemode;
+	DOM("#" + image_type + "mode").checked = 1;
 	DOM("#configuredlg").showModal();
 });
 
 on("click", "#reconfigure", e => {
-	if (DOM("#tilemode").checked) cellsize = [1, 1];
-	else cellsize = [25, 25]; //Currently non-configurable; all grids use 25x25 cells.
+	cellsize = [1, 1];
+	if (DOM("#tilemode").checked) image_type = "tile";
+	else if (DOM("#iconmode").checked) image_type = "icon";
+	else {image_type = "grid"; cellsize = [25, 25];} //Currently non-configurable; all grids use 25x25 cells.
+	//HACK. Remove when update_meta loads all three and hides two of them.
+	sockmsg_update_meta(meta);
 	repaint();
 	DOM("#configuredlg").close();
 });

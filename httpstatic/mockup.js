@@ -26,14 +26,12 @@ export function socket_connected(sock) {
 
 export function sockmsg_update_meta(msg) {
 	meta = msg;
-	replace_content("#imageselector", Object.entries(meta.images)
-		.filter(([id, t]) => !t.grid)
+	replace_content("#imageselector", Object.entries(meta.icons)
 		.map(([id, t]) => [t.title || id, id])
 		.sort((a, b) => a[0].localeCompare(b[0]))
 		.map(([title, id]) => OPTION({value: id}, title))
 	);
-	replace_content("#bgselector", Object.entries(meta.images)
-		.filter(([id, t]) => t.grid)
+	replace_content("#bgselector", Object.entries(meta.grids)
 		.map(([id, t]) => [t.title || id, id])
 		.sort((a, b) => a[0].localeCompare(b[0]))
 		.map(([title, id]) => OPTION({value: id}, title))
@@ -52,7 +50,7 @@ let dragging = null, dragbasex = 50, dragbasey = 10, dragorigx, dragorigy;
 const elements_by_zorder = [];
 function draw_element(ctx, el) {
 	elements_by_zorder.push(el);
-	const url = meta.images[el.image]?.url;
+	const url = meta.icons[el.image]?.url;
 	if (!url) return;
 	const img = image_cache[url];
 	if (!img) {preload_icon(url, 1); return;}
@@ -88,7 +86,7 @@ function draw_element(ctx, el) {
 
 function repaint() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	const url = meta.images[state.bg]?.url;
+	const url = meta.grids[state.bg]?.url;
 	if (url) {
 		const img = image_cache[url];
 		if (!img) preload_icon(url, 1);
@@ -301,7 +299,7 @@ on("click", ".editelement", e => {
 	DOM("#imageselect").hidden = editing_cat !== "elements";
 	if (elem.image) {
 		DOM("#imageselector").value = elem.image;
-		const img = meta.images[elem.image];
+		const img = meta.icons[elem.image];
 		if (img) {DOM("#xsize").value = img.xsize || 1; DOM("#ysize").value = img.ysize || 1;}
 	}
 	if (elem.xsize) DOM("#xsize").value = elem.xsize;
