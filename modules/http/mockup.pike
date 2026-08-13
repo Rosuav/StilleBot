@@ -1,6 +1,12 @@
 inherit http_websocket;
 inherit annotated;
 
+//Terminology note: Pixel art ("images") comes in three varieties.
+//- An *icon* is used to create an *element* on a mockup. It can be any size, and the element can also resize that.
+//- A *tile* is placed on a *grid* to form a background for the mockup. It is always 25x25.
+//- A *grid* generally consists only of tiles and transparent cells, though colour cells are also valid.
+//In the meta mapping, all three of these should always exist (meta.icons, meta.tiles, meta.grids) even if empty.
+
 constant markdown = #"# Mockups
 
 <p id=status></p>
