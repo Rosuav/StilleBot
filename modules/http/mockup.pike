@@ -72,7 +72,7 @@ You have the following mockups:
 
 constant markdown_pixelart = #"# Mockups - Pixel Art
 
-[Configure](:#configurebtn)
+[Configure](:#configurebtn) [Resize](:.opendlg data-dlg=resizedlg)
 <table border=1 id=selections><tr><td>Current</td><td id=curcolor></td><td class=pickcolor data-color=>Transparent</td></tr></table>
 
 > ### Custom Colors
@@ -94,8 +94,6 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 {: tag=formdialog #resizedlg}
 
 <table border=1 id=grid></table>
-
-[Resize](:.opendlg data-dlg=resizedlg)
 
 <style>
 /* Note that 'tile mode' also includes icons */
