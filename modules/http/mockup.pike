@@ -10,8 +10,9 @@ Scene: <select id=sceneselector><option disabled>loading...</select> <span id=sc
 <div id=sidebyside><div id=canvasscroll><canvas width=2700 height=1500></canvas></div><div id=elementlist></div></div>
 
 > ### Edit element
-> <p id=imageselect>Image: <select id=imageselector></select></p>
+> <p id=imageselect>Image: <select id=imageselector></select> <input type=number id=xsize> x <input type=number id=ysize></p>
 > <p id=bgselect>Background: <select id=bgselector></select></p>
+>
 > Name: <input id=elementtitle>
 > <textarea id=elementdesc rows=5 cols=80></textarea>
 >
@@ -262,6 +263,8 @@ mapping|zero wsedit_update_element(mapping mock, mapping(string:mixed) conn, map
 	if (msg->cat == "elements") {
 		//TODO: Validate the image, if not, set some sort of default
 		if (msg->image) target->image = msg->image;
+		if ((int)msg->xsize) target->xsize = (int)msg->xsize;
+		if ((int)msg->ysize) target->ysize = (int)msg->ysize;
 	}
 	if (msg->cat == "mockup") {
 		//TODO: Validate the bg image, if not, blank it

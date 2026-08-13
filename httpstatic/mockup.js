@@ -299,7 +299,13 @@ on("click", ".editelement", e => {
 	//delete something that's new and not yet saved.)
 	DOM("#deleteelement").hidden = !mutation_allowed || editing_element === "" || (editing_cat === "mockup" && ws_sync.get_userid() !== +state.created_by);
 	DOM("#imageselect").hidden = editing_cat !== "elements";
-	if (elem.image) DOM("#imageselector").value = elem.image;
+	if (elem.image) {
+		DOM("#imageselector").value = elem.image;
+		const img = meta.images[elem.image];
+		if (img) {DOM("#xsize").value = img.xsize || 1; DOM("#ysize").value = img.ysize || 1;}
+	}
+	if (elem.xsize) DOM("#xsize").value = elem.xsize;
+	if (elem.ysize) DOM("#ysize").value = elem.ysize;
 	DOM("#bgselect").hidden = editing_cat !== "mockup";
 	if (elem.bg) DOM("#bgselector").value = elem.bg;
 	DOM("#elementtitle").value = elem.title || "";
@@ -307,9 +313,12 @@ on("click", ".editelement", e => {
 	DOM("#editelementdlg").showModal();
 });
 
+//TODO: On change of #imageselector, set xsize and ysize to its size, but only if the user hasn't customized the size already
+
 on("submit", "#editelementdlg form", e => ws_sync.send({cmd: "update_element",
 	cat: editing_cat, id: editing_element,
 	image: DOM("#imageselector").value, //Irrelevant unless cat is "elements"
+	xsize: DOM("#xsize").value, ysize: DOM("#ysize").value,
 	bg: DOM("#bgselector").value, //Irrelevant unless cat is "mockup"
 	title: DOM("#elementtitle").value,
 	description: DOM("#elementdesc").value,
