@@ -53,13 +53,6 @@ You have the following mockups:
 
 constant markdown_pixelart = #"# Mockups - Pixel Art
 
-> ### Load image
-> * loading...
-> {:#imagelist}
->
-> [Close](:.dialog_close)
-{: tag=dialog #loadimagedlg}
-
 [Configure](:#configurebtn)
 <table border=1 id=selections><tr><td>Current</td><td id=curcolor></td><td class=pickcolor data-color=>Transparent</td></tr></table>
 
@@ -83,7 +76,7 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 
 <table border=1 id=grid></table>
 
-[Save](:.opendlg data-dlg=saveimagedlg) [Load](:.opendlg data-dlg=loadimagedlg) [Resize](:.opendlg data-dlg=resizedlg)
+[Save](:.opendlg data-dlg=saveimagedlg) [Resize](:.opendlg data-dlg=resizedlg)
 
 > ### Save image
 > Image name: <input name=savename required>
@@ -103,7 +96,9 @@ td {
 }
 #management {width: 100%;}
 #management td {vertical-align: top;}
-#allimages,#alltiles {
+#mgmtheading {margin-bottom: 0;}
+#imagelist {
+	margin-top: 0;
 	max-height: 8em;
 	overflow-y: auto;
 }
@@ -112,10 +107,9 @@ td {
 > ### Configuration and management
 > Mode: <label><input type=radio name=mode id=tilemode> Tile</label> <label><input type=radio name=mode id=gridmode> Grid</label>
 >
-> Manage images | Manage tiles
-> --------------|--------------
-> <ul id=allimages></ul> | <ul id=alltiles></ul>
-> {:#management}
+> #### Images
+> {:#mgmtheading}
+> <ul id=imagelist></ul>
 >
 > [Configure](:#reconfigure) [Close](:.dialog_close)
 {: tag=dialog #configuredlg}
@@ -393,38 +387,11 @@ void update_meta() {
 			if (sock && sock->state == 1) sock->send_text(text);
 }
 
-__async__ void websocket_cmd_new_tile(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!conn->landing) return;
-	mapping meta;
-	await(G->G->DB->mutate_config(1, "mockup") {meta = __ARGS__[0];
-		if (!meta->images[msg->image]) return;
-		meta->tiles[msg->name] = ([
-			"image": msg->image,
-			"xsize": (int)msg->xsize, "ysize": (int)msg->ysize,
-		]);
-	});
-	meta_cache = meta;
-	update_meta();
-}
-
-__async__ void websocket_cmd_delete_tile(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!conn->landing) return;
-	mapping meta;
-	await(G->G->DB->mutate_config(1, "mockup") {meta = __ARGS__[0];
-		m_delete(meta->tiles, msg->id);
-	});
-	meta_cache = meta;
-	update_meta();
-}
-
 __async__ void websocket_cmd_delete_image(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->landing) return;
 	mapping meta;
 	await(G->G->DB->mutate_config(1, "mockup") {meta = __ARGS__[0];
 		m_delete(meta->images, msg->id);
-		array purge = ({ });
-		foreach (meta->tiles; string id; mapping tile) if (tile->image == msg->id) purge += ({id});
-		m_delete(meta->tiles, purge[*]);
 	});
 	meta_cache = meta;
 	update_meta();

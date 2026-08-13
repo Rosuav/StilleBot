@@ -160,17 +160,14 @@ function DATE(d) {
 export function sockmsg_update_meta(msg) {
 	meta = msg;
 	const images = Object.entries(meta.images).sort((a, b) => a[0].localeCompare(b[0]));
-	replace_content("#imagelist", images.map(([id, img]) => LI([
-		id, " ",
-		//TODO: Check img.created_by, show if it was created by you
-		//Maybe show the user name that created it? Would need serverside help.
-		"(", DATE(img.created_at), ") ",
-		BUTTON({"data-id": id, class: "loadimg"}, "Load"),
-	])));
-	replace_content("#allimages", Object.entries(meta.images)
+	replace_content("#imagelist", Object.entries(meta.images)
 		.sort((a, b) => a[0].localeCompare(b[0]))
 		.map(([id, img]) => LI([
 			img.title || id, " (" + img.xsize + "x" + img.ysize + ") ",
+			"(", DATE(img.created_at), ") ",
+			//TODO: Check img.created_by, show if it was created by you
+			//Maybe show the user name that created it? Would need serverside help.
+			BUTTON({"data-id": id, class: "loadimg"}, "Load"),
 			BUTTON({type: "button", class: "deleteimage", title: "Delete", "data-id": id}, "🗑"),
 		]))
 	);
@@ -190,7 +187,7 @@ sockmsg_update_meta(meta);
 //turn it into a nice collection of pixel colours for us.
 on("click", ".loadimg", e => ws_sync.send({cmd: "load_pixelart", id: e.match.dataset.id}));
 export function sockmsg_pixelart_loaded(msg) { //Also, curiously, triggered by a rescale request :)
-	DOM("#loadimagedlg").close();
+	DOM("#configuredlg").close();
 	grid = msg.grid;
 	xsize = grid[0].length;
 	ysize = grid.length;
