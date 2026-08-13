@@ -6,6 +6,19 @@ inherit annotated;
 //- A *tile* is placed on a *grid* to form a background for the mockup. It is always 25x25.
 //- A *grid* generally consists only of tiles and transparent cells, though colour cells are also valid.
 //In the meta mapping, all three of these should always exist (meta.icons, meta.tiles, meta.grids) even if empty.
+//All three are keyed by id. The values are all mappings with the following keys:
+//- created_at, created_by - timestamp and Twitch user ID of the first time they were saved
+//- xsize, ysize - dimensions in pixels
+//- url - "data:image/png;base64," + the MIME-encoded PNG data for the image
+//Grids additionally have the following:
+//- grid - the original grid of tile names. Can be passed to load_image to recreate the grid.
+//         Notably, this references tiles by *name* rather than content, so updating a tile can update its grids.
+//- cellx, celly - cell size. Currently always 25x25. Recorded on every grid in case flexibility is needed.
+//- gridborder - if nonzero, a gap will be added between tiles (pixels)
+//- gridcolor - if present, is an array [r,g,b] for the colour of the grid border. NOTE: If this is set but the
+//         gridborder is zero, instead a single pixel dot will be set in the lower right of every cell, giving a
+//         subtle alignment marker without consuming space.
+
 
 constant markdown = #"# Mockups
 
