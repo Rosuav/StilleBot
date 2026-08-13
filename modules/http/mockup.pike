@@ -10,7 +10,7 @@ Scene: <select id=sceneselector><option disabled>loading...</select> <span id=sc
 <div id=sidebyside><div id=canvasscroll><canvas width=2700 height=1500></canvas></div><div id=elementlist></div></div>
 
 > ### Edit element
-> <p id=typeselect>Type: <select id=typeselector></select></p>
+> <p id=imageselect>Image: <select id=imageselector></select></p>
 > <p id=bgselect>Background: <select id=bgselector></select></p>
 > Name: <input id=elementtitle>
 > <textarea id=elementdesc rows=5 cols=80></textarea>
@@ -115,11 +115,6 @@ td {
 > --------------|--------------
 > <ul id=allimages></ul> | <ul id=alltiles></ul>
 > {:#management}
->
-> Create additional tile types using existing images, giving alternative
-> sizes for deployable objects.
->
-> <form id=newtile>Add tile: <input name=name> <select id=imagesel></select> <input type=number name=xsize> x <input type=number name=ysize> <button type=submit>Add</button></form>
 >
 > [Configure](:#reconfigure) [Close](:.dialog_close)
 {: tag=dialog #configuredlg}
@@ -258,7 +253,6 @@ mapping|zero wsedit_update_element(mapping mock, mapping(string:mixed) conn, map
 	if (msg->id == "" && msg->cat == "elements") {
 		//Blank ID means create; maybe this should subsume wsedit_new_scene?
 		int i; for (i = 2; mock[msg->cat]["e" + i]; ++i);
-		string type = msg->type;
 		mock[msg->cat][msg->id = "e" + i] = ([]);
 	}
 	mapping target = msg->cat == "mockup" ? mock : mock[msg->cat][msg->id];
@@ -266,8 +260,8 @@ mapping|zero wsedit_update_element(mapping mock, mapping(string:mixed) conn, map
 	foreach ("title description" / " ", string key)
 		if (!undefinedp(msg[key])) target[key] = msg[key];
 	if (msg->cat == "elements") {
-		//TODO: Validate the type, if not, set some sort of default
-		if (msg->type) target->type = msg->type;
+		//TODO: Validate the image, if not, set some sort of default
+		if (msg->image) target->image = msg->image;
 	}
 	if (msg->cat == "mockup") {
 		//TODO: Validate the bg image, if not, blank it
@@ -382,10 +376,6 @@ __async__ void websocket_cmd_save_pixelart(mapping(string:mixed) conn, mapping(s
 			"created_by": conn->session->user->id,
 			"xsize": image->xsize(), "ysize": image->ysize(),
 		]) | xtra;
-		if (!xtra->cellx) meta->tiles[msg->name] = ([ //For images (but not grids), automatically make a corresponding tile type.
-			"image": msg->name,
-			"xsize": image->xsize(), "ysize": image->ysize(),
-		]);
 	});
 	meta_cache = meta;
 	update_meta();

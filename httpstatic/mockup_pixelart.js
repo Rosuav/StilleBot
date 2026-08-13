@@ -174,14 +174,6 @@ export function sockmsg_update_meta(msg) {
 			BUTTON({type: "button", class: "deleteimage", title: "Delete", "data-id": id}, "🗑"),
 		]))
 	);
-	replace_content("#alltiles", Object.entries(meta.tiles)
-		.sort((a, b) => a[0].localeCompare(b[0]))
-		.map(([id, tile]) => LI([
-			tile.title || id, " (" + tile.xsize + "x" + tile.ysize + ") ",
-			BUTTON({type: "button", class: "deletetile", title: "Delete", "data-id": id}, "🗑"),
-		]))
-	);
-	replace_content("#imagesel", images.map(([id, img]) => OPTION({value: id}, [img.title || id, " (" + img.xsize + "x" + img.ysize + ")"])));
 	let row = [], toolbox = [];
 	for (let [id, img] of images) {
 		if (img.xsize !== 25 || img.ysize !== 25) continue; //TODO: Use the configured tile size, not hard-coded 25x25
@@ -237,16 +229,6 @@ on("submit", "#resizedlg form", e => {
 		ysize = +DOM("#ysize").value;
 		repaint();
 	}
-});
-
-on("submit", "#newtile", e => {
-	e.preventDefault(); //This is not a formdialog and should not close the form (or navigate)
-	ws_sync.send({cmd: "new_tile",
-		name: e.match.elements.name.value,
-		image: DOM("#imagesel").value,
-		xsize: e.match.elements.xsize.value,
-		ysize: e.match.elements.ysize.value,
-	});
 });
 
 on("click", ".deleteimage", simpleconfirm("Delete this image? Any tiles built from it will also be deleted.",

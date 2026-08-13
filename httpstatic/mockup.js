@@ -26,7 +26,8 @@ export function socket_connected(sock) {
 
 export function sockmsg_update_meta(msg) {
 	meta = msg;
-	replace_content("#typeselector", Object.entries(meta.tiles)
+	replace_content("#imageselector", Object.entries(meta.images)
+		.filter(([id, t]) => !t.grid)
 		.map(([id, t]) => [t.title || id, id])
 		.sort((a, b) => a[0].localeCompare(b[0]))
 		.map(([title, id]) => OPTION({value: id}, title))
@@ -51,10 +52,8 @@ let dragging = null, dragbasex = 50, dragbasey = 10, dragorigx, dragorigy;
 const elements_by_zorder = [];
 function draw_element(ctx, el) {
 	elements_by_zorder.push(el);
-	const type = meta.tiles[el.type];
-	if (!type) {console.error("UNKNOWN ELEMENT TYPE", el); return;}
-	const url = type.url || meta.images[type.image]?.url;
-	if (!url) return; //??? Should probably never happen.
+	const url = meta.images[el.image]?.url;
+	if (!url) return;
 	const img = image_cache[url];
 	if (!img) {preload_icon(url, 1); return;}
 	if (!img.naturalWidth) return; //Probably not loaded yet
@@ -62,8 +61,8 @@ function draw_element(ctx, el) {
 	//but allow it to be changed later by rescaling.
 	let pos = element_position[el.id];
 	if (!pos) element_position[el.id] = pos = {x: 0, y: 0};
-	el.xsize = el.xsize || type.xsize || img.naturalWidth;
-	el.ysize = el.ysize || type.ysize || img.naturalHeight;
+	el.xsize = el.xsize || img.naturalWidth;
+	el.ysize = el.ysize || img.naturalHeight;
 	ctx.drawImage(img, pos.x, pos.y, el.xsize, el.ysize);
 	if (dragging) {
 		ctx.strokeRect(pos.x, pos.y, el.xsize, el.ysize);
@@ -299,8 +298,8 @@ on("click", ".editelement", e => {
 	//(You also, unsurprisingly, can't delete if you can't mutate, nor can you
 	//delete something that's new and not yet saved.)
 	DOM("#deleteelement").hidden = !mutation_allowed || editing_element === "" || (editing_cat === "mockup" && ws_sync.get_userid() !== +state.created_by);
-	DOM("#typeselect").hidden = editing_cat !== "elements";
-	if (elem.type) DOM("#typeselector").value = elem.type;
+	DOM("#imageselect").hidden = editing_cat !== "elements";
+	if (elem.image) DOM("#imageselector").value = elem.image;
 	DOM("#bgselect").hidden = editing_cat !== "mockup";
 	if (elem.bg) DOM("#bgselector").value = elem.bg;
 	DOM("#elementtitle").value = elem.title || "";
@@ -310,7 +309,7 @@ on("click", ".editelement", e => {
 
 on("submit", "#editelementdlg form", e => ws_sync.send({cmd: "update_element",
 	cat: editing_cat, id: editing_element,
-	type: DOM("#typeselector").value, //Irrelevant unless cat is "elements"
+	image: DOM("#imageselector").value, //Irrelevant unless cat is "elements"
 	bg: DOM("#bgselector").value, //Irrelevant unless cat is "mockup"
 	title: DOM("#elementtitle").value,
 	description: DOM("#elementdesc").value,
