@@ -161,22 +161,27 @@ function DATE(d) {
 	]);
 }
 
-export function sockmsg_update_meta(msg) {
-	meta = msg;
-	const tiles = Object.entries(meta.tiles).sort((a, b) => a[0].localeCompare(b[0]));
-	//FIXME: Load all three image types, and hide the ones that aren't selected, so that
-	//the list updates instantly when the radio button is clicked. Also change the heading.
-	replace_content("#imagelist", Object.entries(meta[image_type + "s"])
+function imagelist(type) {
+	return Object.entries(meta[type + "s"])
 		.sort((a, b) => a[0].localeCompare(b[0]))
-		.map(([id, img]) => LI([
+		.map(([id, img]) => LI({class: "type-" + type}, [
 			img.title || id, " (" + img.xsize + "x" + img.ysize + ") ",
 			"(", DATE(img.created_at), ") ",
 			//TODO: Check img.created_by, show if it was created by you
 			//Maybe show the user name that created it? Would need serverside help.
-			BUTTON({"data-id": id, "data-type": image_type, class: "loadimg"}, "Load"),
+			BUTTON({"data-id": id, "data-type": type, class: "loadimg"}, "Load"),
 			BUTTON({type: "button", class: "deleteimage", title: "Delete", "data-id": id}, "🗑"),
 		]))
-	);
+}
+export function sockmsg_update_meta(msg) {
+	meta = msg;
+	const tiles = Object.entries(meta.tiles).sort((a, b) => a[0].localeCompare(b[0]));
+	replace_content("#imagelist", [
+		//Order here doesn't matter - only one block should ever be visible at a time
+		imagelist("tile"),
+		imagelist("icon"),
+		imagelist("grid"),
+	]).className = "showtype-" + image_type;
 	let row = [], toolbox = [];
 	for (let [id, img] of tiles) {
 		if (img.xsize !== 25 || img.ysize !== 25) continue; //TODO: Use the configured tile size, not hard-coded 25x25
@@ -188,6 +193,10 @@ export function sockmsg_update_meta(msg) {
 	replace_content("#toolbox", toolbox);
 }
 sockmsg_update_meta(meta);
+
+//NOTE: Clicking a mode selector does *not* change image_type. That only happens if you confirm
+//it by clicking "Configure". Closing and reopening the dialog will show the previous one again.
+on("click", "[name=mode]", e => DOM("#imagelist").className = "showtype-" + e.match.id.slice(0, 4));
 
 //We do have the data URL for the image already, but it's easier to let Pike decode it and
 //turn it into a nice collection of pixel colours for us.
@@ -277,8 +286,6 @@ on("click", "#reconfigure", e => {
 	if (DOM("#tilemode").checked) image_type = "tile";
 	else if (DOM("#iconmode").checked) image_type = "icon";
 	else {image_type = "grid"; cellsize = [25, 25];} //Currently non-configurable; all grids use 25x25 cells.
-	//HACK. Remove when update_meta loads all three and hides two of them.
-	sockmsg_update_meta(meta);
 	repaint();
 	DOM("#configuredlg").close();
 });

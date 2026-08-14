@@ -99,6 +99,10 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 /* Note that 'tile mode' also includes icons */
 .tilemode .gridonly {display: none;}
 .gridmode .tileonly {display: none;}
+#imagelist li {display: none;}
+#imagelist.showtype-tile li.type-tile {display: list-item;}
+#imagelist.showtype-icon li.type-icon {display: list-item;}
+#imagelist.showtype-grid li.type-grid {display: list-item;}
 #selections {cursor: default; font-size: small;}
 /* TODO: Put a checkerboard background on #grid so transparent pixels aren't the same as any single colour */
 #grid {margin-top: 1em;}
