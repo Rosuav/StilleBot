@@ -137,8 +137,8 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 /* TODO: Put a checkerboard background on #grid so transparent pixels aren't the same as any single colour */
 #grid {margin-top: 1em;}
 td {
-	width: 25px;
-	height: 25px;
+	width: 26px; height: 26px;
+	min-width: 26px; min-height: 26px; /* Prevent the cells from imploding */
 }
 #management {width: 100%;}
 #management td {vertical-align: top;}
