@@ -36,6 +36,7 @@ export function sockmsg_update_meta(msg) {
 		.sort((a, b) => a[0].localeCompare(b[0]))
 		.map(([title, id]) => OPTION({value: id}, title))
 	);
+	if (meta.grids[state.bg]) repaint();
 }
 sockmsg_update_meta(meta);
 
