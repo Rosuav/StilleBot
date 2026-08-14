@@ -389,7 +389,17 @@ array(Image.Image|mapping) load_image(array(array(string)) grid, mapping|void xt
 			if (features->grid) features->grid[y][x] = cell;
 		}
 	}
-	//TODO: If gridcolor but not gridborder, draw the overlay dots
+	//A border of 0 but a selected color gives corner dots. These are drawn _after_ the
+	//tiles in the cells, so that this overlays (even if there's no transparent corner).
+	if (!gridborder && gridcolor) {
+		werror("Creating corner dots\n");
+		for (int x = 1; x < sizeof(grid[0]); ++x) {
+			for (int y = 1; y < sizeof(grid); ++y) {
+				image->setpixel(x * cellx - 1, y * celly - 1, @gridcolor);
+				alpha->setpixel(x * cellx - 1, y * celly - 1, 255, 255, 255);
+			}
+		}
+	}
 	return ({image, alpha, features});
 }
 
