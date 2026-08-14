@@ -121,7 +121,11 @@ td {
 </style>
 
 > ### Configuration and management
-> Mode: <label><input type=radio name=mode id=tilemode> Tile</label> <label><input type=radio name=mode id=iconmode> Icon</label> <label><input type=radio name=mode id=gridmode> Grid</label>
+> <p>Mode:
+>     <label title=\"Tiles are used on grids\"><input type=radio name=mode id=tilemode> Tile</label>
+>     <label title=\"Icons form the basis of movable elements\"><input type=radio name=mode id=iconmode> Icon</label>
+>     <label title=\"Grids assemble tiles into a background\"><input type=radio name=mode id=gridmode> Grid</label>
+> </p>
 >
 > #### Images
 > {:#mgmtheading}
