@@ -275,13 +275,9 @@
       be a collaborator
   - Rename directory. Can "Create a Tree" move/rename a whole directory? Also needs a UI.
 * Port in the battle grid as a mockup system
-  - Build tiles with pixels as per battle grid
-  - Build backgrounds (grid lines optional) - requires Twitch login
-  - Load background into mockup
   - Toolbox of available elements
     - Colour selection within an element type??
-    - Apply transparency/opacity to individual elements?
-  - Anyone can move or add elements
+    - Apply transparency/opacity to individual elements??
   - List of existing elements
     - Have a Clone button on element properties
   - Have a way to clone a mockup (requires Twitch login) which would allow "now let's do country show"
@@ -290,11 +286,5 @@
     - Add a button to send the password - currently only done if it's in the URL
   - Export entire mockup as a series of PNGs (one per scene)
   - Export as PDF??
-  - Background editor
-    - Same as pixel art but different palette
-    - Config: tile size (x, y), grid thickness (one option, applies to both x and y),
-      grid colour (allow transparent ("None"))
-    - Palette will be every existing pixel art of the correct tile size
-      - Maybe allow smaller tiles???
-    - Automatically update backgrounds when any of their tiles get edited
+  - Automatically update backgrounds when any of their tiles get edited
   - Select multiple elements to move them together???
