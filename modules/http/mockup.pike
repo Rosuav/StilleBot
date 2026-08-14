@@ -354,15 +354,17 @@ array(Image.Image|mapping) load_image(array(array(string)) grid, mapping|void xt
 	//Draw the entire grid first, then apply the actual selection of colours or images
 	//Note that an over-size tile will overlay the grid slightly.
 	if (gridborder && gridcolor) {
-		for (int x = 1; x < sizeof(grid[0]); ++x) {
-			int xpos = x * (cellx + gridborder) - gridborder;
-			image->line(xpos, 0, xpos, ysize, @gridcolor);
-			alpha->line(xpos, 0, xpos, ysize, 255, 255, 255);
-		}
-		for (int y = 1; y < sizeof(grid); ++y) {
-			int ypos = y * (celly + gridborder) - gridborder;
-			image->line(0, ypos, ysize, ypos, @gridcolor);
-			alpha->line(0, ypos, ysize, ypos, 255, 255, 255);
+		for (int i = 0; i < gridborder; ++i) {
+			for (int x = 1; x < sizeof(grid[0]); ++x) {
+				int xpos = x * (cellx + gridborder) - gridborder + i;
+				image->line(xpos, 0, xpos, ysize, @gridcolor);
+				alpha->line(xpos, 0, xpos, ysize, 255, 255, 255);
+			}
+			for (int y = 1; y < sizeof(grid); ++y) {
+				int ypos = y * (celly + gridborder) - gridborder + i;
+				image->line(0, ypos, ysize, ypos, @gridcolor);
+				alpha->line(0, ypos, ysize, ypos, 255, 255, 255);
+			}
 		}
 	}
 	mapping image_cache = ([]);
