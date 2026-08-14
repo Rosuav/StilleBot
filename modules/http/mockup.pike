@@ -140,7 +140,7 @@ td {
 > <label>Thickness <input type=number minimum=0 id=gridborder> px</label>
 > </p>
 >
-> <form id=saveimage>Save as: <input name=savename required> <button type=submit>Save</button></form>
+> <form id=saveimage method=dialog>Save as: <input name=savename required> <button type=submit>Save</button></form>
 >
 > [Close](:.dialog_close)
 {: tag=dialog #configuredlg}

@@ -138,7 +138,6 @@ on("pointerup", "#grid", e => {
 });
 
 on("submit", "#saveimage", e => {
-	e.preventDefault();
 	ws_sync.send({cmd: "save_image",
 		type: image_type,
 		name: e.match.elements.savename.value,
@@ -197,9 +196,28 @@ export function sockmsg_update_meta(msg) {
 }
 sockmsg_update_meta(meta);
 
-//We do have the data URL for the image already, but it's easier to let Pike decode it and
-//turn it into a nice collection of pixel colours for us.
-on("click", ".loadimg", e => ws_sync.send({cmd: "load_image", type: e.match.dataset.type, id: e.match.dataset.id}));
+function hex(n) {return ("0" + n.toString(16)).slice(-2);}
+
+on("click", ".loadimg", e => {
+	//Grids are easy to load, we already have what we need.
+	if (image_type === "grid") {
+		const img = meta.grids[e.match.dataset.id];
+		if (!img) return; // ?? Somehow not found for loading
+		DOM("#saveimage [name=savename]").value = e.match.dataset.id;
+		grid = img.grid;
+		xsize = grid[0].length;
+		ysize = grid.length;
+		gridborder = img.gridborder;
+		if (img.gridcolor) gridcolor = "#" + hex(img.gridcolor[0]) + hex(img.gridcolor[1]) + hex(img.gridcolor[2])
+		else gridcolor = "";
+		console.log("Grid color", gridcolor);
+		repaint();
+		DOM("#configuredlg").close();
+	}
+	//We do have the data URL for the image already, but it's easier to let Pike decode it and
+	//turn it into a nice collection of pixel colours for us.
+	else ws_sync.send({cmd: "load_image", type: e.match.dataset.type, id: e.match.dataset.id});
+});
 export function sockmsg_image_loaded(msg) { //Also, curiously, triggered by a rescale request :)
 	DOM("#configuredlg").close();
 	if (msg.type) image_type = msg.type;
