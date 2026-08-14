@@ -1,3 +1,4 @@
+#charset utf-8
 inherit http_websocket;
 inherit annotated;
 
@@ -32,6 +33,16 @@ constant markdown = #"# Mockups
 <div id=sidebyside><div id=canvasscroll><canvas width=2700 height=1500></canvas></div><div id=elementlist></div></div>
 
 > ### Edit element
+> <p id=lockselect><label>Lock element position in <span id=scenename></span> <input type=checkbox id=elementlocked>
+> <svg id=lockopen fill=black version=1.1 xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\" enable-background=\"new 0 0 512 512\">
+>   <path d=\"m375,11c-66.3,0-120.2,53.9-120.2,120.1v64.1h-177.4c-33.4,0-60.5,27.1-60.5,60.5v184.7c0,33.4 27.2,60.5 60.5,60.5h227.8c33.4,0 60.5-27.1 60.5-60.5v-184.6c0-33.4-27.1-60.5-60.5-60.5h-9.5v-64.1c0-43.7 35.6-79.3 79.3-79.3 43.7,0 79.3,35.6 79.3,79.3v84.5c0,11.3 9.1,20.4 20.4,20.4s20.4-9.1 20.4-20.4v-84.5c0.1-66.3-53.8-120.2-120.1-120.2zm-50.2,244.8v184.7c0,10.8-8.8,19.7-19.7,19.7h-227.7c-10.9,0-19.7-8.8-19.7-19.7v-184.7c0-10.9 8.8-19.7 19.7-19.7h227.8c10.8-2.84217e-14 19.6,8.8 19.6,19.7z\"/>
+>   <path d=\"m191.3,430c11.3,0 20.4-9.1 20.4-20.4v-40.1c0-11.3-9.1-20.4-20.4-20.4-11.3,0-20.4,9.1-20.4,20.4v40.1c-0.1,11.3 9.1,20.4 20.4,20.4z\"/>
+> </svg>
+> <svg id=lockclosed fill=black version=1.1 xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\" enable-background=\"new 0 0 512 512\">
+>   <path d=\"m399.7,460.2h-287.4v-215.6h287.3v215.6h0.1zm-234-318c0-49.8 40.5-90.3 90.3-90.3 49.8,0 90.3,40.5 90.3,90.3v61.6h-180.6v-61.6zm254.4,61.6h-32.9v-61.6c-5.68434e-14-72.4-58.9-131.2-131.2-131.2-72.3,0-131.2,58.8-131.2,131.2v61.6h-32.9c-11.3,0-20.4,9.1-20.4,20.4v256.4c0,11.3 9.1,20.4 20.4,20.4h328.1c11.3,0 20.4-9.1 20.4-20.4v-256.4c0.1-11.3-9.1-20.4-20.3-20.4z\"/>
+>   <path d=\"m256,420c11.3,0 20.4-9.1 20.4-20.4v-36.7c0-11.3-9.1-20.4-20.4-20.4s-20.4,9.1-20.4,20.4v36.7c2.84217e-14,11.2 9.1,20.4 20.4,20.4z\"/>
+> </svg>
+> </label></p>
 > <p id=imageselect>Image: <select id=imageselector></select> <input type=number id=xsize> x <input type=number id=ysize></p>
 > <p id=bgselect>Background: <select id=bgselector></select></p>
 >
@@ -58,6 +69,13 @@ constant markdown = #"# Mockups
 	overflow: auto;
 }
 #elementlist li {text-wrap: nowrap;}
+#elementlocked {display: none;}
+#elementlocked ~ svg {
+	height: 1.25em; width: 1.25em;
+}
+#elementlocked ~ #lockclosed {display: none;}
+#elementlocked:checked ~ #lockopen {display: none;}
+#elementlocked:checked ~ #lockclosed {display: inline;}
 </style>
 ";
 
@@ -316,7 +334,8 @@ __async__ void websocket_cmd_move_element(mapping(string:mixed) conn, mapping(st
 		if (!mock->elements[msg->id]) return;
 		if (!scene->elements) scene->elements = ([]);
 		if (!scene->elements[msg->id]) scene->elements[msg->id] = ([]);
-		scene->elements[msg->id] |= (["x": (float)msg->x, "y": (float)msg->y]);
+		if (!undefinedp(msg->x)) scene->elements[msg->id] |= (["x": (float)msg->x, "y": (float)msg->y]);
+		if (!undefinedp(msg->locked)) scene->elements[msg->id] |= (["locked": !!msg->locked]);
 		update = (["scene": msg->scene, "id": msg->id, "move_element": scene->elements[msg->id], "cause": msg->clientid]);
 	});
 	if (update) send_updates_all(conn->group, update);

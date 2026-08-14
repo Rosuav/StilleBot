@@ -108,14 +108,14 @@ function repaint() {
 	if (dragging) draw_element(ctx, dragging); //Anything being dragged gets drawn last, ensuring it is at the top of z-order.
 }
 
-function element_at_position(x, y) {
+function element_at_position(x, y, filter) {
 	//Iterate through all elements, starting at the top of the z-order stack and going
 	//to the bottom; the first one found containing the given position is returned.
 	for (let i = elements_by_zorder.length - 1; i >= 0; --i) {
 		//TODO: Handle rotated clipping rectangles
 		const el = elements_by_zorder[i];
 		const pos = element_position[el.id];
-		if (x >= pos.x && y >= pos.y && x < pos.x + el.xsize && y < pos.y + el.ysize) return el;
+		if (x >= pos.x && y >= pos.y && x < pos.x + el.xsize && y < pos.y + el.ysize && (!filter || filter(el))) return el;
 	}
 }
 
@@ -124,7 +124,7 @@ canvas.addEventListener("pointerdown", e => {
 	if (!mutation_allowed) return;
 	e.preventDefault();
 	dragging = null;
-	const el = element_at_position(e.offsetX, e.offsetY);
+	const el = element_at_position(e.offsetX, e.offsetY, el => !element_position[el.id].locked);
 	if (!el) return;
 	e.target.setPointerCapture(e.pointerId);
 	clicking = true;
@@ -240,7 +240,6 @@ canvas.addEventListener("pointerup", e => {
 on("dblclick", "canvas", e => {
 	const el = element_at_position(e.offsetX, e.offsetY);
 	if (!el) return;
-	console.log("Double click", el);
 	edit_element("elements", el.id);
 });
 
@@ -310,7 +309,7 @@ function edit_element(cat, elemid) {
 	//(You also, unsurprisingly, can't delete if you can't mutate, nor can you
 	//delete something that's new and not yet saved.)
 	DOM("#deleteelement").hidden = !mutation_allowed || editing_element === "" || (editing_cat === "mockup" && ws_sync.get_userid() !== +state.created_by);
-	DOM("#imageselect").hidden = editing_cat !== "elements";
+	DOM("#imageselect").hidden = DOM("#lockselect").hidden = editing_cat !== "elements";
 	if (elem.image) {
 		DOM("#imageselector").value = elem.image;
 		const img = meta.icons[elem.image];
@@ -322,10 +321,14 @@ function edit_element(cat, elemid) {
 	if (elem.bg) DOM("#bgselector").value = elem.bg;
 	DOM("#elementtitle").value = elem.title || "";
 	DOM("#elementdesc").value = elem.description || "";
+	replace_content("#scenename", state.scenes[curscene].title || curscene);
+	DOM("#elementlocked").checked = !!element_position[elemid].locked;
 	DOM("#editelementdlg").showModal();
 }
 
 on("click", ".editelement", e => edit_element(e.match.dataset.cat, e.match.dataset.element));
+//When you lock/unlock an element, DON'T send the client ID - we'll hear the echo-back and update locked status correctly.
+on("click", "#elementlocked", e => ws_sync.send({cmd: "move_element", scene: curscene, id: editing_element, locked: e.match.checked}));
 
 //TODO: On change of #imageselector, set xsize and ysize to its size, but only if the user hasn't customized the size already
 
