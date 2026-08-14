@@ -138,6 +138,7 @@ on("pointerup", "#grid", e => {
 });
 
 on("submit", "#saveimage", e => {
+	e.preventDefault();
 	ws_sync.send({cmd: "save_image",
 		type: image_type,
 		name: e.match.elements.savename.value,
