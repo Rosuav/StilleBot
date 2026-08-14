@@ -210,7 +210,6 @@ on("click", ".loadimg", e => {
 		gridborder = img.gridborder;
 		if (img.gridcolor) gridcolor = "#" + hex(img.gridcolor[0]) + hex(img.gridcolor[1]) + hex(img.gridcolor[2])
 		else gridcolor = "";
-		console.log("Grid color", gridcolor);
 		repaint();
 		DOM("#configuredlg").close();
 	}
