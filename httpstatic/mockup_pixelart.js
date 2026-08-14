@@ -166,7 +166,9 @@ function imagelist(type) {
 	return Object.entries(meta[type + "s"])
 		.sort((a, b) => a[0].localeCompare(b[0]))
 		.map(([id, img]) => LI({class: "type-" + type}, [
-			img.title || id, " (" + img.xsize + "x" + img.ysize + ") ",
+			img.title || id,
+			//For grids, show the size in cells rather than pixels
+			img.grid ? " (" + img.grid[0].length + "x" + img.grid.length + ")" : " (" + img.xsize + "x" + img.ysize + ") ",
 			"(", DATE(img.created_at), ") ",
 			//TODO: Check img.created_by, show if it was created by you
 			//Maybe show the user name that created it? Would need serverside help.
