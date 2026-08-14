@@ -297,3 +297,4 @@
     - Palette will be every existing pixel art of the correct tile size
       - Maybe allow smaller tiles???
     - Automatically update backgrounds when any of their tiles get edited
+  - Select multiple elements to move them together???

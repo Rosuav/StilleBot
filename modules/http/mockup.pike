@@ -124,6 +124,8 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 #imagelist.showtype-tile li.type-tile {display: list-item;}
 #imagelist.showtype-icon li.type-icon {display: list-item;}
 #imagelist.showtype-grid li.type-grid {display: list-item;}
+#gridconfig {display: none;}
+.showtype-grid ~ #gridconfig {display: block;}
 #imagelist::before {
 	display: block;
 	font-weight: bold;
