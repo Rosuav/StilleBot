@@ -127,8 +127,8 @@ td {
 
 > ### Configuration and management
 > <p>Mode:
->     <label title=\"Tiles are used on grids\"><input type=radio name=mode id=tilemode> Tile</label>
 >     <label title=\"Icons form the basis of movable elements\"><input type=radio name=mode id=iconmode> Icon</label>
+>     <label title=\"Tiles are used on grids\"><input type=radio name=mode id=tilemode> Tile</label>
 >     <label title=\"Grids assemble tiles into a background\"><input type=radio name=mode id=gridmode> Grid</label>
 > </p>
 >
@@ -142,7 +142,7 @@ td {
 >
 > <form id=saveimage>Save as: <input name=savename required> <button type=submit>Save</button></form>
 >
-> [Configure](:#reconfigure) [Close](:.dialog_close)
+> [Close](:.dialog_close)
 {: tag=dialog #configuredlg}
 ";
 

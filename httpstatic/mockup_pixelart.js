@@ -197,10 +197,6 @@ export function sockmsg_update_meta(msg) {
 }
 sockmsg_update_meta(meta);
 
-//NOTE: Clicking a mode selector does *not* change image_type. That only happens if you confirm
-//it by clicking "Configure". Closing and reopening the dialog will show the previous one again.
-on("click", "[name=mode]", e => DOM("#imagelist").className = "showtype-" + e.match.id.slice(0, 4));
-
 //We do have the data URL for the image already, but it's easier to let Pike decode it and
 //turn it into a nice collection of pixel colours for us.
 on("click", ".loadimg", e => ws_sync.send({cmd: "load_image", type: e.match.dataset.type, id: e.match.dataset.id}));
@@ -287,13 +283,15 @@ on("click", "#configurebtn", e => {
 	DOM("#configuredlg").showModal();
 });
 
-on("click", "#reconfigure", e => {
-	gridcolor = DOM("#gridvisible").checked ? DOM("#gridcolor").value : "";
-	gridborder = DOM("#gridborder").value|0;
-	cellsize = [1, 1];
-	if (DOM("#tilemode").checked) image_type = "tile";
-	else if (DOM("#iconmode").checked) image_type = "icon";
-	else {image_type = "grid"; cellsize = [25, 25];} //Currently non-configurable; all grids use 25x25 cells.
+on("click", "[name=mode]", e => {
+	image_type = e.match.id.slice(0, 4);
+	DOM("#imagelist").className = "showtype-" + image_type;
+	cellsize = image_type === "grid" ? [25, 25] : [1, 1];
 	repaint();
-	DOM("#configuredlg").close();
 });
+on("change", "#gridcolor", e => {
+	gridcolor = e.match.value;
+	DOM("#gridvisible").checked = false;
+});
+on("click", "#gridvisible", e => gridcolor = e.match.checked ? DOM("#gridcolor").value : "");
+on("change", "#gridborder", e => gridborder = e.match.value|0);
