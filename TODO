@@ -280,6 +280,13 @@
     - Apply transparency/opacity to individual elements??
   - List of existing elements
     - Have a Clone button on element properties
+  - Element rotation
+    - Hold some key to rotate around an element's center rather than move
+    - Rotation (in degrees) should be on the element's properties (NOTE: Like locking, this is
+      per-scene)
+    - Snap only to elements of the same rotation, or some multiple of 90° away
+    - When rotating, default to snapping to some convenient angle (15° maybe?) but allow a fine
+      rotation of individual degrees
   - Have a way to clone a mockup (requires Twitch login) which would allow "now let's do country show"
   - Page loads in read-only mode, but send the right password to get full access
     - Possibly have a localStorage marker to say "always enable mutation"?
