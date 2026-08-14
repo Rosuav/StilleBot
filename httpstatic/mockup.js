@@ -291,6 +291,7 @@ export function render(data) {
 			.map(e => LI({"data-id": e[0]}, [e[1], " ", EDITBUTTON("elements", e[0])]))),
 		mutation_allowed && DIV(BUTTON({class: "editelement", "data-cat": "elements", "data-element": ""}, "Add\xa0element")),
 	]);
+	DOM("#pixelartlink").hidden = !mutation_allowed || !ws_sync.get_userid();
 	repaint();
 }
 
