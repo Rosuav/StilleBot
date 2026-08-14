@@ -48,6 +48,7 @@ function preload_icon(url, needed) {
 const canvas = DOM("canvas");
 const ctx = canvas.getContext("2d");
 let dragging = null, dragbasex = 50, dragbasey = 10, dragorigx, dragorigy;
+let clicking = false;
 const elements_by_zorder = [];
 function draw_element(ctx, el) {
 	elements_by_zorder.push(el);
@@ -126,6 +127,7 @@ canvas.addEventListener("pointerdown", e => {
 	const el = element_at_position(e.offsetX, e.offsetY);
 	if (!el) return;
 	e.target.setPointerCapture(e.pointerId);
+	clicking = true;
 	if (e.ctrlKey) {
 		//TODO: Hold Ctrl to take a copy of the element and start dragging that
 		//el = clone_element(el);
@@ -192,6 +194,7 @@ function snap_to_elements(baseelem, xpos, ypos, moresnap) {
 }
 
 canvas.addEventListener("pointermove", e => {
+	clicking = false;
 	let cursor = "default";
 	if (dragging) {
 		cursor = "grabbing";
@@ -225,9 +228,11 @@ document.onkeydown = document.onkeyup = e => {
 canvas.addEventListener("pointerup", e => {
 	if (!dragging) return;
 	e.target.releasePointerCapture(e.pointerId);
-	const pos = element_position[dragging.id];
-	[pos.x, pos.y] = snap_to_elements(dragging, e.offsetX - dragbasex, e.offsetY - dragbasey, e.shiftKey);
-	ws_sync.send({cmd: "move_element", scene: curscene, id: dragging.id, x: pos.x, y: pos.y, clientid});
+	if (!clicking) {
+		const pos = element_position[dragging.id];
+		[pos.x, pos.y] = snap_to_elements(dragging, e.offsetX - dragbasex, e.offsetY - dragbasey, e.shiftKey);
+		ws_sync.send({cmd: "move_element", scene: curscene, id: dragging.id, x: pos.x, y: pos.y, clientid});
+	}
 	dragging = null;
 	repaint();
 });
