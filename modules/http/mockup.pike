@@ -103,6 +103,13 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 #imagelist.showtype-tile li.type-tile {display: list-item;}
 #imagelist.showtype-icon li.type-icon {display: list-item;}
 #imagelist.showtype-grid li.type-grid {display: list-item;}
+#imagelist::before {
+	display: block;
+	font-weight: bold;
+}
+#imagelist.showtype-tile::before {content: \"Tiles\";}
+#imagelist.showtype-icon::before {content: \"Icons\";}
+#imagelist.showtype-grid::before {content: \"Grids\";}
 #selections {cursor: default; font-size: small;}
 /* TODO: Put a checkerboard background on #grid so transparent pixels aren't the same as any single colour */
 #grid {margin-top: 1em;}
@@ -112,9 +119,7 @@ td {
 }
 #management {width: 100%;}
 #management td {vertical-align: top;}
-#mgmtheading {margin-bottom: 0;}
 #imagelist {
-	margin-top: 0;
 	max-height: 8em;
 	overflow-y: auto;
 }
@@ -127,8 +132,6 @@ td {
 >     <label title=\"Grids assemble tiles into a background\"><input type=radio name=mode id=gridmode> Grid</label>
 > </p>
 >
-> #### Images
-> {:#mgmtheading}
 > <ul id=imagelist></ul>
 >
 > <form id=saveimage>Save as: <input name=savename required> <button type=submit>Save</button></form>
