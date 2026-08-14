@@ -134,6 +134,12 @@ td {
 >
 > <ul id=imagelist></ul>
 >
+> <p id=gridconfig>Grid:
+> <label><input type=checkbox id=gridvisible>Visible</label>
+> <input type=color id=gridcolor>
+> <label>Thickness <input type=number minimum=0 id=gridborder> px</label>
+> </p>
+>
 > <form id=saveimage>Save as: <input name=savename required> <button type=submit>Save</button></form>
 >
 > [Configure](:#reconfigure) [Close](:.dialog_close)

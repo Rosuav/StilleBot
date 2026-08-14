@@ -278,11 +278,16 @@ on("submit", "#customcolordlg form", e => {
 });
 
 on("click", "#configurebtn", e => {
+	DOM("#gridvisible").checked = gridcolor !== "";
+	DOM("#gridcolor").value = gridcolor || "#000000";
+	DOM("#gridborder").value = gridborder || 0;
 	DOM("#" + image_type + "mode").checked = 1;
 	DOM("#configuredlg").showModal();
 });
 
 on("click", "#reconfigure", e => {
+	gridcolor = DOM("#gridvisible").checked ? DOM("#gridcolor").value : "";
+	gridborder = DOM("#gridborder").value|0;
 	cellsize = [1, 1];
 	if (DOM("#tilemode").checked) image_type = "tile";
 	else if (DOM("#iconmode").checked) image_type = "icon";
