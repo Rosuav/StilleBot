@@ -237,6 +237,13 @@ canvas.addEventListener("pointerup", e => {
 	repaint();
 });
 
+on("dblclick", "canvas", e => {
+	const el = element_at_position(e.offsetX, e.offsetY);
+	if (!el) return;
+	console.log("Double click", el);
+	edit_element("elements", el.id);
+});
+
 function EDITBUTTON(cat, id) {
 	return BUTTON({class: "editelement", "data-cat": cat, "data-element": id},
 		mutation_allowed ? "🖉" : "📄"); //It's the same button, but if mutation's not allowed, don't imply the potential to edit
@@ -290,9 +297,9 @@ export function render(data) {
 on("change", "#sceneselector", e => {curscene = e.match.value; render(state);});
 
 let editing_cat = null, editing_element = null;
-on("click", ".editelement", e => {
-	editing_cat = e.match.dataset.cat;
-	editing_element = e.match.dataset.element;
+function edit_element(cat, elemid) {
+	editing_cat = cat;
+	editing_element = elemid;
 	const elem =
 		editing_cat === "mockup" ? state //Category "mockup" has no ID, you are editing the mockup as a whole
 		: editing_element === "" ? { } //Blank means "create new". Should there be defaults?
@@ -315,7 +322,9 @@ on("click", ".editelement", e => {
 	DOM("#elementtitle").value = elem.title || "";
 	DOM("#elementdesc").value = elem.description || "";
 	DOM("#editelementdlg").showModal();
-});
+}
+
+on("click", ".editelement", e => edit_element(e.match.dataset.cat, e.match.dataset.element));
 
 //TODO: On change of #imageselector, set xsize and ysize to its size, but only if the user hasn't customized the size already
 
