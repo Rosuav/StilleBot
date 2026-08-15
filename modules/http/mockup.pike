@@ -12,7 +12,7 @@ inherit annotated;
 //- xsize, ysize - dimensions in pixels
 //- url - "data:image/png;base64," + the MIME-encoded PNG data for the image
 //Grids additionally have the following:
-//- grid - the original grid of tile names. Can be passed to load_image to recreate the grid.
+//- grid - the original grid of tile names. Can be passed to encode_image to recreate the grid.
 //         Notably, this references tiles by *name* rather than content, so updating a tile can update its grids.
 //- cellx, celly - cell size. Currently always 25x25. Recorded on every grid in case flexibility is needed.
 //- gridborder - if nonzero, a gap will be added between tiles (pixels)
@@ -352,7 +352,7 @@ __async__ void websocket_cmd_move_element(mapping(string:mixed) conn, mapping(st
 //xtra->gridcolor = "#000000" - color for that border (if omitted or "", will be transparent)
 //NOTE: Before calling this, ensure that meta_cache has been populated. If this function is ever made async,
 //it could ensure that it's loaded, but currently it depends on the caller.
-array(Image.Image|mapping) load_image(array(array(string)) grid, mapping|void xtra) {
+array(Image.Image|mapping) encode_image(array(array(string)) grid, mapping|void xtra) {
 	if (!arrayp(grid) || !sizeof(grid) || !arrayp(grid[0]) || !sizeof(grid[0])) return ({0, 0, ([])});
 	if (!mappingp(xtra)) xtra = ([]);
 	mapping features = ([]);
@@ -436,7 +436,7 @@ __async__ void websocket_cmd_save_image(mapping(string:mixed) conn, mapping(stri
 	if (!meta_cache) meta_cache = await(G->G->DB->load_config(1, "mockup"));
 	//The front end sends us a 2D array of colour identifiers given in six digit hex.
 	//Let's make, yaknow, an actual image. In PNG.
-	[Image.Image image, Image.Image alpha, mapping xtra] = load_image(msg->grid, msg);
+	[Image.Image image, Image.Image alpha, mapping xtra] = encode_image(msg->grid, msg);
 	if (!image) return;
 	string png = Image.PNG.encode(image, (["alpha": alpha]));
 	string url = "data:image/png;base64," + MIME.encode_base64(png, 1);
@@ -508,7 +508,7 @@ __async__ mapping websocket_cmd_load_image(mapping(string:mixed) conn, mapping(s
 __async__ mapping|zero websocket_cmd_rescale(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!conn->landing) return 0;
 	if (!meta_cache) meta_cache = await(G->G->DB->load_config(1, "mockup"));
-	[Image.Image image, Image.Image alpha, mapping xtra] = load_image(msg->grid);
+	[Image.Image image, Image.Image alpha, mapping xtra] = encode_image(msg->grid);
 	if (!image) return 0;
 	image = image->scale((int)msg->xsize, (int)msg->ysize);
 	alpha = alpha->scale((int)msg->xsize, (int)msg->ysize);
