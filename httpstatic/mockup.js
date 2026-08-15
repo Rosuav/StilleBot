@@ -319,7 +319,7 @@ function edit_element(cat, elemid) {
 	//(You also, unsurprisingly, can't delete if you can't mutate, nor can you
 	//delete something that's new and not yet saved.)
 	DOM("#deleteelement").hidden = !mutation_allowed || editing_element === "" || (editing_cat === "mockup" && ws_sync.get_userid() !== +state.created_by);
-	DOM("#imageselect").hidden = DOM("#lockselect").hidden = editing_cat !== "elements";
+	DOM("#imageselect").hidden = DOM("#positionselect").hidden = editing_cat !== "elements";
 	if (elem.image) {
 		DOM("#imageselector").value = elem.image;
 		const img = meta.icons[elem.image];
