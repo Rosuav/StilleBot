@@ -2,7 +2,7 @@
 //For the landing page and pixel art, both of which are also on /mockup,
 //see mockup_landing.js and mockup_pixelart.js respectively.
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, DIV, LI, OPTION, UL} = lindt; //autoimport
+const {BUTTON, DIV, INPUT, LABEL, LEGEND, LI, OPTION, "svg:path": PATH, SPAN, "svg:svg": SVG, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 const clientid = Math.random() + "." + Math.random(); //If an update is caused by us, we ignore it
@@ -23,6 +23,26 @@ let mutate = new URLSearchParams(location.search).get("edit");
 export function socket_connected(sock) {
 	if (typeof mutate === "string") sock.send(JSON.stringify({cmd: "mutate", mutate}));
 }
+
+//Easier to do this in JS than Markdown, though currently it is fixed (aside from #scenename that gets independently updated).
+replace_content("#positionselect", [
+	LEGEND([
+		"Position in ",
+		SPAN({id: "scenename"}),
+	]),
+	LABEL([
+		"Locked (undraggable) ",
+		INPUT({type: "checkbox", id: "elementlocked"}),
+		SVG({id: "lockopen", fill: "black", version: "1.1", xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 512 512", "enable-background": "new 0 0 512 512"}, [
+			PATH({d: "m375,11c-66.3,0-120.2,53.9-120.2,120.1v64.1h-177.4c-33.4,0-60.5,27.1-60.5,60.5v184.7c0,33.4 27.2,60.5 60.5,60.5h227.8c33.4,0 60.5-27.1 60.5-60.5v-184.6c0-33.4-27.1-60.5-60.5-60.5h-9.5v-64.1c0-43.7 35.6-79.3 79.3-79.3 43.7,0 79.3,35.6 79.3,79.3v84.5c0,11.3 9.1,20.4 20.4,20.4s20.4-9.1 20.4-20.4v-84.5c0.1-66.3-53.8-120.2-120.1-120.2zm-50.2,244.8v184.7c0,10.8-8.8,19.7-19.7,19.7h-227.7c-10.9,0-19.7-8.8-19.7-19.7v-184.7c0-10.9 8.8-19.7 19.7-19.7h227.8c10.8-2.84217e-14 19.6,8.8 19.6,19.7z"}),
+			PATH({d: "m191.3,430c11.3,0 20.4-9.1 20.4-20.4v-40.1c0-11.3-9.1-20.4-20.4-20.4-11.3,0-20.4,9.1-20.4,20.4v40.1c-0.1,11.3 9.1,20.4 20.4,20.4z"}),
+		]),
+		SVG({id: "lockclosed", fill: "black", version: "1.1", xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 512 512", "enable-background": "new 0 0 512 512"}, [
+			PATH({d: "m399.7,460.2h-287.4v-215.6h287.3v215.6h0.1zm-234-318c0-49.8 40.5-90.3 90.3-90.3 49.8,0 90.3,40.5 90.3,90.3v61.6h-180.6v-61.6zm254.4,61.6h-32.9v-61.6c-5.68434e-14-72.4-58.9-131.2-131.2-131.2-72.3,0-131.2,58.8-131.2,131.2v61.6h-32.9c-11.3,0-20.4,9.1-20.4,20.4v256.4c0,11.3 9.1,20.4 20.4,20.4h328.1c11.3,0 20.4-9.1 20.4-20.4v-256.4c0.1-11.3-9.1-20.4-20.3-20.4z"}),
+			PATH({d: "m256,420c11.3,0 20.4-9.1 20.4-20.4v-36.7c0-11.3-9.1-20.4-20.4-20.4s-20.4,9.1-20.4,20.4v36.7c2.84217e-14,11.2 9.1,20.4 20.4,20.4z"}),
+		]),
+	]),
+]);
 
 export function sockmsg_update_meta(msg) {
 	meta = msg;
