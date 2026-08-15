@@ -2,7 +2,7 @@
 //For the landing page and pixel art, both of which are also on /mockup,
 //see mockup_landing.js and mockup_pixelart.js respectively.
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, DIV, INPUT, LABEL, LEGEND, LI, OPTION, "svg:path": PATH, SPAN, "svg:svg": SVG, UL} = lindt; //autoimport
+const {BR, BUTTON, DIV, INPUT, LABEL, LEGEND, LI, OPTION, "svg:path": PATH, SPAN, "svg:svg": SVG, UL} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 const clientid = Math.random() + "." + Math.random(); //If an update is caused by us, we ignore it
@@ -41,6 +41,11 @@ replace_content("#positionselect", [
 			PATH({d: "m399.7,460.2h-287.4v-215.6h287.3v215.6h0.1zm-234-318c0-49.8 40.5-90.3 90.3-90.3 49.8,0 90.3,40.5 90.3,90.3v61.6h-180.6v-61.6zm254.4,61.6h-32.9v-61.6c-5.68434e-14-72.4-58.9-131.2-131.2-131.2-72.3,0-131.2,58.8-131.2,131.2v61.6h-32.9c-11.3,0-20.4,9.1-20.4,20.4v256.4c0,11.3 9.1,20.4 20.4,20.4h328.1c11.3,0 20.4-9.1 20.4-20.4v-256.4c0.1-11.3-9.1-20.4-20.3-20.4z"}),
 			PATH({d: "m256,420c11.3,0 20.4-9.1 20.4-20.4v-36.7c0-11.3-9.1-20.4-20.4-20.4s-20.4,9.1-20.4,20.4v36.7c2.84217e-14,11.2 9.1,20.4 20.4,20.4z"}),
 		]),
+	]), BR(),
+	LABEL([
+		"Angle: ",
+		INPUT({type: "number", id: "angle"}),
+		"degrees (unsupported)",
 	]),
 ]);
 
@@ -84,12 +89,11 @@ function draw_element(ctx, el) {
 	el.xsize = el.xsize || img.naturalWidth;
 	el.ysize = el.ysize || img.naturalHeight;
 	ctx.save();
-	if (el.angle) {
-		//Rotate around the element's midpoint. Note that the rotation is negated
-		//to make positive angles put us into the mathematical first quadrant,
-		//despite increasing Y values taking us towards the bottom of the canvas.
+	if (pos.angle) {
+		//Rotate around the element's midpoint. Currently no option to rotate around
+		//any other point.
 		ctx.translate(pos.x + el.xsize / 2, pos.y + el.ysize / 2);
-		ctx.rotate(el.angle * Math.PI / -180);
+		ctx.rotate(pos.angle * Math.PI / 180);
 		ctx.translate(-pos.x - el.xsize / 2, -pos.y - el.ysize / 2);
 	}
 	ctx.drawImage(img, pos.x, pos.y, el.xsize, el.ysize);
@@ -353,12 +357,14 @@ function edit_element(cat, elemid) {
 	DOM("#elementdesc").value = elem.description || "";
 	replace_content("#scenename", state.scenes[curscene].title || curscene);
 	DOM("#elementlocked").checked = !!element_position[elemid]?.locked;
+	DOM("#angle").value = element_position[elemid]?.angle || 0;
 	DOM("#editelementdlg").showModal();
 }
 
 on("click", ".editelement", e => edit_element(e.match.dataset.cat, e.match.dataset.element));
-//When you lock/unlock an element, DON'T send the client ID - we'll hear the echo-back and update locked status correctly.
+//When you move an element via the dialog, DON'T send the client ID - we'll hear the echo-back and update locked status correctly.
 on("click", "#elementlocked", e => ws_sync.send({cmd: "move_element", scene: curscene, id: editing_element, locked: e.match.checked}));
+on("change", "#angle", e => ws_sync.send({cmd: "move_element", scene: curscene, id: editing_element, angle: e.match.value|0}));
 
 //TODO: On change of #imageselector, set xsize and ysize to its size, but only if the user hasn't customized the size already
 
