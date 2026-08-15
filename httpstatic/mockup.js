@@ -63,6 +63,15 @@ function draw_element(ctx, el) {
 	if (!pos) element_position[el.id] = pos = {x: 0, y: 0};
 	el.xsize = el.xsize || img.naturalWidth;
 	el.ysize = el.ysize || img.naturalHeight;
+	ctx.save();
+	if (el.angle) {
+		//Rotate around the element's midpoint. Note that the rotation is negated
+		//to make positive angles put us into the mathematical first quadrant,
+		//despite increasing Y values taking us towards the bottom of the canvas.
+		ctx.translate(pos.x + el.xsize / 2, pos.y + el.ysize / 2);
+		ctx.rotate(el.angle * Math.PI / -180);
+		ctx.translate(-pos.x - el.xsize / 2, -pos.y - el.ysize / 2);
+	}
 	ctx.drawImage(img, pos.x, pos.y, el.xsize, el.ysize);
 	if (dragging) {
 		ctx.strokeRect(pos.x, pos.y, el.xsize, el.ysize);
@@ -83,6 +92,7 @@ function draw_element(ctx, el) {
 		ctx.strokeRect(pos.x, pos.y, el.xsize, el.ysize);
 		ctx.restore();
 	}
+	ctx.restore();
 	//If parent-child relationships are implemented, draw all this element's children
 }
 
