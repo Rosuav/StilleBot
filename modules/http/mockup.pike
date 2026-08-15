@@ -350,20 +350,25 @@ __async__ void websocket_cmd_move_element(mapping(string:mixed) conn, mapping(st
 //xtra->cellsize = ({x, y}) - override the cell size; must be larger than (1,1)
 //xtra->gridborder = 1 - draw a border between the tiles
 //xtra->gridcolor = "#000000" - color for that border (if omitted or "", will be transparent)
-//NOTE: Before calling this, ensure that meta_cache has been populated. If this function is ever made async,
-//it could ensure that it's loaded, but currently it depends on the caller.
+//NOTE: Before calling this, ensure that meta_cache has been populated. This function is synchronous
+//to allow it to be used inside mutate_config (though I'm not 100% enthused about that), so it can't
+//also load its own meta.
 array(Image.Image|mapping) encode_image(array(array(string)) grid, mapping|void xtra) {
 	if (!arrayp(grid) || !sizeof(grid) || !arrayp(grid[0]) || !sizeof(grid[0])) return ({0, 0, ([])});
 	if (!mappingp(xtra)) xtra = ([]);
 	mapping features = ([]);
 	int cellx = 1, celly = 1, gridborder = 0;
 	array(int) gridcolor;
-	if (xtra->type == "grid" && arrayp(xtra->cellsize) && sizeof(xtra->cellsize) == 2) [cellx, celly] = xtra->cellsize;
-	else if (xtra->type == "grid") cellx = celly = 25;
+	if (xtra->type == "grid") {
+		if (arrayp(xtra->cellsize) && sizeof(xtra->cellsize) == 2) [cellx, celly] = xtra->cellsize;
+		else if (intp(xtra->cellx) && intp(xtra->celly)) {cellx = xtra->cellx; celly = xtra->celly;}
+		else cellx = celly = 25;
+	}
 	if (cellx > 1 || celly > 1) {
 		//Cell mode. Enables the border if requested.
 		gridborder = (int)xtra->gridborder;
-		if (sscanf(xtra->gridcolor || "??", "#%2x%2x%2x", int r, int g, int b)) gridcolor = ({r, g, b});
+		if (arrayp(xtra->gridcolor) && sizeof(xtra->gridcolor) == 3) gridcolor = (array(int))xtra->gridcolor;
+		else if (sscanf(xtra->gridcolor || "??", "#%2x%2x%2x", int r, int g, int b)) gridcolor = ({r, g, b});
 		features->cellx = cellx; features->celly = celly;
 		features->gridborder = gridborder;
 		if (gridcolor) features->gridcolor = gridcolor;
@@ -418,7 +423,6 @@ array(Image.Image|mapping) encode_image(array(array(string)) grid, mapping|void 
 	//A border of 0 but a selected color gives corner dots. These are drawn _after_ the
 	//tiles in the cells, so that this overlays (even if there's no transparent corner).
 	if (!gridborder && gridcolor) {
-		werror("Creating corner dots\n");
 		for (int x = 1; x < sizeof(grid[0]); ++x) {
 			for (int y = 1; y < sizeof(grid); ++y) {
 				image->setpixel(x * cellx - 1, y * celly - 1, @gridcolor);
@@ -440,8 +444,7 @@ __async__ void websocket_cmd_save_image(mapping(string:mixed) conn, mapping(stri
 	if (!image) return;
 	string png = Image.PNG.encode(image, (["alpha": alpha]));
 	string url = "data:image/png;base64," + MIME.encode_base64(png, 1);
-	mapping meta;
-	await(G->G->DB->mutate_config(1, "mockup") {meta = __ARGS__[0];
+	await(G->G->DB->mutate_config(1, "mockup") {mapping meta = meta_cache = __ARGS__[0];
 		if (!meta->icons) meta->icons = ([]);
 		if (!meta->tiles) meta->tiles = ([]);
 		if (!meta->grids) meta->grids = ([]);
@@ -451,8 +454,19 @@ __async__ void websocket_cmd_save_image(mapping(string:mixed) conn, mapping(stri
 			"created_by": conn->session->user->id,
 			"xsize": image->xsize(), "ysize": image->ysize(),
 		]) | xtra;
+		if (msg->type == "tile") {
+			//When updating a tile, also redo any grids it's a part of.
+			foreach (meta->grids; string id; mapping img) {
+				int update = 0;
+				foreach (img->grid, array row) if (has_value(row, msg->name)) {update = 1; break;}
+				if (!update) continue;
+				[Image.Image image, Image.Image alpha, mapping xtra] = encode_image(img->grid, img | (["type": "grid"]));
+				if (!image) continue;
+				string png = Image.PNG.encode(image, (["alpha": alpha]));
+				img->url = "data:image/png;base64," + MIME.encode_base64(png, 1);
+			}
+		}
 	});
-	meta_cache = meta;
 	update_meta();
 }
 
