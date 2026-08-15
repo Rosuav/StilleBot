@@ -322,7 +322,7 @@ function edit_element(cat, elemid) {
 	DOM("#elementtitle").value = elem.title || "";
 	DOM("#elementdesc").value = elem.description || "";
 	replace_content("#scenename", state.scenes[curscene].title || curscene);
-	DOM("#elementlocked").checked = !!element_position[elemid].locked;
+	DOM("#elementlocked").checked = !!element_position[elemid]?.locked;
 	DOM("#editelementdlg").showModal();
 }
 
