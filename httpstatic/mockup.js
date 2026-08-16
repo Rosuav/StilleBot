@@ -101,7 +101,8 @@ function draw_element(ctx, el) {
 	element_transform[el.id] = ctx.getTransform().inverse();
 	//Now that we have the transformation matrix set, all drawing is done at the origin.
 	ctx.drawImage(img, 0, 0, el.xsize, el.ysize);
-	if (dragging) {
+	if (dragging && ((pos.angle||0) - (element_position[dragging.id].angle||0)) % 90 === 0) {
+		//If you're dragging something that is oriented compatibly to this one, draw snap markers.
 		ctx.strokeRect(0, 0, el.xsize, el.ysize);
 		//TODO: Do partial circles for the corners, only drawing the part outside
 		for (let x = 0; x < 3; ++x) {
