@@ -12,6 +12,7 @@ const SNAP_RANGE = SNAP_DISTANCE * SNAP_DISTANCE; //The distance squared is more
 let curscene = "";
 let state = { };
 let element_position = { }; //Shorthand: element_position <=> state.scenes[curscene].elements
+let element_transform = { }; //Inverted transformation matrix for this element. Transform a point through this matrix to get it in element-relative coordinates.
 let mutation_allowed = false; //If true, show buttons etc for read/write access, since the server's told us we're allowed to
 export function sockmsg_mutation(msg) {mutation_allowed = msg.allowed; render(state);}
 let hoverelement = null;
@@ -95,17 +96,19 @@ function draw_element(ctx, el) {
 		//Rotation is negated because it feels better that way.
 		ctx.translate(pos.x + el.xsize / 2, pos.y + el.ysize / 2);
 		ctx.rotate(-pos.angle * Math.PI / 180);
-		ctx.translate(-pos.x - el.xsize / 2, -pos.y - el.ysize / 2);
-	}
-	ctx.drawImage(img, pos.x, pos.y, el.xsize, el.ysize);
+		ctx.translate(-el.xsize / 2, -el.ysize / 2);
+	} else ctx.translate(pos.x, pos.y);
+	element_transform[el.id] = ctx.getTransform().inverse();
+	//Now that we have the transformation matrix set, all drawing is done at the origin.
+	ctx.drawImage(img, 0, 0, el.xsize, el.ysize);
 	if (dragging) {
-		ctx.strokeRect(pos.x, pos.y, el.xsize, el.ysize);
+		ctx.strokeRect(0, 0, el.xsize, el.ysize);
 		//TODO: Do partial circles for the corners, only drawing the part outside
 		for (let x = 0; x < 3; ++x) {
 			for (let y = 0; y < 3; ++y) {
 				ctx.beginPath();
 				ctx.fillStyle = ctx.strokeStyle = x === 1 && y === 1 ? "cyan" : "blue"
-				ctx.arc(pos.x + el.xsize * x / 2, pos.y + el.ysize * y / 2, 3, 0, 2 * Math.PI);
+				ctx.arc(el.xsize * x / 2, el.ysize * y / 2, 3, 0, 2 * Math.PI);
 				ctx.fill();
 			}
 		}
@@ -114,7 +117,7 @@ function draw_element(ctx, el) {
 		ctx.save();
 		ctx.setLineDash([1, 1]);
 		ctx.strokeStyle = "rebeccapurple";
-		ctx.strokeRect(pos.x, pos.y, el.xsize, el.ysize);
+		ctx.strokeRect(0, 0, el.xsize, el.ysize);
 		ctx.restore();
 	}
 	ctx.restore();
@@ -122,6 +125,7 @@ function draw_element(ctx, el) {
 }
 
 function repaint() {
+	element_transform = { };
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	const url = meta.grids[state.bg]?.url;
 	if (url) {
@@ -146,11 +150,12 @@ function repaint() {
 function element_at_position(x, y, filter) {
 	//Iterate through all elements, starting at the top of the z-order stack and going
 	//to the bottom; the first one found containing the given position is returned.
+	const point = new DOMPointReadOnly(x, y);
 	for (let i = elements_by_zorder.length - 1; i >= 0; --i) {
 		//TODO: Handle rotated clipping rectangles
 		const el = elements_by_zorder[i];
-		const pos = element_position[el.id];
-		if (x >= pos.x && y >= pos.y && x < pos.x + el.xsize && y < pos.y + el.ysize && (!filter || filter(el))) return el;
+		const p = point.matrixTransform(element_transform[el.id]);
+		if (p.x >= 0 && p.y >= 0 && p.x < el.xsize && p.y < el.ysize && (!filter || filter(el))) return el;
 	}
 }
 
