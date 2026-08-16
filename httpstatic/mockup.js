@@ -92,8 +92,9 @@ function draw_element(ctx, el) {
 	if (pos.angle) {
 		//Rotate around the element's midpoint. Currently no option to rotate around
 		//any other point.
+		//Rotation is negated because it feels better that way.
 		ctx.translate(pos.x + el.xsize / 2, pos.y + el.ysize / 2);
-		ctx.rotate(pos.angle * Math.PI / 180);
+		ctx.rotate(-pos.angle * Math.PI / 180);
 		ctx.translate(-pos.x - el.xsize / 2, -pos.y - el.ysize / 2);
 	}
 	ctx.drawImage(img, pos.x, pos.y, el.xsize, el.ysize);
