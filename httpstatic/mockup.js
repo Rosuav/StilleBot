@@ -239,6 +239,7 @@ canvas.addEventListener("pointermove", e => {
 	}
 	else {
 		const el = element_at_position(e.offsetX, e.offsetY);
+		if (el && !element_position[el.id].locked) cursor = "grab";
 		//if (e.ctrlKey && el) cursor = "copy"; //If copy is implemented, show it via the cursor
 		canvas.title = el?.title || "";
 	}
