@@ -59,6 +59,10 @@ constant markdown = #"# Mockups
 	flex-grow: 1;
 	overflow: auto;
 }
+#elementlist {
+	overflow-y: auto;
+	min-width: fit-content;
+}
 #elementlist li {text-wrap: nowrap;}
 #elementlocked {display: none;}
 #elementlocked ~ svg {
