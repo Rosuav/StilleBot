@@ -12,7 +12,8 @@ const SNAP_RANGE = SNAP_DISTANCE * SNAP_DISTANCE; //The distance squared is more
 let curscene = "";
 let state = { };
 let element_position = { }; //Shorthand: element_position <=> state.scenes[curscene].elements
-let element_transform = { }; //Inverted transformation matrix for this element. Transform a point through this matrix to get it in element-relative coordinates.
+let element_transform = { }; //Transformation matrix for this element. Transform a point through this matrix to convert element-relative coordinates to canvas-relative.
+let element_transform_inverse = { }; //Inverted transformation matrix for this element.
 let mutation_allowed = false; //If true, show buttons etc for read/write access, since the server's told us we're allowed to
 export function sockmsg_mutation(msg) {mutation_allowed = msg.allowed; render(state);}
 let hoverelement = null;
@@ -76,6 +77,20 @@ const ctx = canvas.getContext("2d");
 let dragging = null, dragbasex = 50, dragbasey = 10, dragorigx, dragorigy;
 let clicking = false;
 const elements_by_zorder = [];
+
+function element_matrix(x, y, xsize, ysize, angle) {
+	//Rotate around the element's midpoint. Currently no option to rotate around
+	//any other point.
+	//Rotation is negated because it feels better that way.
+	//CAUTION: When rotating a canvas, the angle is specified in radians. When
+	//rotating a matrix, though, it's in degrees. Don't get caught out.
+	return (new DOMMatrixReadOnly()
+		.translate(x + xsize / 2, y + ysize / 2)
+		.rotate(-(angle||0))
+		.translate(-xsize / 2, -ysize / 2)
+	);
+}
+
 function draw_element(ctx, el) {
 	elements_by_zorder.push(el);
 	const url = meta.icons[el.image]?.url;
@@ -90,15 +105,9 @@ function draw_element(ctx, el) {
 	el.xsize = el.xsize || img.naturalWidth;
 	el.ysize = el.ysize || img.naturalHeight;
 	ctx.save();
-	if (pos.angle) {
-		//Rotate around the element's midpoint. Currently no option to rotate around
-		//any other point.
-		//Rotation is negated because it feels better that way.
-		ctx.translate(pos.x + el.xsize / 2, pos.y + el.ysize / 2);
-		ctx.rotate(-pos.angle * Math.PI / 180);
-		ctx.translate(-el.xsize / 2, -el.ysize / 2);
-	} else ctx.translate(pos.x, pos.y);
-	element_transform[el.id] = ctx.getTransform().inverse();
+	element_transform[el.id] = element_matrix(pos.x, pos.y, el.xsize, el.ysize, pos.angle);
+	element_transform_inverse[el.id] = element_transform[el.id].inverse();
+	ctx.setTransform(element_transform[el.id]);
 	//Now that we have the transformation matrix set, all drawing is done at the origin.
 	ctx.drawImage(img, 0, 0, el.xsize, el.ysize);
 	if (dragging && ((pos.angle||0) - (element_position[dragging.id].angle||0)) % 90 === 0) {
@@ -126,7 +135,7 @@ function draw_element(ctx, el) {
 }
 
 function repaint() {
-	element_transform = { };
+	element_transform = { }; element_transform_inverse = { };
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	const url = meta.grids[state.bg]?.url;
 	if (url) {
@@ -155,7 +164,7 @@ function element_at_position(x, y, filter) {
 	for (let i = elements_by_zorder.length - 1; i >= 0; --i) {
 		//TODO: Handle rotated clipping rectangles
 		const el = elements_by_zorder[i];
-		const p = point.matrixTransform(element_transform[el.id]);
+		const p = point.matrixTransform(element_transform_inverse[el.id]);
 		if (p.x >= 0 && p.y >= 0 && p.x < el.xsize && p.y < el.ysize && (!filter || filter(el))) return el;
 	}
 }
@@ -185,18 +194,18 @@ const corners = [
 	[0.0, 0.5, 1], [0.5, 0.5, 2], [1.0, 0.5, 1],
 	[0.0, 1.0, 1], [0.5, 1.0, 1], [1.0, 1.0, 1],
 ];
+
 function snap_to_elements(baseelem, xpos, ypos, moresnap) {
-	//Start by defining the "search rectangle". If the base element is rotated, this should be the
-	//axis-aligned bounding box.
-	const left = xpos - SNAP_DISTANCE, top = ypos - SNAP_DISTANCE;
-	const right = xpos + baseelem.xsize + SNAP_DISTANCE, bottom = ypos + baseelem.ysize + SNAP_DISTANCE;
+	//NOTE: Previously we were doing a fast check against the bounding box before doing the full checks.
+	//This is not currently happening, but if an axis-aligned bounding box is retained, this could allow
+	//us to save some effort. Currently doing the full snap check against every element.
+	const angle = element_position[baseelem.id].angle || 0;
+	const basexfrm = element_matrix(xpos, ypos, baseelem.xsize, baseelem.ysize, element_position[baseelem.id].angle);
 	for (let el of elements_by_zorder) {
 		if (el.id === baseelem.id) continue; //Don't snap to yourself
 		const pos = element_position[el.id];
-		//If the right edge of this element is to the left of the left edge of our bounding box,
-		//there's no way that it's within snap range (since the bounding box includes snap size).
-		if (pos.x + el.xsize < left || pos.x > right || pos.y + el.ysize < top || pos.y > bottom) continue;
-		//Okay. So we have at least the plausibility of overlap.
+		if (((pos.angle||0) - angle) % 90 !== 0) continue; //Only snap to things that are oriented compatibly
+
 		//I could, in theory, make this more efficient. For now I won't bother. Let's go through some
 		//possible snapping arrangements.
 		for (let c1 of corners) for (let c2 of corners) {
@@ -206,29 +215,42 @@ function snap_to_elements(baseelem, xpos, ypos, moresnap) {
 			//edge middles all snap to each other.
 			//If any-snapping is active, affinities are ignored
 			if (!moresnap && c1[2] !== c2[2]) continue;
-			const x1 = xpos + c1[0] * baseelem.xsize, y1 = ypos + c1[1] * baseelem.ysize;
-			const x2 = pos.x + c2[0] * el.xsize, y2 = pos.y + c2[1] * el.ysize;
-			if ((x1 - x2) ** 2 + (y1 - y2) ** 2 <= SNAP_RANGE) {
+			const p1 = new DOMPointReadOnly(c1[0] * baseelem.xsize, c1[1] * baseelem.ysize).matrixTransform(basexfrm);
+			const p2 = new DOMPointReadOnly(c2[0] * el.xsize, c2[1] * el.ysize).matrixTransform(element_transform[el.id]);
+			if ((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2 <= SNAP_RANGE) {
 				//Alright! Let's snap to that. So, how do we need to move in order
 				//to place (x1, y1) onto (x2, y2)? Move the base position that far.
-				return [xpos + x2 - x1, ypos + y2 - y1];
+				return [xpos + p2.x - p1.x, ypos + p2.y - p1.y];
 			}
 		}
 		//If we didn't find a corner to snap to, try snapping to an edge instead.
 		//There are four edges, but each one only snaps to two (you don't snap the
 		//top of one thing to the left of another).
 		for (let e1 = 0; e1 <= 1; ++e1) for (let e2 = 0; e2 <= 1; ++e2) {
-			//e1 is 0 for left/top of the base element, 1 for right/bottom.
-			//e2 is the corresponding for the test element.
-			const x1 = xpos + e1 * baseelem.xsize, y1 = ypos + e1 * baseelem.ysize;
-			const x2 = pos.x + e2 * el.xsize, y2 = pos.y + e2 * el.ysize;
+			const p1 = new DOMPointReadOnly(e1 * baseelem.xsize, e1 * baseelem.ysize).matrixTransform(basexfrm);
+			const p2 = new DOMPointReadOnly(e2 * el.xsize, e2 * el.ysize).matrixTransform(element_transform[el.id]);
 			//if (x1 - x2 <= SNAP_DISTANCE && x2 - x1 <= SNAP_DISTANCE) //Is it better to do two comparisons, to call Math.abs(), or to square the number?
-			if ((x1 - x2) ** 2 <= SNAP_RANGE) //Going with squaring for consistency with the corner snaps.
+			if ((p1.x - p2.x) ** 2 <= SNAP_RANGE) { //Going with squaring for consistency with the corner snaps.
 				//Horizontal snapping (to a vertical edge)
-				return [xpos + x2 - x1, ypos];
-			if ((y1 - y2) ** 2 <= SNAP_RANGE)
-				//Vertical snapping (to a horizontal edge)
-				return [xpos, ypos + y2 - y1];
+				//First, check if the top and/or bottom corner of the base element can be found
+				//within the size of the target. Two-step coordinate transform: first take (x, 0)
+				//and (x, ysize) and translate them into physical coordinates, then translate those
+				//into other-element-relative. The x coordinate post-transformation will be close to
+				//our current location, and one of the y coordinates needs to be within the size of
+				//the target element.
+				const top = new DOMPointReadOnly(e1 * baseelem.xsize, 0).matrixTransform(basexfrm).matrixTransform(element_transform_inverse[el.id]);
+				const bot = new DOMPointReadOnly(e1 * baseelem.xsize, baseelem.ysize).matrixTransform(basexfrm).matrixTransform(element_transform_inverse[el.id]);
+				if ((top.y >= 0 && top.y <= el.ysize) || (bot.y >= 0 && bot.y <= el.ysize))
+					return [xpos + p2.x - p1.x, ypos];
+				//If it's outside range, keep looking - there might be other matches.
+			}
+			if ((p1.y - p2.y) ** 2 <= SNAP_RANGE) {
+				//Vertical snapping (to a horizontal edge), correspondingly.
+				const lef = new DOMPointReadOnly(0, e1 * baseelem.ysize).matrixTransform(basexfrm).matrixTransform(element_transform_inverse[el.id]);
+				const rig = new DOMPointReadOnly(baseelem.xsize, e1 * baseelem.ysize).matrixTransform(basexfrm).matrixTransform(element_transform_inverse[el.id]);
+				if ((lef.x >= 0 && lef.x <= el.xsize) || (rig.x >= 0 && rig.x <= el.xsize))
+					return [xpos, ypos + p2.y - p1.y];
+			}
 		}
 	}
 	return [xpos, ypos];
