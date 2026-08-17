@@ -241,6 +241,8 @@ function snap_to_elements(baseelem, xpos, ypos, moresnap) {
 				const top = new DOMPointReadOnly(e1 * baseelem.xsize, 0).matrixTransform(basexfrm).matrixTransform(element_transform_inverse[el.id]);
 				const bot = new DOMPointReadOnly(e1 * baseelem.xsize, baseelem.ysize).matrixTransform(basexfrm).matrixTransform(element_transform_inverse[el.id]);
 				if ((top.y >= 0 && top.y <= el.ysize) || (bot.y >= 0 && bot.y <= el.ysize))
+					//TODO: Figure out how to slew along the angle to meet the target. Currently
+					//this isn't perfect when the elements are tilted.
 					return [xpos + p2.x - p1.x, ypos];
 				//If it's outside range, keep looking - there might be other matches.
 			}
