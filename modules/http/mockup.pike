@@ -44,6 +44,7 @@ constant markdown = #"# Mockups
 {: tag=formdialog #editelementdlg}
 
 <style>
+#topbar {display: none;} /* Not relevant on this page, no need to waste the real estate */
 #deleteelement {
 	background: red;
 	color: yellow;
@@ -53,7 +54,7 @@ constant markdown = #"# Mockups
 	border: 1px solid black;
 	display: flex;
 	gap: 0.5em;
-	max-height: 800px; /* FIXME: main needs to be made flex so this gets all remaining space instead of a fixed arbitrary height */
+	max-height: 90vh; /* A bit arbitrary but should work on most screen sizes. TODO: Test on mobile, portrait and landscape. */
 }
 #canvasscroll {
 	flex-grow: 1;
