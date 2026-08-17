@@ -291,3 +291,9 @@
   - Export entire mockup as a series of PNGs (one per scene)
   - Export as PDF??
   - Select multiple elements to move them together???
+  - Ruler
+    - Select the tool, then click on one position, click on another
+    - Snap to corners (regardless of element angle)
+    - Show the (diagonal) distance
+    - Allow corners to be dragged
+    - Delete the ruler when the tool is reset
