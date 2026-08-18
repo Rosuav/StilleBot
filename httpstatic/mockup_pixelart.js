@@ -312,3 +312,24 @@ on("change", "#gridcolor", e => {
 });
 on("click", "#gridvisible", e => gridcolor = e.match.checked ? DOM("#gridcolor").value : "");
 on("change", "#gridborder", e => gridborder = e.match.value|0);
+
+//TODO: Deduplicate this with pages.js and make a convenient "file accept" system
+//with a callback that can do the actual work. It'll need to receive e.match.
+function upload(f) {
+	const r = new FileReader();
+	r.onload = () => ws_sync.send({cmd: "import", name: f.name, base64: r.result.split(",")[1]});
+	r.readAsDataURL(f);
+	DOM("#importdlg").close();
+}
+
+on("change", ".fileuploader", e => {
+	for (let f of e.match.files) upload(f);
+	e.match.value = "";
+});
+on("dragover", ".filedropzone", e => e.preventDefault());
+on("drop", ".filedropzone", e => {
+	e.preventDefault();
+	for (let f of e.dataTransfer.items) upload(f.getAsFile());
+});
+
+on("submit", "#importdlg form", e => ws_sync.send({cmd: "import", url: e.match.elements.importurl.value}));

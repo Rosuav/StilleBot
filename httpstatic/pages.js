@@ -68,6 +68,7 @@ function build_directory_tree(files, options) {
 	return UL([dirs[""], createnew("")]);
 }
 
+//TODO: Deduplicate with mockup_pixelart.js
 //NOTE: This uses the same CSS classes as the utils upload_to_library() system does, giving
 //consistent display; since the upload implementation is incompatible, this means that the
 //page cannot use both.

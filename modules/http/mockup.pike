@@ -89,7 +89,17 @@ You have the following mockups:
 
 constant markdown_pixelart = #"# Mockups - Pixel Art
 
-[Configure](:#configurebtn) [Resize](:.opendlg data-dlg=resizedlg)
+> ### Import image
+> Import from URL: <input type=url id=importurl>
+>
+> Import by uploading: <input class=fileuploader type=file accept=\"image/*\">
+>
+> <div class=filedropzone>Or drop a file here to import</div>
+>
+> [Import](:type=submit) [Cancel](:.dialog_close)
+{: tag=formdialog #importdlg}
+
+[Configure](:#configurebtn) [Resize](:.opendlg data-dlg=resizedlg) [Import](:.opendlg data-dlg=importdlg)
 <table border=1 id=selections><tr><td>Current</td><td id=curcolor></td><td class=pickcolor data-color=>Transparent</td></tr></table>
 
 > ### Custom Colors
@@ -524,6 +534,18 @@ __async__ mapping|zero websocket_cmd_rescale(mapping(string:mixed) conn, mapping
 	image = image->scale((int)msg->xsize, (int)msg->ysize);
 	alpha = alpha->scale((int)msg->xsize, (int)msg->ysize);
 	return (["cmd": "image_loaded", "grid": decode_image(image, alpha)]);
+}
+
+__async__ mapping|zero websocket_cmd_import(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (msg->url) {
+		werror("Fetch URL: %O\n", msg->url);
+		object res = await(Protocols.HTTP.Promise.get_url(msg->url));
+		msg->content = res->get();
+		msg->name = basename(Standards.URI(msg->url)->path);
+	} else if (msg->base64) msg->content = MIME.decode_base64(msg->base64);
+	if (!msg->content) return 0; //Note that msg->content will seldom be sent directly, as it's easier to work with base64.
+	mapping image = Image.ANY._decode(msg->content);
+	return (["cmd": "image_loaded", "id": msg->name, "type": "icon", "grid": decode_image(image->image, image->alpha)]);
 }
 
 //TODO: Have a way for the owner to set the password. This should send to all connected clients
