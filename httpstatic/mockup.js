@@ -2,7 +2,7 @@
 //For the landing page and pixel art, both of which are also on /mockup,
 //see mockup_landing.js and mockup_pixelart.js respectively.
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DIV, INPUT, LABEL, LEGEND, LI, OPTION, "svg:path": PATH, SPAN, "svg:svg": SVG, UL} = lindt; //autoimport
+const {BR, BUTTON, DIV, INPUT, LABEL, LEGEND, LI, OPTION, "svg:path": PATH, SPAN, "svg:svg": SVG, "svg:symbol": SYMBOL, UL, "svg:use": USE} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 const clientid = Math.random() + "." + Math.random(); //If an update is caused by us, we ignore it
@@ -50,7 +50,51 @@ replace_content("#positionselect", [
 		"degrees",
 	]),
 ]);
-
+let grabmode = "move";
+replace_content("#modeselector", [
+	"Mode: ",
+	LABEL({title: "Move single element"}, [
+		INPUT({type: "radio", name: "modeselector", checked: true, onclick: () => grabmode = "move"}),
+		SVG({viewBox: "0 0 24 24", fill: "none", xmlns: "http://www.w3.org/2000/svg"}, [
+			SYMBOL({id: "movearrow"},
+				PATH({d: "M5 9L2 12M2 12L5 15M2 12H22M9 5L12 2M12 2L15 5M12 2V22M15 19L12 22M12 22L9 19M19 9L22 12M22 12L19 15", "stroke-width": "1"}),
+			),
+			USE({href: "#movearrow", stroke: "#000000"}),
+		]),
+	]),
+	LABEL({title: "Move group of elements"}, [
+		INPUT({type: "radio", name: "modeselector", onclick: () => grabmode = "multimove"}),
+		SVG({viewBox: "0 0 24 24", xmlns: "http://www.w3.org/2000/svg"}, [
+			//Place the shadowed ones first, with the main one last so it overdraws as needed
+			USE({href: "#movearrow", x: "3", y: "3", stroke: "#888888"}),
+			USE({href: "#movearrow", x: "1", y: "1", stroke: "#888888"}),
+			USE({href: "#movearrow", x: "-1", y: "-1", stroke: "#000000"}), //The "real" one is in solid black, and is slightly moved from where the single-move arrow goes
+		]),
+	]),
+	LABEL({title: "Rotate single element"}, [
+		INPUT({type: "radio", name: "modeselector", onclick: () => grabmode = "rotate"}),
+		SVG({viewBox: "0 0 24 24", xmlns: "http://www.w3.org/2000/svg"}, [
+			SYMBOL({id: "rotatearrows", "stroke-width": "1", fill: "none"}, [
+				PATH({d: "M22 12l-3 3-3-3"}),
+				PATH({d: "M2 12l3-3 3 3"}),
+				PATH({d: "M19.016 14v-1.95A7.05 7.05 0 0 0 8 6.22"}),
+				PATH({d: "M16.016 17.845A7.05 7.05 0 0 1 5 12.015V10"}),
+				PATH({"stroke-linecap": "round", d: "M5 10V9"}),
+				PATH({"stroke-linecap": "round", d: "M19 15v-1"}),
+			]),
+			USE({href: "#rotatearrows", stroke: "#000000"}),
+		])
+	]),
+	LABEL({title: "Rotate group of elements"}, [
+		INPUT({type: "radio", name: "modeselector", onclick: () => grabmode = "multirotate"}),
+		SVG({viewBox: "0 0 24 24", xmlns: "http://www.w3.org/2000/svg"}, [
+			USE({href: "#rotatearrows", x: "2", y: "2", stroke: "#888888"}),
+			USE({href: "#rotatearrows", x: "0.5", y: "0.5", stroke: "#888888"}),
+			USE({href: "#rotatearrows", x: "-1", y: "-1", stroke: "#000000"}),
+		])
+	]),
+]);
+		
 export function sockmsg_update_meta(msg) {
 	meta = msg;
 	replace_content("#imageselector", Object.entries(meta.icons)

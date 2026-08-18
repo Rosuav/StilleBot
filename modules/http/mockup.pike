@@ -27,6 +27,7 @@ constant markdown = #"# Mockups
 
 <div id=spacer>
 <div>Scene: <select id=sceneselector><option disabled>loading...</select> <span id=scenebuttons></span></div>
+<div id=modeselector>Mode:</div>
 <div><a href=\"mockup?pixelart\" id=pixelartlink target=_blank hidden>Edit pixel art</a></div>
 </div>
 
@@ -48,6 +49,16 @@ constant markdown = #"# Mockups
 #spacer {
 	display: flex;
 	justify-content: space-between;
+}
+#modeselector input {display: none;}
+#modeselector svg {
+	height: 1.5em;
+	vertical-align: top;
+	border: 3px outset lightgrey;
+	margin-left: 3px;
+}
+#modeselector input:checked ~ svg {
+	border-style: inset;
 }
 #deleteelement {
 	background: red;
