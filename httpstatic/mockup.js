@@ -47,7 +47,7 @@ replace_content("#positionselect", [
 	LABEL([
 		"Angle: ",
 		INPUT({type: "number", id: "angle"}),
-		"degrees (unsupported)",
+		"degrees",
 	]),
 ]);
 
