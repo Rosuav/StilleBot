@@ -123,13 +123,13 @@ let clicking = false;
 const elements_by_zorder = [];
 
 function element_matrix(x, y, xsize, ysize, angle) {
-	//Rotate around the element's midpoint. Currently no option to rotate around
-	//any other point.
+	//The object's position defines its midpoint, which is also the point
+	//around which it rotates.
 	//Rotation is negated because it feels better that way.
 	//CAUTION: When rotating a canvas, the angle is specified in radians. When
 	//rotating a matrix, though, it's in degrees. Don't get caught out.
 	return (new DOMMatrixReadOnly()
-		.translate(x + xsize / 2, y + ysize / 2)
+		.translate(x, y)
 		.rotate(-(angle||0))
 		.translate(-xsize / 2, -ysize / 2)
 	);
