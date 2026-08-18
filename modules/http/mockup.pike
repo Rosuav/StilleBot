@@ -538,7 +538,6 @@ __async__ mapping|zero websocket_cmd_rescale(mapping(string:mixed) conn, mapping
 
 __async__ mapping|zero websocket_cmd_import(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (msg->url) {
-		werror("Fetch URL: %O\n", msg->url);
 		object res = await(Protocols.HTTP.Promise.get_url(msg->url));
 		msg->content = res->get();
 		msg->name = basename(Standards.URI(msg->url)->path);
