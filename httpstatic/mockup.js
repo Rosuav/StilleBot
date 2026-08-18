@@ -229,6 +229,15 @@ canvas.addEventListener("pointerdown", e => {
 	const pos = element_position[el.id];
 	dragging = el; dragbasex = e.offsetX - pos.x; dragbasey = e.offsetY - pos.y;
 	dragorigx = pos.x; dragorigy = pos.y;
+	if (grabmode === "rotate" || grabmode === "multirotate") {
+		//Duplicates work done by element_at_position but whatevs
+		const point = new DOMPointReadOnly(e.offsetX, e.offsetY);
+		const p = point.matrixTransform(element_transform_inverse[el.id]);
+		//Reusing the x coordinate to store the angle - close enough
+		dragbasex = Math.atan2(p.y - el.ysize / 2, p.x - el.xsize / 2) * -180 / Math.PI - (pos.angle||0);
+		dragbasey = element_transform_inverse[el.id];
+		dragorigx = pos.angle || 0;
+	}
 });
 
 //Corners and middles defined as proportions of the width/height
@@ -244,7 +253,7 @@ function snap_to_elements(baseelem, xpos, ypos, moresnap) {
 	//This is not currently happening, but if an axis-aligned bounding box is retained, this could allow
 	//us to save some effort. Currently doing the full snap check against every element.
 	const angle = element_position[baseelem.id].angle || 0;
-	const basexfrm = element_matrix(xpos, ypos, baseelem.xsize, baseelem.ysize, element_position[baseelem.id].angle);
+	const basexfrm = element_matrix(xpos, ypos, baseelem.xsize, baseelem.ysize, angle);
 	for (let el of elements_by_zorder) {
 		if (el.id === baseelem.id) continue; //Don't snap to yourself
 		const pos = element_position[el.id];
@@ -302,13 +311,26 @@ function snap_to_elements(baseelem, xpos, ypos, moresnap) {
 	return [xpos, ypos];
 }
 
+function update_drag_position(x, y, moresnap) {
+	const pos = element_position[dragging.id];
+	if (grabmode === "move" || grabmode === "multimove") {
+		[pos.x, pos.y] = snap_to_elements(dragging, x - dragbasex, y - dragbasey, moresnap);
+		return {x: pos.x, y: pos.y};
+	} else if (grabmode === "rotate" || grabmode === "multirotate") {
+		//TODO: Support snapping for rotation - snap to the angle of a nearby element.
+		const point = new DOMPointReadOnly(x, y);
+		const p = point.matrixTransform(dragbasey);
+		pos.angle = Math.atan2(p.y - dragging.ysize / 2, p.x - dragging.xsize / 2) * -180 / Math.PI - dragbasex;
+		return {angle: pos.angle};
+	}
+}
+
 canvas.addEventListener("pointermove", e => {
 	clicking = false;
 	let cursor = "default";
 	if (dragging) {
 		cursor = "grabbing";
-		const pos = element_position[dragging.id];
-		[pos.x, pos.y] = snap_to_elements(dragging, e.offsetX - dragbasex, e.offsetY - dragbasey, e.shiftKey);
+		update_drag_position(e.offsetX, e.offsetY, e.shiftKey);
 		repaint();
 	}
 	else {
@@ -324,12 +346,17 @@ document.onkeydown = document.onkeyup = e => {
 		if (e.key === "Escape") {
 			//Note that we don't release pointer capture until pointer up
 			const pos = element_position[dragging.id];
-			dragging = null; pos.x = dragorigx; pos.y = dragorigy;
+			dragging = null;
+			if (grabmode === "move" || grabmode === "multimove") {pos.x = dragorigx; pos.y = dragorigy;}
+			else if (grabmode === "rotate" || grabmode === "multirotate") pos.angle = dragorigx;
 			repaint();
 		}
 		else if (e.key === "Shift") {
 			const pos = element_position[dragging.id];
-			[pos.x, pos.y] = snap_to_elements(dragging, pos.x, pos.y, e.shiftKey);
+			if (grabmode === "move" || grabmode === "multimove")
+				update_drag_position(pos.x, pos.y, e.shiftKey);
+			//Not sure if pressing/releasing shift will do anything in rotation mode
+			//If it does, we'll need to retain the coordinates, or synthesize them from the current angle
 			repaint();
 		}
 	}
@@ -339,9 +366,8 @@ canvas.addEventListener("pointerup", e => {
 	if (!dragging) return;
 	e.target.releasePointerCapture(e.pointerId);
 	if (!clicking) {
-		const pos = element_position[dragging.id];
-		[pos.x, pos.y] = snap_to_elements(dragging, e.offsetX - dragbasex, e.offsetY - dragbasey, e.shiftKey);
-		ws_sync.send({cmd: "move_element", scene: curscene, id: dragging.id, x: pos.x, y: pos.y, clientid});
+		const updates = update_drag_position(e.offsetX, e.offsetY, e.shiftKey);
+		ws_sync.send({cmd: "move_element", scene: curscene, id: dragging.id, ...updates, clientid});
 	}
 	dragging = null;
 	repaint();
