@@ -2,7 +2,7 @@
 //For the landing page and pixel art, both of which are also on /mockup,
 //see mockup_landing.js and mockup_pixelart.js respectively.
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DIV, INPUT, LABEL, LEGEND, LI, OPTION, "svg:path": PATH, SPAN, "svg:svg": SVG, "svg:symbol": SYMBOL, UL, "svg:use": USE} = lindt; //autoimport
+const {BR, BUTTON, DIV, INPUT, LABEL, LEGEND, LI, OPTION, P, "svg:path": PATH, SPAN, "svg:svg": SVG, "svg:symbol": SYMBOL, UL, "svg:use": USE} = lindt; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 const clientid = Math.random() + "." + Math.random(); //If an update is caused by us, we ignore it
@@ -44,10 +44,15 @@ replace_content("#positionselect", [
 			PATH({d: "m256,420c11.3,0 20.4-9.1 20.4-20.4v-36.7c0-11.3-9.1-20.4-20.4-20.4s-20.4,9.1-20.4,20.4v36.7c2.84217e-14,11.2 9.1,20.4 20.4,20.4z"}),
 		]),
 	]), BR(),
-	LABEL([
-		"Angle: ",
-		INPUT({type: "number", id: "angle"}),
-		"degrees",
+	P([
+		"Position: ",
+		INPUT({type: "number", id: "xpos", "data-automove": "x"}),
+		INPUT({type: "number", id: "ypos", "data-automove": "y"}),
+		LABEL([
+			" Angle: ",
+			INPUT({type: "number", id: "angle", "data-automove": "angle"}),
+			"degrees",
+		]),
 	]),
 ]);
 let grabmode = "move";
@@ -533,6 +538,8 @@ function edit_element(cat, elemid) {
 	DOM("#elementdesc").value = elem.description || "";
 	replace_content("#scenename", state.scenes[curscene].title || curscene);
 	DOM("#elementlocked").checked = !!element_position[elemid]?.locked;
+	DOM("#xpos").value = element_position[elemid]?.x || 0;
+	DOM("#ypos").value = element_position[elemid]?.y || 0;
 	DOM("#angle").value = element_position[elemid]?.angle || 0;
 	DOM("#editelementdlg").showModal();
 }
@@ -540,7 +547,7 @@ function edit_element(cat, elemid) {
 on("click", ".editelement", e => edit_element(e.match.dataset.cat, e.match.dataset.element));
 //When you move an element via the dialog, DON'T send the client ID - we'll hear the echo-back and update locked status correctly.
 on("click", "#elementlocked", e => ws_sync.send({cmd: "move_element", scene: curscene, id: editing_element, locked: e.match.checked}));
-on("change", "#angle", e => ws_sync.send({cmd: "move_element", scene: curscene, id: editing_element, angle: e.match.value|0}));
+on("change", "[data-automove]", e => ws_sync.send({cmd: "move_element", scene: curscene, id: editing_element, [e.match.dataset.automove]: e.match.value|0}));
 
 //TODO: On change of #imageselector, set xsize and ysize to its size, but only if the user hasn't customized the size already
 
