@@ -260,8 +260,7 @@ on("click", ".copystyles", e => {
 	notify(e.match, e.clientX, e.clientY, "Copied!");
 });
 
-on("click", ".pastestyles", async e => {
-	const elem = e.match;
+export async function paste_styles(elem, x, y) {
 	let clip;
 	try {clip = await(navigator.clipboard.readText());}
 	catch (exc) {
@@ -279,8 +278,10 @@ on("click", ".pastestyles", async e => {
 	par.querySelectorAll("input,select,textarea").forEach(inp => {
 		if (!inp.dataset.nocopy && typeof values[inp.name] === "string") inp.value = values[inp.name].replace("\\n", "\n");
 	});
-	notify(elem, e.clientX, e.clientY, "Pasted!");
-});
+	notify(elem, x, y, "Pasted!");
+	return values;
+}
+on("click", ".pastestyles", e => paste_styles(e.match, e.clientX, e.clientY));
 
 const sidebar = DOM("nav#sidebar"), box = DOM("#togglesidebarbox");
 const sbvis = window.matchMedia("screen and (width >= 600px)");

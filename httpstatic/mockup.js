@@ -3,7 +3,7 @@
 //see mockup_landing.js and mockup_pixelart.js respectively.
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {BR, BUTTON, DIV, INPUT, LABEL, LEGEND, LI, OPTION, P, "svg:path": PATH, SPAN, "svg:svg": SVG, "svg:symbol": SYMBOL, UL, "svg:use": USE} = lindt; //autoimport
-import {simpleconfirm} from "$$static||utils.js$$";
+import {simpleconfirm, paste_styles} from "$$static||utils.js$$";
 
 const clientid = Math.random() + "." + Math.random(); //If an update is caused by us, we ignore it
 
@@ -44,15 +44,17 @@ replace_content("#positionselect", [
 			PATH({d: "m256,420c11.3,0 20.4-9.1 20.4-20.4v-36.7c0-11.3-9.1-20.4-20.4-20.4s-20.4,9.1-20.4,20.4v36.7c2.84217e-14,11.2 9.1,20.4 20.4,20.4z"}),
 		]),
 	]), BR(),
-	P([
+	P({"data-copystyles": "1"}, [
 		"Position: ",
-		INPUT({type: "number", id: "xpos", "data-automove": "x"}),
-		INPUT({type: "number", id: "ypos", "data-automove": "y"}),
+		INPUT({type: "number", id: "xpos", "data-automove": "x", name: "x"}),
+		INPUT({type: "number", id: "ypos", "data-automove": "y", name: "y"}),
 		LABEL([
 			" Angle: ",
-			INPUT({type: "number", id: "angle", "data-automove": "angle"}),
+			INPUT({type: "number", id: "angle", "data-automove": "angle", name: "angle"}),
 			"degrees",
 		]),
+		BUTTON({type: "button", class: "copystyles"}, "Copy position"),
+		BUTTON({type: "button", id: "pasteposition"}, "Paste position"), //Not using class: "pastestyles" as we need extra code after the paste
 	]),
 ]);
 let grabmode = "move";
@@ -99,7 +101,7 @@ replace_content("#modeselector", [
 		])
 	]),
 ]);
-		
+
 export function sockmsg_update_meta(msg) {
 	meta = msg;
 	replace_content("#imageselector", Object.entries(meta.icons)
@@ -548,6 +550,15 @@ on("click", ".editelement", e => edit_element(e.match.dataset.cat, e.match.datas
 //When you move an element via the dialog, DON'T send the client ID - we'll hear the echo-back and update locked status correctly.
 on("click", "#elementlocked", e => ws_sync.send({cmd: "move_element", scene: curscene, id: editing_element, locked: e.match.checked}));
 on("change", "[data-automove]", e => ws_sync.send({cmd: "move_element", scene: curscene, id: editing_element, [e.match.dataset.automove]: e.match.value|0}));
+
+on("click", "#pasteposition", async e => {
+	const values = await paste_styles(e.match, e.clientX, e.clientY);
+	const msg = {cmd: "move_element", scene: curscene, id: editing_element};
+	//Whitelist to just these parameters. Not strictly necessary as the back end is
+	//validating too, but we might as well.
+	["x", "y", "angle"].forEach(kw => typeof values[kw] !== "undefined" && (msg[kw] = values[kw]));
+	ws_sync.send(msg);
+});
 
 //TODO: On change of #imageselector, set xsize and ysize to its size, but only if the user hasn't customized the size already
 
