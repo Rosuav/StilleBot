@@ -118,7 +118,7 @@ function preload_icon(url, needed) {
 
 const canvas = DOM("canvas");
 const ctx = canvas.getContext("2d");
-let dragging = null, dragbasex = 50, dragbasey = 10, dragorigx, dragorigy;
+let dragging = null, dragbasex = 50, dragbasey = 10, dragorigx, dragorigy, draggroup = [];
 let clicking = false;
 const elements_by_zorder = [];
 
@@ -135,7 +135,7 @@ function element_matrix(x, y, xsize, ysize, angle) {
 	);
 }
 
-function draw_element(ctx, el) {
+function draw_element(ctx, el, dx, dy, dtheta) {
 	elements_by_zorder.push(el);
 	const url = meta.icons[el.image]?.url;
 	if (!url) return;
@@ -149,7 +149,7 @@ function draw_element(ctx, el) {
 	el.xsize = el.xsize || img.naturalWidth;
 	el.ysize = el.ysize || img.naturalHeight;
 	ctx.save();
-	element_transform[el.id] = element_matrix(pos.x, pos.y, el.xsize, el.ysize, pos.angle);
+	element_transform[el.id] = element_matrix(pos.x + (dx||0), pos.y + (dy||0), el.xsize, el.ysize, (pos.angle||0) + (dtheta||0));
 	element_transform_inverse[el.id] = element_transform[el.id].inverse();
 	ctx.setTransform(element_transform[el.id]);
 	//Now that we have the transformation matrix set, all drawing is done at the origin.
@@ -196,9 +196,22 @@ function repaint() {
 	//its parent rather than absolutely on the canvas.
 	elem.forEach(([id, el]) => {
 		el.id = id;
-		if (!el.parent && el !== dragging) draw_element(ctx, el);
+		if (!el.parent && el !== dragging && !draggroup.some(g => g.id === id)) draw_element(ctx, el);
 	});
-	if (dragging) draw_element(ctx, dragging); //Anything being dragged gets drawn last, ensuring it is at the top of z-order.
+	//Anything being dragged gets drawn last, ensuring it is at the top of z-order.
+	if (dragging) {
+		const pos = element_position[dragging.id];
+		if (grabmode === "multimove") {
+			const dx = pos.x - dragorigx, dy = pos.y - dragorigy;
+			draggroup.forEach(el => draw_element(ctx, el, dx, dy));
+		} else if (grabmode === "multirotate") {
+			//TODO: Rotate the grouped elements around the center of the *grabbed* element,
+			//not around their own centers.
+			const dtheta = pos.angle - dragorigx;
+			draggroup.forEach(el => draw_element(ctx, el, 0, 0, dtheta));
+		}
+		draw_element(ctx, dragging); //With the thing you're actually holding at the very top
+	}
 }
 
 function element_at_position(x, y, filter) {
@@ -217,7 +230,7 @@ canvas.addEventListener("pointerdown", e => {
 	if (e.button) return; //Only left clicks
 	if (!mutation_allowed) return;
 	e.preventDefault();
-	dragging = null;
+	dragging = null; draggroup = [];
 	const el = element_at_position(e.offsetX, e.offsetY, el => !element_position[el.id].locked);
 	if (!el) return;
 	e.target.setPointerCapture(e.pointerId);
@@ -238,6 +251,45 @@ canvas.addEventListener("pointerdown", e => {
 		dragbasey = element_transform_inverse[el.id];
 		dragorigx = pos.angle || 0;
 	}
+	draggroup = []; //In single modes, will always be empty; in multi modes, has zero or more additional elements to be moved around.
+	if (grabmode === "multimove" || grabmode === "multirotate") {
+		//Determine the current element group.
+		//Elements are in the group if:
+		//1) They are not locked
+		//2) They are angled compatibly with the current element
+		//3) They are snapped together.
+		//To recognize elements that are snapped together, it is sufficient to test if they would
+		//edge snap, as corner snapping will have them match on edges. Note that proximity is not
+		//significant here, as snapped elements will have zero distance.
+		//An element gets added to the group if it is snapped to any element already in the group,
+		//and this grouping is transitive.
+		//FIXME: This does not currently work correctly for rotated elements, for the same reason
+		//that edge snapping itself doesn't. Fix both at once.
+		const group = {[el.id]: el};
+		let newgroup = [el];
+		const angle = pos.angle || 0;
+		while (newgroup.length) {
+			const nextgroup = [];
+			//Scan all elements to see if any of them snap to anything in newgroup.
+			//We don't need to check what's in group, as they've already been checked against those.
+			//Any new additions get added to nextgroup so they'll get checked as well.
+			for (let el1 of elements_by_zorder) for (let el2 of newgroup) {
+				if (group[el1.id]) continue; //Already in group, ignore it
+				if (((element_position[el1.id].angle||0) - angle) % 90 !== 0) continue;
+				found: for (let e1 = 0; e1 <= 1; ++e1) for (let e2 = 0; e2 <= 1; ++e2) {
+					const p1 = new DOMPointReadOnly(e1 * el1.xsize, e1 * el1.ysize).matrixTransform(element_transform[el1.id]);
+					const p2 = new DOMPointReadOnly(e2 * el2.xsize, e2 * el2.ysize).matrixTransform(element_transform[el2.id]);
+					if (p1.x === p2.x || p1.y === p2.y) {
+						group[el1.id] = el1;
+						nextgroup.push(el1);
+						draggroup.push(el1);
+						break found;
+					}
+				}
+			}
+			newgroup = nextgroup;
+		}
+	}
 });
 
 //Corners and middles defined as proportions of the width/height
@@ -256,6 +308,7 @@ function snap_to_elements(baseelem, xpos, ypos, moresnap) {
 	const basexfrm = element_matrix(xpos, ypos, baseelem.xsize, baseelem.ysize, angle);
 	for (let el of elements_by_zorder) {
 		if (el.id === baseelem.id) continue; //Don't snap to yourself
+		if (draggroup.some(g => g.id === el.id)) continue; //Don't snap to something you're already carrying
 		const pos = element_position[el.id];
 		if (((pos.angle||0) - angle) % 90 !== 0) continue; //Only snap to things that are oriented compatibly
 
@@ -349,7 +402,7 @@ document.onkeydown = document.onkeyup = e => {
 		if (e.key === "Escape") {
 			//Note that we don't release pointer capture until pointer up
 			const pos = element_position[dragging.id];
-			dragging = null;
+			dragging = null; draggroup = [];
 			if (grabmode === "move" || grabmode === "multimove") {pos.x = dragorigx; pos.y = dragorigy;}
 			else if (grabmode === "rotate" || grabmode === "multirotate") pos.angle = dragorigx;
 			repaint();
@@ -373,8 +426,24 @@ canvas.addEventListener("pointerup", e => {
 	if (!clicking) {
 		const updates = update_drag_position(e.offsetX, e.offsetY, e.shiftKey);
 		ws_sync.send({cmd: "move_element", scene: curscene, id: dragging.id, ...updates, clientid});
+		if (grabmode === "multimove") {
+			//For every other object moved, move it by the same vector.
+			const dx = updates.x - dragorigx, dy = updates.y - dragorigy;
+			for (let el of draggroup) {
+				const pos = element_position[el.id];
+				pos.x += dx; pos.y += dy;
+				ws_sync.send({cmd: "move_element", scene: curscene, id: el.id, x: pos.x, y: pos.y, clientid});
+			}
+		} else if (grabmode === "multirotate") {
+			//TODO: Reify the same rotation done by repaint
+			for (let el of draggroup) {
+				const pos = element_position[el.id];
+				pos.angle = updates.angle;
+				ws_sync.send({cmd: "move_element", scene: curscene, id: el.id, angle: pos.angle, clientid});
+			}
+		}
 	}
-	dragging = null;
+	dragging = null; draggroup = [];
 	repaint();
 });
 
