@@ -320,7 +320,10 @@ function update_drag_position(x, y, moresnap) {
 		//TODO: Support snapping for rotation - snap to the angle of a nearby element.
 		const point = new DOMPointReadOnly(x, y);
 		const p = point.matrixTransform(dragbasey);
-		pos.angle = Math.atan2(p.y - dragging.ysize / 2, p.x - dragging.xsize / 2) * -180 / Math.PI - dragbasex;
+		let angle = Math.atan2(p.y - dragging.ysize / 2, p.x - dragging.xsize / 2) * -180 / Math.PI - dragbasex;
+		//Quantize to a reduced set of available angles.
+		angle -= angle % (moresnap ? 5 : 22.5);
+		pos.angle = angle;
 		return {angle: pos.angle};
 	}
 }
@@ -357,6 +360,8 @@ document.onkeydown = document.onkeyup = e => {
 				update_drag_position(pos.x, pos.y, e.shiftKey);
 			//Not sure if pressing/releasing shift will do anything in rotation mode
 			//If it does, we'll need to retain the coordinates, or synthesize them from the current angle
+			//Currently, if you press/release shift while rotating, you have to move the mouse
+			//a smidge to recalculate.
 			repaint();
 		}
 	}
