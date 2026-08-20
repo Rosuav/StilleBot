@@ -58,6 +58,7 @@ replace_content("#positionselect", [
 	]),
 ]);
 let grabmode = "move";
+let rulers = [];
 replace_content("#modeselector", [
 	"Mode: ",
 	LABEL({title: "Move single element"}, [
@@ -98,6 +99,12 @@ replace_content("#modeselector", [
 			USE({href: "#rotatearrows", x: "2", y: "2", stroke: "#888888"}),
 			USE({href: "#rotatearrows", x: "0.5", y: "0.5", stroke: "#888888"}),
 			USE({href: "#rotatearrows", x: "-1", y: "-1", stroke: "#000000"}),
+		])
+	]),
+	LABEL({title: "Measure distances"}, [
+		INPUT({type: "radio", name: "modeselector", onclick: () => {grabmode = "ruler"; rulers = [];}}),
+		SVG({viewBox: "0 0 512 512", xmlns: "http://www.w3.org/2000/svg"}, [
+			PATH({fill: "#000000", d: "M373.324,0.003L0,373.321l138.676,138.676L512,138.68L373.324,0.003z M42.668,373.321l43.942-43.95\n\t\tl49.436,49.437l18.671-18.664l-49.437-49.437l37.38-37.379l28.482,28.475l18.664-18.664l-28.475-28.482l37.328-37.328\n\t\tl49.437,49.437l18.664-18.664l-49.437-49.437l37.394-37.394l28.475,28.482l18.664-18.664l-28.475-28.482l37.328-37.336\n\t\tl49.437,49.436l18.672-18.664l-49.437-49.437l43.942-43.942l96.008,96.015L138.676,469.337L42.668,373.321z"}),
 		])
 	]),
 ]);
@@ -161,7 +168,7 @@ function draw_element(ctx, el, dx, dy, dtheta) {
 	ctx.setTransform(element_transform[el.id]);
 	//Now that we have the transformation matrix set, all drawing is done at the origin.
 	ctx.drawImage(img, 0, 0, el.xsize, el.ysize);
-	if (dragging && ((pos.angle||0) - (element_position[dragging.id].angle||0)) % 90 === 0) {
+	if (dragging && (dragging.is_ruler || ((pos.angle||0) - (element_position[dragging.id].angle||0)) % 90 === 0)) {
 		//If you're dragging something that is oriented compatibly to this one, draw snap markers.
 		ctx.strokeRect(0, 0, el.xsize, el.ysize);
 		//TODO: Do partial circles for the corners, only drawing the part outside
@@ -206,7 +213,42 @@ function repaint() {
 		if (!el.parent && el !== dragging && !draggroup.some(g => g.id === id)) draw_element(ctx, el);
 	});
 	//Anything being dragged gets drawn last, ensuring it is at the top of z-order.
-	if (dragging) {
+	if (grabmode === "ruler") {
+		//Draw all rulers, but don't do anything else about elements being dragged
+		//Note that 'dragging' may be a thing, but if it is, it won't be an element.
+		rulers.forEach(r => {
+			//Rulers are all drawn starting from the origin and moving along the
+			//X axis, and then rotated and translated into the correct position.
+			//This allows things like tick marks to be drawn consistently, without
+			//needing to do complex arithmetic to determine the angle they should
+			//be drawn at.
+			const length = ((r.x2 - r.x1) ** 2 + (r.y2 - r.y1) ** 2) ** 0.5; //Is this the only time I'm measuring distance rather than dsquared?
+			const angle = Math.atan2(r.y2 - r.y1, r.x2 - r.x1);
+			ctx.save();
+			ctx.translate(r.x1, r.y1);
+			ctx.rotate(angle);
+			ctx.setLineDash([1, 1]);
+			ctx.strokeStyle = "blue";
+			//The ruler itself gets some thickness.
+			ctx.lineWidth = 3;
+			ctx.beginPath();
+			ctx.moveTo(0, 0);
+			ctx.lineTo(length, 0);
+			ctx.stroke();
+			//Then the tick marks, which are back to thin (I'd like to say "hairline"
+			//but I have to say "1px wide").
+			ctx.lineWidth = 1;
+			//At each end, a tick mark that goes above and below.
+			ctx.beginPath();
+			ctx.moveTo(0, -10);
+			ctx.lineTo(0, 10);
+			ctx.moveTo(length, -10);
+			ctx.lineTo(length, 10);
+			ctx.stroke();
+			ctx.restore();
+		});
+	}
+	else if (dragging) {
 		const pos = element_position[dragging.id];
 		if (grabmode === "multimove") {
 			const dx = pos.x - dragorigx, dy = pos.y - dragorigy;
@@ -237,6 +279,13 @@ canvas.addEventListener("pointerdown", e => {
 	if (e.button) return; //Only left clicks
 	if (!mutation_allowed) return;
 	e.preventDefault();
+	if (grabmode === "ruler") {
+		//Instead of moving things, we create a ruler.
+		//TODO: Snap to corners
+		rulers.push(dragging = {is_ruler: true, x1: e.offsetX, y1: e.offsetY});
+		repaint();
+		return;
+	}
 	dragging = null; draggroup = [];
 	const el = element_at_position(e.offsetX, e.offsetY, el => !element_position[el.id].locked);
 	if (!el) return;
@@ -392,10 +441,16 @@ canvas.addEventListener("pointermove", e => {
 	clicking = false;
 	let cursor = "default";
 	if (dragging) {
-		cursor = "grabbing";
-		update_drag_position(e.offsetX, e.offsetY, e.shiftKey);
+		if (dragging.is_ruler) {
+			cursor = "crosshair";
+			dragging.x2 = e.offsetX; dragging.y2 = e.offsetY;
+		} else {
+			cursor = "grabbing";
+			update_drag_position(e.offsetX, e.offsetY, e.shiftKey);
+		}
 		repaint();
 	}
+	else if (grabmode === "ruler") cursor = "crosshair";
 	else {
 		const el = element_at_position(e.offsetX, e.offsetY);
 		if (el && !element_position[el.id].locked) cursor = "grab";
@@ -412,6 +467,7 @@ document.onkeydown = document.onkeyup = e => {
 			dragging = null; draggroup = [];
 			if (grabmode === "move" || grabmode === "multimove") {pos.x = dragorigx; pos.y = dragorigy;}
 			else if (grabmode === "rotate" || grabmode === "multirotate") pos.angle = dragorigx;
+			else if (grabmode === "ruler") rulers.pop();
 			repaint();
 		}
 		else if (e.key === "Shift") {
@@ -430,7 +486,9 @@ document.onkeydown = document.onkeyup = e => {
 canvas.addEventListener("pointerup", e => {
 	if (!dragging) return;
 	e.target.releasePointerCapture(e.pointerId);
-	if (!clicking) {
+	if (grabmode === "ruler") {
+		console.log("Final rulers", rulers);
+	} else if (!clicking) {
 		const updates = update_drag_position(e.offsetX, e.offsetY, e.shiftKey);
 		ws_sync.send({cmd: "move_element", scene: curscene, id: dragging.id, ...updates, clientid});
 		if (grabmode === "multimove") {
