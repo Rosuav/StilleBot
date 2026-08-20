@@ -166,6 +166,7 @@ function draw_element(ctx, el, dx, dy, dtheta) {
 	element_transform[el.id] = element_matrix(pos.x + (dx||0), pos.y + (dy||0), el.xsize, el.ysize, (pos.angle||0) + (dtheta||0));
 	element_transform_inverse[el.id] = element_transform[el.id].inverse();
 	ctx.setTransform(element_transform[el.id]);
+	if (hoverelement && el.id !== hoverelement) ctx.globalAlpha = 0.5;
 	//Now that we have the transformation matrix set, all drawing is done at the origin.
 	ctx.drawImage(img, 0, 0, el.xsize, el.ysize);
 	if (dragging && (dragging.is_ruler || ((pos.angle||0) - (element_position[dragging.id].angle||0)) % 90 === 0)) {
