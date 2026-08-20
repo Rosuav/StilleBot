@@ -41,7 +41,7 @@ constant markdown = #"# Mockups
 > Name: <input id=elementtitle>
 > <textarea id=elementdesc rows=5 cols=80></textarea>
 >
-> [Save](:type=submit) [Close](:.dialog_close) [Delete](:#deleteelement)
+> [Save](:type=submit) [Close](:.dialog_close) [Clone](:#cloneelement) [Delete](:#deleteelement)
 {: tag=formdialog #editelementdlg}
 
 <style>
@@ -59,6 +59,10 @@ constant markdown = #"# Mockups
 }
 #modeselector input:checked ~ svg {
 	border-style: inset;
+}
+#cloneelement {
+	background: #88ffff;
+	margin-left: 1em;
 }
 #deleteelement {
 	background: red;
@@ -294,10 +298,28 @@ __async__ void websocket_msg(mapping(string:mixed) conn, mapping(string:mixed) m
 	if (resp) send_msg(conn, resp);
 }
 
-//Will handle (["cmd": "example"]) as a mutator.
-//Must NOT be asynchronous. Is allowed to return a response.
-mapping|zero wsedit_example(mapping mock, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	mock->counter += (int)msg->increment || 1;
+mapping|zero wsedit_clone_element(mapping mock, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!(<"scenes", "elements">)[msg->cat]) return (["error": "Bad cat"]); //Note that, unlike update_element, this does NOT handle cloning of mockups
+	//If you started with "e42", the first guess is "e422", keeping the
+	//clone near its original rather than sticking it at the end.
+	mapping orig = mock[msg->cat][msg->id];
+	if (!orig) return (["error": "Bad id"]);
+	string newid;
+	int i; for (i = 2; mock[msg->cat][newid = msg->id + i]; ++i);
+	mapping new = mock[msg->cat][newid] = orig | ([]);
+	if (new->title) new->title += " " + i;
+	if (msg->cat == "elements") {
+		//For every scene, find this element and offset it by a smidge,
+		//and unlock it. This should make it easy to find and grab.
+		foreach (values(mock->scenes), mapping sc) {
+			if (!sc->elements || !sc->elements[msg->id]) continue;
+			mapping pos = sc->elements[newid] = sc->elements[msg->id] | ([]);
+			pos->x += 10; pos->y += 10;
+			m_delete(pos, "locked");
+		}
+		return 0;
+	}
+	/* else if (msg->cat == "scenes") */ return (["cmd": "select_scene", "id": newid]);
 }
 
 mapping|zero wsedit_update_element(mapping mock, mapping(string:mixed) conn, mapping(string:mixed) msg) {

@@ -602,6 +602,7 @@ export function render(data) {
 		mutation_allowed && BUTTON({id: "new_scene", title: "Add new scene"}, "+"),
 	]);
 	DOM("#editelementdlg [type=submit]").hidden = !mutation_allowed;
+	DOM("#cloneelement").hidden = !mutation_allowed;
 	//Note that #deleteelement isn't hidden/unhidden here as it's done dynamically by category
 	replace_content("#editelementdlg h3", mutation_allowed ? "Edit element" : "Element details");
 	DOM("#elementtitle").readOnly = !mutation_allowed;
@@ -693,6 +694,11 @@ on("click", "#deleteelement", simpleconfirm(
 		DOM("#editelementdlg").close();
 	})
 );
+
+on("click", "#cloneelement", simpleconfirm("Clone this and make another one like it?", e => {
+	ws_sync.send({cmd: "clone_element", cat: editing_cat, id: editing_element});
+	DOM("#editelementdlg").close();
+}));
 
 on("mouseover", "#elementlist [data-id]", e => {hoverelement = e.match.dataset.id; repaint();});
 on("mouseout", "#elementlist", e => {hoverelement = null; repaint();});
