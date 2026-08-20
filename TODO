@@ -278,7 +278,6 @@
   - Toolbox of available elements
     - Colour selection within an element type??
     - Apply transparency/opacity to individual elements??
-  - Have a way to clone a mockup (requires Twitch login) which would allow "now let's do country show"
   - Page loads in read-only mode, but send the right password to get full access
     - Possibly have a localStorage marker to say "always enable mutation"?
     - Add a button to send the password - currently only done if it's in the URL
