@@ -301,14 +301,45 @@ function element_at_position(x, y, filter) {
 	}
 }
 
+//Corners and middles defined as proportions of the width/height
+//[x fraction, y fraction, affinity]
+const corners = [
+	[0.0, 0.0, 1], [0.5, 0.0, 1], [1.0, 0.0, 1],
+	[0.0, 0.5, 1], [0.5, 0.5, 2], [1.0, 0.5, 1],
+	[0.0, 1.0, 1], [0.5, 1.0, 1], [1.0, 1.0, 1],
+];
+
+//Rulers snap by different rules (sorry, we're going to have a lot of regal puns here).
+//There's no corner affinities, and a ruler will always snap to any element's corner or
+//middle; the moresnap flag (aka "hold Shift") now controls whether we edge snap. Which
+//as of 20260821 is not implemented, since edge snapping is currently buggy and needs a
+//rework, but it may be that THIS is actually the easier one to fix, so that could make
+//the other one work later.
+function ruler_snap(xpos, ypos, moresnap) {
+	for (let el of elements_by_zorder) {
+		const pos = element_position[el.id];
+		const xfrm = element_transform[el.id];
+		for (let c of corners) {
+			const p = new DOMPointReadOnly(c[0] * el.xsize, c[1] * el.ysize).matrixTransform(xfrm);
+			if ((p.x - xpos) ** 2 + (p.y - ypos) ** 2 <= SNAP_RANGE)
+				//Snapping is simpler here since we just snap to the point itself.
+				return [p.x, p.y];
+		}
+		if (!moresnap) continue;
+		//If we didn't find a corner to snap to, try snapping to an edge instead.
+		//Unimplemented.
+	}
+	return [xpos, ypos];
+}
+
 canvas.addEventListener("pointerdown", e => {
 	if (e.button) return; //Only left clicks
 	if (!mutation_allowed) return;
 	e.preventDefault();
 	if (grabmode === "ruler") {
 		//Instead of moving things, we create a ruler.
-		//TODO: Snap to corners
-		rulers.push(dragging = {is_ruler: true, x1: e.offsetX, y1: e.offsetY});
+		const [x1, y1] = ruler_snap(e.offsetX, e.offsetY, e.shiftKey);
+		rulers.push(dragging = {is_ruler: true, x1, y1});
 		repaint();
 		return;
 	}
@@ -373,14 +404,6 @@ canvas.addEventListener("pointerdown", e => {
 		}
 	}
 });
-
-//Corners and middles defined as proportions of the width/height
-//[x fraction, y fraction, affinity]
-const corners = [
-	[0.0, 0.0, 1], [0.5, 0.0, 1], [1.0, 0.0, 1],
-	[0.0, 0.5, 1], [0.5, 0.5, 2], [1.0, 0.5, 1],
-	[0.0, 1.0, 1], [0.5, 1.0, 1], [1.0, 1.0, 1],
-];
 
 function snap_to_elements(baseelem, xpos, ypos, moresnap) {
 	//NOTE: Previously we were doing a fast check against the bounding box before doing the full checks.
@@ -469,7 +492,8 @@ canvas.addEventListener("pointermove", e => {
 	if (dragging) {
 		if (dragging.is_ruler) {
 			cursor = "crosshair";
-			dragging.x2 = e.offsetX; dragging.y2 = e.offsetY;
+			const [x, y] = ruler_snap(e.offsetX, e.offsetY, e.shiftKey);
+			dragging.x2 = x; dragging.y2 = y;
 		} else {
 			cursor = "grabbing";
 			update_drag_position(e.offsetX, e.offsetY, e.shiftKey);
