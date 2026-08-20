@@ -224,13 +224,13 @@ function repaint() {
 			//be drawn at.
 			const length = ((r.x2 - r.x1) ** 2 + (r.y2 - r.y1) ** 2) ** 0.5; //Is this the only time I'm measuring distance rather than dsquared?
 			const angle = Math.atan2(r.y2 - r.y1, r.x2 - r.x1);
+			console.log(angle)
 			ctx.save();
 			ctx.translate(r.x1, r.y1);
 			ctx.rotate(angle);
-			ctx.setLineDash([1, 1]);
 			ctx.strokeStyle = "blue";
 			//The ruler itself gets some thickness.
-			ctx.lineWidth = 3;
+			ctx.lineWidth = 2;
 			ctx.beginPath();
 			ctx.moveTo(0, 0);
 			ctx.lineTo(length, 0);
@@ -238,13 +238,25 @@ function repaint() {
 			//Then the tick marks, which are back to thin (I'd like to say "hairline"
 			//but I have to say "1px wide").
 			ctx.lineWidth = 1;
+			const midtick = 5, endtick = 6; //The midticks are only on one side, the endticks are symmetric
 			//At each end, a tick mark that goes above and below.
 			ctx.beginPath();
-			ctx.moveTo(0, -10);
-			ctx.lineTo(0, 10);
-			ctx.moveTo(length, -10);
-			ctx.lineTo(length, 10);
+			ctx.moveTo(0, -endtick);
+			ctx.lineTo(0, endtick);
+			ctx.moveTo(length, -endtick);
+			ctx.lineTo(length, endtick);
 			ctx.stroke();
+			//And finally, let's put some tick marks periodically along the length.
+			//TODO: Make this period configurable
+			for (let x = 100; x < length; x += 100) {
+				ctx.beginPath();
+				ctx.moveTo(x, 0);
+				//Try to always point the tick marks upward. As we cross the vertical,
+				//they flip to the other side.
+				if (angle < -Math.PI/2 || angle > Math.PI/2) ctx.lineTo(x, midtick);
+				else ctx.lineTo(x, -midtick);
+				ctx.stroke();
+			}
 			ctx.restore();
 		});
 	}
