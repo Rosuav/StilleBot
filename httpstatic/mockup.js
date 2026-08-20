@@ -194,6 +194,7 @@ function draw_element(ctx, el, dx, dy, dtheta) {
 
 function repaint() {
 	element_transform = { }; element_transform_inverse = { };
+	ctx.font = "12px 'Lexend', 'Noto Color Emoji', 'Noto Sans Symbols 2', sans-serif";
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	const url = meta.grids[state.bg]?.url;
 	if (url) {
@@ -224,7 +225,9 @@ function repaint() {
 			//be drawn at.
 			const length = ((r.x2 - r.x1) ** 2 + (r.y2 - r.y1) ** 2) ** 0.5; //Is this the only time I'm measuring distance rather than dsquared?
 			const angle = Math.atan2(r.y2 - r.y1, r.x2 - r.x1);
-			console.log(angle)
+			//Try to always point the tick marks upward. As we cross the vertical,
+			//they flip to the other side.
+			const flip = angle < -Math.PI/2 || angle > Math.PI/2;
 			ctx.save();
 			ctx.translate(r.x1, r.y1);
 			ctx.rotate(angle);
@@ -251,12 +254,20 @@ function repaint() {
 			for (let x = 100; x < length; x += 100) {
 				ctx.beginPath();
 				ctx.moveTo(x, 0);
-				//Try to always point the tick marks upward. As we cross the vertical,
-				//they flip to the other side.
-				if (angle < -Math.PI/2 || angle > Math.PI/2) ctx.lineTo(x, midtick);
+				if (flip) ctx.lineTo(x, midtick);
 				else ctx.lineTo(x, -midtick);
 				ctx.stroke();
 			}
+			const label = length.toFixed(0); //Should decimals be permitted? Maybe only on small numbers?
+			const sz = ctx.measureText(label);
+			ctx.strokeStyle = ctx.fillStyle = "#0055aa";
+			if (flip) {
+				//When we're flipped, rotate the text back around so that it looks upright.
+				ctx.translate(length / 2, sz.fontBoundingBoxDescent);
+				ctx.rotate(Math.PI);
+				ctx.fillText(label, -sz.width / 2, 0);
+			}
+			else ctx.fillText(label, (length - sz.width) / 2, -sz.fontBoundingBoxDescent);
 			ctx.restore();
 		});
 	}
@@ -502,7 +513,7 @@ canvas.addEventListener("pointerup", e => {
 	if (!dragging) return;
 	e.target.releasePointerCapture(e.pointerId);
 	if (grabmode === "ruler") {
-		console.log("Final rulers", rulers);
+		//Nothing actually needs to change currently... hmm
 	} else if (!clicking) {
 		const updates = update_drag_position(e.offsetX, e.offsetY, e.shiftKey);
 		ws_sync.send({cmd: "move_element", scene: curscene, id: dragging.id, ...updates, clientid});
