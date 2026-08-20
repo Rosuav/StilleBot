@@ -58,11 +58,10 @@ replace_content("#positionselect", [
 	]),
 ]);
 let grabmode = "move";
-let rulers = [];
 replace_content("#modeselector", [
 	"Mode: ",
 	LABEL({title: "Move single element"}, [
-		INPUT({type: "radio", name: "modeselector", checked: true, onclick: () => grabmode = "move"}),
+		INPUT({type: "radio", name: "modeselector", checked: true, value: "move"}),
 		SVG({viewBox: "0 0 24 24", fill: "none", xmlns: "http://www.w3.org/2000/svg"}, [
 			SYMBOL({id: "movearrow"},
 				PATH({d: "M5 9L2 12M2 12L5 15M2 12H22M9 5L12 2M12 2L15 5M12 2V22M15 19L12 22M12 22L9 19M19 9L22 12M22 12L19 15", "stroke-width": "1"}),
@@ -71,7 +70,7 @@ replace_content("#modeselector", [
 		]),
 	]),
 	LABEL({title: "Move group of elements"}, [
-		INPUT({type: "radio", name: "modeselector", onclick: () => grabmode = "multimove"}),
+		INPUT({type: "radio", name: "modeselector", value: "multimove"}),
 		SVG({viewBox: "0 0 24 24", xmlns: "http://www.w3.org/2000/svg"}, [
 			//Place the shadowed ones first, with the main one last so it overdraws as needed
 			USE({href: "#movearrow", x: "3", y: "3", stroke: "#888888"}),
@@ -80,7 +79,7 @@ replace_content("#modeselector", [
 		]),
 	]),
 	LABEL({title: "Rotate single element"}, [
-		INPUT({type: "radio", name: "modeselector", onclick: () => grabmode = "rotate"}),
+		INPUT({type: "radio", name: "modeselector", value: "rotate"}),
 		SVG({viewBox: "0 0 24 24", xmlns: "http://www.w3.org/2000/svg"}, [
 			SYMBOL({id: "rotatearrows", "stroke-width": "1", fill: "none"}, [
 				PATH({d: "M22 12l-3 3-3-3"}),
@@ -94,7 +93,7 @@ replace_content("#modeselector", [
 		])
 	]),
 	LABEL({title: "Rotate group of elements"}, [
-		INPUT({type: "radio", name: "modeselector", onclick: () => grabmode = "multirotate"}),
+		INPUT({type: "radio", name: "modeselector", value: "multirotate"}),
 		SVG({viewBox: "0 0 24 24", xmlns: "http://www.w3.org/2000/svg"}, [
 			USE({href: "#rotatearrows", x: "2", y: "2", stroke: "#888888"}),
 			USE({href: "#rotatearrows", x: "0.5", y: "0.5", stroke: "#888888"}),
@@ -102,13 +101,13 @@ replace_content("#modeselector", [
 		])
 	]),
 	LABEL({title: "Measure distances"}, [
-		INPUT({type: "radio", name: "modeselector", onclick: () => {grabmode = "ruler"; rulers = [];}}),
+		INPUT({type: "radio", name: "modeselector", value: "ruler"}),
 		SVG({viewBox: "0 0 512 512", xmlns: "http://www.w3.org/2000/svg"}, [
 			PATH({fill: "#000000", d: "M373.324,0.003L0,373.321l138.676,138.676L512,138.68L373.324,0.003z M42.668,373.321l43.942-43.95\n\t\tl49.436,49.437l18.671-18.664l-49.437-49.437l37.38-37.379l28.482,28.475l18.664-18.664l-28.475-28.482l37.328-37.328\n\t\tl49.437,49.437l18.664-18.664l-49.437-49.437l37.394-37.394l28.475,28.482l18.664-18.664l-28.475-28.482l37.328-37.336\n\t\tl49.437,49.436l18.672-18.664l-49.437-49.437l43.942-43.942l96.008,96.015L138.676,469.337L42.668,373.321z"}),
 		])
 	]),
 ]);
-
+			
 export function sockmsg_update_meta(msg) {
 	meta = msg;
 	replace_content("#imageselector", Object.entries(meta.icons)
@@ -135,6 +134,7 @@ const ctx = canvas.getContext("2d");
 let dragging = null, dragbasex = 50, dragbasey = 10, dragorigx, dragorigy, draggroup = [];
 let clicking = false;
 const elements_by_zorder = [];
+let rulers = [];
 
 function element_matrix(x, y, xsize, ysize, angle) {
 	//The object's position defines its midpoint, which is also the point
@@ -262,6 +262,9 @@ function repaint() {
 		draw_element(ctx, dragging); //With the thing you're actually holding at the very top
 	}
 }
+
+//Clearing rulers and repainting don't actually need to be done on EVERY mode selection, but it's no biggie
+on("click", "[name=modeselector]", e => {grabmode = e.match.value; rulers = []; repaint();});
 
 function element_at_position(x, y, filter) {
 	//Iterate through all elements, starting at the top of the z-order stack and going
