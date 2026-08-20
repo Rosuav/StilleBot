@@ -283,6 +283,3 @@
     - Add a button to send the password - currently only done if it's in the URL
   - Export entire mockup as a series of PNGs (one per scene)
   - Export as PDF??
-  - Allow ruler ends to be dragged
-    - Note that this will make it hard to chain rulers forwards, but you can still chain them
-      backwards by snapping to an existing ruler end. Oh. Yeah, make that a thing, thanks.

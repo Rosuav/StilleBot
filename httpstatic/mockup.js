@@ -316,7 +316,7 @@ const corners = [
 //as of 20260821 is not implemented, since edge snapping is currently buggy and needs a
 //rework, but it may be that THIS is actually the easier one to fix, so that could make
 //the other one work later.
-function ruler_snap(xpos, ypos, moresnap) {
+function ruler_snap_to_element(xpos, ypos, moresnap) {
 	for (let el of elements_by_zorder) {
 		const pos = element_position[el.id];
 		const xfrm = element_transform[el.id];
@@ -333,14 +333,38 @@ function ruler_snap(xpos, ypos, moresnap) {
 	return [xpos, ypos];
 }
 
+function ruler_snap_to_ruler(xpos, ypos, moresnap) {
+	for (let r of rulers) {
+		if (r === dragging) continue;
+		if ((r.x1 - xpos) ** 2 + (r.y1 - ypos) ** 2 <= SNAP_RANGE) return [r.x1, r.y1, r];
+		if ((r.x2 - xpos) ** 2 + (r.y2 - ypos) ** 2 <= SNAP_RANGE) return [r.x2, r.y2, r];
+		if (!moresnap) continue;
+		//Ditto, snap to the side of a ruler. Maybe do that even if !moresnap but only
+		//at 90 degrees?
+	}
+	return [xpos, ypos, null];
+}
+
 canvas.addEventListener("pointerdown", e => {
 	if (e.button) return; //Only left clicks
 	if (!mutation_allowed) return;
 	e.preventDefault();
 	if (grabmode === "ruler") {
 		//Instead of moving things, we create a ruler.
-		const [x1, y1] = ruler_snap(e.offsetX, e.offsetY, e.shiftKey);
-		rulers.push(dragging = {is_ruler: true, x1, y1});
+		//First check to see if we're within snap distance of an existing ruler end.
+		let [x1, y1, ruler] = ruler_snap_to_ruler(e.offsetX, e.offsetY, e.shiftKey);
+		if (ruler) {
+			//Grab the existing ruler and move it. If you're grabbing the x1/y1, then
+			//invert the ruler (this isn't perfect but it's probably less confusing).
+			//If the changing tick marks are an issue, toggle a flag here that causes
+			//them to be rendered from the other end.
+			if (x1 === ruler.x1 && y1 === ruler.y1)
+				[ruler.x1, ruler.y1, ruler.x2, ruler.y2] = [ruler.x2, ruler.y2, ruler.x1, ruler.y1];
+			dragging = ruler;
+		} else {
+			[x1, y1] = ruler_snap_to_element(e.offsetX, e.offsetY, e.shiftKey);
+			rulers.push(dragging = {is_ruler: true, x1, y1});
+		}
 		repaint();
 		return;
 	}
@@ -493,7 +517,9 @@ canvas.addEventListener("pointermove", e => {
 	if (dragging) {
 		if (dragging.is_ruler) {
 			cursor = "crosshair";
-			const [x, y] = ruler_snap(e.offsetX, e.offsetY, e.shiftKey);
+			//Snap to either a ruler's end or an element's corner
+			let [x, y, ruler] = ruler_snap_to_ruler(e.offsetX, e.offsetY, e.shiftKey);
+			if (!ruler) [x, y] = ruler_snap_to_element(e.offsetX, e.offsetY, e.shiftKey);
 			dragging.x2 = x; dragging.y2 = y;
 		} else {
 			cursor = "grabbing";
