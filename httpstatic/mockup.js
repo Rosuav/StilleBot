@@ -696,7 +696,7 @@ on("click", "#deleteelement", simpleconfirm(
 );
 
 on("click", "#cloneelement", simpleconfirm("Clone this and make another one like it?", e => {
-	if (editing_cat === "mockup") ws_sync.send({cmd: "create_mockup", id: editing_element});
+	if (editing_cat === "mockup") ws_sync.send({cmd: "create_mockup", id: ws_group});
 	else ws_sync.send({cmd: "clone_element", cat: editing_cat, id: editing_element});
 	DOM("#editelementdlg").close();
 }));

@@ -257,16 +257,24 @@ __async__ mapping websocket_cmd_create_mockup(mapping(string:mixed) conn, mappin
 	if (!conn->session->user->?id) return (["error": "Need to be logged in"]);
 	string id;
 	await(G->G->DB->mutate_config(0, "mockup") {mapping mocks = __ARGS__[0];
-		mapping old = mocks[msg->id] || ([]); //NOTE: If you attempt to clone but the ID is wrong, you just create a brand new one from scratch.
+		//NOTE: If you attempt to clone but the ID is wrong, you just create a brand new one from scratch.
+		//I could instead use conn->group rather than passing the ID back from the front end, but this
+		//would result in an API of "if you do this from the landing page, it's a brand new thing, but if
+		//you do it from a mockup, it clones", which is a tad weird. Clearer to have the front end request
+		//the cloning of a specific ID.
+		mapping old = mocks[msg->id] || ([]);
 		do {id = replace(MIME.encode_base64(random_string(12)), (["/": "q", "+": "X"]));} while (mocks[id]);
 		mocks[id] = ([
+			//Defaults if not specified in the one being cloned
+			"description": "Describe the purpose of your mockup here.",
+			"mutate": "",
+			"scenes": (["default": (["title": "New Scene"])]),
+			"elements": ([]),
+		]) | old | ([
+			//Overrides that apply even if there was an existing one
 			"created_at": time(),
 			"created_by": conn->session->user->id,
-			"title": old->title || "New Mockup",
-			"description": old->description || "Describe the purpose of your mockup here.",
-			"mutate": old->mutate || "",
-			"scenes": old->scenes || ([]),
-			"elements": old->elements || ([]),
+			"title": old->title ? old->title + " Clone" : "New Mockup",
 		]);
 	});
 	await(G->G->DB->mutate_config(conn->session->user->id, "mockup") {mapping mocks = __ARGS__[0];
