@@ -291,9 +291,6 @@
   - Export entire mockup as a series of PNGs (one per scene)
   - Export as PDF??
   - Select multiple elements to move them together???
-  - Ruler
-    - Select the tool, then click on one position, click on another
-    - Snap to corners (regardless of element angle)
-    - Show the (diagonal) distance
-    - Allow corners to be dragged
-    - Delete the ruler when the tool is reset
+  - Allow ruler ends to be dragged
+    - This would, if done naively, make it impossible to do chained rulers. Check with Kanros
+      about a good UI on that.
