@@ -696,9 +696,11 @@ on("click", "#deleteelement", simpleconfirm(
 );
 
 on("click", "#cloneelement", simpleconfirm("Clone this and make another one like it?", e => {
-	ws_sync.send({cmd: "clone_element", cat: editing_cat, id: editing_element});
+	if (editing_cat === "mockup") ws_sync.send({cmd: "create_mockup", id: editing_element});
+	else ws_sync.send({cmd: "clone_element", cat: editing_cat, id: editing_element});
 	DOM("#editelementdlg").close();
 }));
+export function sockmsg_mockup_created(msg) {window.open("/mockup?view=" + msg.id + "&edit=", "_blank");}
 
 on("mouseover", "#elementlist [data-id]", e => {hoverelement = e.match.dataset.id; repaint();});
 on("mouseout", "#elementlist", e => {hoverelement = null; repaint();});

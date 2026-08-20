@@ -254,18 +254,19 @@ __async__ mapping get_state(string group) {
 }
 
 __async__ mapping websocket_cmd_create_mockup(mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!conn->landing) return (["error": "Only create mockups from your landing page"]);
+	if (!conn->session->user->?id) return (["error": "Need to be logged in"]);
 	string id;
 	await(G->G->DB->mutate_config(0, "mockup") {mapping mocks = __ARGS__[0];
+		mapping old = mocks[msg->id] || ([]); //NOTE: If you attempt to clone but the ID is wrong, you just create a brand new one from scratch.
 		do {id = replace(MIME.encode_base64(random_string(12)), (["/": "q", "+": "X"]));} while (mocks[id]);
 		mocks[id] = ([
 			"created_at": time(),
 			"created_by": conn->session->user->id,
-			"title": "New Mockup",
-			"description": "Describe the purpose of your mockup here.",
-			"mutate": "",
-			"scenes": (["default": (["title": "New Scene"])]),
-			"elements": ([]),
+			"title": old->title || "New Mockup",
+			"description": old->description || "Describe the purpose of your mockup here.",
+			"mutate": old->mutate || "",
+			"scenes": old->scenes || ([]),
+			"elements": old->elements || ([]),
 		]);
 	});
 	await(G->G->DB->mutate_config(conn->session->user->id, "mockup") {mapping mocks = __ARGS__[0];
