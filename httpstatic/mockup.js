@@ -498,6 +498,7 @@ function update_drag_position(x, y, moresnap) {
 	const pos = element_position[dragging.id];
 	if (grabmode === "move" || grabmode === "multimove") {
 		[pos.x, pos.y] = snap_to_elements(dragging, x - dragbasex, y - dragbasey, moresnap);
+		pos.x = Math.round(pos.x); pos.y = Math.round(pos.y);
 		return {x: pos.x, y: pos.y};
 	} else if (grabmode === "rotate" || grabmode === "multirotate") {
 		//TODO: Support snapping for rotation - snap to the angle of a nearby element.
