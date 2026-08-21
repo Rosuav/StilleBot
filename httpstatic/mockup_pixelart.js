@@ -266,7 +266,7 @@ on("click", ".deleteimage", simpleconfirm("Delete this image? This cannot be und
 
 function update_custom_colors(colors) {
 	replace_content("#colorlist", [
-		colors.map(col => LI([INPUT({type: "color", value: col}), BUTTON({type: "button", class: "deletecolor", title: "Delete"}, "🗑")])),
+		colors.map((col, idx) => LI([INPUT({type: "color", value: col}), BUTTON({type: "button", class: "deletecolor", "data-idx": idx, title: "Delete"}, "🗑")])),
 		LI(BUTTON({type: "button", id: "addcolor"}, "Add")),
 	]);
 }
@@ -286,7 +286,11 @@ on("click", "#addcolor", e => {
 	update_custom_colors(colors);
 });
 
-on("click", ".deletecolor", e => e.match.closest("li").remove());
+on("click", ".deletecolor", e => {
+	const colors = fetch_custom_colors();
+	colors.splice(e.match.dataset.idx, 1);
+	update_custom_colors(colors);
+});
 
 on("submit", "#customcolordlg form", e => {
 	custom_colors = fetch_custom_colors();
