@@ -74,6 +74,7 @@ constant markdown = #"# Mockups
 	display: flex;
 	gap: 0.5em;
 	max-height: 90vh; /* A bit arbitrary but should work on most screen sizes. TODO: Test on mobile, portrait and landscape. */
+	margin-bottom: 2em; /* Bit of gap so you know you've reached the bottom */
 }
 #canvasscroll {
 	flex-grow: 1;
@@ -160,7 +161,10 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 #imagelist.showtype-grid::before {content: \"Grids\";}
 #selections {cursor: default; font-size: small;}
 /* TODO: Put a checkerboard background on #grid so transparent pixels aren't the same as any single colour */
-#grid {margin-top: 1em;}
+#grid {
+	margin-top: 1em;
+	margin-bottom: 2em; /* Bit of gap so you know you've reached the bottom */
+}
 td {
 	width: 26px; height: 26px;
 	min-width: 26px; min-height: 26px; /* Prevent the cells from imploding */
