@@ -317,7 +317,7 @@ const corners = [
 //rework, but it may be that THIS is actually the easier one to fix, so that could make
 //the other one work later.
 function ruler_snap_to_element(xpos, ypos, moresnap) {
-	const snaps = [];
+	const snaps = [], moresnaps = [];
 	for (let el of elements_by_zorder) {
 		const pos = element_position[el.id];
 		const xfrm = element_transform[el.id];
@@ -346,6 +346,8 @@ function ruler_snap_to_element(xpos, ypos, moresnap) {
 				const maxy = Math.max(points[0].y, points[1].y);
 				if (endx >= minx && endx <= maxx) snaps.push([endx, miny], [endx, maxy]);
 				if (endy >= miny && endy <= maxy) snaps.push([minx, endy], [maxx, endy]);
+				if (xpos >= minx && xpos <= maxx) moresnaps.push([xpos, miny], [xpos, maxy]);
+				if (ypos >= miny && ypos <= maxy) moresnaps.push([minx, ypos], [maxx, ypos]);
 			} else {
 				//const corner = new DOMPointReadOnly(1 * el.xsize, 1 * el.ysize).matrixTransform(xfrm); //actually done in the loop below
 				//The slope of the horizontal lines is simply the tangent of the element's angle,
@@ -362,32 +364,41 @@ function ruler_snap_to_element(xpos, ypos, moresnap) {
 				//Solving for x and y gives:
 				//x = (slope * cornerx - invslope * endx + endy - cornery) / (slope - invslope)
 				//y = slope * (x - cornerx) + p1.y
-				//Now we just have to do that four times.
-				for (let p of points) {
+				//Now we just have to do that four times. Or eight, if we are checking for more
+				//snap targets, which means we find the perpendicular for the current position too.
+				const checks = [
+					[points[0], slope, invslope, endx, endy, snaps],
+					[points[1], slope, invslope, endx, endy, snaps],
+					[points[0], invslope, slope, endx, endy, snaps],
+					[points[1], invslope, slope, endx, endy, snaps],
+				];
+				if (moresnap) checks.push(
+					[points[0], slope, invslope, xpos, ypos, moresnaps],
+					[points[1], slope, invslope, xpos, ypos, moresnaps],
+					[points[0], invslope, slope, xpos, ypos, moresnaps],
+					[points[1], invslope, slope, xpos, ypos, moresnaps],
+				);
+				for (let [p, sl, isl, xref, yref, dest] of checks) {
 					//The top/bottom
-					const x1 = (slope * p.x - invslope * endx + endy - p.y) / (slope - invslope);
-					const y1 = slope * (x1 - p.x) + p.y;
-					//The left/right - use the same corner but switch the slopes
-					const x2 = (invslope * p.x - slope * endx + endy - p.y) / (invslope - slope);
-					const y2 = invslope * (x2 - p.x) + p.y;
-					//So! Are these even within bounds?
+					const x = (sl * p.x - isl * xref + yref - p.y) / (sl - isl);
+					const y = sl * (x - p.x) + p.y;
+					//So! Is this even within bounds?
 					//Note that we need only check one coordinate; this algorithm is not used for
 					//elements at exact multiples of 90 degrees, and if the x coordinate is so close
 					//to one of the corners that this trips up, we would be within the snap range of
 					//the corner anyway.
-					if (x1 >= points[0].x && x1 <= points[1].x)
-						snaps.push([x1, y1]);
-					if (x2 >= points[0].x && x2 <= points[1].x)
-						snaps.push([x2, y2]);
+					if (x >= points[0].x && x <= points[1].x) dest.push([x, y]);
 				}
 			}
 		}
-		if (!moresnap) continue;
-		//If we didn't find a corner or perpendicular to snap to, try snapping to (anywhere on) an edge instead.
 	}
 	for (let [x, y] of snaps)
 		if ((x - xpos) ** 2 + (y - ypos) ** 2 <= SNAP_RANGE)
 			//Snapping is simpler here since we just snap to the point itself.
+			return [x, y];
+	//Test ALL primary snap targets before ANY moresnaps
+	if (moresnap) for (let [x, y] of moresnaps)
+		if ((x - xpos) ** 2 + (y - ypos) ** 2 <= SNAP_RANGE)
 			return [x, y];
 	return [xpos, ypos];
 }
