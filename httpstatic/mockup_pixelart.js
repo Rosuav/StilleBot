@@ -286,6 +286,8 @@ on("click", "#addcolor", e => {
 	update_custom_colors(colors);
 });
 
+on("click", ".deletecolor", e => e.match.closest("li").remove());
+
 on("submit", "#customcolordlg form", e => {
 	custom_colors = fetch_custom_colors();
 	repaint();
