@@ -317,19 +317,78 @@ const corners = [
 //rework, but it may be that THIS is actually the easier one to fix, so that could make
 //the other one work later.
 function ruler_snap_to_element(xpos, ypos, moresnap) {
+	const snaps = [];
 	for (let el of elements_by_zorder) {
 		const pos = element_position[el.id];
 		const xfrm = element_transform[el.id];
 		for (let c of corners) {
 			const p = new DOMPointReadOnly(c[0] * el.xsize, c[1] * el.ysize).matrixTransform(xfrm);
-			if ((p.x - xpos) ** 2 + (p.y - ypos) ** 2 <= SNAP_RANGE)
-				//Snapping is simpler here since we just snap to the point itself.
-				return [p.x, p.y];
+			snaps.push([p.x, p.y]);
+		}
+		if (dragging && dragging.is_ruler) {
+			const endx = dragging.x1, endy = dragging.y1;
+			//Project the ruler's starting point to each side of the element, finding the
+			//point at which it would meet perpendicularly. This point is itself a snap
+			//target, and can be used directly.
+			const points = [
+				new DOMPointReadOnly(0 * el.xsize, 0 * el.ysize).matrixTransform(xfrm),
+				new DOMPointReadOnly(1 * el.xsize, 1 * el.ysize).matrixTransform(xfrm),
+			];
+			if ((pos.angle||0)%90 === 0) {
+				//Simpler algorithm when working with axis-aligned elements. This is both the
+				//most common case, and the one in which the more general algorithm will
+				//exhibit the greatest error (due to tan theta going crazy).
+				//For this calculation, we don't care about the exact orientation, just the
+				//limits of the bounding box.
+				const minx = Math.min(points[0].x, points[1].x);
+				const miny = Math.min(points[0].y, points[1].y);
+				const maxx = Math.max(points[0].x, points[1].x);
+				const maxy = Math.max(points[0].y, points[1].y);
+				if (endx >= minx && endx <= maxx) snaps.push([endx, miny], [endx, maxy]);
+				if (endy >= miny && endy <= maxy) snaps.push([minx, endy], [maxx, endy]);
+			} else {
+				//const corner = new DOMPointReadOnly(1 * el.xsize, 1 * el.ysize).matrixTransform(xfrm); //actually done in the loop below
+				//The slope of the horizontal lines is simply the tangent of the element's angle,
+				//and the slope of vertical lines is its inverse.
+				const slope = Math.tan(-pos.angle * Math.PI / 180);
+				const invslope = -1/slope; //Reciprocal of slope for the perpendicular.
+				//Need to find a point (x,y) such that:
+				//  (y-cornery)/(x-cornerx) = slope
+				//  (y-endy)/(x-endx) = invslope
+				//This will find the location along the top of the box which, if linked to the far
+				//end of the ruler, would connect perpendicularly. Same for the opposite corner
+				//gives the matching point on the bottom of the box; and inverting slope and
+				//invslope gives the left and right meeting points.
+				//Solving for x and y gives:
+				//x = (slope * cornerx - invslope * endx + endy - cornery) / (slope - invslope)
+				//y = slope * (x - cornerx) + p1.y
+				//Now we just have to do that four times.
+				for (let p of points) {
+					//The top/bottom
+					const x1 = (slope * p.x - invslope * endx + endy - p.y) / (slope - invslope);
+					const y1 = slope * (x1 - p.x) + p.y;
+					//The left/right - use the same corner but switch the slopes
+					const x2 = (invslope * p.x - slope * endx + endy - p.y) / (invslope - slope);
+					const y2 = invslope * (x2 - p.x) + p.y;
+					//So! Are these even within bounds?
+					//Note that we need only check one coordinate; this algorithm is not used for
+					//elements at exact multiples of 90 degrees, and if the x coordinate is so close
+					//to one of the corners that this trips up, we would be within the snap range of
+					//the corner anyway.
+					if (x1 >= points[0].x && x1 <= points[1].x)
+						snaps.push([x1, y1]);
+					if (x2 >= points[0].x && x2 <= points[1].x)
+						snaps.push([x2, y2]);
+				}
+			}
 		}
 		if (!moresnap) continue;
-		//If we didn't find a corner to snap to, try snapping to an edge instead.
-		//Unimplemented.
+		//If we didn't find a corner or perpendicular to snap to, try snapping to (anywhere on) an edge instead.
 	}
+	for (let [x, y] of snaps)
+		if ((x - xpos) ** 2 + (y - ypos) ** 2 <= SNAP_RANGE)
+			//Snapping is simpler here since we just snap to the point itself.
+			return [x, y];
 	return [xpos, ypos];
 }
 
