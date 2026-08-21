@@ -697,7 +697,12 @@ on("click", "#pasteposition", async e => {
 	ws_sync.send(msg);
 });
 
-//TODO: On change of #imageselector, set xsize and ysize to its size, but only if the user hasn't customized the size already
+on("change", "#imageselector", e => {
+	const icon = meta.icons[e.match.value];
+	if (!icon) return;
+	DOM("#xsize").value = ""+icon.xsize;
+	DOM("#ysize").value = ""+icon.ysize;
+});
 
 on("submit", "#editelementdlg form", e => ws_sync.send({cmd: "update_element",
 	cat: editing_cat, id: editing_element,
