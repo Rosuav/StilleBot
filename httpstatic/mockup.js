@@ -593,7 +593,7 @@ function update_drag_position(x, y, moresnap) {
 		let angle = Math.atan2(p.y - dragging.ysize / 2, p.x - dragging.xsize / 2) * -180 / Math.PI - dragbasex;
 		//Quantize to a reduced set of available angles.
 		angle -= angle % (moresnap ? 5 : 22.5);
-		pos.angle = angle;
+		pos.angle = angle % 360;
 		return {angle: pos.angle};
 	}
 }
