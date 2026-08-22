@@ -493,23 +493,25 @@ canvas.addEventListener("pointerdown", e => {
 				//element, we project along the two slopes to reach each of the two
 				//diagonally opposite corners of the other element, and if we meet,
 				//we must be snapped together.
+				//In order to minimize trignometric error, we project along the major
+				//axis for any slope. If the slope is more horizontal than vertical,
+				//we project horizontally until we find the X coordinate of the
+				//target point; otherwise we project vertically until we find the Y.
+				//Every element has a "primary angle" (given by element_position[].angle)
+				//and a "secondary angle" (perpendicular to that). If the angle is
+				//between -45 and 45, it's more horizontal; between 45 and 135, it's
+				//more vertical; and so on. We need both angles, so it doesn't matter
+				//which one we use, as long as it's consistent.
 				const p1 = new DOMPointReadOnly(0 * el1.xsize, 0 * el1.ysize).matrixTransform(element_transform[el1.id]);
 				const p2 = new DOMPointReadOnly(1 * el1.xsize, 1 * el1.ysize).matrixTransform(element_transform[el1.id]);
 				const p3 = new DOMPointReadOnly(0 * el2.xsize, 0 * el2.ysize).matrixTransform(element_transform[el2.id]);
 				const p4 = new DOMPointReadOnly(1 * el2.xsize, 1 * el2.ysize).matrixTransform(element_transform[el2.id]);
-				//TODO.
-				if (angle % 90 === 0) {
-					//As with elsewhere, special-case the vertical to avoid trignometric error.
-					//But in this case, all we have to do is project the other way here.
-				}
-				found: for (let e1 = 0; e1 <= 1; ++e1) for (let e2 = 0; e2 <= 1; ++e2) {
-					if (p1.x === p3.x || p1.y === p3.y) {
-						group[el1.id] = el1;
-						nextgroup.push(el1);
-						draggroup.push(el1);
-						break found;
-					}
-				}
+				const vertical = Math.floor((Math.abs(angle) + 45) / 90) % 2;
+				const slope = Math.tan((-angle + vertical * 90) * Math.PI / 180);
+				const invslope = -1/slope; //Reciprocal of slope for the perpendicular.
+				//Okay. So now slope is close to zero and invslope is not, regardless of the
+				//actual slope involved.
+				console.log(el1.title, el2.title, angle, "Slope", slope, invslope, vertical, vertical ? "V" : "H")
 			}
 			newgroup = nextgroup;
 		}
