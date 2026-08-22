@@ -484,10 +484,26 @@ canvas.addEventListener("pointerdown", e => {
 			for (let el1 of elements_by_zorder) for (let el2 of newgroup) {
 				if (group[el1.id]) continue; //Already in group, ignore it
 				if (((element_position[el1.id].angle||0) - angle) % 90 !== 0) continue;
+				//But for angled lines, what we're checking for here is colinearity.
+				//Specifically: If the two edges are on top of each other, then the
+				//four ends of those lines will all be colinear, and the slope from
+				//any one to any other will be the correct angle (or the points will
+				//be the exact same, meaning that the corners have snapped together).
+				//So, starting from each of two diagonally opposite corners of one
+				//element, we project along the two slopes to reach each of the two
+				//diagonally opposite corners of the other element, and if we meet,
+				//we must be snapped together.
+				const p1 = new DOMPointReadOnly(0 * el1.xsize, 0 * el1.ysize).matrixTransform(element_transform[el1.id]);
+				const p2 = new DOMPointReadOnly(1 * el1.xsize, 1 * el1.ysize).matrixTransform(element_transform[el1.id]);
+				const p3 = new DOMPointReadOnly(0 * el2.xsize, 0 * el2.ysize).matrixTransform(element_transform[el2.id]);
+				const p4 = new DOMPointReadOnly(1 * el2.xsize, 1 * el2.ysize).matrixTransform(element_transform[el2.id]);
+				//TODO.
+				if (angle % 90 === 0) {
+					//As with elsewhere, special-case the vertical to avoid trignometric error.
+					//But in this case, all we have to do is project the other way here.
+				}
 				found: for (let e1 = 0; e1 <= 1; ++e1) for (let e2 = 0; e2 <= 1; ++e2) {
-					const p1 = new DOMPointReadOnly(e1 * el1.xsize, e1 * el1.ysize).matrixTransform(element_transform[el1.id]);
-					const p2 = new DOMPointReadOnly(e2 * el2.xsize, e2 * el2.ysize).matrixTransform(element_transform[el2.id]);
-					if (p1.x === p2.x || p1.y === p2.y) {
+					if (p1.x === p3.x || p1.y === p3.y) {
 						group[el1.id] = el1;
 						nextgroup.push(el1);
 						draggroup.push(el1);
