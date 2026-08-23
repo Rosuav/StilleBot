@@ -485,33 +485,58 @@ canvas.addEventListener("pointerdown", e => {
 				if (group[el1.id]) continue; //Already in group, ignore it
 				if (((element_position[el1.id].angle||0) - angle) % 90 !== 0) continue;
 				//But for angled lines, what we're checking for here is colinearity.
-				//Specifically: If the two edges are on top of each other, then the
-				//four ends of those lines will all be colinear, and the slope from
-				//any one to any other will be the correct angle (or the points will
-				//be the exact same, meaning that the corners have snapped together).
-				//So, starting from each of two diagonally opposite corners of one
-				//element, we project along the two slopes to reach each of the two
-				//diagonally opposite corners of the other element, and if we meet,
-				//we must be snapped together.
-				//In order to minimize trignometric error, we project along the major
-				//axis for any slope. If the slope is more horizontal than vertical,
-				//we project horizontally until we find the X coordinate of the
-				//target point; otherwise we project vertically until we find the Y.
+				//From a corner of the element, we can project along its slope (as
+				//calculated from the element angle) to find the X or Y intercept,
+				//and the other intercept comes from the antislope (the inverse
+				//reciprocal slope). If two lines are colinear, they will have the
+				//same slope and (roughly) the same intercept.
+				//(Would you intercept me? ........ I'd intercept me.)
+				//So taking two diametrically opposite corners of each element, and
+				//taking both the slope and antislope for each one, we have a total
+				//of eight potential pairings; if any pair matches, the elements are
+				//considered to be potentially abutting. To confirm that they are
+				//*actually* abutting, we can subsequently ensure that one corner of
+				//one element is between the two corners of the other.
 				//Every element has a "primary angle" (given by element_position[].angle)
 				//and a "secondary angle" (perpendicular to that). If the angle is
 				//between -45 and 45, it's more horizontal; between 45 and 135, it's
-				//more vertical; and so on. We need both angles, so it doesn't matter
-				//which one we use, as long as it's consistent.
-				const p1 = new DOMPointReadOnly(0 * el1.xsize, 0 * el1.ysize).matrixTransform(element_transform[el1.id]);
-				const p2 = new DOMPointReadOnly(1 * el1.xsize, 1 * el1.ysize).matrixTransform(element_transform[el1.id]);
-				const p3 = new DOMPointReadOnly(0 * el2.xsize, 0 * el2.ysize).matrixTransform(element_transform[el2.id]);
-				const p4 = new DOMPointReadOnly(1 * el2.xsize, 1 * el2.ysize).matrixTransform(element_transform[el2.id]);
+				//more vertical; and so on. In order to minimize trignometric error,
+				//we always work with whichever angle gives us a slope between -1 and 1.
+				//(Note that, due to small amounts of error, the slope we actually use
+				//may end up being 1.000000000000001 or so; but the antislope may easily
+				//be a very large number, or even infinite if the slope is zero.)
 				const vertical = Math.floor((Math.abs(angle) + 45) / 90) % 2;
 				const slope = Math.tan((-angle + vertical * 90) * Math.PI / 180);
-				const invslope = -1/slope; //Reciprocal of slope for the perpendicular.
-				//Okay. So now slope is close to zero and invslope is not, regardless of the
-				//actual slope involved.
-				console.log(el1.title, el2.title, angle, "Slope", slope, invslope, vertical, vertical ? "V" : "H")
+				//const antislope = -1/slope; //Reciprocal of slope for the perpendicular. Not actually used but can be verified for debugging.
+				found: for (let c1 = 0; c1 <= 1; ++c1) for (let c2 = 0; c2 <= 1; ++c2) {
+					const p1 = new DOMPointReadOnly(c1 * el1.xsize, c1 * el1.ysize).matrixTransform(element_transform[el1.id]);
+					const p2 = new DOMPointReadOnly(c2 * el2.xsize, c2 * el2.ysize).matrixTransform(element_transform[el2.id]);
+					const yint1 = p1.y - p1.x * slope, yint2 = p2.y - p2.x * slope;
+					const xint1 = p1.x + p1.y * slope, xint2 = p2.x + p2.y * slope; //Note that, due to coordinate quirks, the sign flips.
+					let edge = null;
+					if (Math.abs(yint1 - yint2) < 1) edge = "x"; //Potential abuttal along Y-intercept (top/bottom side abuttal)
+					if (Math.abs(xint1 - xint2) < 1) edge = "y"; //Potential abuttal along X-intercept (left/right side abuttal)
+					if (edge) {
+						//Find the counterpoints to the ones we're using. The line segments
+						//defined by each point+counterpoint pair need to overlap in order
+						//for there to be actual abuttal. To check this, we use only the Y
+						//coordinates (as they change more than the X coords do - note that
+						//axis-aligned elements have a slope of zero, so the X coords would
+						//not change at all in that situation), and check the ordering. (If
+						//a Y intercept is found, use the X coordinates, by the same logic.)
+						const cp1 = new DOMPointReadOnly((1-c1) * el1.xsize, (1-c1) * el1.ysize).matrixTransform(element_transform[el1.id]);
+						const cp2 = new DOMPointReadOnly((1-c2) * el2.xsize, (1-c2) * el2.ysize).matrixTransform(element_transform[el2.id]);
+						const min1 = Math.min(p1[edge], cp1[edge]), max1 = Math.max(p1[edge], cp1[edge]);
+						const min2 = Math.min(p2[edge], cp2[edge]), max2 = Math.max(p2[edge], cp2[edge]);
+						if ((min1 < min2 + 1 && max1 > min2 - 1)
+							|| (min2 < min1 + 1 && max2 > min1 - 1)) {
+								group[el1.id] = el1;
+								nextgroup.push(el1);
+								draggroup.push(el1);
+								break found;
+						}
+					}
+				}
 			}
 			newgroup = nextgroup;
 		}
