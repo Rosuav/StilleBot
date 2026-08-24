@@ -28,7 +28,7 @@ constant markdown = #"# Mockups
 <div id=spacer>
 <div>Scene: <select id=sceneselector><option disabled>loading...</select> <span id=scenebuttons></span></div>
 <div id=modeselector>Mode:</div>
-<div><a href=\"mockup?pixelart\" id=pixelartlink target=_blank hidden>Edit pixel art</a></div>
+<div id=righttools></div>
 </div>
 
 <div id=sidebyside><div id=canvasscroll><canvas width=2700 height=1500></canvas></div><div id=elementlist></div></div>

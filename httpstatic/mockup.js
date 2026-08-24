@@ -2,7 +2,7 @@
 //For the landing page and pixel art, both of which are also on /mockup,
 //see mockup_landing.js and mockup_pixelart.js respectively.
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DIV, INPUT, LABEL, LEGEND, LI, OPTION, P, "svg:path": PATH, SPAN, "svg:svg": SVG, "svg:symbol": SYMBOL, UL, "svg:use": USE} = lindt; //autoimport
+const {A, BR, BUTTON, DIV, INPUT, LABEL, LEGEND, LI, OPTION, P, "svg:path": PATH, SPAN, "svg:svg": SVG, "svg:symbol": SYMBOL, UL, "svg:use": USE} = lindt; //autoimport
 import {simpleconfirm, paste_styles} from "$$static||utils.js$$";
 
 const clientid = Math.random() + "." + Math.random(); //If an update is caused by us, we ignore it
@@ -107,7 +107,14 @@ replace_content("#modeselector", [
 		])
 	]),
 ]);
-			
+replace_content("#righttools", [
+	BUTTON({onclick: e => DOM("main").requestFullscreen(), style: "margin-right: 5px; padding: 1px", title: "Fullscreen"},
+		SVG({height: "1.2em", style: "vertical-align: bottom", viewBox: "0 0 24 24", fill: "none", xmlns: "http://www.w3.org/2000/svg"},
+			PATH({d: "M9.00002 3.99998H4.00004L4 9M20 8.99999V4L15 3.99997M15 20H20L20 15M4 15L4 20L9.00002 20", stroke: "#000000", "stroke-width": "1.5", "stroke-linecap": "round", "stroke-linejoin": "round"}))
+	),
+	A({href: "mockup?pixelart", id: "pixelartlink", target: "_blank", hidden: true}, "Edit pixel art"),
+]);
+
 export function sockmsg_update_meta(msg) {
 	meta = msg;
 	replace_content("#imageselector", Object.entries(meta.icons)

@@ -286,5 +286,4 @@
   - Export as PDF??
   - Element position, add a "flip horiz"/"flip vert" option
   - Figure out how to make the canvas-plus-stuff use all available view space w/o scrollbars
-  - Add a fullscreen button (DOM("main").requestFullscreen())
   - Next scene, prev scene (don't loop, stop at the end)
