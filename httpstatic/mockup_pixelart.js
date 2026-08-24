@@ -65,6 +65,8 @@ function repaint() {
 	})))));
 }
 
+//NOTE: This will potentially create a line that goes beyond the bounds of the actual grid.
+//Only cells that actually land within the grid will be affected.
 function update_line() {
 	line = { };
 	if (!dragging) {repaint(); return;}
@@ -107,35 +109,40 @@ on("click", ".pickcolor", e => {
 	if (e.match.dataset.hue) {hue = e.match.dataset.hue; repaint();}
 });
 
-on("pointerdown", "#grid", e => {
+DOM("#grid").onpointerdown = e => {
 	if (e.button) return; //Only left clicks
 	e.preventDefault();
+	console.log(e.pointerId, e.currentTarget, e.target)
+	e.currentTarget.setPointerCapture(e.pointerId);
 	const x = e.target.cellIndex, y = e.target.parentElement.rowIndex;
 	dragging = [x, y, x, y, e.shiftKey];
 	update_line();
-});
-on("pointermove", "#grid", e => {
+};
+DOM("#grid").onpointermove = e => {
 	if (!dragging) return;
-	const x = e.target.cellIndex, y = e.target.parentElement.rowIndex;
+	const cell = document.elementFromPoint(e.pageX, e.pageY);
+	//Note that these can go out of bounds. The line will be drawn to the
+	//requested destination, even if some of the drawn pixels aren't visible.
+	const x = Math.floor(e.offsetX / 26), y = Math.floor(e.offsetY / 26);
 	if (dragging[2] !== x || dragging[3] !== y || dragging[4] !== e.shiftKey) {
 		dragging[2] = x;
 		dragging[3] = y;
 		dragging[4] = e.shiftKey;
 		update_line();
 	}
-});
+};
 document.onkeydown = document.onkeyup = e => {
 	if (dragging && e.key === "Escape") {dragging = null; update_line();} //Note that we don't release pointer capture until pointer up
 	if (dragging && dragging[4] !== e.shiftKey) {dragging[4] = e.shiftKey; update_line();}
 }
-on("pointerup", "#grid", e => {
-	e.target.releasePointerCapture(e.pointerId);
+DOM("#grid").onpointerup = e => {
+	e.currentTarget.releasePointerCapture(e.pointerId);
 	if (!dragging) return;
 	//"Harden" the line into being real.
 	grid.forEach((row, y) => row.forEach((cell, x) => line[x + "," + y] && (row[x] = curcolor)));
 	dragging = null;
 	update_line();
-});
+};
 
 on("submit", "#saveimage", e => {
 	ws_sync.send({cmd: "save_image",
