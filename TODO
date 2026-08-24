@@ -277,7 +277,8 @@
 * Port in the battle grid as a mockup system
   - Toolbox of available elements
     - Colour selection within an element type??
-    - Apply transparency/opacity to individual elements??
+    - Apply transparency/opacity to individual elements?? Possibly reserve alpha for a
+      "layer" concept in the future.
   - Page loads in read-only mode, but send the right password to get full access
     - Possibly have a localStorage marker to say "always enable mutation"?
     - Add a button to send the password - currently only done if it's in the URL
@@ -286,3 +287,6 @@
   - Bug report: In the pixel editor, if a line ends outside the grid, it won't release when you stop dragging
     - Possible issue with pointer capture?? Or maybe unable to calculate negative coords?
   - Element position, add a "flip horiz"/"flip vert" option
+  - Figure out how to make the canvas-plus-stuff use all available view space w/o scrollbars
+  - Add a fullscreen button (DOM("main").requestFullscreen())
+  - Next scene, prev scene (don't loop, stop at the end)
