@@ -415,6 +415,61 @@ function ruler_snap_to_ruler(xpos, ypos, moresnap) {
 	return [xpos, ypos, null];
 }
 
+function edge_snap_check(angle, el1, el2, threshold, xfrmoverride) {
+	//For angled lines, what we're checking for here is colinearity.
+	//From a corner of the element, we can project along its slope (as
+	//calculated from the element angle) to find the X or Y intercept,
+	//and the other intercept comes from the antislope (the inverse
+	//reciprocal slope). If two lines are colinear, they will have the
+	//same slope and (roughly) the same intercept.
+	//(Would you intercept me? ........ I'd intercept me.)
+	//So taking two diametrically opposite corners of each element, and
+	//taking both the slope and antislope for each one, we have a total
+	//of eight potential pairings; if any pair matches, the elements are
+	//considered to be potentially abutting. To confirm that they are
+	//*actually* abutting, we can subsequently ensure that one corner of
+	//one element is between the two corners of the other.
+	//Every element has a "primary angle" (given by element_position[].angle)
+	//and a "secondary angle" (perpendicular to that). If the angle is
+	//between -45 and 45, it's more horizontal; between 45 and 135, it's
+	//more vertical; and so on. In order to minimize trignometric error,
+	//we always work with whichever angle gives us a slope between -1 and 1.
+	//(Note that, due to small amounts of error, the slope we actually use
+	//may end up being 1.000000000000001 or so; but the antislope may easily
+	//be a very large number, or even infinite if the slope is zero.)
+	const vertical = Math.floor((Math.abs(angle) + 45) / 90) % 2;
+	const slope = Math.tan((-angle + vertical * 90) * Math.PI / 180);
+	//const antislope = -1/slope; //Reciprocal of slope for the perpendicular. Not actually used but can be verified for debugging.
+	for (let c1 = 0; c1 <= 1; ++c1) for (let c2 = 0; c2 <= 1; ++c2) {
+		const p1 = new DOMPointReadOnly(c1 * el1.xsize, c1 * el1.ysize).matrixTransform(xfrmoverride || element_transform[el1.id]);
+		const p2 = new DOMPointReadOnly(c2 * el2.xsize, c2 * el2.ysize).matrixTransform(element_transform[el2.id]);
+		const yint1 = p1.y - p1.x * slope, yint2 = p2.y - p2.x * slope;
+		const xint1 = p1.x + p1.y * slope, xint2 = p2.x + p2.y * slope; //Note that, due to coordinate quirks, the sign flips.
+		let edge = null;
+		if (Math.abs(yint1 - yint2) < threshold) edge = "x"; //Potential abuttal along Y-intercept (top/bottom side abuttal)
+		if (Math.abs(xint1 - xint2) < threshold) edge = "y"; //Potential abuttal along X-intercept (left/right side abuttal)
+		if (edge) {
+			//Find the counterpoints to the ones we're using. The line segments
+			//defined by each point+counterpoint pair need to overlap in order
+			//for there to be actual abuttal. To check this, we use only the Y
+			//coordinates (as they change more than the X coords do - note that
+			//axis-aligned elements have a slope of zero, so the X coords would
+			//not change at all in that situation), and check the ordering. (If
+			//a Y intercept is found, use the X coordinates, by the same logic.)
+			const cp1 = new DOMPointReadOnly((1-c1) * el1.xsize, (1-c1) * el1.ysize).matrixTransform(xfrmoverride || element_transform[el1.id]);
+			const cp2 = new DOMPointReadOnly((1-c2) * el2.xsize, (1-c2) * el2.ysize).matrixTransform(element_transform[el2.id]);
+			const min1 = Math.min(p1[edge], cp1[edge]), max1 = Math.max(p1[edge], cp1[edge]);
+			const min2 = Math.min(p2[edge], cp2[edge]), max2 = Math.max(p2[edge], cp2[edge]);
+			if ((min1 < min2 + threshold && max1 > min2 - threshold)
+					|| (min2 < min1 + threshold && max2 > min1 - threshold)) {
+				//Got a snap! Calculate the distance we need to move.
+				if (edge === "x") return [(yint1-yint2)*slope, -(yint1-yint2)];
+				return [-(xint1-xint2), (xint1-xint2)*slope];
+			}
+		}
+	}
+}
+
 canvas.addEventListener("pointerdown", e => {
 	if (e.button) return; //Only left clicks
 	if (!mutation_allowed) return;
@@ -484,58 +539,10 @@ canvas.addEventListener("pointerdown", e => {
 			for (let el1 of elements_by_zorder) for (let el2 of newgroup) {
 				if (group[el1.id]) continue; //Already in group, ignore it
 				if (((element_position[el1.id].angle||0) - angle) % 90 !== 0) continue;
-				//But for angled lines, what we're checking for here is colinearity.
-				//From a corner of the element, we can project along its slope (as
-				//calculated from the element angle) to find the X or Y intercept,
-				//and the other intercept comes from the antislope (the inverse
-				//reciprocal slope). If two lines are colinear, they will have the
-				//same slope and (roughly) the same intercept.
-				//(Would you intercept me? ........ I'd intercept me.)
-				//So taking two diametrically opposite corners of each element, and
-				//taking both the slope and antislope for each one, we have a total
-				//of eight potential pairings; if any pair matches, the elements are
-				//considered to be potentially abutting. To confirm that they are
-				//*actually* abutting, we can subsequently ensure that one corner of
-				//one element is between the two corners of the other.
-				//Every element has a "primary angle" (given by element_position[].angle)
-				//and a "secondary angle" (perpendicular to that). If the angle is
-				//between -45 and 45, it's more horizontal; between 45 and 135, it's
-				//more vertical; and so on. In order to minimize trignometric error,
-				//we always work with whichever angle gives us a slope between -1 and 1.
-				//(Note that, due to small amounts of error, the slope we actually use
-				//may end up being 1.000000000000001 or so; but the antislope may easily
-				//be a very large number, or even infinite if the slope is zero.)
-				const vertical = Math.floor((Math.abs(angle) + 45) / 90) % 2;
-				const slope = Math.tan((-angle + vertical * 90) * Math.PI / 180);
-				//const antislope = -1/slope; //Reciprocal of slope for the perpendicular. Not actually used but can be verified for debugging.
-				found: for (let c1 = 0; c1 <= 1; ++c1) for (let c2 = 0; c2 <= 1; ++c2) {
-					const p1 = new DOMPointReadOnly(c1 * el1.xsize, c1 * el1.ysize).matrixTransform(element_transform[el1.id]);
-					const p2 = new DOMPointReadOnly(c2 * el2.xsize, c2 * el2.ysize).matrixTransform(element_transform[el2.id]);
-					const yint1 = p1.y - p1.x * slope, yint2 = p2.y - p2.x * slope;
-					const xint1 = p1.x + p1.y * slope, xint2 = p2.x + p2.y * slope; //Note that, due to coordinate quirks, the sign flips.
-					let edge = null;
-					if (Math.abs(yint1 - yint2) < 1) edge = "x"; //Potential abuttal along Y-intercept (top/bottom side abuttal)
-					if (Math.abs(xint1 - xint2) < 1) edge = "y"; //Potential abuttal along X-intercept (left/right side abuttal)
-					if (edge) {
-						//Find the counterpoints to the ones we're using. The line segments
-						//defined by each point+counterpoint pair need to overlap in order
-						//for there to be actual abuttal. To check this, we use only the Y
-						//coordinates (as they change more than the X coords do - note that
-						//axis-aligned elements have a slope of zero, so the X coords would
-						//not change at all in that situation), and check the ordering. (If
-						//a Y intercept is found, use the X coordinates, by the same logic.)
-						const cp1 = new DOMPointReadOnly((1-c1) * el1.xsize, (1-c1) * el1.ysize).matrixTransform(element_transform[el1.id]);
-						const cp2 = new DOMPointReadOnly((1-c2) * el2.xsize, (1-c2) * el2.ysize).matrixTransform(element_transform[el2.id]);
-						const min1 = Math.min(p1[edge], cp1[edge]), max1 = Math.max(p1[edge], cp1[edge]);
-						const min2 = Math.min(p2[edge], cp2[edge]), max2 = Math.max(p2[edge], cp2[edge]);
-						if ((min1 < min2 + 1 && max1 > min2 - 1)
-							|| (min2 < min1 + 1 && max2 > min1 - 1)) {
-								group[el1.id] = el1;
-								nextgroup.push(el1);
-								draggroup.push(el1);
-								break found;
-						}
-					}
+				if (edge_snap_check(angle, el1, el2, 1)) {
+					group[el1.id] = el1;
+					nextgroup.push(el1);
+					draggroup.push(el1);
 				}
 			}
 			newgroup = nextgroup;
@@ -575,34 +582,8 @@ function snap_to_elements(baseelem, xpos, ypos, moresnap) {
 		//If we didn't find a corner to snap to, try snapping to an edge instead.
 		//There are four edges, but each one only snaps to two (you don't snap the
 		//top of one thing to the left of another).
-		for (let e1 = 0; e1 <= 1; ++e1) for (let e2 = 0; e2 <= 1; ++e2) {
-			const p1 = new DOMPointReadOnly(e1 * baseelem.xsize, e1 * baseelem.ysize).matrixTransform(basexfrm);
-			const p2 = new DOMPointReadOnly(e2 * el.xsize, e2 * el.ysize).matrixTransform(element_transform[el.id]);
-			//if (x1 - x2 <= SNAP_DISTANCE && x2 - x1 <= SNAP_DISTANCE) //Is it better to do two comparisons, to call Math.abs(), or to square the number?
-			if ((p1.x - p2.x) ** 2 <= SNAP_RANGE) { //Going with squaring for consistency with the corner snaps.
-				//Horizontal snapping (to a vertical edge)
-				//First, check if the top and/or bottom corner of the base element can be found
-				//within the size of the target. Two-step coordinate transform: first take (x, 0)
-				//and (x, ysize) and translate them into physical coordinates, then translate those
-				//into other-element-relative. The x coordinate post-transformation will be close to
-				//our current location, and one of the y coordinates needs to be within the size of
-				//the target element.
-				const top = new DOMPointReadOnly(e1 * baseelem.xsize, 0).matrixTransform(basexfrm).matrixTransform(element_transform_inverse[el.id]);
-				const bot = new DOMPointReadOnly(e1 * baseelem.xsize, baseelem.ysize).matrixTransform(basexfrm).matrixTransform(element_transform_inverse[el.id]);
-				if ((top.y >= 0 && top.y <= el.ysize) || (bot.y >= 0 && bot.y <= el.ysize))
-					//TODO: Figure out how to slew along the angle to meet the target. Currently
-					//this isn't perfect when the elements are tilted.
-					return [xpos + p2.x - p1.x, ypos];
-				//If it's outside range, keep looking - there might be other matches.
-			}
-			if ((p1.y - p2.y) ** 2 <= SNAP_RANGE) {
-				//Vertical snapping (to a horizontal edge), correspondingly.
-				const lef = new DOMPointReadOnly(0, e1 * baseelem.ysize).matrixTransform(basexfrm).matrixTransform(element_transform_inverse[el.id]);
-				const rig = new DOMPointReadOnly(baseelem.xsize, e1 * baseelem.ysize).matrixTransform(basexfrm).matrixTransform(element_transform_inverse[el.id]);
-				if ((lef.x >= 0 && lef.x <= el.xsize) || (rig.x >= 0 && rig.x <= el.xsize))
-					return [xpos, ypos + p2.y - p1.y];
-			}
-		}
+		const snap = edge_snap_check(angle, baseelem, el, SNAP_DISTANCE, basexfrm);
+		if (snap) return [xpos+snap[0], ypos+snap[1]];
 	}
 	return [xpos, ypos];
 }
