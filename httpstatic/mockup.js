@@ -541,8 +541,7 @@ canvas.addEventListener("pointerdown", e => {
 		//significant here, as snapped elements will have zero distance.
 		//An element gets added to the group if it is snapped to any element already in the group,
 		//and this grouping is transitive.
-		//FIXME: This does not currently work correctly for rotated elements, for the same reason
-		//that edge snapping itself doesn't. Fix both at once.
+		//TODO: This can be imperfect for rotated elements; there seems to be some error creeping in.
 		const group = {[el.id]: el};
 		let newgroup = [el];
 		const angle = pos.angle || 0;
