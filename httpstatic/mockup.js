@@ -146,22 +146,24 @@ let clicking = false;
 const elements_by_zorder = [];
 let rulers = [];
 
-function element_matrix(x, y, xsize, ysize, angle, flipx, flipy) {
+function element_matrix(x, y, xsize, ysize, angle, flipx, flipy, dtheta, rotx, roty) {
 	//The object's position defines its midpoint, which is also the point
 	//around which it rotates and flips.
 	//Rotation is negated because it feels better that way.
 	//CAUTION: When rotating a canvas, the angle is specified in radians. When
 	//rotating a matrix, though, it's in degrees. Don't get caught out.
-	return (new DOMMatrixReadOnly()
-		.translate(x, y)
-		.rotate(-(angle||0))
-		[flipx ? "flipX" : "translate"]() //Calling .translate() does nothing
-		[flipy ? "flipY" : "translate"]()
-		.translate(-xsize / 2, -ysize / 2)
-	);
+	let mat = new DOMMatrixReadOnly().translate(x, y);
+	if (dtheta) mat = mat
+		.translate(rotx-x, roty-y)
+		.rotate(-dtheta)
+		.translate(x-rotx, y-roty);
+	if (angle) mat = mat.rotate(-angle);
+	if (flipx) mat = mat.flipX();
+	if (flipy) mat = mat.flipY();
+	return mat.translate(-xsize / 2, -ysize / 2);
 }
 
-function draw_element(ctx, el, dx, dy, dtheta) {
+function draw_element(ctx, el, dx, dy, dtheta, rotx, roty) {
 	elements_by_zorder.push(el);
 	const url = meta.icons[el.image]?.url;
 	if (!url) return;
@@ -175,13 +177,13 @@ function draw_element(ctx, el, dx, dy, dtheta) {
 	el.xsize = el.xsize || img.naturalWidth;
 	el.ysize = el.ysize || img.naturalHeight;
 	ctx.save();
-	element_transform[el.id] = element_matrix(pos.x + (dx||0), pos.y + (dy||0), el.xsize, el.ysize, (pos.angle||0) + (dtheta||0), pos.flipx, pos.flipy);
+	element_transform[el.id] = element_matrix(pos.x + (dx||0), pos.y + (dy||0), el.xsize, el.ysize, pos.angle, pos.flipx, pos.flipy, dtheta, rotx, roty);
 	element_transform_inverse[el.id] = element_transform[el.id].inverse();
 	ctx.setTransform(element_transform[el.id]);
 	if (hoverelement && el.id !== hoverelement) ctx.globalAlpha = 0.5;
 	//Now that we have the transformation matrix set, all drawing is done at the origin.
 	ctx.drawImage(img, 0, 0, el.xsize, el.ysize);
-	if (dragging && (dragging.is_ruler || ((pos.angle||0) - (element_position[dragging.id].angle||0)) % 90 === 0)) {
+	if (dragging && (dragging.is_ruler || ((pos.angle||0) + (dtheta||0) - (element_position[dragging.id].angle||0)) % 90 === 0)) {
 		//If you're dragging something that is oriented compatibly to this one, draw snap markers.
 		ctx.strokeRect(0, 0, el.xsize, el.ysize);
 		//TODO: Do partial circles for the corners, only drawing the part outside
@@ -290,10 +292,11 @@ function repaint() {
 			const dx = pos.x - dragorigx, dy = pos.y - dragorigy;
 			draggroup.forEach(el => draw_element(ctx, el, dx, dy));
 		} else if (grabmode === "multirotate") {
-			//TODO: Rotate the grouped elements around the center of the *grabbed* element,
-			//not around their own centers.
+			//Rotate the grouped elements around the center of the *grabbed* element,
+			//not around their own centers. This is done in the transform matrix, so
+			//the element's purported position does not change until it is dropped.
 			const dtheta = pos.angle - dragorigx;
-			draggroup.forEach(el => draw_element(ctx, el, 0, 0, dtheta));
+			draggroup.forEach(el => draw_element(ctx, el, 0, 0, dtheta, pos.x||0, pos.y||0));
 		}
 		draw_element(ctx, dragging); //With the thing you're actually holding at the very top
 	}
@@ -685,11 +688,21 @@ canvas.addEventListener("pointerup", e => {
 				ws_sync.send({cmd: "move_element", scene: curscene, id: el.id, x: pos.x, y: pos.y, clientid});
 			}
 		} else if (grabmode === "multirotate") {
-			//TODO: Reify the same rotation done by repaint
+			//Reify the rotation; during drag, this is done by changing its matrix,
+			//but we now need to change its position so that its center is correct.
+			const basepos = element_position[dragging.id];
+			const xfrm = new DOMMatrixReadOnly()
+				.translate(basepos.x, basepos.y)
+				.rotate(dragorigx - updates.angle)
+				.translate(-basepos.x, -basepos.y)
+			;
 			for (let el of draggroup) {
 				const pos = element_position[el.id];
-				pos.angle = updates.angle;
-				ws_sync.send({cmd: "move_element", scene: curscene, id: el.id, angle: pos.angle, clientid});
+				const dest = new DOMPointReadOnly(pos.x, pos.y).matrixTransform(xfrm);
+				pos.angle += updates.angle - dragorigx;
+				pos.x = dest.x;
+				pos.y = dest.y;
+				ws_sync.send({cmd: "move_element", scene: curscene, id: el.id, x: dest.x, y: dest.y, angle: pos.angle, clientid});
 			}
 		}
 	}
