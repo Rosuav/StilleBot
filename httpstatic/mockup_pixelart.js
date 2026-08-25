@@ -112,7 +112,6 @@ on("click", ".pickcolor", e => {
 DOM("#grid").onpointerdown = e => {
 	if (e.button) return; //Only left clicks
 	e.preventDefault();
-	console.log(e.pointerId, e.currentTarget, e.target)
 	e.currentTarget.setPointerCapture(e.pointerId);
 	const x = e.target.cellIndex, y = e.target.parentElement.rowIndex;
 	dragging = [x, y, x, y, e.shiftKey];
@@ -193,7 +192,7 @@ export function sockmsg_update_meta(msg) {
 	]).className = "showtype-" + image_type;
 	let row = [], toolbox = [];
 	for (let [id, img] of tiles) {
-		if (img.xsize !== 25 || img.ysize !== 25) continue; //TODO: Use the configured tile size, not hard-coded 25x25
+		if (img.xsize !== 25 || img.ysize !== 25) continue; //TODO maybe: Use the configured cellx/celly, not hard-coded 25x25 (would require loading more and hiding those irrelevant)
 		if (row.length >= 10) {toolbox.push(TR(row)); row = [];}
 		row.push(TD({class: "pickcolor", "data-color": id, title: id, style: "background: url(" + img.url + ")"}));
 	}

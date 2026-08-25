@@ -310,7 +310,6 @@ function element_at_position(x, y, filter) {
 	//to the bottom; the first one found containing the given position is returned.
 	const point = new DOMPointReadOnly(x, y);
 	for (let i = elements_by_zorder.length - 1; i >= 0; --i) {
-		//TODO: Handle rotated clipping rectangles
 		const el = elements_by_zorder[i];
 		const p = point.matrixTransform(element_transform_inverse[el.id]);
 		if (p.x >= 0 && p.y >= 0 && p.x < el.xsize && p.y < el.ysize && (!filter || filter(el))) return el;
