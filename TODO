@@ -285,4 +285,3 @@
   - Export entire mockup as a series of PNGs (one per scene)
   - Export as PDF??
   - Figure out how to make the canvas-plus-stuff use all available view space w/o scrollbars
-  - Next scene, prev scene (don't loop, stop at the end)

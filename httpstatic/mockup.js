@@ -727,12 +727,12 @@ export function render(data) {
 	if (!element_position) element_position = state.scenes[curscene].elements = { };
 	//This feels inefficient. Doing all this work every time anything changes, when it only
 	//needs to be updated when a scene is added/removed/renamed, seems like overkill. *sigh*
+	const scenes = Object.entries(state.scenes).map(e => [e[0], e[1].title]).sort((a, b) => a[1].localeCompare(b[1]));
+	const cur = scenes.findIndex(pair => pair[0] === curscene);
 	replace_content("#scenebuttons", [
-		SELECT({id: "sceneselector", value: curscene},
-			Object.entries(state.scenes).map(e => [e[0], e[1].title])
-			.sort((a, b) => a[1].localeCompare(b[1]))
-			.map(e => OPTION({value: e[0]}, e[1]))
-		),
+		BUTTON({type: "button", class: "scenepicker", "data-scene": (scenes[cur-1]||[""])[0], disabled: cur === 0}, "<"),
+		SELECT({id: "sceneselector", value: curscene}, scenes.map(e => OPTION({value: e[0]}, e[1]))),
+		BUTTON({type: "button", class: "scenepicker", "data-scene": (scenes[cur+1]||[""])[0], disabled: cur === scenes.length - 1}, ">"),
 		" ",
 		EDITBUTTON("scenes", curscene),
 		mutation_allowed && BUTTON({id: "new_scene", title: "Add new scene"}, "+"),
@@ -757,6 +757,7 @@ export function render(data) {
 }
 
 on("change", "#sceneselector", e => {curscene = e.match.value; render(state);});
+on("click", ".scenepicker", e => {curscene = e.match.dataset.scene; render(state);});
 
 let editing_cat = null, editing_element = null;
 function edit_element(cat, elemid) {
