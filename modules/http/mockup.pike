@@ -23,7 +23,7 @@ inherit annotated;
 
 constant markdown = #"# Mockups
 
-<p id=status></p>
+<p id=status hidden></p>
 
 <div id=spacer>
 <div>Scene: <span id=scenebuttons></span></div>
@@ -45,6 +45,13 @@ constant markdown = #"# Mockups
 {: tag=formdialog #editelementdlg}
 
 <style>
+/* Use all available space and then have scrolling internally instead */
+main {
+	max-width: unset;
+	padding: 0 1.5em;
+	position: fixed;
+	width: 100vw; height: 100vh;
+}
 #topbar {display: none;} /* Not relevant on this page, no need to waste the real estate */
 #spacer {
 	display: flex;

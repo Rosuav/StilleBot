@@ -718,7 +718,7 @@ export function render(data) {
 		return;
 	}
 	state = data; //Yes, this will include state.cmd == "update", no big deal
-	if (state.deleted) return replace_content("#status", "Mockup deleted.");
+	if (state.deleted) return replace_content("#status", "Mockup deleted.").hidden = false;
 	if (state.scenes && !state.scenes[curscene]) {
 		//You aren't on any scene. Pick one. TODO: Have a "default scene" selector somewhere.
 		curscene = Object.keys(state.scenes)[0];
