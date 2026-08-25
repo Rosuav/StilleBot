@@ -34,7 +34,7 @@ replace_content("#positionselect", [
 	]),
 	LABEL([
 		"Locked (undraggable) ",
-		INPUT({type: "checkbox", id: "elementlocked"}),
+		INPUT({type: "checkbox", "id": "elementlocked", "data-automove": "locked"}),
 		SVG({id: "lockopen", fill: "black", version: "1.1", xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 512 512", "enable-background": "new 0 0 512 512"}, [
 			PATH({d: "m375,11c-66.3,0-120.2,53.9-120.2,120.1v64.1h-177.4c-33.4,0-60.5,27.1-60.5,60.5v184.7c0,33.4 27.2,60.5 60.5,60.5h227.8c33.4,0 60.5-27.1 60.5-60.5v-184.6c0-33.4-27.1-60.5-60.5-60.5h-9.5v-64.1c0-43.7 35.6-79.3 79.3-79.3 43.7,0 79.3,35.6 79.3,79.3v84.5c0,11.3 9.1,20.4 20.4,20.4s20.4-9.1 20.4-20.4v-84.5c0.1-66.3-53.8-120.2-120.1-120.2zm-50.2,244.8v184.7c0,10.8-8.8,19.7-19.7,19.7h-227.7c-10.9,0-19.7-8.8-19.7-19.7v-184.7c0-10.9 8.8-19.7 19.7-19.7h227.8c10.8-2.84217e-14 19.6,8.8 19.6,19.7z"}),
 			PATH({d: "m191.3,430c11.3,0 20.4-9.1 20.4-20.4v-40.1c0-11.3-9.1-20.4-20.4-20.4-11.3,0-20.4,9.1-20.4,20.4v40.1c-0.1,11.3 9.1,20.4 20.4,20.4z"}),
@@ -46,13 +46,16 @@ replace_content("#positionselect", [
 	]), BR(),
 	P({"data-copystyles": "1"}, [
 		"Position: ",
-		INPUT({type: "number", id: "xpos", "data-automove": "x", name: "x"}),
-		INPUT({type: "number", id: "ypos", "data-automove": "y", name: "y"}),
+		INPUT({type: "number", "data-automove": "x", name: "x"}),
+		INPUT({type: "number", "data-automove": "y", name: "y"}),
 		LABEL([
 			" Angle: ",
-			INPUT({type: "number", id: "angle", "data-automove": "angle", name: "angle"}),
+			INPUT({type: "number", "data-automove": "angle", name: "angle"}),
 			"degrees",
 		]),
+		" ", LABEL([INPUT({type: "checkbox", "data-automove": "flipx", name: "flipx"}), " Flip horiz"]),
+		" ", LABEL([INPUT({type: "checkbox", "data-automove": "flipy", name: "flipy"}), " Flip vert"]),
+		BR(),
 		BUTTON({type: "button", class: "copystyles"}, "Copy position"),
 		BUTTON({type: "button", id: "pasteposition"}, "Paste position"), //Not using class: "pastestyles" as we need extra code after the paste
 	]),
@@ -143,15 +146,17 @@ let clicking = false;
 const elements_by_zorder = [];
 let rulers = [];
 
-function element_matrix(x, y, xsize, ysize, angle) {
+function element_matrix(x, y, xsize, ysize, angle, flipx, flipy) {
 	//The object's position defines its midpoint, which is also the point
-	//around which it rotates.
+	//around which it rotates and flips.
 	//Rotation is negated because it feels better that way.
 	//CAUTION: When rotating a canvas, the angle is specified in radians. When
 	//rotating a matrix, though, it's in degrees. Don't get caught out.
 	return (new DOMMatrixReadOnly()
 		.translate(x, y)
 		.rotate(-(angle||0))
+		[flipx ? "flipX" : "translate"]() //Calling .translate() does nothing
+		[flipy ? "flipY" : "translate"]()
 		.translate(-xsize / 2, -ysize / 2)
 	);
 }
@@ -170,7 +175,7 @@ function draw_element(ctx, el, dx, dy, dtheta) {
 	el.xsize = el.xsize || img.naturalWidth;
 	el.ysize = el.ysize || img.naturalHeight;
 	ctx.save();
-	element_transform[el.id] = element_matrix(pos.x + (dx||0), pos.y + (dy||0), el.xsize, el.ysize, (pos.angle||0) + (dtheta||0));
+	element_transform[el.id] = element_matrix(pos.x + (dx||0), pos.y + (dy||0), el.xsize, el.ysize, (pos.angle||0) + (dtheta||0), pos.flipx, pos.flipy);
 	element_transform_inverse[el.id] = element_transform[el.id].inverse();
 	ctx.setTransform(element_transform[el.id]);
 	if (hoverelement && el.id !== hoverelement) ctx.globalAlpha = 0.5;
@@ -561,8 +566,9 @@ function snap_to_elements(baseelem, xpos, ypos, moresnap) {
 	//NOTE: Previously we were doing a fast check against the bounding box before doing the full checks.
 	//This is not currently happening, but if an axis-aligned bounding box is retained, this could allow
 	//us to save some effort. Currently doing the full snap check against every element.
-	const angle = element_position[baseelem.id].angle || 0;
-	const basexfrm = element_matrix(xpos, ypos, baseelem.xsize, baseelem.ysize, angle);
+	const basepos = element_position[baseelem.id];
+	const angle = basepos.angle || 0;
+	const basexfrm = element_matrix(xpos, ypos, baseelem.xsize, baseelem.ysize, angle, basepos.flipx, basepos.flipy);
 	for (let el of elements_by_zorder) {
 		if (el.id === baseelem.id) continue; //Don't snap to yourself
 		if (draggroup.some(g => g.id === el.id)) continue; //Don't snap to something you're already carrying
@@ -777,17 +783,17 @@ function edit_element(cat, elemid) {
 	DOM("#elementtitle").value = elem.title || "";
 	DOM("#elementdesc").value = elem.description || "";
 	replace_content("#scenename", state.scenes[curscene].title || curscene);
-	DOM("#elementlocked").checked = !!element_position[elemid]?.locked;
-	DOM("#xpos").value = element_position[elemid]?.x || 0;
-	DOM("#ypos").value = element_position[elemid]?.y || 0;
-	DOM("#angle").value = element_position[elemid]?.angle || 0;
+	document.querySelectorAll("[data-automove]").forEach(el => {
+		if (el.type === "checkbox") el.checked = !!element_position[elemid][el.dataset.automove];
+		else el.value = element_position[elemid][el.dataset.automove] || 0;
+	});
 	DOM("#editelementdlg").showModal();
 }
 
 on("click", ".editelement", e => edit_element(e.match.dataset.cat, e.match.dataset.element));
 //When you move an element via the dialog, DON'T send the client ID - we'll hear the echo-back and update locked status correctly.
-on("click", "#elementlocked", e => ws_sync.send({cmd: "move_element", scene: curscene, id: editing_element, locked: e.match.checked}));
-on("change", "[data-automove]", e => ws_sync.send({cmd: "move_element", scene: curscene, id: editing_element, [e.match.dataset.automove]: e.match.value|0}));
+on("change", "[data-automove]", e => ws_sync.send({cmd: "move_element", scene: curscene, id: editing_element,
+	[e.match.dataset.automove]: e.match.type === "checkbox" ? e.match.checked : e.match.value|0}));
 
 on("click", "#pasteposition", async e => {
 	const values = await paste_styles(e.match, e.clientX, e.clientY);

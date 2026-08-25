@@ -396,6 +396,8 @@ __async__ void websocket_cmd_move_element(mapping(string:mixed) conn, mapping(st
 		if (!undefinedp(msg->y)) scene->elements[msg->id]->y = (int)msg->y;
 		if (!undefinedp(msg->locked)) scene->elements[msg->id]->locked = !!msg->locked;
 		if (!undefinedp(msg->angle)) scene->elements[msg->id]->angle = (int)(msg->angle * 2) / 2.0;
+		if (!undefinedp(msg->flipx)) scene->elements[msg->id]->flipx = !!msg->flipx;
+		if (!undefinedp(msg->flipy)) scene->elements[msg->id]->flipy = !!msg->flipy;
 		update = (["scene": msg->scene, "id": msg->id, "move_element": scene->elements[msg->id], "cause": msg->clientid]);
 	});
 	if (update) send_updates_all(conn->group, update);

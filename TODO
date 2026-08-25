@@ -284,6 +284,5 @@
     - Add a button to send the password - currently only done if it's in the URL
   - Export entire mockup as a series of PNGs (one per scene)
   - Export as PDF??
-  - Element position, add a "flip horiz"/"flip vert" option
   - Figure out how to make the canvas-plus-stuff use all available view space w/o scrollbars
   - Next scene, prev scene (don't loop, stop at the end)
