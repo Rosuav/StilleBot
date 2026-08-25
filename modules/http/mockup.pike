@@ -167,10 +167,11 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 #imagelist.showtype-icon::before {content: \"Icons\";}
 #imagelist.showtype-grid::before {content: \"Grids\";}
 #selections {cursor: default; font-size: small;}
-/* TODO: Put a checkerboard background on #grid so transparent pixels aren't the same as any single colour */
 #grid {
 	margin-top: 1em;
 	margin-bottom: 2em; /* Bit of gap so you know you've reached the bottom */
+	/* Checkerboard background so transparent pixels aren't the same as any single colour */
+	background: repeating-conic-gradient(#ddd 0 25%, #fff 0 50%) 50% / 26px 26px;
 }
 td {
 	width: 26px; height: 26px;
