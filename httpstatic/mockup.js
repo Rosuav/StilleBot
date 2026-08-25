@@ -2,7 +2,7 @@
 //For the landing page and pixel art, both of which are also on /mockup,
 //see mockup_landing.js and mockup_pixelart.js respectively.
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, DIV, INPUT, LABEL, LEGEND, LI, OPTION, P, "svg:path": PATH, SPAN, "svg:svg": SVG, "svg:symbol": SYMBOL, UL, "svg:use": USE} = lindt; //autoimport
+const {A, BR, BUTTON, DIV, INPUT, LABEL, LEGEND, LI, OPTION, P, "svg:path": PATH, SELECT, SPAN, "svg:svg": SVG, "svg:symbol": SYMBOL, UL, "svg:use": USE} = lindt; //autoimport
 import {simpleconfirm, paste_styles} from "$$static||utils.js$$";
 
 const clientid = Math.random() + "." + Math.random(); //If an update is caused by us, we ignore it
@@ -727,12 +727,13 @@ export function render(data) {
 	if (!element_position) element_position = state.scenes[curscene].elements = { };
 	//This feels inefficient. Doing all this work every time anything changes, when it only
 	//needs to be updated when a scene is added/removed/renamed, seems like overkill. *sigh*
-	replace_content("#sceneselector",
-		Object.entries(state.scenes).map(e => [e[0], e[1].title])
-		.sort((a, b) => a[1].localeCompare(b[1]))
-		.map(e => OPTION({value: e[0]}, e[1]))
-	).value = curscene;
 	replace_content("#scenebuttons", [
+		SELECT({id: "sceneselector", value: curscene},
+			Object.entries(state.scenes).map(e => [e[0], e[1].title])
+			.sort((a, b) => a[1].localeCompare(b[1]))
+			.map(e => OPTION({value: e[0]}, e[1]))
+		),
+		" ",
 		EDITBUTTON("scenes", curscene),
 		mutation_allowed && BUTTON({id: "new_scene", title: "Add new scene"}, "+"),
 	]);

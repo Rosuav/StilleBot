@@ -26,7 +26,7 @@ constant markdown = #"# Mockups
 <p id=status></p>
 
 <div id=spacer>
-<div>Scene: <select id=sceneselector><option disabled>loading...</select> <span id=scenebuttons></span></div>
+<div>Scene: <span id=scenebuttons></span></div>
 <div id=modeselector>Mode:</div>
 <div id=righttools></div>
 </div>
