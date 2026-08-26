@@ -215,6 +215,85 @@ to create a new mockup, you will need to [log in with a Twitch account](:.twitch
 ";
 
 mapping meta_cache;
+
+mapping generate_snapshot(mapping mock, string|void scene, mapping(string:mapping)|void icon_cache) {
+	if (!icon_cache) icon_cache = ([]);
+	mapping sc = mock->scenes[scene];
+	if (!sc) {
+		//TODO: Call self recursively, generating per-scene images, then combine them into a PDF.
+		//Share the icon_cache to speed things up
+		sc = values(mock->scenes)[0]; //Pick one arbitrarily for now.
+	}
+	mapping bg = meta_cache->grids[mock->bg];
+	int xsize = 1, ysize = 1;
+	if (bg) {
+		xsize = max(xsize, bg->xsize);
+		ysize = max(ysize, bg->ysize);
+		sscanf(bg->url, "data:image/png;base64,%s", string raw);
+		bg = Image.PNG._decode(MIME.decode_base64(raw));
+	}
+	//Run over all the elements in this scene and figure out the required extents
+	//(expanding xsize/ysize as needed).
+	foreach (sc->elements; string id; mapping pos) {
+		//TODO: Handle rotated images better. For simplicity, just use the max
+		//of x and y for both.
+		mapping el = mock->elements[id]; if (!el) continue;
+		int sz = max(el->xsize, mock->ysize) / 2;
+		xsize = max(xsize, pos->x + sz);
+		ysize = max(ysize, pos->y + sz);
+	}
+	Image.Image image = Image.Image(xsize, ysize, 255, 255, 255), alpha = Image.Image(xsize, ysize);
+	if (bg) {
+		//Note that we draw a solid colour background first, then draw the bg image
+		//over it. This means there'll be no transparency behind this image.
+		//Alternatively, if it's better to have a constant colour behind everything,
+		//select that colour as the default when constructing image, and select a
+		//default of 255,255,255 when constructing alpha, and remove this box call.
+		alpha->box(0, 0, bg->xsize, bg->ysize, 255, 255, 255);
+		image->paste_mask(bg->image, bg->alpha, 0, 0);
+	}
+	array elements = (array)sc->elements;
+	sort(elements[*][0], elements);
+	foreach (elements, [string id, mapping pos]) {
+		//if (id != "e10") continue; //HACK
+		mapping el = mock->elements[id];
+		if (!el) continue;
+		/*el = ([
+			"description": "",
+			"image": "Xmas tree",
+			"title": "Christmas Tree",
+			"xsize": 50,
+			"ysize": 50
+		])*/
+		/*pos = ([
+			"angle": 0.0,
+			"x": 485,
+			"y": 191
+		])*/
+		mapping icon = icon_cache[el->image];
+		if (!icon) {
+			sscanf(meta_cache->icons[el->image]->?url || "!", "data:image/png;base64,%s", string raw);
+			icon_cache[el->image] = icon = Image.PNG._decode(MIME.decode_base64(raw));
+		}
+		//Note that the scaling done here may not exactly match what's done in the front end,
+		//eg as regards antialiasing.
+		object img = icon->image, alp = icon->alpha;
+		if (el->xsize != icon->xsize || el->ysize != icon->ysize) {
+			img = img->scale(el->xsize, el->ysize);
+			alp = alp->scale(el->xsize, el->ysize);
+		}
+		if (pos->angle) {
+			//NOTE: This can enlarge the image, so subsequent "size" calculations
+			//need to use the image object's size.
+			img = img->rotate(pos->angle, 0, 0, 0);
+			alp = alp->rotate(pos->angle, 0, 0, 0); //Fill in any corners with transparency
+		}
+		alpha->paste_mask(alp, alp, pos->x - alp->xsize() / 2, pos->y - alp->ysize() / 2);
+		image->paste_mask(img, alp, pos->x - img->xsize() / 2, pos->y - img->ysize() / 2);
+	}
+	return (["data": Image.PNG.encode(image, (["alpha": alpha])), "type": "image/png"]);
+}
+
 __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req) {
 	if (!meta_cache) meta_cache = await(G->G->DB->load_config(1, "mockup"));
 	if (string id = req->variables->view) {
@@ -225,6 +304,12 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		//for read-write functionality.
 		mapping mock = await(G->G->DB->load_config(0, "mockup"))[id];
 		if (mock) return render(req, (["vars": (["ws_group": id, "meta": meta_cache])]));
+		//Otherwise fall through and show the landing page
+	}
+	if (string id = req->variables->snapshot) {
+		//Take the existing mockup and generate an image for one of its scenes
+		mapping mock = await(G->G->DB->load_config(0, "mockup"))[id];
+		if (mock) return generate_snapshot(mock, req->variables->scene);
 		//Otherwise fall through and show the landing page
 	}
 	if (string uid = req->misc->session->user->?id) {
