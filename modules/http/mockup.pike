@@ -154,6 +154,7 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 <table border=1 id=grid></table>
 
 <style>
+main {padding-bottom: 0.5em;}
 /* Note that 'tile mode' also includes icons */
 .tilemode .gridonly {display: none;}
 .gridmode .tileonly {display: none;}
@@ -173,7 +174,7 @@ constant markdown_pixelart = #"# Mockups - Pixel Art
 #selections {cursor: default; font-size: small;}
 #grid {
 	margin-top: 1em;
-	margin-bottom: 2em; /* Bit of gap so you know you've reached the bottom */
+	margin-bottom: 0.5em; /* Bit of gap so you know you've reached the bottom */
 	/* Checkerboard background so transparent pixels aren't the same as any single colour */
 	background: repeating-conic-gradient(#ddd 0 25%, #fff 0 50%) 50% / 26px 26px;
 }
