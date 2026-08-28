@@ -218,7 +218,10 @@ function repaint() {
 		else ctx.drawImage(img, 0, 0);
 	}
 	elements_by_zorder.length = 0;
-	const elem = Object.entries(state.elements).sort((a, b) => a[0].localeCompare(b[0])); //Sort by ID. May need a way to explicitly reorder them.
+	//Sort by zgroup, then by the ID. Ordering within a zgroup should be considered
+	//arbitrary, with explicit zgroups being assigned by the user for everything that
+	//matters.
+	const elem = Object.entries(state.elements).sort((a, b) => (a[1].zgroup||0 - b[1].zgroup||0) || a[0].localeCompare(b[0]));
 	ctx.strokeStyle = ctx.fillStyle = "blue"; //Draw the frames around elements in blue
 	//Parent-child relationships not currently implemented, but maybe.
 	//If an element is a child of another, it will always be drawn after its parent
@@ -791,6 +794,7 @@ function edit_element(cat, elemid) {
 	}
 	if (elem.xsize) DOM("#xsize").value = elem.xsize;
 	if (elem.ysize) DOM("#ysize").value = elem.ysize;
+	DOM("#zgroup").value = elem.zgroup || 0;
 	DOM("#bgselect").hidden = editing_cat !== "mockup";
 	if (elem.bg) DOM("#bgselector").value = elem.bg;
 	DOM("#elementtitle").value = elem.title || "";
@@ -829,6 +833,7 @@ on("submit", "#editelementdlg form", e => ws_sync.send({cmd: "update_element",
 	cat: editing_cat, id: editing_element,
 	image: DOM("#imageselector").value, //Irrelevant unless cat is "elements"
 	xsize: DOM("#xsize").value, ysize: DOM("#ysize").value,
+	zgroup: DOM("#zgroup").value,
 	bg: DOM("#bgselector").value, //Irrelevant unless cat is "mockup"
 	title: DOM("#elementtitle").value,
 	description: DOM("#elementdesc").value,

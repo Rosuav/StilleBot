@@ -35,7 +35,7 @@ constant markdown = #"# Mockups
 
 > ### Edit element
 > <fieldset id=positionselect></fieldset>
-> <p id=imageselect>Image: <select id=imageselector></select> <input type=number id=xsize> x <input type=number id=ysize></p>
+> <p id=imageselect>Image: <select id=imageselector></select> <input type=number id=xsize> x <input type=number id=ysize> <label class=gapbefore>Stack order <input type=number id=zgroup></label></p>
 > <p id=bgselect>Background: <select id=bgselector></select></p>
 >
 > Name: <input id=elementtitle>
@@ -103,6 +103,7 @@ main {
 #elementlocked ~ #lockclosed {display: none;}
 #elementlocked:checked ~ #lockopen {display: none;}
 #elementlocked:checked ~ #lockclosed {display: inline;}
+.gapbefore {margin-left: 40px;}
 </style>
 ";
 
@@ -467,6 +468,7 @@ mapping|zero wsedit_update_element(mapping mock, mapping(string:mixed) conn, map
 		if (msg->image) target->image = msg->image;
 		if ((int)msg->xsize) target->xsize = (int)msg->xsize;
 		if ((int)msg->ysize) target->ysize = (int)msg->ysize;
+		if (!undefinedp(msg->zgroup)) target->zgroup = (int)msg->zgroup;
 	}
 	if (msg->cat == "mockup") {
 		//TODO: Validate the bg image, if not, blank it
