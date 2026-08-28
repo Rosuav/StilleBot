@@ -50,7 +50,7 @@ main {
 	max-width: unset;
 	padding: 0 1.5em;
 	position: fixed;
-	width: 100vw; height: 100vh;
+	inset: 0;
 }
 #topbar {display: none;} /* Not relevant on this page, no need to waste the real estate */
 #spacer {
