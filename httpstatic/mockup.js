@@ -662,7 +662,7 @@ document.onkeydown = document.onkeyup = e => {
 		else if (e.key === "Shift") {
 			const pos = element_position[dragging.id];
 			if (grabmode === "move" || grabmode === "multimove")
-				update_drag_position(pos.x, pos.y, e.shiftKey);
+				update_drag_position(pos.x + dragbasex, pos.y + dragbasey, e.shiftKey);
 			//Not sure if pressing/releasing shift will do anything in rotation mode
 			//If it does, we'll need to retain the coordinates, or synthesize them from the current angle
 			//Currently, if you press/release shift while rotating, you have to move the mouse
