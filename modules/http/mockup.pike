@@ -222,6 +222,42 @@ to create a new mockup, you will need to [log in with a Twitch account](:.twitch
 
 mapping meta_cache;
 
+//Three-skew rotation done with no antialiasing, to preserve pixel values as precisely
+//as possible. This gives somewhat odd results in some cases, but overall seems better
+//than using the default img->rotate() which antialiases.
+Image.Image pixel_skewy(Image.Image img, float inc) {
+	Image.Image dest = Image.Image(img->xsize(), img->ysize() + (int)ceil(img->xsize() * abs(inc)));
+	int ofs = inc < 0 && (int)(img->xsize() * -inc);
+	for (int x = 0; x < img->xsize(); ++x) for (int y = 0; y < img->ysize(); ++y) {
+		dest->setpixel(x, y + ofs + (int)(x * inc + 0.5), @img->getpixel(x, y));
+	}
+	return dest;
+}
+
+Image.Image pixel_skewx(Image.Image img, float inc) {
+	Image.Image dest = Image.Image(img->xsize() + (int)ceil(img->ysize() * abs(inc)), img->ysize());
+	int ofs = inc < 0 && (int)(img->ysize() * -inc);
+	for (int x = 0; x < img->xsize(); ++x) for (int y = 0; y < img->ysize(); ++y) {
+		dest->setpixel(x + ofs + (int)(y * inc + 0.5), y, @img->getpixel(x, y));
+	}
+	return dest;
+}
+
+Image.Image pixel_rotate(Image.Image img, int|float angle) {
+	//Start with simple rotations to minimize error
+	while (angle >= 45) {img = img->rotate_ccw(); angle -= 90;}
+	while (angle <= -45) {img = img->rotate_cw(); angle += 90;}
+	if (angle > 0.5 || angle < -0.5) {
+		//The final rotation, between -45 and 45 degrees
+		float angle = angle * 3.141592653589793 / 180.0;
+		float yskew = -tan(angle/2);
+		img = pixel_skewy(img, yskew);
+		img = pixel_skewx(img, sin(angle));
+		img = pixel_skewy(img, yskew);
+	}
+	return img;
+}
+
 mapping generate_snapshot(mapping mock, string|void scene, mapping(string:mapping)|void icon_cache) {
 	if (!icon_cache) icon_cache = ([]);
 	mapping sc = mock->scenes[scene];
@@ -261,21 +297,8 @@ mapping generate_snapshot(mapping mock, string|void scene, mapping(string:mappin
 	array elements = (array)sc->elements;
 	sort(elements[*][0], elements);
 	foreach (elements, [string id, mapping pos]) {
-		//if (id != "e10") continue; //HACK
 		mapping el = mock->elements[id];
 		if (!el) continue;
-		/*el = ([
-			"description": "",
-			"image": "Xmas tree",
-			"title": "Christmas Tree",
-			"xsize": 50,
-			"ysize": 50
-		])*/
-		/*pos = ([
-			"angle": 0.0,
-			"x": 485,
-			"y": 191
-		])*/
 		mapping icon = icon_cache[el->image];
 		if (!icon) {
 			sscanf(meta_cache->icons[el->image]->?url || "!", "data:image/png;base64,%s", string raw);
@@ -291,8 +314,10 @@ mapping generate_snapshot(mapping mock, string|void scene, mapping(string:mappin
 		if (pos->angle) {
 			//NOTE: This can enlarge the image, so subsequent "size" calculations
 			//need to use the image object's size.
-			img = img->rotate(pos->angle, 0, 0, 0);
-			alp = alp->rotate(pos->angle, 0, 0, 0); //Fill in any corners with transparency
+			//img = img->rotate(pos->angle); //Antialiased rotation
+			//alp = alp->rotate(pos->angle);
+			img = pixel_rotate(img, pos->angle); //Pixel-perfect (but sometimes wonky) rotation
+			alp = pixel_rotate(alp, pos->angle);
 		}
 		alpha->paste_mask(alp, alp, pos->x - alp->xsize() / 2, pos->y - alp->ysize() / 2);
 		image->paste_mask(img, alp, pos->x - img->xsize() / 2, pos->y - img->ysize() / 2);
