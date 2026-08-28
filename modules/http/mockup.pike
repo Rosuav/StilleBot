@@ -51,6 +51,8 @@ main {
 	padding: 0 1.5em;
 	position: fixed;
 	inset: 0;
+	display: flex;
+	flex-direction: column;
 }
 #topbar {display: none;} /* Not relevant on this page, no need to waste the real estate */
 #spacer {
@@ -80,8 +82,9 @@ main {
 	border: 1px solid black;
 	display: flex;
 	gap: 0.5em;
-	max-height: 90vh; /* A bit arbitrary but should work on most screen sizes. TODO: Test on mobile, portrait and landscape. */
-	margin-bottom: 2em; /* Bit of gap so you know you've reached the bottom */
+	min-height: 0;
+	flex: 1;
+	margin-bottom: 1em; /* Bit of gap so you know you've reached the bottom */
 }
 #canvasscroll {
 	flex-grow: 1;
@@ -90,6 +93,7 @@ main {
 #elementlist {
 	overflow-y: auto;
 	min-width: fit-content;
+	padding-bottom: 0.5em;
 }
 #elementlist li {text-wrap: nowrap;}
 #elementlocked {display: none;}
