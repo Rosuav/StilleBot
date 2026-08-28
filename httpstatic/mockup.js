@@ -796,9 +796,10 @@ function edit_element(cat, elemid) {
 	DOM("#elementtitle").value = elem.title || "";
 	DOM("#elementdesc").value = elem.description || "";
 	replace_content("#scenename", state.scenes[curscene].title || curscene);
+	const pos = element_position[elemid] || { };
 	document.querySelectorAll("[data-automove]").forEach(el => {
-		if (el.type === "checkbox") el.checked = !!element_position[elemid][el.dataset.automove];
-		else el.value = element_position[elemid][el.dataset.automove] || 0;
+		if (el.type === "checkbox") el.checked = !!pos[el.dataset.automove];
+		else el.value = pos[el.dataset.automove] || 0;
 	});
 	DOM("#editelementdlg").showModal();
 }
