@@ -258,13 +258,65 @@ Image.Image pixel_rotate(Image.Image img, int|float angle) {
 	return img;
 }
 
+string(8bit) make_zip(array(array(string(8bit))) files) {
+	Stdio.Buffer data = Stdio.Buffer();
+	Stdio.Buffer central = Stdio.Buffer();
+	//Put the same modification date/time on all files
+	mapping tm = localtime(time());
+	string ts = sprintf("%-2c%-2c",
+		tm->hour << 11 | tm->min << 5 | tm->sec >> 1, //Time
+		(tm->year - 80) << 9 | (tm->mon + 1) << 5 | tm->mday, //Date
+	);
+	foreach (files, [string name, string content]) {
+		//Slap in the local file header, followed by the file itself.
+		int crc = Gz.crc32(content);
+		string|zero compressed = Gz.compress(content, 1, 9, 0, 15);
+		if (sizeof(compressed) >= sizeof(content)) compressed = 0; //Stored (0%)
+		int pos = sizeof(data);
+		//TODO: What happens if a file name isn't ASCII? How should it be represented?
+		//Currently taking the simple approach of storing it UTF-8, but haven't seen any
+		//confirmation that this is correct.
+		name = string_to_utf8(name);
+		data->sprintf("PK\3\4\x14\0\0\0%c\0%s%-4c%-4c%-4c%-2c\0\0%s",
+			compressed ? 8 : 0, ts, crc,
+			sizeof(compressed || content), sizeof(content), //Compressed and uncompressed size
+			sizeof(name), name,
+		);
+		data->add(compressed || content);
+		//Add the entry to the central directory, to be appended.
+		central->sprintf("PK\1\2\x1e\3\x14\0\0\0%c\0%s%-4c%-4c%-4c%-2c\0\0\0\0\0\0\0\0\0\0\0\0%-4c%s",
+			compressed ? 8 : 0, ts, crc,
+			sizeof(compressed || content), sizeof(content), //Compressed and uncompressed size
+			sizeof(name), pos, name,
+		);
+	}
+	int sz = sizeof(central), pos = sizeof(data);
+	data->add(central);
+	//Finally, add the EOCD. It gives the position and size of the central directory,
+	//and the rest of the information we aren't using.
+	data->sprintf("PK\5\6\0\0\0\0%-2c%<-2c%-4c%-4c\0\0", sizeof(files), sz, pos);
+	return (string)data;
+}
+
 mapping generate_snapshot(mapping mock, string|void scene, mapping(string:mapping)|void icon_cache) {
 	if (!icon_cache) icon_cache = ([]);
 	mapping sc = mock->scenes[scene];
 	if (!sc) {
-		//TODO: Call self recursively, generating per-scene images, then combine them into a PDF.
-		//Share the icon_cache to speed things up
-		sc = values(mock->scenes)[0]; //Pick one arbitrarily for now.
+		//Call self recursively, generating per-scene images, then combine them into a zip.
+		//Share the icon_cache to speed things up.
+		multiset(string) names_used = (<>); //Ensure that file names are unique, even scene names aren't.
+		array(array(string)) files = ({ });
+		foreach (mock->scenes; string id; mapping sc) {
+			werror("%O - %O\n", id, sc->title);
+			string basefn = sc->title || id, fn = basefn;
+			for (int i = 2; names_used[fn]; ++i) fn = sprintf("%s (%d)", basefn, i);
+			files += ({({fn + ".png", generate_snapshot(mock, id, icon_cache)->data})});
+		}
+		return ([
+			"data": make_zip(files),
+			"type": "application/zip",
+			"extra_heads": (["Content-disposition": "attachment; filename=" + (mock->title || "New Scene") + ".zip"]),
+		]);
 	}
 	mapping bg = meta_cache->grids[mock->bg];
 	int xsize = 1, ysize = 1;
@@ -276,7 +328,7 @@ mapping generate_snapshot(mapping mock, string|void scene, mapping(string:mappin
 	}
 	//Run over all the elements in this scene and figure out the required extents
 	//(expanding xsize/ysize as needed).
-	foreach (sc->elements; string id; mapping pos) {
+	foreach (sc->elements || ([]); string id; mapping pos) {
 		//TODO: Handle rotated images better. For simplicity, just use the max
 		//of x and y for both.
 		mapping el = mock->elements[id]; if (!el) continue;
@@ -294,7 +346,7 @@ mapping generate_snapshot(mapping mock, string|void scene, mapping(string:mappin
 		alpha->box(0, 0, bg->xsize, bg->ysize, 255, 255, 255);
 		image->paste_mask(bg->image, bg->alpha, 0, 0);
 	}
-	array elements = (array)sc->elements;
+	array elements = (array)(sc->elements || ([]));
 	sort(elements[*][0], elements);
 	foreach (elements, [string id, mapping pos]) {
 		mapping el = mock->elements[id];
@@ -319,8 +371,10 @@ mapping generate_snapshot(mapping mock, string|void scene, mapping(string:mappin
 			img = pixel_rotate(img, pos->angle); //Pixel-perfect (but sometimes wonky) rotation
 			alp = pixel_rotate(alp, pos->angle);
 		}
-		alpha->paste_mask(alp, alp, pos->x - alp->xsize() / 2, pos->y - alp->ysize() / 2);
-		image->paste_mask(img, alp, pos->x - img->xsize() / 2, pos->y - img->ysize() / 2);
+		//Note that casting coords to int should only be needed for legacy data, eventually they
+		//will all be integers in the database.
+		alpha->paste_mask(alp, alp, (int)pos->x - alp->xsize() / 2, (int)pos->y - alp->ysize() / 2);
+		image->paste_mask(img, alp, (int)pos->x - img->xsize() / 2, (int)pos->y - img->ysize() / 2);
 	}
 	return (["data": Image.PNG.encode(image, (["alpha": alpha])), "type": "image/png"]);
 }
@@ -340,6 +394,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 	if (string id = req->variables->snapshot) {
 		//Take the existing mockup and generate an image for one of its scenes
 		mapping mock = await(G->G->DB->load_config(0, "mockup"))[id];
+		await(Concurrent.resolve(1));
 		if (mock) return generate_snapshot(mock, req->variables->scene);
 		//Otherwise fall through and show the landing page
 	}
