@@ -109,6 +109,7 @@ const numeric = {...default_handlers,
 	make_control: (id, val, el) => INPUT({...id, value: val || "", size: 5, type: "number"}),
 	retrieve_value: el => +el.value,
 };
+const numeric_stringify = {...numeric, retrieve_value: el => (+el.value)+""}; //Numeric, but return it as a string (for builtin_param)
 const bool_attr = {...default_handlers,
 	make_control: (id, val, el) => INPUT({...id, type: "checkbox", checked: val === "on"}),
 	retrieve_value: el => el.checked ? "on" : "",
@@ -458,7 +459,7 @@ function reformat_param(param, idx) {
 		return {attr: "builtin_param" + (idx||""), label, values: split, selections};
 	}
 	//Input parameters simply ask for a value. "#Label" and "?Label" choose different input types, but otherwise no validation.
-	if (param[0] === "#") return {attr: "builtin_param" + (idx||""), label: param.slice(1), values: numeric};
+	if (param[0] === "#") return {attr: "builtin_param" + (idx||""), label: param.slice(1), values: numeric_stringify};
 	if (param[0] === "?") return {attr: "builtin_param" + (idx||""), label: param.slice(1), values: bool_attr};
 	return {attr: "builtin_param" + (idx||""), label: param};
 }
