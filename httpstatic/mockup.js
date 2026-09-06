@@ -111,8 +111,12 @@ replace_content("#modeselector", [
 	]),
 ]);
 replace_content("#righttools", [
+	BUTTON({onclick: e => window.location = "mockup?snapshot=" + ws_group, style: "margin-right: 5px; padding: 1px", title: "Download images"},
+		SVG({fill: "#000000", viewBox: "0 0 32 32", xmlns: "http://www.w3.org/2000/svg"},
+			PATH({d: "M30 2.497h-28c-1.099 0-2 0.901-2 2v23.006c0 1.099 0.9 2 2 2h28c1.099 0 2-0.901 2-2v-23.006c0-1.099-0.901-2-2-2zM30 27.503l-28-0v-5.892l8.027-7.779 8.275 8.265c0.341 0.414 0.948 0.361 1.379 0.035l3.652-3.306 6.587 6.762c0.025 0.025 0.053 0.044 0.080 0.065v1.85zM30 22.806l-5.876-6.013c-0.357-0.352-0.915-0.387-1.311-0.086l-3.768 3.282-8.28-8.19c-0.177-0.214-0.432-0.344-0.709-0.363-0.275-0.010-0.547 0.080-0.749 0.27l-7.309 7.112v-14.322h28v18.309zM23 12.504c1.102 0 1.995-0.894 1.995-1.995s-0.892-1.995-1.995-1.995-1.995 0.894-1.995 1.995c0 1.101 0.892 1.995 1.995 1.995z"}))
+	),
 	BUTTON({onclick: e => DOM("main").requestFullscreen(), style: "margin-right: 5px; padding: 1px", title: "Fullscreen"},
-		SVG({height: "1.2em", style: "vertical-align: bottom", viewBox: "0 0 24 24", fill: "none", xmlns: "http://www.w3.org/2000/svg"},
+		SVG({viewBox: "0 0 24 24", fill: "none", xmlns: "http://www.w3.org/2000/svg"},
 			PATH({d: "M9.00002 3.99998H4.00004L4 9M20 8.99999V4L15 3.99997M15 20H20L20 15M4 15L4 20L9.00002 20", stroke: "#000000", "stroke-width": "1.5", "stroke-linecap": "round", "stroke-linejoin": "round"}))
 	),
 	A({href: "mockup?pixelart", id: "pixelartlink", target: "_blank", hidden: true}, "Edit pixel art"),

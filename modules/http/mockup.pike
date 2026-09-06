@@ -69,6 +69,10 @@ main {
 #modeselector input:checked ~ svg {
 	border-style: inset;
 }
+#righttools svg {
+	height: 1.2em;
+	vertical-align: bottom;
+}
 #cloneelement {
 	background: #88ffff;
 	margin-left: 1em;
