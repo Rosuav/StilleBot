@@ -124,8 +124,11 @@ class SugarBuyer(int VERSION) {
 	//Request a cert, add it to the context, and register the context for changes.
 	//Simple API for simple use-cases; if anything else is needed, use request/register.
 	//Will make a vanilla context if none provided.
+	//As a side effect, also updates the context's min and max TLS versions.
 	__async__ SSL.Context provide_cert(string fn, SSL.Context|void ctx) {
 		if (!ctx) ctx = SSL.Context();
+		ctx->min_version = SSL.Constants.PROTOCOL_TLS_1_2;
+		ctx->max_version = SSL.Constants.PROTOCOL_TLS_MAX;
 		object pem = await(request(fn));
 		ctx->add_cert(pem->get_private_key(), pem->get_certificates());
 		register(fn, ctx);
