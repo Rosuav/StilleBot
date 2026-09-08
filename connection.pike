@@ -1963,11 +1963,10 @@ __async__ void setup_http_server() {
 		//Hack: Timing tests are done with a duplicated bot, run it on a separate port
 		listen_port = 9876;
 		#endif
-		//FIXME: If the port changes but we're not encrypting, this won't trigger an update, is that right??
-		if (listen_port * -use_https != G->G->httpserver_port_used) {
+		if (listen_port * (use_https ? -1 : 1) != G->G->httpserver_port_used) {
 			//Port or SSL status has changed. Force the server to be restarted.
 			if (object http = m_delete(G->G, "httpserver")) http->close();
-			G->G->httpserver_port_used = listen_port * -use_https;
+			G->G->httpserver_port_used = listen_port * (use_https ? -1 : 1);
 			werror("Resetting HTTP server.\n");
 		}
 
