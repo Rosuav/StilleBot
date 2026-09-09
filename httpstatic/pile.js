@@ -248,6 +248,19 @@ function hexcolor(color, alpha) {
 	return (color || "#000000") + ("0" + Math.floor((alpha || 0) * 2.55 + 0.5).toString(16)).slice(-2);
 }
 
+function wincheck(mergemode) {
+	//Once there's only one merge mode left, that is the winner!
+	let allsame = true;
+	Object.values(thingcategories).forEach(cat => cat.forEach(thing => {
+		if (!mergemode) mergemode = thing.plugin.mustardmine_conflict
+		if (thing.plugin.mustardmine_conflict !== mergemode) allsame = false;
+	}));
+	if (allsame) {
+		ws_sync.send({cmd: "contestwinner", mergemode});
+		merge_mode = "normal";
+	}
+}
+
 let _bounce_events_created = false;
 export function render(data) {
 	if (data.data) { //Odd name but this is the primary reconfiguration
@@ -331,18 +344,7 @@ export function render(data) {
 					if (idx >= 0) things.splice(idx, 1);
 					if (!window.frameElement) ws_sync.send({cmd: "removed", thingtype, conflict_description, label: loser.label, newcount: things.length});
 					Matter.Composite.remove(engine.world, loser);
-					if (merge_mode === "contest") {
-						//Once there's only one merge mode left, that is the winner!
-						const mergemode = winner.plugin.mustardmine_conflict;
-						let allsame = true;
-						Object.values(thingcategories).forEach(cat => cat.forEach(thing => {
-							if (thing.plugin.mustardmine_conflict !== mergemode) allsame = false;
-						}));
-						if (allsame) {
-							ws_sync.send({cmd: "contestwinner", mergemode});
-							merge_mode = "normal";
-						}
-					}
+					if (merge_mode === "contest") wincheck(winner.plugin.mustardmine_conflict);
 				}));
 			}
 		}
@@ -527,7 +529,7 @@ export function render(data) {
 			return;
 		}
 	}
-	if (data.merge) merge_mode = data.merge;
+	if (data.merge) {merge_mode = data.merge; wincheck();}
 }
 if (!autorps) ws_sync.send({cmd: "querycounts"});
 
