@@ -2,9 +2,6 @@
 inherit builtin_command;
 inherit http_websocket;
 
-//TODO: Consider an off-platform request option where people can authenticate
-//using some other service eg VRChat and contribute requests
-
 constant markdown = #"# Request Queue
 
 <div id=queueinfo>Loading...</div>

@@ -342,7 +342,7 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 				+ "&reward_id=" + rewardid
 				+ "&id=" + redemid,
 			(["Authorization": "Bearer " + creds[0]]),
-			(["method": "PATCH", "json": (["status": status])]),
+			(["method": "PATCH", "json": (["status": status]), "return_errors": 1]),
 		);
 	};
 }
