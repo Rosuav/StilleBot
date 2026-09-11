@@ -1,7 +1,7 @@
 //NOTE: This file only handles the actual mockup rendering.
 //For the landing page and pixel art, both of which are also on /mockup,
 //see mockup_landing.js and mockup_pixelart.js respectively.
-import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
+import {lindt, replace_content, on, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {A, BR, BUTTON, DIV, INPUT, LABEL, LEGEND, LI, OPTION, P, "svg:path": PATH, SELECT, SPAN, "svg:svg": SVG, "svg:symbol": SYMBOL, UL, "svg:use": USE} = lindt; //autoimport
 import {simpleconfirm, paste_styles} from "$$static||utils.js$$";
 
