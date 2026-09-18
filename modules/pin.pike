@@ -28,16 +28,9 @@ void pin(object channel, string|int mod, string msgid, string|int duration) {
 }
 
 __async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
-	//FIXME: Need to know which voice triggered the builtin, which would be the moderator.
-	//This should not be duplicated like this.
-	string|zero voice = (cfg->voice && cfg->voice != "") ? cfg->voice : channel->config->defvoice;
-	if (!G->G->DB->load_cached_config(channel->userid, "voices")[voice]) voice = 0;
-	if (!voice) voice = G->G->irc->id[0]->?config->?defvoice;
-	//End duplication from connection.pike
-	if (!voice) voice = channel->userid;
 	if (param[0] == "")
-		cfg->callback = lambda(mapping vars, mapping result) {pin(channel, voice, result->message_id, param[1]);};
+		cfg->callback = lambda(mapping vars, mapping result) {pin(channel, cfg->speaker, result->message_id, param[1]);};
 	else
-		pin(channel, voice, param[0], param[1]);
+		pin(channel, cfg->speaker, param[0], param[1]);
 	return ([]);
 }

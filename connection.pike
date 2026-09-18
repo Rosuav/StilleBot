@@ -467,7 +467,7 @@ class channel(mapping identity) {
 	__async__ void _send_recursive(mapping person, echoable_message message, mapping vars, mapping cfg) {
 		if (!message) return;
 		if (!mappingp(message)) message = (["message": message]);
-		if (message->builtin == "participant") werror("_send_recursive %O\n", message);
+		//if (message->builtin == "participant") werror("_send_recursive %O\n", message);
 		if (message->dest == "//") return; //Comments are ignored. Not even side effects.
 
 		if (message->delay && message->delay != "") {
@@ -518,6 +518,29 @@ class channel(mapping identity) {
 			"target": String.trim(_substitute_vars(message->target || "", vars, person, cfg->users)),
 			"destcfg": _substitute_vars(message->action || message->destcfg || "", vars, person, cfg->users),
 		]);
+
+		//cfg->voice could be absent, blank, "0", or a voice ID eg "279141671"
+		//Absent and blank mean "use the channel default" - config->defvoice - which
+		//might be zero (meaning that the channel default is the global default).
+		//"0" means "use the global default, even if it's not the channel default"
+		//Otherwise, it's the ID of a Twitch user whose voice we should use. Note that
+		//there's no check to ensure that we have permission to do so; if you add a
+		//voice but don't grant permission to use chat, all chat messages will just
+		//fail silently. (This would be fine if it's only used for slash commands.)
+		//After all of these checks are passed, the final effective voice is stored
+		//under cfg->speaker, which is the thing to query for any API calls where this
+		//matters. Note that, if an action can ONLY be done by the broadcaster, it's
+		//best to ignore cfg->speaker and use the broadcaster's ID regardless.
+		string|zero voice = (cfg->voice && cfg->voice != "") ? cfg->voice : config->defvoice;
+		if (!G->G->DB->load_cached_config(userid, "voices")[voice]) voice = 0; //Ensure that the voice hasn't been deauthenticated since the command was edited
+		if (!voice) {
+			//No voice has been selected (either explicitly or as the channel default).
+			//Use the bot's global default voice, or the intrinsic voice (implicitly zero).
+			voice = G->G->irc->id[0]->?config->?defvoice;
+			//Even if this voice hasn't been activated for this channel, that's fine - it is
+			//implicitly permitted for use by all channels.
+		}
+		if (voice != cfg->speaker) cfg |= (["speaker": voice]); //Record the effective voice that performs the actions
 
 		if (message->builtin) {
 			object handler = G->G->builtins[message->builtin] || message->builtin; //Chaining can be done by putting the object itself in the mapping
@@ -660,24 +683,6 @@ class channel(mapping identity) {
 			default: break; //including UNDEFINED which means unconditional, and 0 which means "condition already processed"
 		}
 		if (!msg) return; //If a message doesn't have an Otherwise, it'll end up null.
-
-		//cfg->voice could be absent, blank, "0", or a voice ID eg "279141671"
-		//Absent and blank mean "use the channel default" - config->defvoice - which
-		//might be zero (meaning that the channel default is the global default).
-		//"0" means "use the global default, even if it's not the channel default"
-		//Otherwise, it's the ID of a Twitch user whose voice we should use. Note that
-		//there's no check to ensure that we have permission to do so; if you add a
-		//voice but don't grant permission to use chat, all chat messages will just
-		//fail silently. (This would be fine if it's only used for slash commands.)
-		string|zero voice = (cfg->voice && cfg->voice != "") ? cfg->voice : config->defvoice;
-		if (!G->G->DB->load_cached_config(userid, "voices")[voice]) voice = 0; //Ensure that the voice hasn't been deauthenticated since the command was edited
-		if (!voice) {
-			//No voice has been selected (either explicitly or as the channel default).
-			//Use the bot's global default voice, or the intrinsic voice (implicitly zero).
-			voice = G->G->irc->id[0]->?config->?defvoice;
-			//Even if this voice hasn't been activated for this channel, that's fine - it is
-			//implicitly permitted for use by all channels.
-		}
 
 		if (message->mode == "foreach") {
 			//For now, this only iterates over participants. To expand and generalize this,

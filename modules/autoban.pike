@@ -33,16 +33,9 @@ constant builtin_param = ({"Message ID", "/Action/ALLOW/DENY"});
 constant vars_provided = ([]);
 
 __async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
-	//FIXME: Need to know which voice triggered the builtin, which would be the moderator.
-	//This should not be duplicated like this. Same as pin.pike.
-	string|zero voice = (cfg->voice && cfg->voice != "") ? cfg->voice : channel->config->defvoice;
-	if (!G->G->DB->load_cached_config(channel->userid, "voices")[voice]) voice = 0;
-	if (!voice) voice = G->G->irc->id[0]->?config->?defvoice;
-	//End duplication from connection.pike
-	if (!voice) voice = channel->userid;
 	twitch_api_request("https://api.twitch.tv/helix/moderation/automod/message",
-		(["Authorization": (int)voice]),
-		(["json": (["user_id": (string)voice, "msg_id": param[0], "action": param[1]])]),
+		(["Authorization": (int)cfg->speaker]),
+		(["json": (["user_id": (string)cfg->speaker, "msg_id": param[0], "action": param[1]])]),
 	);
 	return ([]);
 }
