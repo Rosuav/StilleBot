@@ -43,6 +43,7 @@ constant triggers = ({
 		"{subreason}": "Additional details, based on the given reason",
 		"{msgid}": "Message ID, can be used to allow/deny the message",
 		"{@buyfollows}": "1 if the user appears to be trying to sell followers, 0 if not.",
+		"{raider}": "0 if this person hasn't raided you this stream, else how recently (in seconds)",
 	]), "Status"),
 });
 
@@ -226,6 +227,7 @@ mapping automodmsg(object channel, mapping info) {
 			//should be a matter of scanning the individual fragments, and then normalizing.
 		default: break; //Unknown reason, leave subreason blank
 	}
+	int raided = channel->raiders[(int)info->user_id];
 	return ([
 		"$$": ([
 			"user": info->user_login,
@@ -238,6 +240,7 @@ mapping automodmsg(object channel, mapping info) {
 		"{@emoted}": reassemble_emoted_message(info->message->fragments),
 		"{@buyfollows}": (string)is_selling_followers(info->message->text), //Same logic as autoban uses for regular messages
 		"{@mod}": "0", //Undocumented. Automod never catches mod messages. Allow the same buy-follows trigger to process these by being explicit.
+		"{raider}": (string)(raided && (time() - raided + 1)), //If they have raided, guarantee a nonzero value
 	]);
 }
 
