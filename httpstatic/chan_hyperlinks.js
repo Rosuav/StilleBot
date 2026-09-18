@@ -3,10 +3,8 @@ const {A, BR, BUTTON, CODE, DIV, H3, INPUT, LABEL, OPTION, P, SELECT, SPAN, TABL
 import {simpleconfirm} from "$$static||utils.js$$";
 import {cmd_configure} from "$$static||command_editor.js$$";
 
-//TODO: When we subscribe to a special, have the back end also send us the framework for it
-cmd_configure({
-	subscribe: "!!hyperlink",
-});
+//TODO: When we subscribe to specials (or a single special), have the back end also send us the framework for it
+cmd_configure({subscribe: "!!"});
 
 set_content("#settings", [
 	TABLE([

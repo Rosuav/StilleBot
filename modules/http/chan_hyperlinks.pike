@@ -7,10 +7,13 @@ inherit hook;
 
 constant markdown = #{# Hyperlink blocking for $$channel$$
 
-Posting of hyperlinks can be blocked in your Twitch Dashboard. If they are, none of these
-settings will take effect, and non-moderators will not be able to post any links.
-Go to [your dashboard](https://dashboard.twitch.tv/moderation/settings) and "Show All Advanced
-Settings" if necessary, then scroll down to "Block Hyperlinks" and ensure that it is disabled.
+Hyperlinks can be managed by Automod rather than being blocked after the event. To configure
+this, go to [your dashboard](https://dashboard.twitch.tv/moderation/settings?view=settings-controls)
+and scroll down to the Automod settings, where "Hold Hyperlinks for Review" can be selected.
+If it is enabled, all links from non-vip/non-mod users will be retained for review; you can
+have Mustard Mine review those in the <button data-id="!automodmsg" class=advview><code>!!automodmsg</code></button>
+special trigger, where they can be automatically permitted if eg the person just raided you.
+All links not blocked by automod will then be handled here.
 
 <div id=settings></div>
 
