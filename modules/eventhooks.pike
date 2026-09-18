@@ -37,6 +37,13 @@ constant triggers = ({
 		"{msgid}": "Message ID, can be used with /deletemsg",
 		"{@buyfollows}": "1 if the user appears to be trying to sell followers, 0 if not.",
 	]), "Status"),
+	special_trigger("!automodmsg", "A chat message was caught by automod", "The chatter", ([
+		"%s": "Text of the message the user tried to send",
+		"{reason}": "Reason the message was retained",
+		"{subreason}": "Additional details, based on the given reason",
+		"{msgid}": "Message ID, can be used to allow/deny the message",
+		"{@buyfollows}": "1 if the user appears to be trying to sell followers, 0 if not.",
+	]), "Status"),
 });
 
 //Fourth parameter in the decorator is a mapping of flags.
@@ -166,16 +173,19 @@ mapping suspicioususer(object channel, mapping info) {
 	]);
 }
 
-@({"moderator:read:suspicious_users", "channel.suspicious_user.message", "1", (["modid": 1])}):
-mapping suspiciousmsg(object channel, mapping info) {
-	Stdio.append_file("evthook.log", sprintf("EVENT: Suspicious message [%O, %d]: %O\n", channel, time(), info));
-	//Reassemble the emoted message from its fragments
+string reassemble_emoted_message(array fragments) {
 	string emoted = "";
-	foreach (info->message->fragments, mapping f) {
+	foreach (fragments, mapping f) {
 		if (f->type == "text") emoted += f->text;
 		//TODO: Cheer emotes? Not sure, maybe just leave them like regular emotes.
 		else if (f->type == "emote") emoted += sprintf("\uFFFAe%s:%s\uFFFB", f->emote->id, f->text);
 	}
+	return emoted;
+}
+
+@({"moderator:read:suspicious_users", "channel.suspicious_user.message", "1", (["modid": 1])}):
+mapping suspiciousmsg(object channel, mapping info) {
+	Stdio.append_file("evthook.log", sprintf("EVENT: Suspicious message [%O, %d]: %O\n", channel, time(), info));
 	return ([
 		"$$": ([
 			"user": info->user_login,
@@ -185,10 +195,49 @@ mapping suspiciousmsg(object channel, mapping info) {
 		"{msgid}": info->message->message_id,
 		"{status}": info->low_trust_status,
 		"%s": info->message->text,
-		"{@emoted}": emoted,
+		"{@emoted}": reassemble_emoted_message(info->message->fragments),
 		"{@buyfollows}": (string)is_selling_followers(info->message->text), //Same logic as autoban uses for regular messages
 		"{@mod}": "0", //Undocumented. Suspicious users are never mods. Allow the same buy-follows trigger to process these by being explicit.
 		//"{types}": info->types * ", ", //Is this useful? Not sure.
+	]);
+}
+
+@({"moderator:manage:automod", "automod.message.hold", "2", (["modid": 1])}):
+mapping automodmsg(object channel, mapping info) {
+	Stdio.append_file("evthook.log", sprintf("EVENT: Message automodded [%O, %d]: %O\n", channel, time(), info));
+	string subreason = "";
+	switch (info->reason) {
+		case "automod": subreason = info->automod->?category || ""; break;
+		case "blocked_term": {
+			//The actual blocked term isn't given, only its UUID. However, the
+			//boundaries of it are provided, so we can fetch that up. Note that
+			//we assume one term was blocked; if there were multiple, we'll give
+			//the first one as the subreason and ignore the others. This could be
+			//a bit weird if you want to permit a term under certain circumstances
+			//(eg ban an emote, but allow it for your VIPs), as having this special
+			//case would allow other blocked terms to then be bypassed.
+			mapping pos = info->blocked_term->terms_found[0]->boundary;
+			subreason = info->message->text[pos->start_pos..pos->end_pos];
+			break;
+		}
+		case "blocked_link":
+			//FIXME: Grab the actual link and normalize it (eg providing protocol if elided, etc)
+			//Note that the message fragments separate out the link into its own piece, so this
+			//should be a matter of scanning the individual fragments, and then normalizing.
+		default: break; //Unknown reason, leave subreason blank
+	}
+	return ([
+		"$$": ([
+			"user": info->user_login,
+			"displayname": info->user_name,
+			"uid": info->user_id,
+		]),
+		"{msgid}": info->message_id,
+		"{reason}": info->reason, "{subreason}": subreason,
+		"%s": info->message->text,
+		"{@emoted}": reassemble_emoted_message(info->message->fragments),
+		"{@buyfollows}": (string)is_selling_followers(info->message->text), //Same logic as autoban uses for regular messages
+		"{@mod}": "0", //Undocumented. Automod never catches mod messages. Allow the same buy-follows trigger to process these by being explicit.
 	]);
 }
 
