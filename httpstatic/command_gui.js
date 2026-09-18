@@ -414,6 +414,13 @@ const builtin_label_funcs = {
 		}
 		return "Points rewards";
 	},
+	autoban: el => {
+		switch ((el.builtin_param||"!!")[1]) { //Note: If it's a legacy string, this will grab one character from it, possibly undefined, and won't match any of the cases.
+			case "ALLOW": return "Automod allow message";
+			case "DENY": return "Automod deny message";
+		}
+		return "Automod Message";
+	},
 };
 builtin_label_funcs.chan_pointsrewards = builtin_label_funcs.chan_rewards; //Alias the deprecated to the new
 function reformat_param(param, idx) {
