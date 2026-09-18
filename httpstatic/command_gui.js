@@ -420,6 +420,29 @@ const builtin_label_funcs = {
 		}
 		return "Automod Message";
 	},
+	chan_giveaway: el => {
+		switch ((el.builtin_param||"!!")[0]) {
+			case "refund": return "Giveaway: Refund";
+			case "status": return "Giveaway: Status";
+		}
+		return "Giveaway tools";
+	},
+	chan_minigames: el => {
+		switch ((el.builtin_param||"!!")[0]) {
+			case "boss": return "Minigame: " + el.builtin_param[1] + " boss";
+			case "first": return "Minigame: claim " + el.builtin_param[1]; //No need to say "First first"
+			case "rps": switch (el.builtin_param[1]) {
+				case "predict": return "Minigame: RPS prediction";
+				case "complete": return "Minigame: RPS conclusion"; //Mark the prediction as completed
+				default: return "Minigame: RPS " + el.builtin_param[1];
+			}
+		}
+		return "Minigame";
+	},
+	chan_obs: el => {
+		if (el.builtin_param) return "OBS: " + el.builtin_param[0]; //A bit weird if it's a legacy string param
+		return "OBS Studio";
+	},
 };
 builtin_label_funcs.chan_pointsrewards = builtin_label_funcs.chan_rewards; //Alias the deprecated to the new
 function reformat_param(param, idx) {
