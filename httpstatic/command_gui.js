@@ -403,8 +403,7 @@ function stub_type(typename) {
 
 const builtin_label_funcs = {
 	chan_rewards: el => {
-		if (!el.builtin_param || typeof el.builtin_param === "string") return "Points rewards"; //TODO: Reformat into new style?
-		switch (el.builtin_param[1]) {
+		switch ((el.builtin_param||"!!")[1]) { //Note: If it's a legacy string, this will grab one character from it, possibly undefined, and won't match any of the cases.
 			case "enable": if (el.builtin_param[2] !== "0") return "Points reward: enable";
 			case "disable": return "Points reward: disable";
 			case "title": return "Points reward: Set title";
@@ -415,7 +414,7 @@ const builtin_label_funcs = {
 		return "Points rewards";
 	},
 	autoban: el => {
-		switch ((el.builtin_param||"!!")[1]) { //Note: If it's a legacy string, this will grab one character from it, possibly undefined, and won't match any of the cases.
+		switch ((el.builtin_param||"!!")[1]) {
 			case "ALLOW": return "Automod allow message";
 			case "DENY": return "Automod deny message";
 		}
