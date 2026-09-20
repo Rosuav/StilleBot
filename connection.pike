@@ -609,6 +609,9 @@ class channel(mapping identity) {
 					//NOTE: Other {regexpNN} vars are not cleared. This may mean
 					//that nested regexps can both contribute. I may change this
 					//in the future, if I allow an easy way to set a local var.
+					//NOTE: This is not compatible with array notation, much as I
+					//would like to use that. {regexp0} is the entire matched text,
+					//rather than the size of the array.
 					foreach (result / 2; int i; [int start, int end])
 						vars["{regexp" + i + "}"] = matchtext[start..end-1];
 					break;
