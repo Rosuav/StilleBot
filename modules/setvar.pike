@@ -80,13 +80,20 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 				values += ({val});
 			}
 			sort(values, users);
-			mapping ret = (["{value}": (string)sizeof(users)]); //The base return value won't have anything much, just the (total) count of users
+			//The base return value won't have anything much, just the (total) count of users.
+			//TODO: Did I ever promise this? If not, it would be better to set {value} to the
+			//array of values (see below) and have some other placeholder for the total number
+			//of users. Check to see if this is used anywhere (cf Hyrum's Law). Also consider
+			//renaming {usernameN} so that it can be an array; this will almost certainly be
+			//a breaking change, but to an undocumented feature.
+			mapping ret = (["{value}": (string)sizeof(users)]);
 			int limit = (int)value;
 			if (limit) users = users[..limit-1];
+			//ret["{value}"] = vars[users[*]][varname]; //Conflicts with current usage
+			ret["{uid}"] = users;
 			foreach (users; int i; string uid) {
 				ret["{value" + (i+1) + "}"] = vars[uid][varname];
-				ret["{uid" + (i+1) + "}"] = uid;
-				ret["{username" + (i+1) + "}"] = await(get_user_info(uid))->?display_name || uid;
+				ret["{username" + (i+1) + "}"] = await(get_user_info(uid))->?display_name || uid; //Could do this with Promise.all() but this is fine.
 			}
 			return ret;
 		}

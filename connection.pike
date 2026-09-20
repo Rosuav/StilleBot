@@ -4,6 +4,7 @@ inherit annotated;
 
 mapping simple_regex_cache = ([]); //Emptied on code reload.
 object substitutions = Regexp.PCRE("(\\$ *[*?A-Za-z0-9|:]* *\\$)|({ *[A-Za-z0-9_@|]+ *})");
+//object trailing_digits = Regexp.SimpleRegexp("^(.*[^0-9])([0-9]+)$"); //Match any base name followed by digits. Not currently used.
 constant messagetypes = ({"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT", "USERSTATE"});
 mapping irc_connections = ([]); //Not persisted across code reloads, but will be repopulated (after checks) from the connection_cache.
 @retain: mapping channelcolor = ([]);
@@ -429,7 +430,7 @@ class channel(mapping identity) {
 			//throw an error or something. For now, they're equivalent, and $var$ will be
 			//an empty string if the var isn't found.
 			[string _, string filter, string dflt] = ((filterdflt + "||") / "|")[..2];
-			string value;
+			string|array|zero value;
 			if (type == "$" && sscanf(kwd, "%s*%s", string user, string basename) && basename) {
 				//If the kwd is of the format "49497888*varname", and the type is "$",
 				//look up a per-user variable called "*varname" for that user.
@@ -437,7 +438,25 @@ class channel(mapping identity) {
 				if (basename == "") value = user; //"$*$" or "$kwd*$" will give you the ID of that user.
 				else if (mappingp(vars["*"])) value = vars["*"][user][?type + basename + tail];
 			}
-			else value = vars[type + kwd + tail];
+			else {
+				//NOTE: Array lookup is not currently supported in variables, and notably, there
+				//is no lookup of this nature when querying user vars above.
+				value = vars[type + kwd + tail];
+				if (!value && kwd[-1] >= '0' && kwd[-1] <= '9') {
+					//[kwd, string idx] = trailing_digits->split(kwd);
+					//For simplicity and performance, mandating that this shorthand be used only on
+					//base names that contain no digits. So eg {username4} -> username[3] (1-indexed
+					//as 0 gives the length, REXX-style), but {spam42ham37} would fail.
+					sscanf(kwd, "%[^0-9]%[0-9]%s", string basename, string digits, string empty);
+					array|string arr = vars[type + basename + tail];
+					if (digits != "" && empty == "" && arrayp(arr)) {
+						int idx = (int)digits;
+						if (!idx) value = (string)sizeof(arr); //{username0} -> size of the array
+						else if (idx > 0 && idx <= sizeof(arr)) value = arr[idx - 1];
+						//Else leave value null, so it gives the default.
+					}
+				}
+			}
 			if (!value || value == "") return dflt;
 			if (function f = filter != "" && text_filters[filter]) value = f(value, dflt, this);
 			return prefix + value + suffix;
