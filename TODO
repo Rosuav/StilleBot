@@ -284,3 +284,7 @@
     - Add a button to send the password - currently only done if it's in the URL
   - Export as a single PDF rather than an archive of PNGs?? May need to install deps.
   - Multimove should respect things snapped by middle
+* Builtins with parameter trees could potentially have different provisions too.
+  - See eg setvar
+  - Handling this properly will be hard but consider a shorthand of keeping them all,
+    and highlighting the active ones while in the properties dialog
