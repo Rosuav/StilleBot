@@ -442,7 +442,7 @@ class channel(mapping identity) {
 				//NOTE: Array lookup is not currently supported in variables, and notably, there
 				//is no lookup of this nature when querying user vars above.
 				value = vars[type + kwd + tail];
-				if (!value && kwd[-1] >= '0' && kwd[-1] <= '9') {
+				if (!value && kwd != "" && kwd[-1] >= '0' && kwd[-1] <= '9') {
 					//[kwd, string idx] = trailing_digits->split(kwd);
 					//For simplicity and performance, mandating that this shorthand be used only on
 					//base names that contain no digits. So eg {username4} -> username[3] (1-indexed
