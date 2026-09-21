@@ -745,7 +745,7 @@ const main_types = {
 		typedesc: "Force a message to be sent into chat, rather than captured",
 	},
 	foreach: {
-		color: "#66ee66", children: ["message"], label: el => "For each...",
+		color: "#66ee66", children: ["message"], label: el => el.collection && el.iterator ? "For each " + el.collection + " as " + el.iterator : "For each...",
 		params: [{attr: "mode", values: "foreach"},
 			{attr: "collection", label: "Collection", values: required},
 			{attr: "iterator", label: "Named as", values: required}], //FIXME: Make this available in the subtree, same as a builtin's provisions
