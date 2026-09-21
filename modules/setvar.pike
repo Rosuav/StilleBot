@@ -95,6 +95,7 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 				ret["{value" + (i+1) + "}"] = vars[uid][varname];
 				ret["{username" + (i+1) + "}"] = await(get_user_info(uid))->?display_name || uid; //Could do this with Promise.all() but this is fine.
 			}
+			//TODO: ret["{leaders}"] => array of mappings with all available info
 			return ret;
 		}
 		default: error("Invalid action %O, check docs\n", action);
