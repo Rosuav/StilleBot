@@ -84,7 +84,7 @@ __async__ mapping message_params(object channel, mapping person, array param) {
 		follage += sprintf("%02d:%02d:%02d", since / 3600, (since / 60) % 60, since % 60);
 	}
 	return ([
-		"{following}": foll ? "since " + replace(foll, ({"T", "Z"}), "") : "",
+		"{following}": foll ? "since " + replace(foll, (["T": " ", "Z": ""])) : "",
 		"{followage}": follage ? "for " + follage : "",
 		"{prevname}": sizeof(names) >= 2 ? names[-2] : "",
 		"{curname}": sizeof(names) ? names[-1] : user,
