@@ -707,7 +707,7 @@ class channel(mapping identity) {
 		if (!msg) return; //If a message doesn't have an Otherwise, it'll end up null.
 
 		if (message->mode == "foreach") {
-			//For now, this only iterates over participants. To expand and generalize this,
+			//Originally, this only iterated over participants. To expand and generalize this,
 			//create a builtin that gathers a collection of participants, and then foreach
 			//will iterate over any collection. The builtin's args would specify the timeout
 			//(or "no timeout" for all in chat), and would probably collect into something
@@ -720,8 +720,15 @@ class channel(mapping identity) {
 			//has been active within the last 15 minutes", and this may well include people
 			//who are no longer listed in the "all chatters" list.
 			//TODO: Allow the iteration to do other things than just select a user into "each"
+			//Participant iteration is still a bit magical; ideally it should be transformed
+			//as above, but without breaking backward compatibility.
 			array users = ({ });
-			if (string varname = message->variable) {
+			if (string collname = message->collection) {
+				mixed coll = vars[collname];
+				if (arrayp(coll)) foreach (coll, string thing)
+					await(_send_recursive(person, msg, vars | ([message->iterator: thing]), cfg));
+				return;
+			} else if (string varname = message->variable) {
 				//Iterate over every user for whom there are variables.
 				//Note that there may not be a specific variable; you'll need to do some
 				//sort of check eg "$each*varname$" == "" to see if it's actually set.
@@ -758,7 +765,7 @@ class channel(mapping identity) {
 			}
 			cfg |= (["users": cfg->users | (["each": "0"])]);
 			//Now that we've disconnected both cfg and cfg->users, it's okay to mutate.
-			foreach (users, cfg->users->each) _send_recursive(person, msg, vars, cfg);
+			foreach (users, cfg->users->each) await(_send_recursive(person, msg, vars, cfg));
 			return;
 		}
 

@@ -334,12 +334,20 @@ echoable_message _validate_recursive(echoable_message resp, mapping state)
 		if (stringp(resp->switchon)) ret->switchon = resp->switchon;
 		else m_delete(ret, "mode");
 	}
-	//Iteration can be done on all-in-chat or all-who've-chatted.
-	if (int timeout = ret->mode == "foreach" && (int)resp->participant_activity)
-		ret->participant_activity = timeout;
-	//It can also be done for all variables, or for a specific variable.
-	if (string v = ret->mode == "foreach" && resp->variable)
-		ret->variable = v == "" ? "*" : v; //Ensure that we never use empty strings here, they could cause confusion
+	//Iteration can be done on collections, chatters, or users with variables.
+	if (ret->mode == "foreach") {
+		if (int timeout = (int)resp->participant_activity) ret->participant_activity = timeout;
+		//It can also be done for all variables, or for a specific variable.
+		if (string v = resp->variable) ret->variable = v == "" ? "*" : v; //Ensure that we never use empty strings here, they could cause confusion
+		//The primary form of foreach is iterating over a collection.
+		if (sscanf(resp->collection || "*", "{%[^{}]", string c) && c) {
+			sscanf(resp->iterator || "*", "{%[^{}]", string it);
+			if (c == "") c = "args"; //Again, disallow empty strings. Is there a better default? Or should it simply error out?
+			if (!it || it == "") it = "it";
+			ret->collection = "{" + c + "}";
+			ret->iterator = "{" + it + "}";
+		}
+	}
 
 	//Voice ID validity depends on the channel we're working with. A syntax-only check will
 	//accept any voice ID as long as it's a string of digits.

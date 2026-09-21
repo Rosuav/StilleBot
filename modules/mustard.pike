@@ -108,8 +108,9 @@ echoable_message parse_mustard(string|Stdio.Buffer mustard) {
 //mode is "rotate"), but will be checked regardless - it's up to cmdmgr's validation to ensure that
 //useless attributes cannot be saved.
 constant message_flags = ({
-	"delay", "dest", "target", "destcfg", "voice", "mode", "participant_activity", "variable", "weight",
-	"rotatename", "switchon",
+	"delay", "dest", "target", "destcfg", "voice",
+	"mode", "participant_activity", "variable", "collection", "iterator",
+	"weight", "rotatename", "switchon",
 });
 string quoted_string(string value) {
 	return string_to_utf8(Standards.JSON.encode(value));

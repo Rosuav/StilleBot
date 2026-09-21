@@ -744,6 +744,13 @@ const main_types = {
 		params: [{attr: "dest", values: ""}],
 		typedesc: "Force a message to be sent into chat, rather than captured",
 	},
+	foreach: {
+		color: "#66ee66", children: ["message"], label: el => "For each...",
+		params: [{attr: "mode", values: "foreach"},
+			{attr: "collection", label: "Collection", values: required},
+			{attr: "iterator", label: "Named as", values: required}], //FIXME: Make this available in the subtree, same as a builtin's provisions
+		typedesc: "Do something for every item in a collection.",
+	},
 	foreach_vars: {
 		color: "#66ee66", children: ["message"], label: el => "For each user with vars",
 		params: [{attr: "mode", values: "foreach"},
@@ -752,7 +759,7 @@ const main_types = {
 			"will be available with the name ", CODE("each*"), " for any variable. Specify a variable name to", BR(),
 			"include only users with it set, and to sort descending by that variable's value."],
 	},
-	foreach: {
+	foreach_chatter: {
 		color: "#66ee66", children: ["message"], label: el => +el.participant_activity ? "For each active chatter" : "For each person in chat",
 		params: [{attr: "mode", values: "foreach"},
 			{attr: "participant_activity", label: "Active in the past X seconds", values: [0, 86400, 1]},],
@@ -973,6 +980,7 @@ const tray_tabs = [
 		{type: "conditional_number", expr1: "$deaths$ > 10"},
 		//{type: "conditional_string", conditional: "regexp", expr1: "[Hh]ello", expr2: "{param}"},
 		{type: "chain_of_command", target: "", destcfg: ""},
+		{type: "foreach"},
 		{type: "comment"},
 		{type: "block_comment"},
 		//NOTE: Even though they're internally conditionals too, cooldowns don't belong in this tray.
@@ -989,7 +997,7 @@ const tray_tabs = [
 		{type: "weight", weight: 2},
 		{type: "cooldown", cdlength: "30", cdname: ""},
 		{type: "foreach_vars"},
-		{type: "foreach", "participant_activity": "300"},
+		{type: "foreach_chatter", "participant_activity": "300"},
 	]},
 	{name: "Extras", color: "#7f7f7f", items: [ //I'm REALLY not happy with these names.
 		{type: "builtin_chan_monitors"},
