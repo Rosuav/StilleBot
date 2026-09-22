@@ -3,7 +3,7 @@ inherit irc_callback;
 inherit annotated;
 
 mapping simple_regex_cache = ([]); //Emptied on code reload.
-object substitutions = Regexp.PCRE("(\\$ *[*?A-Za-z0-9|:]* *\\$)|({ *[A-Za-z0-9_@|]+ *})");
+object substitutions = Regexp.PCRE("(\\$ *[*?A-Za-z0-9|:.]* *\\$)|({ *[A-Za-z0-9_@|.]+ *})");
 //object trailing_digits = Regexp.SimpleRegexp("^(.*[^0-9])([0-9]+)$"); //Match any base name followed by digits. Not currently used.
 constant messagetypes = ({"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT", "USERSTATE"});
 mapping irc_connections = ([]); //Not persisted across code reloads, but will be repopulated (after checks) from the connection_cache.
@@ -431,6 +431,8 @@ class channel(mapping identity) {
 			//an empty string if the var isn't found.
 			[string _, string filter, string dflt] = ((filterdflt + "||") / "|")[..2];
 			string|array|zero value;
+			array subscripts;
+			if (has_value(kwd, '.')) [kwd, subscripts] = Array.shift(kwd / ".");
 			if (type == "$" && sscanf(kwd, "%s*%s", string user, string basename) && basename) {
 				//If the kwd is of the format "49497888*varname", and the type is "$",
 				//look up a per-user variable called "*varname" for that user.
@@ -438,24 +440,21 @@ class channel(mapping identity) {
 				if (basename == "") value = user; //"$*$" or "$kwd*$" will give you the ID of that user.
 				else if (mappingp(vars["*"])) value = vars["*"][user][?type + basename + tail];
 			}
-			else {
-				//NOTE: Array lookup is not currently supported in variables, and notably, there
-				//is no lookup of this nature when querying user vars above.
-				value = vars[type + kwd + tail];
-				if (!value && kwd != "" && kwd[-1] >= '0' && kwd[-1] <= '9') {
-					//[kwd, string idx] = trailing_digits->split(kwd);
-					//For simplicity and performance, mandating that this shorthand be used only on
-					//base names that contain no digits. So eg {username4} -> username[3] (1-indexed
-					//as 0 gives the length, REXX-style), but {spam42ham37} would fail.
-					sscanf(kwd, "%[^0-9]%[0-9]%s", string basename, string digits, string empty);
-					array|string arr = vars[type + basename + tail];
-					if (digits != "" && empty == "" && arrayp(arr)) {
-						int idx = (int)digits;
-						if (!idx) value = (string)sizeof(arr); //{username0} -> size of the array
-						else if (idx > 0 && idx <= sizeof(arr)) value = arr[idx - 1];
-						//Else leave value null, so it gives the default.
-					}
+			else value = vars[type + kwd + tail];
+			if (subscripts) foreach (subscripts, string sub) {
+				if (arrayp(value)) {
+					//Subscripting an array, whether with dot notation or (in the future)
+					//some other notation allowing substitution within the subscript, is
+					//one-based indexing. If the cast to integer fails, the result is
+					//null (which will become the default, maybe blank), but if the string
+					//is actually "0", we give back the length, REXX-style.
+					int idx = (int)sub;
+					if (sub == "0") value = (string)sizeof(value);
+					else if (idx < 1 || idx > sizeof(value)) value = 0;
+					else value = value[idx - 1];
 				}
+				else if (mappingp(value)) value = value[sub]; //Null if absent
+				else value = 0; //If for any reason the subscripting fails, it will continue to be null.
 			}
 			if (!value || value == "") return dflt;
 			if (function f = filter != "" && text_filters[filter]) value = f(value, dflt, this);
@@ -611,7 +610,11 @@ class channel(mapping identity) {
 					//in the future, if I allow an easy way to set a local var.
 					//NOTE: This is not compatible with array notation, much as I
 					//would like to use that. {regexp0} is the entire matched text,
-					//rather than the size of the array.
+					//rather than the size of the array. Instead it may be better
+					//to make an array {regexp} for the subparts (1-index), and
+					//have a separate {match} for the entire text. Keep the numbered
+					//strings around for backward compat; this may mean that it's
+					//simply not worth adding the array.
 					foreach (result / 2; int i; [int start, int end])
 						vars["{regexp" + i + "}"] = matchtext[start..end-1];
 					break;

@@ -294,14 +294,3 @@
   - Whenever it exceeds 500ish characters, emit the beginning (don't wait until the
     entire subtree is done)
   - Allow a prefix to be specified on the node, which will start each message.
-* Better ways to work with collections
-  - Given an array {arg}, you can use {arg3} to get the third element (aka [2]).
-    Need a way to name a collection and take a specific subscript that may have come from
-    a variable. Example: {arg}[{i}] where {i} might have come from elsewhere.
-  - Need a way to handle a collection of records, not just strings. This may be better
-    handled by having a proper "record" type (implemented as a mapping). For now, don't
-    try to support dynamic key lookups.
-  - Example: "{leaders}[1].username with {leaders}[1].value"
-  - Ensure that foreach can iterate over an array of records.
-  - For now, continue to not support records or collections in variables, only in
-    placeholders.

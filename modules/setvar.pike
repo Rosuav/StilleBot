@@ -81,21 +81,23 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 			}
 			sort(values, users);
 			//The base return value won't have anything much, just the (total) count of users.
-			//TODO: Did I ever promise this? If not, it would be better to set {value} to the
-			//array of values (see below) and have some other placeholder for the total number
-			//of users. Check to see if this is used anywhere (cf Hyrum's Law). Also consider
-			//renaming {usernameN} so that it can be an array; this will almost certainly be
-			//a breaking change, but to an undocumented feature.
-			mapping ret = (["{value}": (string)sizeof(users)]);
+			mapping ret = (["{value}": (string)sizeof(users), "{leaders}": ({ })]);
 			int limit = (int)value;
 			if (limit) users = users[..limit-1];
-			//ret["{value}"] = vars[users[*]][varname]; //Conflicts with current usage
-			ret["{uid}"] = users;
 			foreach (users; int i; string uid) {
+				string username = await(get_user_info(uid))->?display_name || uid; //Could do this with Promise.all() but this is fine.
+				//Old way of doing this - eventually will be de-documented and deprecated, but no
+				//removal is scheduled.
 				ret["{value" + (i+1) + "}"] = vars[uid][varname];
-				ret["{username" + (i+1) + "}"] = await(get_user_info(uid))->?display_name || uid; //Could do this with Promise.all() but this is fine.
+				ret["{uid" + (i+1) + "}"] = uid;
+				ret["{username" + (i+1) + "}"] = username;
+				//New way, recommended: {leaders.1.username}
+				ret["{leaders}"] += ({([
+					"value": vars[uid][varname],
+					"uid": uid,
+					"username": username,
+				])});
 			}
-			//TODO: ret["{leaders}"] => array of mappings with all available info
 			return ret;
 		}
 		default: error("Invalid action %O, check docs\n", action);
