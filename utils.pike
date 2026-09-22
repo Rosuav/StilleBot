@@ -603,11 +603,13 @@ __async__ void test() {
 	//If you need something from a specific module:
 	add_constant("hook_allmsgs", "ignore"); //Suppress annotations if needed.
 	object chan_hyperlinks = G->bootstrap("modules/http/chan_hyperlinks.pike");
+	//Need preloaded configs?
+	await(G->G->DB->preload_configs(({"variables"})));
 	//Need a channel object? Try this:
 	object connection = G->bootstrap("connection.pike");
 	object channel = connection->channel((["twitchid": 0, "login": "!demo", "display_name": "Demo", "data": ([])]), ({ }));
 	//Example:
-	werror("Text: %O\n", channel->_substitute_vars("Leader 1 is {leader.1.username}.", ([
+	werror("Text: %O\n", channel->expand_variables("Leader 1 is {leader.1.username}.", ([
 		"{leader}": ({(["username": "foo"])}),
 	]), ([]), ([])));
 }
