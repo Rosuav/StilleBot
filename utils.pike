@@ -604,14 +604,18 @@ __async__ void test() {
 	add_constant("hook_allmsgs", "ignore"); //Suppress annotations if needed.
 	object chan_hyperlinks = G->bootstrap("modules/http/chan_hyperlinks.pike");
 	//Need preloaded configs?
-	await(G->G->DB->preload_configs(({"variables"})));
+	await(G->G->DB->preload_configs(({"variables", "voices"})));
 	//Need a channel object? Try this:
 	object connection = G->bootstrap("connection.pike");
 	object channel = connection->channel((["twitchid": 0, "login": "!demo", "display_name": "Demo", "data": ([])]), ({ }));
-	//Example:
+	/* Example:
 	werror("Text: %O\n", channel->expand_variables("Leader 1 is {leader.1.username}.", ([
 		"{leader}": ({(["username": "foo"])}),
-	]), ([]), ([])));
+	]), ([]), ([]))); // */
+	/* To execute commands:
+	await(channel->_send_with_catch((["user": "demo", "displayname": "Demo", "uid": "0"]), "This is a message.", ([
+		"{var}": "some value",
+	]), (["simulate": lambda(string m) {werror("--> %s\n", m);}]))); // */
 }
 
 protected void create(string name) {
