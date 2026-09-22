@@ -773,6 +773,44 @@ class channel(mapping identity) {
 			return;
 		}
 
+		if (message->mode == "wrap") {
+			//Process the message, collecting everything that would be emitted.
+			//Combine those using the given joiner (default " "), prepend and/or
+			//append fixed strings, and when the result exceeds 500 characters,
+			//emit it. Note that wrapping will always delay messages until the
+			//entire body has executed.
+			//If wrap is nested inside wrap, the inner one shadows the outer until
+			//the inner has completed.
+			//TODO: Allow these aspects of wrap state to be configured somehow.
+			//TODO: Allow wrapping to be by word or by piece. If by piece, collect
+			//pieces until the next one would exceed 500, use the joiner only
+			//between pieces in a single message, and emit prefix and suffix correctly.
+			string prefix = message->prefix || "", suffix = message->suffix || "";
+			mapping wrapstate = (["pieces": ({ }), "joiner": message->joiner || " "]);
+			await(_send_recursive(person, msg, vars, cfg | (["wrapstate": wrapstate, "dest": ""])));
+			//For now assuming wrap-by-word.
+			string text = wrapstate->pieces * wrapstate->joiner;
+			int len = 500 - sizeof(prefix) - sizeof(suffix);
+			if (len < 80) {
+				//It's unreasonable to have prefix and/or suffix so long that you get
+				//less than a normal line of text in a single message. Since this is
+				//not a normal situation, just wipe the prefix/suffix and wrap to 500.
+				prefix = suffix = "";
+				len = 500;
+			}
+			msg = ({ });
+			while (sizeof(text) > len) {
+				int pos = len;
+				while (pos >= 0) if (text[pos] == ' ') break; else --pos;
+				if (pos < 0) pos = len; //No word break position in time; hard break at length.
+				msg += ({prefix + String.trim(text[..pos]) + suffix});
+				text = String.trim(text[pos..]);
+			}
+			msg += ({prefix + text + suffix});
+			//Continue on with the new message text. It will now be just text, though the
+			//destination may affect the meaning of that.
+		}
+
 		if (mappingp(msg)) {await(_send_recursive(person, (["conditional": 0]) | msg, vars, cfg)); return;} //CJA 20230623: See other of this datemark.
 
 		if (arrayp(msg))
@@ -861,6 +899,9 @@ class channel(mapping identity) {
 			return; //Nothing more to send here.
 		}
 
+		//It's a simple message; collect it for wrapping, don't send it.
+		if (cfg->wrapstate) {cfg->wrapstate->pieces += ({msg}); return;}
+
 		//Simulation of commands (for bulk testing etc) will capture all text sent, including
 		//slash commands. TODO: Include the voice at the beginning of the message?
 		if (cfg->simulate) {cfg->simulate(msg); return;}
@@ -875,8 +916,8 @@ class channel(mapping identity) {
 			//prefix with "/chat ", which will force them to be sent via the API (not IRC).
 			//NOTE: Some things here won't work with multiple messages, so there's no wordbreak
 			//happening here. Reconsider this at some point; it would be nice if messages could
-			//get sent in multiple pieces instead of being dropped silently. Alternatively, have
-			//a builtin to wrap a message??? That would allow a prefix to be provided again.
+			//automatically get sent in multiple pieces instead of being dropped silently. Use
+			//a wrap node if you wish to specify a prefix or suffix.
 			if (cfg->callback && mappingp(handled) && arrayp(handled->data)) cfg->callback(vars, handled->data[0]);
 			if (!stringp(handled)) return; //Promises have no meaningful response, and null means there's nothing to do
 			msg = handled;

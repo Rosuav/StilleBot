@@ -288,9 +288,3 @@
   - See eg setvar
   - Handling this properly will be hard but consider a shorthand of keeping them all,
     and highlighting the active ones while in the properties dialog
-* Wrap node.
-  - Everything inside this gets collected, allowing this to combine short messages eg
-    from a loop
-  - Whenever it exceeds 500ish characters, emit the beginning (don't wait until the
-    entire subtree is done)
-  - Allow a prefix to be specified on the node, which will start each message.

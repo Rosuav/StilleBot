@@ -612,10 +612,12 @@ __async__ void test() {
 	werror("Text: %O\n", channel->expand_variables("Leader 1 is {leader.1.username}.", ([
 		"{leader}": ({(["username": "foo"])}),
 	]), ([]), ([]))); // */
-	/* To execute commands:
-	await(channel->_send_with_catch((["user": "demo", "displayname": "Demo", "uid": "0"]), "This is a message.", ([
-		"{var}": "some value",
-	]), (["simulate": lambda(string m) {werror("--> %s\n", m);}]))); // */
+	//* To execute commands:
+	await(channel->_send_with_catch((["user": "demo", "displayname": "Demo", "uid": "0"]),
+		(["mode": "wrap", "message": ({"This is a", "wrapped message."}), "prefix": "/me "]),
+		([
+			"{var}": "some value",
+		]), (["simulate": lambda(string m) {werror("--> %s\n", m);}]))); // */
 }
 
 protected void create(string name) {

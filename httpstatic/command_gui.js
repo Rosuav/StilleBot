@@ -767,6 +767,14 @@ const main_types = {
 			"active recently (eg 300 = five minutes). This user's variables will be available with the", BR(),
 			"name ", CODE("each*"), " for any variable."],
 	},
+	wrap: {
+		color: "#ee7777", children: ["message"], label: el => "Gather and wrap",
+		params: [{attr: "mode", values: "wrap"},
+			{attr: "prefix", label: "Prefix"},
+			{attr: "suffix", label: "Suffix"},
+			{attr: "joiner", label: "Joiner between pieces"}],
+		typedesc: "Join all messages inside this and then wrap them into 500-character messages.",
+	},
 	conditional_string: {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => [
 			el.conditional === "string" ? (el.expr1 && el.expr2 ? "If " + el.expr1 + " == " + el.expr2 : el.expr1 ? "If " + el.expr1 + " is blank" : "String comparison")

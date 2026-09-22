@@ -150,7 +150,7 @@ void autospam(string|int chanid, string cmd) {
 //Map a flag name to a set of valid values for it
 //Blank or null is always allowed, and will result in no flag being set.
 constant message_flags = ([
-	"mode": (<"random", "rotate", "foreach", "switch">),
+	"mode": (<"random", "rotate", "foreach", "switch", "wrap">),
 	"dest": (<"", "/w", "/web", "/set", "/chain", "/reply", "//">),
 ]);
 //As above, but applying only to the top level of a command.
@@ -347,6 +347,12 @@ echoable_message _validate_recursive(echoable_message resp, mapping state)
 			ret->collection = "{" + c + "}";
 			ret->iterator = "{" + it + "}";
 		}
+	}
+
+	if (ret->mode == "wrap") {
+		if (stringp(resp->prefix) && resp->prefix != "") ret->prefix = resp->prefix;
+		if (stringp(resp->suffix) && resp->suffix != "") ret->suffix = resp->suffix;
+		if (stringp(resp->joiner) && resp->joiner != " ") ret->joiner = resp->joiner; //Default joiner is a single space; can override it with empty string if needed.
 	}
 
 	//Voice ID validity depends on the channel we're working with. A syntax-only check will

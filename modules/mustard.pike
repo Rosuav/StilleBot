@@ -110,7 +110,7 @@ echoable_message parse_mustard(string|Stdio.Buffer mustard) {
 constant message_flags = ({
 	"delay", "dest", "target", "destcfg", "voice",
 	"mode", "participant_activity", "variable", "collection", "iterator",
-	"weight", "rotatename", "switchon",
+	"weight", "rotatename", "switchon", "prefix", "suffix", "joiner",
 });
 string quoted_string(string value) {
 	return string_to_utf8(Standards.JSON.encode(value));
