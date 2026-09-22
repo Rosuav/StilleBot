@@ -11,8 +11,8 @@ Creating new command functionality
   `_send_recursive()`. The order things are checked determines precedence.
 * Commands can be directly manipulated in the config mapping with no
   validation checks. This is unsupported behaviour but will probably work.
-* From the front end, commands are filtered by chan_commands.pike `validate()`,
-  with the majority of flags being checked in the recursive `_validate()`.
+* From the front end, commands are filtered by cmdmgr.pike `validate_command()`,
+  with the majority of flags being checked in `_validate_recursive()`.
 * For completely new functionality, the command GUI will need a new type of
   element, possibly with a new colour.
   - This element needs a method of distinguishment, most commonly an attribute
