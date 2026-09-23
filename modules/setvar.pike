@@ -84,8 +84,10 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 			mapping ret = (["{value}": (string)sizeof(users), "{leaders}": ({ })]);
 			int limit = (int)value;
 			if (limit) users = users[..limit-1];
+			array userinfo = await(get_users_info(users));
+			mapping display_name = mkmapping(userinfo->id, userinfo->display_name);
 			foreach (users; int i; string uid) {
-				string username = await(get_user_info(uid))->?display_name || uid; //Could do this with Promise.all() but this is fine.
+				string username = display_name[uid] || uid;
 				//Old way of doing this - eventually will be de-documented and deprecated, but no
 				//removal is scheduled.
 				ret["{value" + (i+1) + "}"] = vars[uid][varname];
