@@ -285,6 +285,12 @@
   - Export as a single PDF rather than an archive of PNGs?? May need to install deps.
   - Multimove should respect things snapped by middle
 * Builtins with parameter trees could potentially have different provisions too.
-  - See eg setvar
+  - See eg setvar, chan_minigames
   - Handling this properly will be hard but consider a shorthand of keeping them all,
     and highlighting the active ones while in the properties dialog
+* Improve display of vars_provided with arrays and records.
+  - If array, suggest {varname.1}
+  - If record, maybe a drop-down of all its attributes???
+  - If array of records...??
+  - Note also that a foreach node needs to provide its iterator, which has to carry
+    the description of whatever was in the array.
