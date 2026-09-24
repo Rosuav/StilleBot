@@ -294,3 +294,4 @@
   - If array of records...??
   - Note also that a foreach node needs to provide its iterator, which has to carry
     the description of whatever was in the array.
+* Does foreach need a limiter? eg foreach {leaders} as {person} limit 3 ?
