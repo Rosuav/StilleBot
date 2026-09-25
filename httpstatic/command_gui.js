@@ -155,7 +155,7 @@ const text_message = {...default_handlers,
 		for (let el of parents) Object.assign(allvars, provides(el, null, allvars));
 		return DIV({className: "msgedit"}, [
 			DIV({className: "buttonbox attached"}, Object.entries(allvars).map(([v, d]) => BUTTON({type: "button", title: provision_label(d), className: "insertvar", "data-insertme": v}, v))),
-			TEXTAREA({...id, "data-editme": 1, "data-vars": Object.keys(allvars).join(" ")}, el.message || ""),
+			TEXTAREA({...id, "data-editme": 1, ".provided_vars": allvars}, el.message || ""),
 			DIV({class: "emotepicker"}, "☺"),
 			DIV({class: "slashcommands short"}, slashcommands(el.message || "")),
 			DIV({class: "slashcommands full"}, slashcommands(el.message || "")),
@@ -2190,11 +2190,51 @@ function find_tab_completion(mle) {
 		return Object.keys(window.cmdedit_collections.slash_commands).filter(c => c.startsWith(line.slice(1)))
 			.map(c => c.slice(line.length - 1) + " ");
 	}
-	const m = /\S+$/.exec(line); const word = m && m[0];
-	if (word && word[0] === '{') return mle.dataset.vars.split(" ")
-		.filter(v => v.startsWith(word))
-		.map(v => v.slice(word.length));
 	//TODO: Also support $varname$ which will require having a list of known variables
+	const m = /\{\S+$/.exec(line); let word = m && m[0];
+	if (word) {
+		if (word[word.length - 1] === "}") return; //No available completions once you've finished the entire name.
+		const parts = word.split(".");
+		let prov = mle.provided_vars;
+		let suffix = "";
+		if (parts.length > 1) {
+			//You've already put in at least "{somevar." and so the only variable we can pull up is {somevar}
+			//(which might be an array or record).
+			prov = provision_type(prov[parts[0] + "}"] || "");
+			if (typeof prov !== "object") return; //Bad var name or atomic var, no completions possible.
+			parts.shift();
+			word = parts.pop(); suffix = "}";
+			for (let part of parts) {
+				//For intermediate parts, step through, checking the validity along the way.
+				if (Array.isArray(prov)) {
+					if (/^[0-9]+$/.exec(part)) prov = provision_type(prov[0]);
+					else return; //Only numerics allowed for arrays
+				} else prov = provision_type(prov[part] || "");
+				if (typeof prov !== "object") return; //Intermediates should always bring us to another array or record.
+			}
+			//For the final part, we may have partial or no information.
+			if (Array.isArray(prov)) {
+				//Suggest 0, 1, and 2, since we can't know the actual size of the array
+				if (word === "") return ["0}", "1.", "2."];
+				if (word === "0") return ["}"]; //{some_array.0 ==> {some_array.0} for the length
+				return ["."]; //If you've already filled out part of an index, all we can suggest is the dot.
+			}
+		}
+		//You've put in "{someva" and we can fill out the rest of a variable name eg "{somevar}".
+		//If that variable is an array or record, don't close the brace.
+		const vars = [];
+		Object.entries(prov).forEach(([v, t]) => {
+			if (v === "\0" || !v.startsWith(word)) return;
+			v += suffix; //When we're deep inside a nested collection, add the closing brace that is otherwise part of the vars provided
+			//provision_type() will return a string for an atomic value, or
+			//an array or mapping for an array or record. The latter two both
+			//have a typeof "object" and both should leave the brace unclosed
+			//and suggest adding another part to it.
+			if (typeof provision_type(t) === "object") v = v.slice(0, -1) + "."; //(Is there a better way to replace the last character in a string?)
+			vars.push(v.slice(word.length));
+		});
+		return vars;
+	}
 }
 
 function retrieve_attrs(dest, params) {
