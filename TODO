@@ -298,3 +298,5 @@
 * ACE tab completion for MustardScript??
 * Separate placeholder provision into "normal" and "extra", hiding less-relevant ones
   like {msgid} since they will usually be less directly used (eg via a "Reply" node).
+  - Anything with "(deprecated)" is currently completely invisible in the front end.
+    Instead they should be relegated to "extra" so they can still be found.

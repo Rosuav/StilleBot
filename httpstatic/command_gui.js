@@ -95,6 +95,16 @@ function provides(el, type_override) {
 	if (typeof prov === "function") return prov(el);
 	return prov;
 }
+//For display of the provision itself, show this.
+function provision_label(prov) {
+	if (typeof prov === "string") return prov;
+	return prov.desc || "undocumented";
+}
+//For downstream examination of the value provided, show this.
+function provision_type(prov) {
+	if (typeof prov === "string") return prov;
+	return prov.type || prov.desc || "undocumented";
+}
 
 const default_handlers = {
 	//Validation sees the original value and determines whether it's possible for it to be correct.
@@ -134,7 +144,7 @@ const text_message = {...default_handlers,
 			vars_avail.unshift(provides(par));
 		const allvars = Object.assign({}, ...vars_avail);
 		return DIV({className: "msgedit"}, [
-			DIV({className: "buttonbox attached"}, Object.entries(allvars).map(([v, d]) => BUTTON({type: "button", title: d, className: "insertvar", "data-insertme": v}, v))),
+			DIV({className: "buttonbox attached"}, Object.entries(allvars).map(([v, d]) => BUTTON({type: "button", title: provision_label(d), className: "insertvar", "data-insertme": v}, v))),
 			TEXTAREA({...id, "data-editme": 1, "data-vars": Object.keys(allvars).join(" ")}, el.message || ""),
 			DIV({class: "emotepicker"}, "☺"),
 			DIV({class: "slashcommands short"}, slashcommands(el.message || "")),
@@ -508,7 +518,9 @@ function builtin_types() {
 			typedesc: blt.desc, provides: { },
 		};
 		b.params.unshift({attr: "builtin", values: name});
-		for (let prov in blt) if (prov[0] === '{' && !blt[prov].includes("(deprecated)")) b.provides[prov] = blt[prov];
+		for (let prov in blt) if (prov[0] === '{')
+			if (!provision_label(blt[prov]).includes("(deprecated)")) b.provides[prov] = blt[prov];
+			//TODO: else store it in an "extras" of some form, maybe inside provides but with a flag
 	});
 	return ret;
 }
@@ -754,7 +766,7 @@ const main_types = {
 		color: "#66ee66", children: ["message"], label: el => el.collection && el.iterator ? "For each " + el.collection + " as " + el.iterator : "For each...",
 		params: [{attr: "mode", values: "foreach"},
 			{attr: "collection", label: "Collection", values: required}, //TODO: Select from known array values in scope
-			{attr: "iterator", label: "Named as", values: required}], //FIXME: Make this available in the subtree, same as a builtin's provisions
+			{attr: "iterator", label: "Named as", values: required}],
 		typedesc: "Do something for every item in a collection.",
 		provides: el => ({[el.iterator]: "The current item"}), //FIXME: Copy the description from the child of the collection if it is correctly an array.
 	},
@@ -1936,7 +1948,7 @@ function open_element_properties(el, type_override) {
 	set_content("#params", (type.params||[]).map(param => build_element(param, cfg)));
 	update_governed_params();
 	set_content("#providesdesc", Object.entries(provides(el, type_override) || {}).map(([v, d]) => LI([
-		CODE(v), ": " + d,
+		CODE(v), ": " + provision_label(d),
 	])));
 	if (!type_override) set_content("#saveprops", "Close"); //On initial open, say that there are no changes. Type override means there are, in effect, changes.
 	DOM("#templateinfo").style.display = el.template && el.type !== "flag" ? "block" : "none";

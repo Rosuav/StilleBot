@@ -352,6 +352,10 @@ function get_command_details(elem) {
 export function cls_save_message() {
 	return {...toplevel_params, ...get_command_details(DOM("#command_details > .optedmsg"))};
 }
+function provision_label(prov) { //Duplicated from command_gui - can they be imported from command_editor instead?
+	if (typeof prov === "string") return prov;
+	return prov.desc || "undocumented";
+}
 export function cls_load_message(cmd_basis, cmd_editing) {
 	//HACK: The server's validation for tab changing doesn't know that this is a trigger,
 	//so if the basis doesn't tell us what type to be (ie it's a trigger), remove a blank
@@ -361,7 +365,7 @@ export function cls_load_message(cmd_basis, cmd_editing) {
 	anchor_props.forEach(f => cmd_editing[f] && (toplevel_params[f] = cmd_editing[f]));
 	set_content("#command_details", [
 		//Maybe make the Provides entries clickable to insert that token in the current EF??
-		UL(Object.keys(cmd_basis.provides || { }).map(p => LI([CODE(p), " - " + cmd_basis.provides[p]]))),
+		UL(Object.keys(cmd_basis.provides || { }).map(p => LI([CODE(p), " - " + provision_label(cmd_basis.provides[p])]))),
 		render_command(toplevel_params, cmd_basis.type === "anchor_command"),
 	]);
 }
