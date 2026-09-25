@@ -2169,22 +2169,20 @@ on("keydown", ".msgedit textarea", e => {
 		if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
 		e.preventDefault();
 		const insertme = find_tab_completion(e.match);
-		if (typeof insertme === "string") e.match.setRangeText(insertme, e.match.selectionStart, e.match.selectionEnd, "end");
-		else if (Array.isArray(insertme) && insertme.length) {
-			//If there's a common prefix, tab-complete that.
-			for (let len = insertme[0].length; len > 0; --len) {
-				let pfx = insertme[0].slice(0, len);
-				for (let i = 1; i < insertme.length; ++i)
-					if (insertme[i].slice(0, len) !== pfx) {pfx = null; break;}
-				//Found a common prefix! Use it and stop.
-				if (pfx) {e.match.setRangeText(pfx, e.match.selectionStart, e.match.selectionEnd, "end"); return;}
-			}
-			//No common prefix. If there's selected text and it matches one option, fill in the
-			//next; otherwise fill in the first. This allows you to cycle options.
-			const sel = e.match.value.slice(e.match.selectionStart, e.match.selectionEnd);
-			const idx = insertme.indexOf(sel); //Returns -1 if not found, which is actually perfect for us. But we want to skip the last slot, so, not quite perfect.
-			e.match.setRangeText(insertme[idx !== insertme.length - 1 ? idx + 1 : 0], e.match.selectionStart, e.match.selectionEnd, "select");
+		if (!insertme || !insertme.length) return; //No completions available
+		//If there's a common prefix, tab-complete that.
+		for (let len = insertme[0].length; len > 0; --len) {
+			let pfx = insertme[0].slice(0, len);
+			for (let i = 1; i < insertme.length; ++i)
+				if (insertme[i].slice(0, len) !== pfx) {pfx = null; break;}
+			//Found a common prefix! Use it and stop.
+			if (pfx) {e.match.setRangeText(pfx, e.match.selectionStart, e.match.selectionEnd, "end"); return;}
 		}
+		//No common prefix. If there's selected text and it matches one option, fill in the
+		//next; otherwise fill in the first. This allows you to cycle options.
+		const sel = e.match.value.slice(e.match.selectionStart, e.match.selectionEnd);
+		const idx = insertme.indexOf(sel); //Returns -1 if not found, which is actually perfect for us. But we want to skip the last slot, so, not quite perfect.
+		e.match.setRangeText(insertme[idx !== insertme.length - 1 ? idx + 1 : 0], e.match.selectionStart, e.match.selectionEnd, "select");
 	}
 });
 
