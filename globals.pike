@@ -149,6 +149,12 @@ class builtin_command {
 	//for a commented example. Whether a mapping or a string of options, "option1=Label for option 1" can give a
 	//label that's different from the keyword itself.
 	//TODO: Allow data type indications, which can be used in the front end to switch to a numeric input or a checkbox
+
+	//Each provided variable name maps to one of four possibilities:
+	//1) A string represents an atomic value, labelled with that string (type is "string")
+	//2) An array of two values gives both a label and a data type
+	//3) An array of one value is a collection of that type, with no label (label is "collection of " + label for prov[0])
+	//4) A mapping is a record providing those values; the label is either keyed with a NUL or implicitly "record of " + keys(prov)
 	constant vars_provided = ([ ]); //List all available vars (it's okay if they aren't all always provided)
 	constant command_suggestions = 0; //Set this to provide some suggestions (which will show up as enableable features)
 	constant scope_required = ""; //If nonblank, will be offered as a suggestion any time this builtin is used. TODO: Make this more flexible, so some parameters can ask for scope, others not?

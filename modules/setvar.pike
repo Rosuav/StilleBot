@@ -26,10 +26,15 @@ constant builtin_param = ({
 });
 constant vars_provided = ([
 	"{value}": "Value of that variable (after any change)",
-	"{leaders}": ([
-		"desc": "Collection of the top or bottom N users. Only if Action is leaders/lowleaders.",
-		"type": ({(["value": "Value on the leaderboard", "username": "User in this position", "uid": "ID of that user"])}),
-	]),
+	"{leaders}": ({
+		"Collection of the top or bottom N users. Only if Action is leaders/lowleaders.",
+		({([
+			"\0": "Information about this leaderboard entry",
+			"value": "Value on the leaderboard",
+			"username": "User in this position",
+			"uid": "ID of that user",
+		])}),
+	}),
 ]);
 
 __async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {

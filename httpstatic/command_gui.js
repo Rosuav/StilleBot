@@ -90,20 +90,27 @@ function automation_to_string(val) {
 }
 
 //Return null if there aren't any, or an object mapping "{someplaceholder}" to a description of it.
-function provides(el, type_override) {
+function provides(el, type_override, provisions) {
 	const prov = types[type_override || el.type].provides || el.provides;
-	if (typeof prov === "function") return prov(el);
+	if (typeof prov === "function") return prov(el, provisions || { });
 	return prov;
 }
 //For display of the provision itself, show this.
 function provision_label(prov) {
 	if (typeof prov === "string") return prov;
-	return prov.desc || "undocumented";
+	if (Array.isArray(prov)) {
+		if (prov.length === 2) return prov[0];
+		return "Collection of " + provision_label(prov[0]);
+	}
+	//Else it's a record.
+	return prov["\0"] || "Record of " + Object.keys(prov).join(", ");
 }
 //For downstream examination of the value provided, show this.
 function provision_type(prov) {
-	if (typeof prov === "string") return prov;
-	return prov.type || prov.desc || "undocumented";
+	if (Array.isArray(prov) && prov.length === 2) return prov[1];
+	//All other forms are giving the type without any separate label.
+	//(A string alone functions as both type and label.)
+	return prov;
 }
 
 const default_handlers = {
@@ -139,10 +146,13 @@ const text_message = {...default_handlers,
 		//This keeps the display tidy (having {param} always first, for instance),
 		//but also ensures that wonky situations with vars overwriting each other
 		//will behave the way the back end would handle them.
-		const vars_avail = [];
-		for (let par = el; par; par = par.parent && par.parent[0])
-			vars_avail.unshift(provides(par));
-		const allvars = Object.assign({}, ...vars_avail);
+		//Note that, in case one element's provisions depend on its parents, we
+		//actually scan both up and down - up to collect all the parents, then down
+		//to actually get the variables.
+		const parents = [];
+		for (let par = el; par; par = par.parent && par.parent[0]) parents.unshift(par);
+		const allvars = { };
+		for (let el of parents) Object.assign(allvars, provides(el, null, allvars));
 		return DIV({className: "msgedit"}, [
 			DIV({className: "buttonbox attached"}, Object.entries(allvars).map(([v, d]) => BUTTON({type: "button", title: provision_label(d), className: "insertvar", "data-insertme": v}, v))),
 			TEXTAREA({...id, "data-editme": 1, "data-vars": Object.keys(allvars).join(" ")}, el.message || ""),
@@ -768,7 +778,12 @@ const main_types = {
 			{attr: "collection", label: "Collection", values: required}, //TODO: Select from known array values in scope
 			{attr: "iterator", label: "Named as", values: required}],
 		typedesc: "Do something for every item in a collection.",
-		provides: el => ({[el.iterator]: "The current item"}), //FIXME: Copy the description from the child of the collection if it is correctly an array.
+		provides: (el, vars) => {
+			const coll = provision_type(vars[el.collection] || "");
+			if (Array.isArray(coll) && coll.length === 1) //If the type is an array of one thing, it's a collection, and we have the type of its element(s)
+				return {[el.iterator]: coll[0]};
+			return {[el.iterator]: "The current item"}; //Unknown collection, give a default
+		},
 	},
 	foreach_vars: {
 		color: "#66ee66", children: ["message"], label: el => "For each user with vars",

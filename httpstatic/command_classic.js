@@ -354,7 +354,12 @@ export function cls_save_message() {
 }
 function provision_label(prov) { //Duplicated from command_gui - can they be imported from command_editor instead?
 	if (typeof prov === "string") return prov;
-	return prov.desc || "undocumented";
+	if (Array.isArray(prov)) {
+		if (prov.length === 2) return prov[0];
+		return "Collection of " + provision_label(prov[0]);
+	}
+	//Else it's a record.
+	return prov["\0"] || "Record of " + Object.keys(prov).join(", ");
 }
 export function cls_load_message(cmd_basis, cmd_editing) {
 	//HACK: The server's validation for tab changing doesn't know that this is a trigger,
