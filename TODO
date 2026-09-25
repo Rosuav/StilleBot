@@ -296,3 +296,5 @@
     the description of whatever was in the array.
 * Does foreach need a limiter? eg foreach {leaders} as {person} limit 3 ?
 * ACE tab completion for MustardScript??
+* Separate placeholder provision into "normal" and "extra", hiding less-relevant ones
+  like {msgid} since they will usually be less directly used (eg via a "Reply" node).

@@ -89,6 +89,13 @@ function automation_to_string(val) {
 	else return m1 + "-" + m2; //min-max
 }
 
+//Return null if there aren't any, or an object mapping "{someplaceholder}" to a description of it.
+function provides(el, type_override) {
+	const prov = types[type_override || el.type].provides || el.provides;
+	if (typeof prov === "function") return prov(el);
+	return prov;
+}
+
 const default_handlers = {
 	//Validation sees the original value and determines whether it's possible for it to be correct.
 	validate: val => typeof val === "string" || typeof val === "undefined",
@@ -123,9 +130,8 @@ const text_message = {...default_handlers,
 		//but also ensures that wonky situations with vars overwriting each other
 		//will behave the way the back end would handle them.
 		const vars_avail = [];
-		for (let par = el; par; par = par.parent && par.parent[0]) {
-			vars_avail.unshift(types[par.type].provides || par.provides);
-		}
+		for (let par = el; par; par = par.parent && par.parent[0])
+			vars_avail.unshift(provides(par));
 		const allvars = Object.assign({}, ...vars_avail);
 		return DIV({className: "msgedit"}, [
 			DIV({className: "buttonbox attached"}, Object.entries(allvars).map(([v, d]) => BUTTON({type: "button", title: d, className: "insertvar", "data-insertme": v}, v))),
@@ -747,9 +753,10 @@ const main_types = {
 	foreach: {
 		color: "#66ee66", children: ["message"], label: el => el.collection && el.iterator ? "For each " + el.collection + " as " + el.iterator : "For each...",
 		params: [{attr: "mode", values: "foreach"},
-			{attr: "collection", label: "Collection", values: required},
+			{attr: "collection", label: "Collection", values: required}, //TODO: Select from known array values in scope
 			{attr: "iterator", label: "Named as", values: required}], //FIXME: Make this available in the subtree, same as a builtin's provisions
 		typedesc: "Do something for every item in a collection.",
+		provides: el => ({[el.iterator]: "The current item"}), //FIXME: Copy the description from the child of the collection if it is correctly an array.
 	},
 	foreach_vars: {
 		color: "#66ee66", children: ["message"], label: el => "For each user with vars",
@@ -1928,7 +1935,7 @@ function open_element_properties(el, type_override) {
 	const cfg = {focus: null};
 	set_content("#params", (type.params||[]).map(param => build_element(param, cfg)));
 	update_governed_params();
-	set_content("#providesdesc", Object.entries(type.provides || el.provides || {}).map(([v, d]) => LI([
+	set_content("#providesdesc", Object.entries(provides(el, type_override) || {}).map(([v, d]) => LI([
 		CODE(v), ": " + d,
 	])));
 	if (!type_override) set_content("#saveprops", "Close"); //On initial open, say that there are no changes. Type override means there are, in effect, changes.
