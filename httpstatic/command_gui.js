@@ -2135,10 +2135,13 @@ function slashcommands(e) {
 		if (parts.length < 2) return l;
 		return [parts[0], " ->", parts[1].split(" ").map(p => [" ", CODE(p)])];
 	});
+	const tab = find_tab_completion(mle, 1); //Get tab completions other than slash commands
 	//So, which word are we in? Grab the line up to the cursor, and count words in it.
 	//1 word means we're in the command itself; 2 means the first parameter, etc. Offset to 0-based.
 	const param = content.slice(linestart === -1 ? 0 : linestart + 1, cursor).split(" ").length - 1;
-	mle.closest(".msgedit").querySelectorAll(".slashcommands").forEach(el => set_content(el,
+	mle.closest(".msgedit").querySelectorAll(".slashcommands").forEach(el => set_content(el, [
+		//TODO: If the current selection is one of the completions, give it class "curparam"
+		tab && ["Tab complete:", tab.map(t => [" ", CODE(t)]), BR()],
 		desc.split("\n").map(l => {
 			//If there's a usage arrow, render the parameters atomically.
 			const parts = l.split(" -> ");
@@ -2155,7 +2158,7 @@ function slashcommands(e) {
 			if (el.classList.contains("full")) return P(l);
 			return l;
 		}),
-	));
+	]));
 }
 on("change", ".msgedit textarea", slashcommands);
 on("input", ".msgedit textarea", slashcommands);
@@ -2186,12 +2189,13 @@ on("keydown", ".msgedit textarea", e => {
 	}
 });
 
-function find_tab_completion(mle) {
+function find_tab_completion(mle, descriptive) {
 	const content = mle.value;
 	const cursor = mle.selectionStart;
 	const linestart = content.lastIndexOf("\n", cursor - 1);
 	const line = content.slice(linestart === -1 ? 0 : linestart + 1, cursor); //just what's behind the cursor, not anything after it
-	if (line[0] === "/" && !line.includes(' ')) {
+	//For actual tab key presses, fill out slash commands; for the descriptions, don't (as they're already described better elsewhere).
+	if (!descriptive && line[0] === "/" && !line.includes(' ')) {
 		return Object.keys(window.cmdedit_collections.slash_commands).filter(c => c.startsWith(line.slice(1)))
 			.map(c => c.slice(line.length - 1) + " ");
 	}
@@ -2220,7 +2224,10 @@ function find_tab_completion(mle) {
 			//For the final part, we may have partial or no information.
 			if (Array.isArray(prov)) {
 				//Suggest 0, 1, and 2, since we can't know the actual size of the array
-				if (word === "") return ["0}", "1.", "2."];
+				if (word === "") {
+					if (descriptive) return ["0}", "1.", "2.", "..."];
+					else return ["0}", "1.", "2."];
+				}
 				if (word === "0") return ["}"]; //{some_array.0 ==> {some_array.0} for the length
 				return ["."]; //If you've already filled out part of an index, all we can suggest is the dot.
 			}
@@ -2236,7 +2243,7 @@ function find_tab_completion(mle) {
 			//have a typeof "object" and both should leave the brace unclosed
 			//and suggest adding another part to it.
 			if (typeof provision_type(t) === "object") v = v.slice(0, -1) + "."; //(Is there a better way to replace the last character in a string?)
-			vars.push(v.slice(word.length));
+			vars.push(descriptive ? v : v.slice(word.length));
 		});
 		return vars;
 	}
