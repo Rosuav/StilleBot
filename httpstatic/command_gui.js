@@ -154,7 +154,14 @@ const text_message = {...default_handlers,
 		const allvars = { };
 		for (let el of parents) Object.assign(allvars, provides(el, null, allvars));
 		return DIV({className: "msgedit"}, [
-			DIV({className: "buttonbox attached"}, Object.entries(allvars).map(([v, d]) => BUTTON({type: "button", title: provision_label(d), className: "insertvar", "data-insertme": v}, v))),
+			DIV({className: "buttonbox attached"}, Object.entries(allvars).map(([v, d]) => {
+				const t = provision_type(d);
+				//When the variable is an aggregate value (array/record), fill out the name
+				//followed by a dot, rather than closing the brace immediately. Keep the button
+				//label the same though. (Or should it say "{stuff...}" for a collection?)
+				const insertme = typeof t === "object" ? v.slice(0, -1) + "." : v;
+				return BUTTON({type: "button", title: provision_label(d), class: "insertvar", "data-insertme": insertme}, v)
+			})),
 			TEXTAREA({...id, "data-editme": 1, ".provided_vars": allvars}, el.message || ""),
 			DIV({class: "emotepicker"}, "☺"),
 			DIV({class: "slashcommands short"}, slashcommands(el.message || "")),
