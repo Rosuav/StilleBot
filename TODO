@@ -289,6 +289,7 @@
   - Handling this properly will be hard but consider a shorthand of keeping them all,
     and highlighting the active ones while in the properties dialog
 * Does foreach need a limiter? eg foreach {leaders} as {person} limit 3 ?
+  - If so, deprecate and de-document the leaders/lowleaders limit in setvar
 * ACE tab completion for MustardScript??
   - https://github.com/ajaxorg/ace/wiki/Configuring-Ace/
 * Separate placeholder provision into "normal" and "extra", hiding less-relevant ones
