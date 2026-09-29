@@ -1932,7 +1932,7 @@ __async__ void establish_hook_notification(string|int channelid, string hook, ma
 			foreach (socks, object sock) {
 				mapping conn = sock && sock->query_id();
 				if (!conn || !mappingp(conn->session)) continue;
-				sock->send_text(Standards.JSON.encode(([
+				if (sock->state == 1) sock->send_text(Standards.JSON.encode(([
 					"cmd": "*DC*",
 					"error": "This bot is deactivating, see other",
 					"redirect": other,
