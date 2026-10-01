@@ -307,3 +307,26 @@
   - Others? Note that this is not an all-or-nothing project; as soon as any aspect is
     implemented, that will see the benefit, and the package can be augmented after.
   - Best mechanism for the transfer? HTTP?
+* Turn kickstarter.pike into a coherent feature, putting it under chan_integrations
+  - Get streamer to copy/paste the page link
+  - Strip off any junk, then add /stats.json?v=1
+  - This should give a valid JSON blob for any campaign at all, notably including a
+    "state". Poll some projects to learn what states are possible.
+  - Map the state to a poll duration. If it's "successful" or whatever happens if it
+    fails to clear its target, poll duration is zero. If it's upcoming, poll every
+    ten minutes maybe? See if there's anything useful to report. If it's active, poll
+    every minute.
+  - Command editor. Save an echoable_message to be sent whenever the backer count is
+    seen to go up. Acknowledge that this is polled and therefore not fast.
+  - Save these in broadcaster-specific data.
+  - On uid 1, save a list of broadcasters with upcoming or active campaigns (two
+    separate lists).
+  - Fast poll and slow poll. Each works the same way, just a different delay time.
+  - On poll, fetch the relevant list, then go through each broadcaster and fetch
+    their data. Might need a custom query to fetch them all, rather than using the
+    normal convenience function.
+  - Query the JSON files of all applicable campaigns.
+  - If the state has changed, remove it from the list, and maybe remove the bcaster
+    from the master list.
+  - If the master list is now empty, stop the poll.
+  - Need to ping the poll whenever the list is added to, or when the bot becomes active.
