@@ -332,3 +332,10 @@
     from the master list.
   - If the master list is now empty, stop the poll.
   - Need to ping the poll whenever the list is added to, or when the bot becomes active.
+* Similarly for makeship.pike
+  - Given a page URL, fetch it, and find "gid://shopify/Product/%[0-9]". Save the ID.
+    There may be multiple. Take the first? Or maybe parse the JSON properly.
+  - Not sure how to get the status. Need to know whether to fetch pledge or sales qty.
+  - If any active status, poll every minute, otherwise don't poll at all (require a
+    mod to explicitly tell it to start).
+  - Again, allow any command to be edited in
