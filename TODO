@@ -322,6 +322,8 @@
   - On uid 1, save a list of broadcasters with upcoming or active campaigns (two
     separate lists).
   - Fast poll and slow poll. Each works the same way, just a different delay time.
+  - Cancel the poll immediately if the bot is inactive (the other should pick up
+    and start polling shortly).
   - On poll, fetch the relevant list, then go through each broadcaster and fetch
     their data. Might need a custom query to fetch them all, rather than using the
     normal convenience function.
