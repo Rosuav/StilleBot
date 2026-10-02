@@ -127,11 +127,12 @@ __async__ mapping get_state(int|string chan)
 }
 
 //Confirmed as all unlockable 20250915
-constant emotes = #"FrogPonder ChillGirl ButtonMash BatterUp GoodOne MegaConsume SpillTheTea ThatsAServe WhosThisDiva ConfettiHype FrogWow OhWow EndlerLove
-AGiftForYou KittyHype DangerDance PersonalBest HenloThere GimmeDat RespectfullyNo ThatsIconique HerMind ImSpiraling LuvLuvLUV EpicClip GeorgieMarch
-MegaMlep RawkOut FallDamage RedCard ApplauseBreak TouchOfSalt NoComment DownBad UghMood ShyGhost MeSweat SoCinema ServalBop
-KittyLove TurnUp CatScare LateSave NoTheyDidNot BeholdThis TheyAte PlotTwist AnActualQueen LilTrickster HiHand RageOut EmuLoad
-RaccoonPop GoblinJam YouMissed GriddyGoose CheersToThat StirThePot PackItUp InTheirBag SpitTheTruth PufferPop IAmClap HonkShoe WinnieHuh
+//Purged 20261003 based on Twitch blog but not confirmed
+constant emotes = #"ChillGirl ButtonMash BatterUp GoodOne MegaConsume ThatsAServe ConfettiHype FrogWow EndlerLove ZombiePup
+AGiftForYou KittyHype DangerDance HenloThere ImSpiraling LuvLuvLUV GeorgieMarch BooHoo
+RawkOut RedCard ApplauseBreak TouchOfSalt SoCinema ServalBop HereCATCH
+KittyLove TurnUp LateSave NoTheyDidNot BeholdThis PlotTwist LilTrickster HiHand RageOut EmuLoad DemonDance
+GoblinJam GriddyGoose CheersToThat InTheirBag SpitTheTruth PufferPop IAmClap WinnieHuh EyeSeeYou
 Bonus emotes for even higher levels: BleedPurpleHD HeyHeyGuys PogChomp KappaInfinite";
 
 string avail_emotes = "";

@@ -6,6 +6,14 @@ inherit annotated;
 //be greyed out if not available.
 //NOTE: The display is aimed at no more than six emotes across.
 constant hypetrain = replace(#"
+## Hype Train set ten
+### Unlockable Oct 2026
+ZombiePup<br>
+BooHoo<br>
+HereCATCH<br>
+DemonDance<br>
+EyeSeeYou<br>
+
 ## Hype Train set nine
 ### Unlockable Apr 2025 to current
 ### Additional columns unlocked Jul 2025, Sep 2025, Dec 2025, May 2026
@@ -282,6 +290,12 @@ constant emoteids = ([
 	//A couple more bonus emotes for stupid-high-level trains
 	"NeuroJAM": "emotesv2_16862a2d50724c34b78499f3c094ce47",
 	"EvilJAM": "emotesv2_c3134ab06c334403a7691d3ef58441d1",
+	//New column Oct 2026
+	"ZombiePup": "emotesv2_90bda6a8775540ecb8ea349852d070c9",
+	"BooHoo": "emotesv2_ea37228fd0104409a8741c2e4dbb10c4",
+	"HereCATCH": "emotesv2_f19c2e92d86040d7b8af5a42e56fe12e",
+	"DemonDance": "emotesv2_e3b4b2e84a2749598abc869dca4400ac",
+	"EyeSeeYou": "emotesv2_7291c0f62b6441e8a2a9aa7d0b2e5eb5",
 ]);
 
 Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
