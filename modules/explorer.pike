@@ -64,11 +64,23 @@ class menu_clicked
 		no_recursion[hash] = 0;
 	}
 
+	void enumerate_callouts() {
+		GTK2.TreeIter parent = win->store->append();
+		win->store->set_value(parent, 0, "Callouts");
+		array callouts = call_out_info(); sort(callouts[*][0], callouts); //Show them in chronological order
+		foreach (callouts, array co) {
+			win->store->set_value(win->store->append(parent), 0,
+				sprintf("[%ds] %O (%d args)", co[0], co[2], sizeof(co) - 3)
+			);
+		}
+	}
+
 	void makewindow()
 	{
 		win->store = GTK2.TreeStore(({"string"}));
 		//Ephemeral - discarded on program restart. Survives code reload.
 		add_to_store(G->G, "G");
+		enumerate_callouts();
 		//Database configuration. Shared between instances, can update live. Note that
 		//precached config is not separated out here; it may be nice to at least annotate
 		//which ones are PCC and which are not, but for now they're just in together.
