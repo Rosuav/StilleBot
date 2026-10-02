@@ -191,6 +191,7 @@ class channel(mapping identity) {
 	mapping botconfig, config;
 	mapping(int:array) lastmsg = ([]); //The single most recent message from any particular user
 	int(1bit) need_irc = 0; //Set to 1 if we definitely need an IRC connection
+	array(string) xco_path() {return ({"irc", "id", userid});}
 
 	protected void create(array commands) {
 		botconfig = m_delete(identity, "data") || ([]);
@@ -318,6 +319,13 @@ class channel(mapping identity) {
 			msgs[(string)id]->acknowledgement = ack || destcfg;
 			if (timeout) {
 				msgs[(string)id]->expiry = time() + timeout;
+				//NOTE: This isn't using xfr_call_out - the only cost of a bot hop is that the message
+				//expiring won't get pushed out on the websocket. Private messages with timeouts will
+				//usually expire very quickly (60s, maybe a few minutes at most), and if they last a
+				//long time, the visual issue of leaving them there is not going to be relevant.
+				//(Note that currently, if the bot crashes fully and this callout is lost, the message
+				//will linger in the database, and be constantly skipped over for rendering - see
+				//chan_messages::_get_message() - so it would be nice to clean them out eventually.)
 				call_out(delete_msg, timeout, uid, (string)id);
 			}
 		}
@@ -504,7 +512,7 @@ class channel(mapping identity) {
 				stream_reset_messages[userid] += ({({person, message | (["delay": 0, "_changevars": 1]), vars, cfg})});
 				//FIXME: Disallow if stream is offline.
 			}
-			else call_out(_send_with_catch, delay, person, message | (["delay": 0, "_changevars": 1]), vars, cfg);
+			else xfr_call_out(_send_with_catch, delay, person, message | (["delay": 0, "_changevars": 1]), vars, cfg);
 			return;
 		}
 		if (message->_changevars)
@@ -686,7 +694,7 @@ class channel(mapping identity) {
 					//Note that, as with regular delayed messages, a cooldown queue is a
 					//deferral and NOT a pause. The promise won't be blocked on this.
 					cooldown_timeout[key] = time() + delay + message->cdlength;
-					call_out(_send_with_catch, delay, person, message | (["conditional": 0, "_changevars": 1]), vars, cfg);
+					xfr_call_out(_send_with_catch, delay, person, message | (["conditional": 0, "_changevars": 1]), vars, cfg);
 				}
 				//Yes, it's possible for the timeout to be 0 seconds.
 				msg = message->otherwise;
@@ -956,6 +964,8 @@ class channel(mapping identity) {
 	//for single-message sends, and if multiple messages are sent, it will only be
 	//called once). Example: void cb(mapping vars, mapping params) --> params->id is
 	//the message ID that just got sent.
+	//CAUTION: Using a callback will prevent delayed messages from hopping to the other
+	//bot. If a callback is used, keep any delays very short.
 	Concurrent.Future send(mapping|zero person, echoable_message message, mapping|void vars, function|void callback) {
 		//For convenience, system messages can be sent without an initiator - the broadcaster will do it.
 		//(This is not the same thing as using the broadcaster's voice; it's as if the bcaster ran a command.)

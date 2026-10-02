@@ -1780,3 +1780,52 @@ string totp(string secret, int|void tm) {
 	code &= 0x7fffffff; //It's a 31-bit code, mask off the high bit
 	return ("00000000" + (string)code)[<7..]; //Assumes eight-digit codes
 }
+
+//A transferrable callout is one which:
+//1) Is calling a method of an object with an xco_path() method
+//2) Has a delay long enough to be worth transferring (so, usually at least 60 seconds, more likely 600 or more)
+//3) Has JSON-safe arguments.
+//The callback function will be wrapped, and the callout retained for potential transfer.
+@"G->G->xco";
+mixed _xco_done(int xco_id) {
+	[function f, array args, mixed id] = m_delete(G->G->xco, xco_id);
+	return f(@args);
+}
+
+array xfr_call_out(function f, float|int delay, mixed ... args) {
+	int xco_id = G->G->next_xco_id++;
+	array cur = G->G->xco[xco_id] = ({f, args, call_out(_xco_done, delay, xco_id)});
+	return cur[2];
+}
+
+/* These can go elsewhere to perform the actual transfer.
+void spawn_xco(string xfr) {
+	foreach (Standards.JSON.decode(xfr), [array(string) path, int delay, array args]) {
+		mixed fun = G;
+		foreach (path, string node) if (!(fun = fun[node])) break;
+		if (!fun) write("Failed xfr %O\n", xfr);
+		else xfr_call_out(fun, delay, @args);
+	}
+}
+
+string gather_xco() {
+	array ret = ({ });
+	foreach (indices(xco), int xco_id) {
+		//Quick check: Make sure the args are JSON safe and not too large. If it is,
+		//leave the xco here - don't discard it; if we hop back in time, it can still
+		//be used. TODO: Report this in a log somewhere.
+		if (catch {
+			if (sizeof(Standards.JSON.encode(xco[xco_id][1])) > 1048576) continue;
+		}) continue;
+		[function f, array args, mixed id] = m_delete(xco, xco_id);
+		int delay = remove_call_out(id);
+		object obj = function_object(f);
+		ret += ({({
+			obj->xco_path() + ({function_name(f)}),
+			delay,
+			args,
+		})});
+	}
+	return Standards.JSON.encode(ret);
+}
+*/
