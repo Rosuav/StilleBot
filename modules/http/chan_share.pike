@@ -237,6 +237,8 @@ int delmsgs(object channel, string target) {
 }
 
 void cleanup() {
+	//Done on both bots; note that purging of ephemera on an inactive bot will not notify the
+	//corresponding websockets, but this is not enough of a deal to worry about.
 	remove_call_out(G->G->artshare_cleanup);
 	G->G->artshare_cleanup = call_out(cleanup, 3600 * 12); //Check twice a day for anything over a day old
 	G->G->DB->query_rw("delete from stillebot.uploads where expires < now() returning channel, uploader, id")->then() {

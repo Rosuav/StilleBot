@@ -459,6 +459,7 @@ __async__ mapping wscmd_googlelogin(object channel, mapping(string:mixed) conn, 
 }
 
 void autosync() {
+	//Done on both bots so you effectively get twice as many synchronizations
 	remove_call_out(G->G->calendar_autosync);
 	G->G->calendar_autosync = call_out(autosync, 86400*7); //In stable state, run autosync once a week.
 	G->G->calendar_last_autosync = time();

@@ -303,6 +303,7 @@
   than in response to an outage), package up a set of transients and transfer them
   destructively.
   - Delayed messages, including stream-reset
+  - G->G->autocommands (handling cmdmgr->autospam)
   - chan_minigames::already_claimed, since the framework's here
   - Others? Note that this is not an all-or-nothing project; as soon as any aspect is
     implemented, that will see the benefit, and the package can be augmented after.

@@ -1451,6 +1451,9 @@ void delete_single_message(object channel, mapping data) {channel->delete_single
 
 void session_cleanup() {
 	//Go through all HTTP sessions and dispose of old ones
+	//Done on both bots. Note that aged-out sessions continue to be used until one of these
+	//periodic checks, meaning that they last for 7 days plus a random interval. If that is
+	//deemed a problem, change load_session() to check for expiration.
 	G->G->http_session_cleanup = call_out(session_cleanup, 86400);
 	G->G->DB->query_rw("delete from stillebot.http_sessions where active < now () - '7 days'::interval");
 }

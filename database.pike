@@ -840,6 +840,7 @@ Concurrent.Future local_read_write_transaction(function body) {
 
 string|zero last_desync_lsn = 0; //Null if the last check showed we were in sync
 __async__ void replication_watchdog() {
+	//Run on both bots - two dogs for the price of one
 	G->G->repl_wdog_call_out = call_out(replication_watchdog, 60);
 	//Check to see if replication appears stalled.
 	//If the R/W database is advancing, the fast database isn't, and they're different,
