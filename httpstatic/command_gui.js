@@ -2141,7 +2141,7 @@ function slashcommands(e) {
 	const param = content.slice(linestart === -1 ? 0 : linestart + 1, cursor).split(" ").length - 1;
 	mle.closest(".msgedit").querySelectorAll(".slashcommands").forEach(el => set_content(el, [
 		//TODO: If the current selection is one of the completions, give it class "curparam"
-		tab && ["Tab complete:", tab.map(t => [" ", CODE(t)]), BR()],
+		tab && tab.length && ["Tab complete:", tab.map(t => [" ", CODE(t)]), BR()],
 		desc.split("\n").map(l => {
 			//If there's a usage arrow, render the parameters atomically.
 			const parts = l.split(" -> ");
