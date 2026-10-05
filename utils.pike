@@ -538,7 +538,7 @@ __async__ void channel_scopes() {
 	foreach (channels, mapping chan) {
 		array havescopes = chan->creds->scopes || ({ });
 		array needscopes = wantscopes - havescopes;
-		if (sizeof(needscopes) && chan->creds->missing * " " != needscopes * " ") {
+		if (sizeof(needscopes) && (chan->creds->missing||({})) * " " != needscopes * " ") {
 			werror("%O needs %O\n", chan->login, needscopes * " ");
 			chan->creds->missing = needscopes;
 			await(G->G->DB->save_config(chan->userid, "credentials", chan->creds));
