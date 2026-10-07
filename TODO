@@ -343,3 +343,11 @@
   - If any active status, poll every minute, otherwise don't poll at all (require a
     mod to explicitly tell it to start).
   - Again, allow any command to be edited in
+* Streamer groups
+  - Example: Junk Fan Club (for StaticTides)
+  - Let streamers create them maybe? For now only I create.
+  - Creator of the group can edit its heading (but not its keyword which will be fixed)
+    and description, and maybe add and remove people manually
+  - Anyone can add themselves to the group
+  - If not logged in, invite login with button saying "Join group" and autojoin on login
+    (imitate /activate)
