@@ -1,3 +1,5 @@
+//New ID for Devi's new campaign: 9276948021404
+//but don't hard code stuff
 __async__ void pingmakeship() {
 	G->G->makeship_call_out = call_out(pingmakeship, 30);
 	//For a petition:
