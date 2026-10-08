@@ -98,6 +98,12 @@ img {
 	height: 100%;
 	object-fit: cover;
 }
+img.adornment {
+	position: absolute;
+	top: 0; left: 4px;
+	transform: translate(50%, -50%);
+	width: 20px; height: unset;
+}
 .text {
 	flex: 1;
 	min-width: 0;

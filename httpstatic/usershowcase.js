@@ -12,6 +12,7 @@ function update_display() {
 		const name = slot === "-" ? "name" : slot;
 		const av = slot === "-" ? "avatar" : slot + ":avatar";
 		box.querySelector(".profile-pic img").src = state[av] || TRANSPARENT_IMAGE;
+		box.querySelector("img.adornment").src = state[slot + ":adornment"] || TRANSPARENT_IMAGE;
 		let mode = state[slot + ":mode"];
 		set_content(box.querySelector(".name"), state[name]).className = mode ? "name mode-" + mode : "name";
 	});
@@ -22,7 +23,8 @@ export function render(data) {
 		//Primary reconfiguration
 		set_content("#display", [
 			STYLE(".text {" + (data.data.text_css||"") + "}"),
-			data.data.slots.map(slot => DIV({class: "box", "data-slot": slot.id}, [
+			data.data.slots.map(slot => DIV({class: "box", "data-slot": slot.id, style: "position: relative"}, [
+				IMG({class: "adornment", src: TRANSPARENT_IMAGE}),
 				DIV({class: "profile-pic"}, IMG({src: TRANSPARENT_IMAGE})),
 				DIV({class: "text"}, [
 					DIV({class: "title"}, slot.label),
