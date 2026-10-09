@@ -149,7 +149,6 @@ void autospam(string|int chanid, string cmd) {
 }
 
 void xfr_in(array cmds) {
-	werror("XFR IN AUTOCOMMANDS %O\n", autospam);
 	int now = time();
 	foreach (cmds, string pkg) {
 		sscanf(pkg, "%d!%d!%s", int next, int chanid, string cmd);
