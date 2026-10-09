@@ -120,12 +120,13 @@ mapping(string:mixed)|zero http_request(Protocols.HTTP.Server.Request req) {
 	if (string xfr = req->variables->xfr) {
 		//This request is ONLY accepted from the other bot.
 		string ip = req->get_ip();
-		if (!xfr_ip_sources[ip]) return 0; //If anyone else requests, give back a 404.
+		if (!xfr_ip_sources[ip]) {werror("BAD XFR IP %O\n", ip); return 0;} //If anyone else requests, give back a 404.
 		function totp = function_object(request_certificate)->totp;
 		int now = time();
 		if (xfr != totp(now) && xfr != totp(now - 30)) {
 			//Accept both the current TOTP and the previous one, in case of lag or clock drift
 			//But if it doesn't match, reject with 404, since this is a very abnormal thing.
+			werror("BAD XFR TOTP %O\n", xfr);
 			return 0;
 		}
 		return jsonify((["xco": gather_xco()]));
@@ -394,6 +395,7 @@ __async__ void fetch_xfr(mapping(string:mixed)|void conn) {
 		function_object(request_certificate)->totp()));
 	mapping xfr; catch {xfr = Standards.JSON.decode_utf8(res->get());};
 	if (!mappingp(xfr)) {
+		werror("FAILED TO GET XFR %O\n", res->get());
 		if (conn) log(conn, "Failed to get xfr");
 		return;
 	}
