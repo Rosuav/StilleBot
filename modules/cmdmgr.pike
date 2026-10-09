@@ -120,13 +120,13 @@ void autospam(string|int chanid, string cmd) {
 	if (function f = bounce(this_function)) return f(chanid, cmd);
 	cmd -= "!"; //Compat with older parameter style
 	if (stringp(chanid)) chanid = G->G->user_info[chanid - "#"]->id; //Compat with older param style
+	remove_call_out(m_delete(autocommands, chanid + "!" + cmd));
 	if (!G->G->stream_online_since[chanid]) return;
 	object channel = G->G->irc->id[chanid];
 	if (!channel) return; //Channel no longer configured (TODO: handle channel deactivation)
 	echoable_message response = channel->commands[?cmd];
 	int|array(int) mins = mappingp(response) && response->automate;
 	if (!mins) return; //Autocommand disabled
-	remove_call_out(autocommands[chanid + "!" + cmd]);
 	autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(mins, channel->config->timezone), chanid, cmd);
 	channel->send(0, response);
 }
