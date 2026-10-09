@@ -3,6 +3,7 @@
 inherit hook;
 inherit annotated;
 inherit builtin_command;
+inherit transferrable;
 @retain: mapping autocommands = ([]);
 
 constant _SPECIAL_PARAMS = ({
@@ -145,6 +146,27 @@ void autospam(string|int chanid, string cmd) {
 			autocommands[chanid + "!" + cmd] = call_out(autospam, seconds(response->automate, channel->config->timezone), chanid, cmd);
 		}
 	}
+}
+
+void xfr_in(array autospam) {
+	werror("XFR IN AUTOCOMMANDS %O\n", autospam);
+	int now = time();
+	foreach (autospam, string pkg) {
+		sscanf(pkg, "%d!%d!%s", int next, int chanid, string cmd);
+		autocommands[chanid + "!" + cmd] = call_out(autospam, next - now, chanid, cmd);
+	}
+}
+
+array xfr_out() {
+	array ret = ({ });
+	int now = time();
+	foreach (autocommands; string chancmd; mixed id) {
+		if (!id[0]) continue; //Lingering callouts get the function zeroed out, and can safely be ignored.
+		int delay = remove_call_out(id);
+		if (!undefinedp(delay)) ret += ({(now + delay) + "!" + chancmd});
+	}
+	m_clear(autocommands);
+	return ret;
 }
 
 //Map a flag name to a set of valid values for it

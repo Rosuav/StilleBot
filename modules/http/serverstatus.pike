@@ -92,7 +92,7 @@ multiset xfr_ip_sources = (<
 
 //serverstatus's xfr is xfr_call_out entries. They don't really belong here, but I don't want
 //globals.pike to be inheriting something that's defined inside globals.pike.
-void xfr_in(array|zero xco) {
+void xfr_in(array xco) {
 	int now = time();
 	foreach (xco, [array(string) path, int targettime, array args]) {
 		mixed fun = G->G;
