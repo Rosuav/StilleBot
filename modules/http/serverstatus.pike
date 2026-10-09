@@ -70,6 +70,18 @@ constant markdown = #"# StilleBot server status
 ";
 mapping state = ([]), admin_state = ([]);
 
+//Not strictly RFC-compliant TOTPs but a similar concept; uses the Twitch client secret
+//as the shared secret. 0 to generate, string to verify.
+string|bool totpish(string|void verify) {
+	int tm = time() / 30;
+	object hmac = Crypto.SHA1.HMAC(G->G->instance_config->clientsecret);
+	string cur = String.string2hex(hmac(sprintf("%8c", tm)));
+	if (!verify) return cur;
+	if (verify == cur) return 1;
+	//When verifying, allow the previous code as well, in case of lag
+	return verify == String.string2hex(hmac(sprintf("%8c", tm - 1)));
+}
+
 multiset xfr_ip_sources = (<
 	//Valid transfer IP addresses: Sikorsky
 	"2403:5803:f90e::1", "159.196.70.86",
@@ -121,14 +133,7 @@ mapping(string:mixed)|zero http_request(Protocols.HTTP.Server.Request req) {
 		//This request is ONLY accepted from the other bot.
 		string ip = req->get_ip();
 		if (!xfr_ip_sources[ip]) {werror("BAD XFR IP %O\n", ip); return 0;} //If anyone else requests, give back a 404.
-		function totp = function_object(request_certificate)->totp;
-		int now = time();
-		if (xfr != totp(now) && xfr != totp(now - 30)) {
-			//Accept both the current TOTP and the previous one, in case of lag or clock drift
-			//But if it doesn't match, reject with 404, since this is a very abnormal thing.
-			werror("BAD XFR TOTP %O\n", xfr);
-			return 0;
-		}
+		if (!totpish(xfr)) {werror("BAD XFR TOTP %O\n", xfr); return 0;} //Ditto if the TOTPish is wrong
 		return jsonify((["xco": gather_xco()]));
 	}
 	mapping params = (["vars": (["ws_group": ""])]);
@@ -392,7 +397,7 @@ __async__ void fetch_xfr(mapping(string:mixed)|void conn) {
 	if (conn) log(conn, "Fetching xfr...");
 	int cutoff_time = time() + 30; //If it takes more than this, don't wait on it.
 	Protocols.HTTP.Promise.Result res = await(Protocols.HTTP.Promise.get_url("https://" + other + "/serverstatus?xfr=" +
-		function_object(request_certificate)->totp()));
+		totpish()));
 	mapping xfr; catch {xfr = Standards.JSON.decode_utf8(res->get());};
 	if (!mappingp(xfr)) {
 		werror("FAILED TO GET XFR %O\n", res->get());
