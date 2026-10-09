@@ -148,10 +148,10 @@ void autospam(string|int chanid, string cmd) {
 	}
 }
 
-void xfr_in(array autospam) {
+void xfr_in(array cmds) {
 	werror("XFR IN AUTOCOMMANDS %O\n", autospam);
 	int now = time();
-	foreach (autospam, string pkg) {
+	foreach (cmds, string pkg) {
 		sscanf(pkg, "%d!%d!%s", int next, int chanid, string cmd);
 		autocommands[chanid + "!" + cmd] = call_out(autospam, next - now, chanid, cmd);
 	}
