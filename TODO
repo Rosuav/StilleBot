@@ -303,7 +303,6 @@
   than in response to an outage), package up a set of transients and transfer them
   destructively. Add more to the xfr package:
   - G->G->stream_reset_messages
-  - G->G->autocommands (handling cmdmgr->autospam)
   - chan_minigames::already_claimed, since the framework's here
   - Anything that sleeps may need to be checked
   - Others? Note that this is not an all-or-nothing project; as soon as any aspect is
