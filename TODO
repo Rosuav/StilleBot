@@ -305,6 +305,7 @@
   - G->G->stream_reset_messages
   - G->G->autocommands (handling cmdmgr->autospam)
   - chan_minigames::already_claimed, since the framework's here
+  - Anything that sleeps may need to be checked
   - Others? Note that this is not an all-or-nothing project; as soon as any aspect is
     implemented, that will see the benefit, and the package can be augmented after.
   - Where appropriate, replace call_out with xfr_call_out. Ensure that the function

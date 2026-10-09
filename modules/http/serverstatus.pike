@@ -1,6 +1,7 @@
 #charset utf-8
 inherit http_websocket;
 inherit annotated;
+inherit transferrable;
 constant valid_on_inactive_bot = 1;
 
 constant markdown = #"# StilleBot server status
@@ -88,8 +89,10 @@ multiset xfr_ip_sources = (<
 	//and Gideon
 	"2a01:488:67:1000:253d:cd8a:0:1", "37.61.205.138",
 >);
-void spawn_xco(array|zero xco) {
-	if (!xco) return;
+
+//serverstatus's xfr is xfr_call_out entries. They don't really belong here, but I don't want
+//globals.pike to be inheriting something that's defined inside globals.pike.
+void xfr_in(array|zero xco) {
 	int now = time();
 	foreach (xco, [array(string) path, int targettime, array args]) {
 		mixed fun = G->G;
@@ -99,7 +102,7 @@ void spawn_xco(array|zero xco) {
 	}
 }
 
-array gather_xco() {
+array xfr_out() {
 	array ret = ({ });
 	int now = time();
 	foreach (indices(G->G->xco), int xco_id) {
@@ -135,7 +138,10 @@ mapping(string:mixed)|zero http_request(Protocols.HTTP.Server.Request req) {
 		if (ip == "127.0.0.1") ip = req->request_headers["x-forwarded-for"]; //On Gideon, where we're behind Apache, use Apache's reported IP address.
 		if (!xfr_ip_sources[ip]) {werror("BAD XFR IP %O\n", ip); return 0;} //If anyone else requests, give back a 404.
 		if (!totpish(xfr)) {werror("BAD XFR TOTP %O\n", xfr); return 0;} //Ditto if the TOTPish is wrong
-		return jsonify((["xco": gather_xco()]));
+		mapping pkg = ([]);
+		foreach (G->G->transferrables; string name; object mod)
+			pkg[name] = mod->xfr_out();
+		return jsonify(pkg);
 	}
 	mapping params = (["vars": (["ws_group": ""])]);
 	if (req->misc->session->user->?id == (string)G->G->bot_uid)
@@ -410,7 +416,8 @@ __async__ void fetch_xfr(mapping(string:mixed)|void conn) {
 		return;
 	}
 	if (conn) log(conn, "Received xfr:%{ %s%}", indices(xfr));
-	spawn_xco(xfr->xco);
+	foreach (G->G->transferrables; string name; object mod)
+		if (xfr[name]) mod->xfr_in(xfr[name]);
 }
 
 __async__ void websocket_cmd_transfer(mapping(string:mixed) conn, mapping(string:mixed) msg) {

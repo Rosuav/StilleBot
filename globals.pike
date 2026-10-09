@@ -113,6 +113,18 @@ class unified_diff(string old, string new, array|void extra_flags) {
 	void donecb(object proc) {call_out(done, 0, proc);}
 }
 
+@"G->G->transferrables";
+class transferrable {
+	//Called when a transfer-out is requested; its return value must be JSON-compatible.
+	//TODO: Should this allow a Concurrent.Future (ie allow it to be asynchronous)?
+	mapping|array xfr_out() { }
+	//Called whenever a transfer-in is received and the corresponding module name was found
+	//in the transfer package. Will be passed the value returned from xfr_out().
+	void xfr_in(mapping|array data) { }
+
+	protected void create(string name) {G->G->transferrables[name] = this;}
+}
+
 //When a builtin gets renamed, leave a redirect at the old name.
 //TODO maybe: On saving of a command, if it references any redirects, automatically
 //replace it with the new name?
