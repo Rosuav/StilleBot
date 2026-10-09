@@ -1797,35 +1797,3 @@ array xfr_call_out(function f, float|int delay, mixed ... args) {
 	array cur = G->G->xco[xco_id] = ({f, args, call_out(_xco_done, delay, xco_id)});
 	return cur[2];
 }
-
-/* These can go elsewhere to perform the actual transfer.
-void spawn_xco(string xfr) {
-	foreach (Standards.JSON.decode(xfr), [array(string) path, int delay, array args]) {
-		mixed fun = G;
-		foreach (path, string node) if (!(fun = fun[node])) break;
-		if (!fun) write("Failed xfr %O\n", xfr);
-		else xfr_call_out(fun, delay, @args);
-	}
-}
-
-string gather_xco() {
-	array ret = ({ });
-	foreach (indices(xco), int xco_id) {
-		//Quick check: Make sure the args are JSON safe and not too large. If it is,
-		//leave the xco here - don't discard it; if we hop back in time, it can still
-		//be used. TODO: Report this in a log somewhere.
-		if (catch {
-			if (sizeof(Standards.JSON.encode(xco[xco_id][1])) > 1048576) continue;
-		}) continue;
-		[function f, array args, mixed id] = m_delete(xco, xco_id);
-		int delay = remove_call_out(id);
-		object obj = function_object(f);
-		ret += ({({
-			obj->xco_path() + ({function_name(f)}),
-			delay,
-			args,
-		})});
-	}
-	return Standards.JSON.encode(ret);
-}
-*/

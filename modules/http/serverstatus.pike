@@ -69,7 +69,47 @@ constant markdown = #"# StilleBot server status
 </style>
 ";
 mapping state = ([]), admin_state = ([]);
-mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
+
+multiset xfr_ip_sources = (<
+	//Valid transfer IP addresses: Sikorsky
+	"2403:5803:f90e::1", "159.196.70.86",
+	//and Gideon
+	"2a01:488:67:1000:253d:cd8a:0:1", "37.61.205.138",
+>);
+void spawn_xco(array|zero xco) {
+	if (!xco) return;
+	int now = time();
+	foreach (xco, [array(string) path, int targettime, array args]) {
+		mixed fun = G->G;
+		foreach (path, string node) if (!(fun = fun[node])) break;
+		if (!fun) werror("Failed xfr %O\n", xco);
+		else xfr_call_out(fun, targettime - now, @args);
+	}
+}
+
+array gather_xco() {
+	array ret = ({ });
+	int now = time();
+	foreach (indices(G->G->xco), int xco_id) {
+		//Quick check: Make sure the args are JSON safe and not too large. If it is,
+		//leave the xco here - don't discard it; if we hop back in time, it can still
+		//be used. TODO: Report this in a log somewhere.
+		if (catch {
+			if (sizeof(Standards.JSON.encode(G->G->xco[xco_id][1])) > 1048576) continue;
+		}) continue;
+		[function f, array args, mixed id] = m_delete(G->G->xco, xco_id);
+		int delay = remove_call_out(id);
+		object obj = function_object(f);
+		ret += ({({
+			obj->xco_path() + ({function_name(f)}),
+			now + delay,
+			args,
+		})});
+	}
+	return ret;
+}
+
+mapping(string:mixed)|zero http_request(Protocols.HTTP.Server.Request req) {
 	state->responder = G->G->instance_config->local_address;
 	if (req->variables->which) return jsonify(([
 		"responder": G->G->instance_config->local_address, //If you ask for https://mustardmine.com/serverstatus?which, you will be told which bot actually responded.
@@ -77,6 +117,19 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 		"db_fast": G->G->DB->fastdb,
 		"db_live": G->G->DB->livedb,
 	]));
+	if (string xfr = req->variables->xfr) {
+		//This request is ONLY accepted from the other bot.
+		string ip = req->get_ip();
+		if (!xfr_ip_sources[ip]) return 0; //If anyone else requests, give back a 404.
+		function totp = function_object(request_certificate)->totp;
+		int now = time();
+		if (xfr != totp(now) && xfr != totp(now - 30)) {
+			//Accept both the current TOTP and the previous one, in case of lag or clock drift
+			//But if it doesn't match, reject with 404, since this is a very abnormal thing.
+			return 0;
+		}
+		return jsonify((["xco": gather_xco()]));
+	}
 	mapping params = (["vars": (["ws_group": ""])]);
 	if (req->misc->session->user->?id == (string)G->G->bot_uid)
 		params->vars->ws_group = "control"; //If logged in as the bot's intrinsic voice, permit interaction.
@@ -330,11 +383,34 @@ void websocket_cmd_activate(mapping(string:mixed) conn, mapping(string:mixed) ms
 	G->G->DB->query_rw("update stillebot.settings set active_bot = :me", (["me": G->G->instance_config->local_address]));
 }
 
+//Attempt to fetch transferrables from the currently active bot
+//If we can't get them fairly quickly, abandon it and report.
+__async__ void fetch_xfr(mapping(string:mixed)|void conn) {
+	string self = G->G->instance_config->local_address, other = get_active_bot();
+	if (!other || other == self) return; //Nothing to transfer (maybe the other bot is already down).
+	if (conn) log(conn, "Fetching xfr...");
+	int cutoff_time = time() + 30; //If it takes more than this, don't wait on it.
+	Protocols.HTTP.Promise.Result res = await(Protocols.HTTP.Promise.get_url("https://" + other + "/serverstatus?xfr=" +
+		function_object(request_certificate)->totp()));
+	mapping xfr; catch {xfr = Standards.JSON.decode_utf8(res->get());};
+	if (!mappingp(xfr)) {
+		if (conn) log(conn, "Failed to get xfr");
+		return;
+	}
+	if (time() > cutoff_time) {
+		if (conn) log(conn, "Failed to get xfr in time");
+		return;
+	}
+	if (conn) log(conn, "Received xfr:%{ %s%}", indices(xfr));
+	spawn_xco(xfr->xco);
+}
+
 __async__ void websocket_cmd_transfer(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->group != "control") return;
 	log(conn, "Transferring bot...");
 	int cutoff_time = time() + 10; //It should normally be pretty quick. Should the timeout go up to 30s?
 	//This should take care of everything with a single click.
+	fetch_xfr();
 	int may_other_down = 1, may_self_up = 1;
 	//Wait until the local database is the one that's up.
 	while (G->G->DB->livedb != G->G->instance_config->local_address) {
