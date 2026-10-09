@@ -350,3 +350,5 @@
   - Anyone can add themselves to the group
   - If not logged in, invite login with button saying "Join group" and autojoin on login
     (imitate /activate)
+* Tab completion in command editor doesn't work on "{hour}:{mi<tab>" - possibly due to
+  having another brace in there
