@@ -132,6 +132,7 @@ mapping(string:mixed)|zero http_request(Protocols.HTTP.Server.Request req) {
 	if (string xfr = req->variables->xfr) {
 		//This request is ONLY accepted from the other bot.
 		string ip = req->get_ip();
+		if (ip == "127.0.0.1") ip = req->request_headers["x-forwarded-for"]; //On Gideon, where we're behind Apache, use Apache's reported IP address.
 		if (!xfr_ip_sources[ip]) {werror("BAD XFR IP %O\n", ip); return 0;} //If anyone else requests, give back a 404.
 		if (!totpish(xfr)) {werror("BAD XFR TOTP %O\n", xfr); return 0;} //Ditto if the TOTPish is wrong
 		return jsonify((["xco": gather_xco()]));
