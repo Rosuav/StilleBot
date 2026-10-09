@@ -410,7 +410,7 @@ __async__ void websocket_cmd_transfer(mapping(string:mixed) conn, mapping(string
 	log(conn, "Transferring bot...");
 	int cutoff_time = time() + 10; //It should normally be pretty quick. Should the timeout go up to 30s?
 	//This should take care of everything with a single click.
-	fetch_xfr();
+	fetch_xfr(conn);
 	int may_other_down = 1, may_self_up = 1;
 	//Wait until the local database is the one that's up.
 	while (G->G->DB->livedb != G->G->instance_config->local_address) {
