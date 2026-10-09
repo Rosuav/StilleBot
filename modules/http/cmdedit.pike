@@ -106,7 +106,7 @@ void update_command(object channel, string command) {
 }
 
 void wscmd_cmdedit_update(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	echoable_message valid = G->G->cmdmgr->update_command(channel, (conn->subscription_group / "#")[0], msg->cmdname, msg->response, ([
+	echoable_message valid = G->G->cmdmgr->update_command(channel, ((conn->subscription_group || conn->group) / "#")[0], msg->cmdname, msg->response, ([
 		"original": msg->original,
 		"language": msg->language == "mustard" ? "mustard" : "",
 	]));
