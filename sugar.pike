@@ -18,7 +18,7 @@ string totp(int|void tm) {
 //Replace a certificate in an SSL context. I don't know if this is actually a supported concept,
 //but it works fine, and future operations will use the new certificate.
 void replace_cert(SSL.Context ctx, Standards.PEM.Messages pem) {
-	werror("Replace cert!\n");
+	werror("Replace cert - context %O\n", hash_value(ctx));
 	array certs = pem->get_certificates();
 	//Find the existing CertificatePair. We assume that the set of domains will not change, so we use the
 	//new commonName to look up the CertificatePair, and will not be making any changes to that lookup.
@@ -53,6 +53,7 @@ class SugarBuyer(int VERSION) {
 						pending->success(pem);
 					//And those interested will have stuck SSL contexts into a separate array.
 					//These ones remain, so multiple notifications can be sent to the same context.
+					werror("Replacing certs - SugarBuyer %O\n", hash_value(this));
 					if (array interested = sugarmill_notify[fn])
 						replace_cert(interested[*], pem);
 					continue;
