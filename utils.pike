@@ -141,7 +141,9 @@ Concurrent.Future dbupdate() {return G->G->DB->create_tables();}
 __async__ void lookup() {
 	array(string) names = G->G->args[Arg.REST];
 	foreach (names, string name) {
-		int uid = await(get_user_id(name));
+		int uid;
+		catch {uid = await(get_user_id(name));};
+		if (!uid) uid = (int)name; //Allow lookups of IDs too
 		if (!uid) {write(name + ": Not found\n"); continue;}
 		write("%s: UID %d\n", name, uid);
 		array times = await(G->G->DB->query_ro("select login, min(sighted) from stillebot.user_login_sightings where twitchid = :id group by login order by 2",
