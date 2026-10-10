@@ -304,7 +304,7 @@
   destructively. Add more to the xfr package:
   - G->G->stream_reset_messages
   - chan_minigames::already_claimed, since the framework's here
-  - Anything that sleeps may need to be checked
+  - Anything that sleeps may need to be checked eg twitch_apis::shoutout
   - Others? Note that this is not an all-or-nothing project; as soon as any aspect is
     implemented, that will see the benefit, and the package can be augmented after.
   - Where appropriate, replace call_out with xfr_call_out. Ensure that the function
