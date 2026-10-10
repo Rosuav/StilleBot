@@ -10,6 +10,7 @@ let send_socket, send_sockets = { }; //If populated, send() is functional.
 const self = new URL(import.meta.url); //Connection is, by default, relative to where you got ws_sync.js from (not necessarily where the page comes from)
 let protocol = self.protocol == "https:" ? "wss://" : "ws://";
 try {protocol = ws_protocol_override;} catch (e) { }
+let initmsgs = []; //Messages to be sent alongside the init
 let pending_message = []; //Allow messages to be queued on startup (will be sent after initialization)
 let prefs = { }; //Updated from the server as needed
 const prefs_hooks = [];
@@ -54,6 +55,7 @@ export function connect(group, handler)
 		const msg = {cmd: "init", type: handler.ws_type || ws_type, group};
 		if (redirect_host && redirect_xfr) msg.xfr = redirect_xfr;
 		socket.send(JSON.stringify(msg));
+		initmsgs.forEach(m => socket.send(JSON.stringify(m)));
 		//NOTE: It's possible that the server is about to kick us (for any of a number of reasons,
 		//including that the bot is shutting down, we need to be a mod, or the type/group is just
 		//plain wrong). The socket_connected hook is still called in these situations, sending is
@@ -206,4 +208,10 @@ callbacks.demo = data => {
 	elem.className = "shown";
 	clearTimeout(demomsg_timeout);
 	demomsg_timeout = setTimeout(() => elem.className = "", 10000);
+}
+
+//Call this to queue a message for any time we reinitialize the socket.
+export function initmsg(msg) {
+	if (send_socket) send(msg);
+	initmsgs.push(msg);
 }

@@ -351,4 +351,3 @@
     (imitate /activate)
 * Tab completion in command editor doesn't work on "{hour}:{mi<tab>" - possibly due to
   having another brace in there
-* FIXME: Check if ws reconnecting after a bot hop loses subscription. If so, revert e1c9241e.
