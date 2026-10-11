@@ -11,11 +11,11 @@
 mapping need_scope = ([]); //Filled in by create()
 multiset uses_bcaster_auth = (<>); //Commands that will use channel auth rather than voice
 
-Concurrent.Future _low_announce(object channel, string voiceid, string msg, mapping tok, string color) {
+Concurrent.Future _low_announce(object channel, string voiceid, string msg, string color) {
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/announcements?broadcaster_id=%d&moderator_id=%s",
 		channel->userid, voiceid),
-		(["Authorization": "Bearer " + tok->token]),
+		(["Authorization": (int)voiceid]),
 		(["json": ([
 			"message": msg,
 			"color": color,
@@ -25,80 +25,80 @@ Concurrent.Future _low_announce(object channel, string voiceid, string msg, mapp
 
 @"moderator:manage:announcements":
 @"Send an announcement (add suffix for color) -> message":
-Concurrent.Future announce(object c, string v, string m, mapping t) {return _low_announce(c, v, m, t, "primary");}
+Concurrent.Future announce(object c, string v, string m) {return _low_announce(c, v, m, "primary");}
 @"moderator:manage:announcements":
 @"Announce in blue -> message":
-Concurrent.Future announceblue(object c, string v, string m, mapping t) {return _low_announce(c, v, m, t, "blue");}
+Concurrent.Future announceblue(object c, string v, string m) {return _low_announce(c, v, m, "blue");}
 @"moderator:manage:announcements":
 @"Announce in green -> message":
-Concurrent.Future announcegreen(object c, string v, string m, mapping t) {return _low_announce(c, v, m, t, "green");}
+Concurrent.Future announcegreen(object c, string v, string m) {return _low_announce(c, v, m, "green");}
 @"moderator:manage:announcements":
 @"Announce in orange -> message":
-Concurrent.Future announceorange(object c, string v, string m, mapping t) {return _low_announce(c, v, m, t, "orange");}
+Concurrent.Future announceorange(object c, string v, string m) {return _low_announce(c, v, m, "orange");}
 @"moderator:manage:announcements":
 @"Announce in purple -> message":
-Concurrent.Future announcepurple(object c, string v, string m, mapping t) {return _low_announce(c, v, m, t, "purple");}
+Concurrent.Future announcepurple(object c, string v, string m) {return _low_announce(c, v, m, "purple");}
 
-Concurrent.Future chat_settings(object channel, string voiceid, string msg, mapping tok, string field, mixed val, string|void duration) {
+Concurrent.Future chat_settings(object channel, string voiceid, string msg, string field, mixed val, string|void duration) {
 	mapping cfg = ([field: val]);
 	//For /followers and /slow, a parameter specifies the duration too.
 	if (duration) cfg[duration] = (int)msg;
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/settings?broadcaster_id=%d&moderator_id=%s",
 		channel->userid, voiceid),
-		(["Authorization": "Bearer " + tok->token]),
+		(["Authorization": (int)voiceid]),
 		(["method": "PATCH", "json": cfg]),
 	);
 }
 
 @"moderator:manage:chat_settings":
 @"Enable emote-only mode until /emoteonlyoff ->":
-Concurrent.Future emoteonly(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "emote_mode", Val.true);}
+Concurrent.Future emoteonly(object c, string v, string m) {return chat_settings(c, v, m, "emote_mode", Val.true);}
 @"moderator:manage:chat_settings":
 @"End emote-only mode ->":
-Concurrent.Future emoteonlyoff(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "emote_mode", Val.false);}
+Concurrent.Future emoteonlyoff(object c, string v, string m) {return chat_settings(c, v, m, "emote_mode", Val.false);}
 @"moderator:manage:chat_settings":
 @"Enable follower-only mode until /followersoff -> [min-follow-time]":
-Concurrent.Future followers(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "follower_mode", Val.true, "follower_mode_duration");}
+Concurrent.Future followers(object c, string v, string m) {return chat_settings(c, v, m, "follower_mode", Val.true, "follower_mode_duration");}
 @"moderator:manage:chat_settings":
 @"End follower-only mode ->":
-Concurrent.Future followersoff(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "follower_mode", Val.false);}
+Concurrent.Future followersoff(object c, string v, string m) {return chat_settings(c, v, m, "follower_mode", Val.false);}
 @"moderator:manage:chat_settings":
 @"Enable slow mode (eg /slow 3) until /slowoff -> delay-time":
-Concurrent.Future slow(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "slow_mode", Val.true, "slow_mode_wait_time");}
+Concurrent.Future slow(object c, string v, string m) {return chat_settings(c, v, m, "slow_mode", Val.true, "slow_mode_wait_time");}
 @"moderator:manage:chat_settings":
 @"End slow mode ->":
-Concurrent.Future slowoff(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "slow_mode", Val.false);}
+Concurrent.Future slowoff(object c, string v, string m) {return chat_settings(c, v, m, "slow_mode", Val.false);}
 @"moderator:manage:chat_settings":
 @"Enable sub-only mode until /subscribersoff ->":
-Concurrent.Future subscribers(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "subscriber_mode", Val.true);}
+Concurrent.Future subscribers(object c, string v, string m) {return chat_settings(c, v, m, "subscriber_mode", Val.true);}
 @"moderator:manage:chat_settings":
 @"End sub-only mode ->":
-Concurrent.Future subscribersoff(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "subscriber_mode", Val.false);}
+Concurrent.Future subscribersoff(object c, string v, string m) {return chat_settings(c, v, m, "subscriber_mode", Val.false);}
 @"moderator:manage:chat_settings":
 @"Enable unique chat mode (R9K) until /uniquechatoff ->":
-Concurrent.Future uniquechat(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "unique_chat_mode", Val.true);}
+Concurrent.Future uniquechat(object c, string v, string m) {return chat_settings(c, v, m, "unique_chat_mode", Val.true);}
 @"moderator:manage:chat_settings":
 @"End unique-chat mode ->":
-Concurrent.Future uniquechatoff(object c, string v, string m, mapping t) {return chat_settings(c, v, m, t, "unique_chat_mode", Val.false);}
+Concurrent.Future uniquechatoff(object c, string v, string m) {return chat_settings(c, v, m, "unique_chat_mode", Val.false);}
 
-Concurrent.Future delete_chat(object channel, string voiceid, string msg, mapping tok, string|void msgid) {
+Concurrent.Future delete_chat(object channel, string voiceid, string msg, string|void msgid) {
 	//Pass a msgid to delete an individual message, else clears all chat
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/chat?broadcaster_id=%d&moderator_id=%s%s",
 		channel->userid, voiceid, msgid ? "&message_id=" + msgid : ""),
-		(["Authorization": "Bearer " + tok->token]),
+		(["Authorization": (int)voiceid]),
 		(["method": "DELETE"]),
 	);
 }
 @"moderator:manage:chat_messages":
 @"Clear all chat (not commonly necessary) ->":
-Concurrent.Future clear(object c, string v, string m, mapping t) {return delete_chat(c, v, "", t);}
+Concurrent.Future clear(object c, string v, string m) {return delete_chat(c, v, "");}
 @"moderator:manage:chat_messages":
 @"Delete a single message -> message-id":
-Concurrent.Future deletemsg(object c, string v, string m, mapping t) {return delete_chat(c, v, "", t, m);}
+Concurrent.Future deletemsg(object c, string v, string m) {return delete_chat(c, v, "", m);}
 
-__async__ void whack(object channel, string voiceid, string msg, mapping tok, int|void timeout) {
+__async__ void whack(object channel, string voiceid, string msg, int|void timeout) {
 	sscanf(msg, "%s %s", string username, string reason);
 	int uid = await(get_user_id(username || msg));
 	mapping params = (["user_id": uid]);
@@ -112,48 +112,48 @@ __async__ void whack(object channel, string voiceid, string msg, mapping tok, in
 	await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/bans?broadcaster_id=%d&moderator_id=%s",
 		channel->userid, voiceid),
-		(["Authorization": "Bearer " + tok->token]),
+		(["Authorization": (int)voiceid]),
 		(["method": "POST", "json": (["data": params])]), //Not sure why it needs to be wrapped like this
 	));
 }
 @"moderator:manage:banned_users":
 @"Ban a user -> username [reason]":
-Concurrent.Future ban(object c, string v, string m, mapping t) {return whack(c, v, m, t, 0);}
+Concurrent.Future ban(object c, string v, string m) {return whack(c, v, m, 0);}
 @"moderator:manage:banned_users":
 @"Time out a user -> username time [reason]":
-Concurrent.Future timeout(object c, string v, string m, mapping t) {return whack(c, v, m, t, 1);}
+Concurrent.Future timeout(object c, string v, string m) {return whack(c, v, m, 1);}
 @"moderator:manage:banned_users":
 @"Time out a user -> username time [reason]":
-Concurrent.Future t(object c, string v, string m, mapping t) {return whack(c, v, m, t, 1);}
+Concurrent.Future t(object c, string v, string m) {return whack(c, v, m, 1);}
 
 @"moderator:manage:banned_users":
 @"Cancel a ban/timeout -> username":
-Concurrent.Future unban(object channel, string voiceid, string msg, mapping tok) {
+Concurrent.Future unban(object channel, string voiceid, string msg) {
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/bans?broadcaster_id=%d&moderator_id=%s&user_id={{USER}}",
 		channel->userid, voiceid),
-		(["Authorization": "Bearer " + tok->token]),
+		(["Authorization": (int)voiceid]),
 		(["method": "DELETE", "username": msg]),
 	);
 }
 @"moderator:manage:banned_users":
 @"Cancel a ban/timeout -> username":
-Concurrent.Future untimeout(object c, string v, string m, mapping t) {return unban(c, v, m, t);}
+Concurrent.Future untimeout(object c, string v, string m) {return unban(c, v, m);}
 
 mapping(int:int) qso = ([]); //Not retained, will be purged on code reload
 @"moderator:manage:shoutouts":
 @"Send an on-platform shoutout immediately, or fail if it can't be done -> streamername":
-__async__ void shoutout(object channel, string voiceid, string msg, mapping tok, string|void queue) {
+__async__ void shoutout(object channel, string voiceid, string msg, string|void queue) {
 	if (queue == "QUEUE") {
 		int delay = qso[channel->userid] - time();
 		qso[channel->userid] = max(qso[channel->userid], time()) + 121; //Update the queue time before sleeping
-		if (delay > 0) await(task_sleep(delay));
+		if (delay > 0) sleep(delay);
 	}
 	mapping ret = await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/shoutouts?from_broadcaster_id=%d"
 			+ "&to_broadcaster_id={{USER}}&moderator_id=%s",
 			channel->userid, voiceid),
-		(["Authorization": "Bearer " + tok->token]), ([
+		(["Authorization": (int)voiceid]), ([
 			"method": "POST",
 			"username": replace(msg, ({"@", " "}), ""),
 			"return_errors": 1,
@@ -172,16 +172,16 @@ __async__ void shoutout(object channel, string voiceid, string msg, mapping tok,
 }
 @"moderator:manage:shoutouts":
 @"Send an on-platform shoutout, delaying it until the previous /qshoutout is done -> streamername":
-Concurrent.Future qshoutout(object c, string v, string m, mapping t) {return shoutout(c, v, m, t, "QUEUE");}
+Concurrent.Future qshoutout(object c, string v, string m) {return shoutout(c, v, m, "QUEUE");}
 
 @"user:manage:whispers":
 @"Whisper a message to a user -> username message":
-Concurrent.Future whisper(object channel, string voiceid, string msg, mapping tok, string dest, string user) {
+Concurrent.Future whisper(object channel, string voiceid, string msg, string dest, string user) {
 	if (dest != "/w") sscanf(String.trim(msg), "%s %s", user, msg);
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/whispers?from_user_id=%s&to_user_id={{USER}}",
 			voiceid),
-		(["Authorization": "Bearer " + tok->token]), ([
+		(["Authorization": (int)voiceid]), ([
 			"method": "POST",
 			"username": replace(user, ({"@", " "}), ""),
 			"json": (["message": msg]),
@@ -190,13 +190,13 @@ Concurrent.Future whisper(object channel, string voiceid, string msg, mapping to
 }
 @"user:manage:whispers":
 @"Whisper a message to a user -> username message":
-Concurrent.Future w(object c, string v, string m, mapping t) {return whisper(c, v, m, t, "", "");}
+Concurrent.Future w(object c, string v, string m) {return whisper(c, v, m, "", "");}
 
 @"*channel:edit:commercial":
 @"Start an ad break -> [length]":
-Concurrent.Future commercial(object channel, string voiceid, string msg, mapping tok) {
+Concurrent.Future commercial(object channel, string voiceid, string msg) {
 	return twitch_api_request("https://api.twitch.tv/helix/channels/commercial",
-		(["Authorization": channel->userid]), ([
+		(["Authorization": (int)voiceid]), ([
 			"method": "POST",
 			"json": ([
 				"broadcaster_id": (string)channel->userid,
@@ -208,7 +208,7 @@ Concurrent.Future commercial(object channel, string voiceid, string msg, mapping
 
 @"*channel:manage:ads":
 @"Delay the next scheduled ad break by 5 minutes ->":
-__async__ void snooze(object channel, string voiceid, string msg, mapping tok) {
+__async__ void snooze(object channel, string voiceid, string msg) {
 	await(twitch_api_request("https://api.twitch.tv/helix/channels/ads/schedule/snooze?broadcaster_id=" + channel->userid,
 		([]), (["authtype": "app", "method": "POST"]),
 	));
@@ -217,9 +217,9 @@ __async__ void snooze(object channel, string voiceid, string msg, mapping tok) {
 
 @"channel:manage:broadcast": //TODO: bcaster_auth?
 @"Add a VOD marker so you can find back this point for highlighting -> label":
-Concurrent.Future marker(object channel, string voiceid, string msg, mapping tok) {
+Concurrent.Future marker(object channel, string voiceid, string msg) {
 	return twitch_api_request("https://api.twitch.tv/helix/streams/markers",
-		(["Authorization": "Bearer " + tok->token]), ([
+		(["Authorization": (int)voiceid]), ([
 			"method": "POST",
 			"json": ([
 				"user_id": (string)channel->userid,
@@ -231,11 +231,11 @@ Concurrent.Future marker(object channel, string voiceid, string msg, mapping tok
 
 @"channel:manage:raids": //TODO: bcaster_auth?
 @"Raid someone! -> target-streamer":
-Concurrent.Future raid(object channel, string voiceid, string msg, mapping tok) {
+Concurrent.Future raid(object channel, string voiceid, string msg) {
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/raids?from_broadcaster_id=%d&to_broadcaster_id={{USER}}",
 			channel->userid),
-		(["Authorization": "Bearer " + tok->token]), ([
+		(["Authorization": (int)voiceid]), ([
 			"method": "POST",
 			"username": replace(msg, ({"@", " "}), ""),
 		]),
@@ -244,11 +244,11 @@ Concurrent.Future raid(object channel, string voiceid, string msg, mapping tok) 
 
 @"channel:manage:raids": //TODO: bcaster_auth?
 @"Cancel a raid that's been started but hasn't gone through yet ->":
-Concurrent.Future unraid(object channel, string voiceid, string msg, mapping tok) {
+Concurrent.Future unraid(object channel, string voiceid, string msg) {
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/raids?broadcaster_id=%d",
 			channel->userid),
-		(["Authorization": "Bearer " + tok->token]), ([
+		(["Authorization": (int)voiceid]), ([
 			"method": "DELETE",
 		]),
 	);
@@ -256,11 +256,11 @@ Concurrent.Future unraid(object channel, string voiceid, string msg, mapping tok
 
 @"*channel:manage:vips":
 @"Give someone a VIP badge -> username":
-Concurrent.Future vip(object channel, string voiceid, string msg, mapping tok, string|void remove) {
+Concurrent.Future vip(object channel, string voiceid, string msg, string|void remove) {
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/channels/vips?broadcaster_id=%d&user_id={{USER}}",
 			channel->userid),
-		(["Authorization": channel->userid]), ([
+		(["Authorization": (int)voiceid]), ([
 			"method": remove == "REMOVE" ? "DELETE" : "POST",
 			"username": replace(msg, ({"@", " "}), ""),
 		]),
@@ -268,29 +268,29 @@ Concurrent.Future vip(object channel, string voiceid, string msg, mapping tok, s
 }
 @"*channel:manage:vips":
 @"Remove someone's VIP badge -> username":
-Concurrent.Future unvip(object c, string v, string m, mapping t) {return vip(c, v, m, t, "REMOVE");}
+Concurrent.Future unvip(object c, string v, string m) {return vip(c, v, m, "REMOVE");}
 
-@"channel:manage:moderators": //TODO: bcaster_auth?
+@"channel:manage:moderators": //Not broadcaster auth since a lead mod can do this too
 @"Give someone a mod sword -> username":
-Concurrent.Future mod(object channel, string voiceid, string msg, mapping tok, string|void remove) {
+Concurrent.Future mod(object channel, string voiceid, string msg, string|void remove) {
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=%d&user_id={{USER}}",
 			channel->userid),
-		(["Authorization": "Bearer " + tok->token]), ([
+		(["Authorization": (int)voiceid]), ([
 			"method": remove == "REMOVE" ? "DELETE" : "POST",
 			"username": replace(msg, ({"@", " "}), ""),
 		]),
 	);
 }
-@"channel:manage:moderators": //TODO: bcaster_auth?
+@"channel:manage:moderators":
 @"Remove a mod sword -> username":
-Concurrent.Future unmod(object c, string v, string m, mapping t) {return mod(c, v, m, t, "REMOVE");}
+Concurrent.Future unmod(object c, string v, string m) {return mod(c, v, m, "REMOVE");}
 
 Regexp.SimpleRegexp bicap = Regexp.SimpleRegexp("[a-z][A-Z]");
 string bicap_to_snake(string pair) {return pair / 1 * "_";}
 @"user:manage:chat_color":
 @"Set your chat color. Words eg GoldenRod, or hex eg #663399 -> color":
-Concurrent.Future color(object channel, string voiceid, string msg, mapping tok) {
+Concurrent.Future color(object channel, string voiceid, string msg) {
 	if (msg == "") return Concurrent.resolve(1); //No error return here for simplicity (we can't send to just the user anyway)
 	//Twitch expects users to write BiCapitalized colour names eg "GoldenRod", but
 	//the API expects them in snake_case instead eg "golden_rod". Don't add any
@@ -299,7 +299,7 @@ Concurrent.Future color(object channel, string voiceid, string msg, mapping tok)
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/color?user_id=%s&color=%s",
 			voiceid, Protocols.HTTP.uri_encode(msg)),
-		(["Authorization": "Bearer " + tok->token]), ([
+		(["Authorization": (int)voiceid]), ([
 			"method": "PUT",
 		]),
 	);
@@ -307,11 +307,11 @@ Concurrent.Future color(object channel, string voiceid, string msg, mapping tok)
 
 @"moderator:manage:shield_mode":
 @"Engage shield mode immediately ->":
-Concurrent.Future shield(object channel, string voiceid, string msg, mapping tok, string|void remove) {
+Concurrent.Future shield(object channel, string voiceid, string msg, string|void remove) {
 	return twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/shield_mode?broadcaster_id=%d&moderator_id=%s",
 			channel->userid, voiceid),
-		(["Authorization": "Bearer " + tok->token]), ([
+		(["Authorization": (int)voiceid]), ([
 			"method": "PUT",
 			"json": (["is_active": remove == "REMOVE" ? Val.false : Val.true]),
 		]),
@@ -319,19 +319,19 @@ Concurrent.Future shield(object channel, string voiceid, string msg, mapping tok
 }
 @"moderator:manage:shield_mode":
 @"Disengage shield mode ->":
-Concurrent.Future shieldoff(object c, string v, string m, mapping t) {return shield(c, v, m, t, "REMOVE");}
+Concurrent.Future shieldoff(object c, string v, string m) {return shield(c, v, m, "REMOVE");}
 
 //TODO: Should there be a corresponding special trigger when the user acknowledges it?
 @"moderator:manage:warnings":
 @"Give a moderatorial warning to a user - they must acknowledge it to continue chatting -> username warning":
-__async__ void warn(object channel, string voiceid, string msg, mapping tok) {
+__async__ void warn(object channel, string voiceid, string msg) {
 	sscanf(msg, "%s %s", string user, string reason);
 	if (!user) return; //Must have a reason
 	int uid = await(get_user_id(user));
 	await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/moderation/warnings?broadcaster_id=%d&moderator_id=%s",
 			channel->userid, voiceid),
-		(["Authorization": "Bearer " + tok->token]), ([
+		(["Authorization": (int)voiceid]), ([
 			"method": "POST",
 			"json": (["data": (["user_id": (string)uid, "reason": reason])]),
 		]),
@@ -340,14 +340,14 @@ __async__ void warn(object channel, string voiceid, string msg, mapping tok) {
 
 @"user:write:chat":
 @"Send a chat message using the API ->":
-Concurrent.Future|zero chat(object channel, string voiceid, string msg, mapping tok, string dest, string target) {
+Concurrent.Future|zero chat(object channel, string voiceid, string msg, string dest, string target) {
 	if (!channel->userid) {
 		//HACK: Messages sent to the !demo channel get logged to the console.
 		channel->chatlog("[DEMO] ", (["displayname": "!demo"]), msg);
 		return 0;
 	}
 	return twitch_api_request("https://api.twitch.tv/helix/chat/messages",
-		(["Authorization": "Bearer " + tok->token]), ([
+		(["Authorization": (int)voiceid]), ([
 			"method": "POST",
 			"json": ([
 				"broadcaster_id": (string)channel->userid,
@@ -393,7 +393,7 @@ string|Concurrent.Future send_chat_command(object channel, string voiceid, strin
 		channel->report_error("ERROR", "This command requires " + need_scope[cmd] + " permission", msg);
 		return Concurrent.resolve(1); //Note that this will still suppress the chat message.
 	}
-	return this[cmd](channel, voiceid, msg, tok, dest, target);
+	return this[cmd](channel, voiceid, msg, dest, target);
 }
 
 protected void create(string name) {
