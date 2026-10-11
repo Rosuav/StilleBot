@@ -140,15 +140,11 @@ Concurrent.Future unban(object channel, string voiceid, string msg) {
 @"Cancel a ban/timeout -> username":
 Concurrent.Future untimeout(object c, string v, string m) {return unban(c, v, m);}
 
-mapping(int:int) qso = ([]); //Not retained, will be purged on code reload
 @"moderator:manage:shoutouts":
 @"Send an on-platform shoutout immediately, or fail if it can't be done -> streamername":
-__async__ void shoutout(object channel, string voiceid, string msg, string|void queue) {
-	if (queue == "QUEUE") {
-		int delay = qso[channel->userid] - time();
-		qso[channel->userid] = max(qso[channel->userid], time()) + 121; //Update the queue time before sleeping
-		if (delay > 0) sleep(delay);
-	}
+//Delayed shoutouts retain the channel ID, not the channel object.
+__async__ void shoutout(object|int channel, string voiceid, string msg) {
+	if (intp(channel)) channel = G->G->irc->id[channel];
 	mapping ret = await(twitch_api_request(sprintf(
 		"https://api.twitch.tv/helix/chat/shoutouts?from_broadcaster_id=%d"
 			+ "&to_broadcaster_id={{USER}}&moderator_id=%s",
@@ -163,16 +159,19 @@ __async__ void shoutout(object channel, string voiceid, string msg, string|void 
 		//Something went wrong. Likely possibilities:
 		//400 - no self-shoutouts, no offline shoutouts
 		//429 - either too quick on the shoutouts, or you just shouted that streamer out
-		//TODO: Log this somewhere for the broadcaster to see
-		if (ret->status == 429 && queue == "QUEUE" && !has_value(ret->message, "the specified streamer")) {
-			werror("** qshoutout failure: Got 429 error, qso %O time %O\n", qso[channel->userid], time());
-		}
-		else channel->report_error("WARN", ret->message, "/shoutout " + msg);
+		channel->report_error("WARN", ret->message, "/shoutout " + msg);
 	}
 }
+
+mapping(int:int) qso = ([]); //Not retained, will be purged on code reload
 @"moderator:manage:shoutouts":
 @"Send an on-platform shoutout, delaying it until the previous /qshoutout is done -> streamername":
-Concurrent.Future qshoutout(object c, string v, string m) {return shoutout(c, v, m, "QUEUE");}
+Concurrent.Future qshoutout(object channel, string voiceid, string msg) {
+	int delay = qso[channel->userid] - time();
+	qso[channel->userid] = max(qso[channel->userid], time()) + 121; //Update the queue time before sleeping
+	if (delay > 0) {xfr_call_out(shoutout, delay, channel->userid, voiceid, msg); return Concurrent.resolve(1);}
+	return shoutout(channel, voiceid, msg);
+}
 
 @"user:manage:whispers":
 @"Whisper a message to a user -> username message":
@@ -396,7 +395,9 @@ string|Concurrent.Future send_chat_command(object channel, string voiceid, strin
 	return this[cmd](channel, voiceid, msg, dest, target);
 }
 
+array(string) xco_path() {return ({"twitch_apis"});}
 protected void create(string name) {
+	G->G->twitch_apis = this; //For xfr_call_out
 	G->G->send_chat_command = send_chat_command;
 	mapping voice_scopes = ([]), scope_commands = ([]);
 	mapping slashcommands = (["me": "Describe an action -> msg"]);
