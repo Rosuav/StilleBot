@@ -391,6 +391,23 @@ void websocket_cmd_irc_reconnect(mapping(string:mixed) conn, mapping(string:mixe
 	G->G->on_botservice_change();
 }
 
+void demo_online_offline(mapping(string:mixed) conn, string dir) {
+	if (conn->group != "control") return;
+	object channel = G->G->irc->id[0];
+	if (!channel) return;
+	log(conn, "Bringing !demo " + dir);
+	mapping event = ([
+		"started_at": strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(time())), //Only relevant to online
+		"broadcaster_user_name": "!demo",
+		"broadcaster_user_id": "0",
+	]);
+	foreach (G->G->eventhooks["stream." + dir + "=1"] || ([]); string name; function func)
+		if (mixed ex = name != "" && catch (func(channel, event)))
+			werror("Error in hook %s %O\n%s", name, event, describe_backtrace(ex));
+}
+void websocket_cmd_demo_online (mapping(string:mixed) conn, mapping(string:mixed) msg) {demo_online_offline(conn, "online");}
+void websocket_cmd_demo_offline(mapping(string:mixed) conn, mapping(string:mixed) msg) {demo_online_offline(conn, "offline");}
+
 void websocket_cmd_activate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->group != "control") return;
 	log(conn, "Activating bot on " + G->G->instance_config->local_address);
