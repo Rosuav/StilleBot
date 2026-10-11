@@ -114,6 +114,7 @@ array xfr_out() {
 		}) continue;
 		[function f, array args, mixed id] = m_delete(G->G->xco, xco_id);
 		int delay = remove_call_out(id);
+		if (undefinedp(delay)) continue;
 		object obj = function_object(f);
 		ret += ({({
 			obj->xco_path() + ({function_name(f)}),
