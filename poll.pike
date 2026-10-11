@@ -669,7 +669,9 @@ void stream_offline(object channel, mapping data) {
 		"{uptime_hms}": describe_time_short(uptime),
 		"{uptime_english}": describe_time(uptime),
 	]));
-	stream_reset_callout[channel->userid] = call_out(delayed_stream_reset, 1800, channel->userid);
+	//Hack: For the demo channel, reset after just five minutes offline, since this is used
+	//for testing the reset signal rather than actually being a channel.
+	stream_reset_callout[channel->userid] = xfr_call_out(delayed_stream_reset, channel->userid ? 1800 : 300, channel->userid);
 }
 
 //NOTE: Polling should not be necessary long-term. However, it still has some value: startup checks.
