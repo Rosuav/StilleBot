@@ -340,7 +340,12 @@ __async__ void warn(object channel, string voiceid, string msg, mapping tok) {
 
 @"user:write:chat":
 @"Send a chat message using the API ->":
-Concurrent.Future chat(object channel, string voiceid, string msg, mapping tok, string dest, string target) {
+Concurrent.Future|zero chat(object channel, string voiceid, string msg, mapping tok, string dest, string target) {
+	if (!channel->userid) {
+		//HACK: Messages sent to the !demo channel get logged to the console.
+		channel->chatlog("[DEMO] ", (["displayname": "!demo"]), msg);
+		return 0;
+	}
 	return twitch_api_request("https://api.twitch.tv/helix/chat/messages",
 		(["Authorization": "Bearer " + tok->token]), ([
 			"method": "POST",
