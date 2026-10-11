@@ -163,7 +163,7 @@ __async__ void shoutout(object|int channel, string voiceid, string msg) {
 	}
 }
 
-mapping(int:int) qso = ([]); //Not retained, will be purged on code reload
+mapping(int:int) qso = ([]); //Not retained, will be purged on code reload (should this be sent in a transfer packet?)
 @"moderator:manage:shoutouts":
 @"Send an on-platform shoutout, delaying it until the previous /qshoutout is done -> streamername":
 Concurrent.Future qshoutout(object channel, string voiceid, string msg) {
