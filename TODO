@@ -349,3 +349,4 @@
     (imitate /activate)
 * Tab completion in command editor doesn't work on "{hour}:{mi<tab>" - possibly due to
   having another brace in there
+* Command editor summary for a foreach says "One of"
