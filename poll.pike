@@ -717,8 +717,10 @@ int(1bit) is_active; //Last-known active state
 	#endif
 }
 
-protected void create(string|void name)
-{
+array(string) xco_path() {return ({"poll"});}
+
+protected void create(string|void name) {
+	G->G->poll = this; //For the sake of xfr_call_out()
 	is_active = is_active_bot();
 	remove_call_out(G->G->poll_call_out);
 	#if !constant(INTERACTIVE)
