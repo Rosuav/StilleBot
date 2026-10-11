@@ -1,6 +1,7 @@
 inherit hook;
 inherit irc_callback;
 inherit annotated;
+inherit transferrable;
 
 mapping simple_regex_cache = ([]); //Emptied on code reload.
 object substitutions = Regexp.PCRE("(\\$ *[*?A-Za-z0-9|:.]* *\\$)|({ *[A-Za-z0-9_@|.]+ *})");
@@ -1921,19 +1922,7 @@ __async__ void establish_hook_notification(string|int channelid, string hook, ma
 	int now_active = is_active_bot();
 	werror("kick_when_inactive: was %O now %O\n", is_active, now_active);
 	if (now_active && !is_active) call_out(reconnect, 0); //Just become active? Make sure we're connected.
-	if (!now_active) {
-		remove_call_out(G->G->conduit_fallen_over);
-		//QUIRK: If the bot hops while there are "until reset" messages waiting, they
-		//are not sent to the other bot, but it would be *extremely* confusing if the
-		//messages got deferred until a LATER stream goes online and offline. So to
-		//ensure that the very weirdest behaviour doesn't happen, we clear this out
-		//when we become inactive.
-		//Note that it's possible for the stream reset message to simply not happen,
-		//mainly if the bot hops during the half-hour delay. This will likely have
-		//other problems than just lost messages, and should eventually be properly
-		//solved.
-		m_clear(stream_reset_messages);
-	}
+	if (!now_active) remove_call_out(G->G->conduit_fallen_over);
 	is_active = now_active;
 	string other = !is_active && get_active_bot();
 	if (!other) return; //We're active (or uncertain), don't kick clients.
@@ -2036,6 +2025,19 @@ __async__ void reconnect() {
 //the bot's intrisic voice, but to an arbitrary channel. Instead, since messages should generally only
 //be sent to channels where the bot is active, use the channel object's send() method.
 void send_message(string chan, string msg) {if (irc_connections[0]) irc_connections[0]->send(chan, msg);}
+
+void xfr_in(mapping resets) {
+	//Merge the incoming resets with any we already have
+	foreach (resets; string chanid; array msgs) {
+		resets[(int)chanid] += msgs;
+	}
+}
+
+mapping xfr_out() {
+	mapping ret = (mapping(string:mixed))stream_reset_messages; //JSON requires string keys
+	m_clear(stream_reset_messages);
+	return ret;
+}
 
 __async__ void setup_http_server() {
 	string http_address = G->G->instance_config->http_address;

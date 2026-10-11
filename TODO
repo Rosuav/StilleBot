@@ -302,7 +302,6 @@
 * When the bot hops under stable circumstances (if done in advance of an outage, rather
   than in response to an outage), package up a set of transients and transfer them
   destructively. Add more to the xfr package:
-  - G->G->stream_reset_messages
   - Anything that sleeps may need to be checked eg twitch_apis::shoutout
   - Others? Note that this is not an all-or-nothing project; as soon as any aspect is
     implemented, that will see the benefit, and the package can be augmented after.
