@@ -2,6 +2,7 @@ inherit annotated;
 inherit hook;
 inherit http_websocket;
 inherit builtin_command;
+inherit transferrable;
 constant markdown = #"# Minigames for $$channel$$
 
 Want to add some fun minigames to your channel? These are all built using Twitch
@@ -687,8 +688,6 @@ constant vars_provided = ([
 	"{newhp}": "New boss HP if one just got slain",
 ]);
 
-//Should this be stored somewhere other than ephemeral memory? If the bot hops, this gets lost, with the (tragic) result
-//that people can claim an additional reward that stream without getting shamed for it.
 @retain: mapping already_claimed = ([]);
 @retain: mapping rps_predictions_pending = ([]); //No big deal if this is lost, just means the prediction won't autocomplete
 __async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
@@ -817,6 +816,24 @@ __async__ mapping message_params(object channel, mapping person, array param, ma
 	if (mapping game = games->boss) {
 		if (game->autoreset) reset_boss(channel, sections->boss | game);
 	}
+}
+
+void xfr_in(array claimed) {
+	foreach (claimed, string ids) {
+		sscanf(ids, "%d:%d:%d", int chanid, int userid, int ts);
+		if (!already_claimed[chanid]) already_claimed[chanid] = ([]);
+		already_claimed[chanid][userid] = ts;
+	}
+}
+
+array xfr_out() {
+	array claimed = ({ });
+	int limit = time() - 3600 * 48; //Assume you can't be online for >48 hours
+	foreach (already_claimed; int chanid; mapping users)
+		foreach (users; int userid; int ts)
+			if (ts > limit) claimed += ({sprintf("%d:%d:%d", chanid, userid, ts)});
+	m_clear(already_claimed);
+	return claimed;
 }
 
 protected void create(string name) {::create(name);}
