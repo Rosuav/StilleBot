@@ -441,7 +441,7 @@ __async__ void fetch_xfr(mapping(string:mixed)|void conn) {
 __async__ void websocket_cmd_transfer(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (conn->group != "control") return;
 	log(conn, "Transferring bot...");
-	int cutoff_time = time() + 10; //It should normally be pretty quick. Should the timeout go up to 30s?
+	int cutoff_time = time() + 30; //It should normally be pretty quick. Sometimes it exceeds 10 seconds (before reaching full stability) but shouldn't exceed 30.
 	//This should take care of everything with a single click.
 	fetch_xfr(conn);
 	int may_other_down = 1, may_self_up = 1;
