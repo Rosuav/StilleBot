@@ -53,7 +53,7 @@ class SugarBuyer(int VERSION) {
 						pending->success(pem);
 					//And those interested will have stuck SSL contexts into a separate array.
 					//These ones remain, so multiple notifications can be sent to the same context.
-					werror("Replacing certs - SugarBuyer %O\n", hash_value(this));
+					werror("Replacing certs - SugarBuyer %O fn %O\n", hash_value(this), fn);
 					if (array interested = sugarmill_notify[fn])
 						replace_cert(interested[*], pem);
 					continue;
