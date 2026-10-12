@@ -379,13 +379,9 @@ __async__ void reconnect(int force, int|void both) {
 		}
 		m_clear(pg_connections); //Mutate the existing mapping so all clones of the module see that there are no connections
 	}
-	//FIXME: This is leaking contexts. Each one requests the certificate, and registers itself as
-	//needing to know about updates to that cert, which means that it's indefinitely retained in
-	//the sugarbuyer's list - which grows without bound. Should there be a single superglobal ctx
-	//for all database connections, created only if one doesn't exist? Would that be safe?
-	object ctx = await(provide_ssl_certificate("db.rosuav.com"));
+	if (!G->G->database_ssl_context) G->G->database_ssl_context = await(provide_ssl_certificate("db.rosuav.com"));
 	foreach (database_ips, string host) {
-		if (!pg_connections[host]) await((mixed)connect(ctx, host));
+		if (!pg_connections[host]) await((mixed)connect(G->G->database_ssl_context, host));
 		if (!both && host == G->G->instance_config->local_address) _have_fastdb(host);
 		if (!both && !pg_connections[host]->readonly) {_have_livedb(host); return;}
 	}
