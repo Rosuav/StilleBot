@@ -377,7 +377,7 @@ __async__ void reconnect(int force, int|void both) {
 			if (db->conn) db->conn->close();
 			destruct(db->conn); //Might not be necessary with SSLDatabase
 		}
-		m_delete(pg_connections, indices(pg_connections)[*]); //Mutate the existing mapping so all clones of the module see that there are no connections
+		m_clear(pg_connections); //Mutate the existing mapping so all clones of the module see that there are no connections
 	}
 	object ctx = await(provide_ssl_certificate("db.rosuav.com"));
 	foreach (database_ips, string host) {
