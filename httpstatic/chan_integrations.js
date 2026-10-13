@@ -115,7 +115,7 @@ export function sockmsg_makeship_lookup(msg) {
 	set_content("#campaigndetails", [
 		B(msg.title),
 		//P(["Tags:", msg.tags.map(t => [" ", CODE({style: "margin-left: 4px"}, t)])]),
-		P("Pledges: " + (msg.pledge_count||0)),
+		//P("Pledges: " + (msg.pledge_count||0)),
 		UL(Object.entries(date_labels).map(([id, lbl]) => {
 			const date = msg.metadata.date[id]; if (!date) return;
 			const d = new Date(date);

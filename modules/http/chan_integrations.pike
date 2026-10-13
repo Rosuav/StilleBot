@@ -526,10 +526,12 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		if (!meta[f->namespace]) meta[f->namespace] = ([]);
 		meta[f->namespace][f->key] = f->value;
 	}
+	int productid;
+	if (product->id) sscanf(product->id, "gid://shopify/Product/%d", productid);
 	return (["cmd": "makeship_lookup",
 		"url": url,
-		"pledge_count": props->pledgeCount,
-		"productid": product->id,
+		"pledge_count": props->pledgeCount, //Might not be useful, actually
+		"productid": productid,
 		"metadata": meta,
 		"title": product->title,
 		"tags": product->tags,
