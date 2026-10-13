@@ -1,5 +1,5 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, BUTTON, FORM, IMG, INPUT, LI, STRONG, TD, TR} = choc; //autoimport
+const {A, B, BUTTON, CODE, FORM, IMG, INPUT, LI, P, STRONG, TD, TIME, TR, UL} = choc; //autoimport
 
 export function render(data) {
 	//Note that the entire token will never be shown, only the last few characters
@@ -77,4 +77,49 @@ export function sockmsg_resyncpatreon(msg) {
 		]),
 	])));
 	DOM("#patrondlg").showModal();
+}
+
+function DATE(date) {
+	let day = date.getDate();
+	switch (day) {
+		case 1: case 21: day += "st"; break;
+		case 2: case 22: day += "nd"; break;
+		case 3: case 23: day += "rd"; break;
+		default: day += "th";
+	}
+	return TIME({datetime: date.toISOString(), title: date.toLocaleString()}, [
+		//This abbreviated format assumes English and shows just the date. The hover uses your locale.
+		day + " " + "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[date.getMonth()] + " " + date.getFullYear(),
+	]);
+}
+
+on("click", "#lookup", e => ws_sync.send({cmd: "makeship_lookup", url: DOM("#campaignurl").value}));
+export function sockmsg_makeship_lookup(msg) {
+	if (msg.error) return set_content("#campaigndetails", msg.error).classList = "error";
+	if (msg.url && msg.url !== DOM("#campaignurl").value) DOM("#campaignurl").value = msg.url;
+	//All of the relevant dates are stored in meta.dates[], keyed by some relevant ID.
+	//Sort them by date, and show the campaign progress both past and future.
+	const date_labels = {
+		petitionLaunchDate: "Petition!",
+		petitionEndDate: "Petition ends",
+		paymentDue: "Pledges due", // ? Not sure exactly what payment is due on this date; it happens prior to the campaign's launch.
+		launch: "Campaign!",
+		enddate: "Campaign ends",
+		delivery: "Plushies are delivered!",
+	};
+	//For simplicity, not actually sorting the dates per se, just using the order given above.
+	//However, each date will individually be checked for "past" vs "future", so if they are
+	//ever out of order (which may happen if a keyword is reused for multiple meanings), you
+	//will still see which ones are upcoming.
+	const now = +new Date;
+	set_content("#campaigndetails", [
+		B(msg.title),
+		//P(["Tags:", msg.tags.map(t => [" ", CODE({style: "margin-left: 4px"}, t)])]),
+		P("Pledges: " + (msg.pledge_count||0)),
+		UL(Object.entries(date_labels).map(([id, lbl]) => {
+			const date = msg.metadata.date[id]; if (!date) return;
+			const d = new Date(date);
+			return LI({class: +d > now ? "date upcoming" : "date past"}, [DATE(d), " ", lbl]);
+		})),
+	]).classList = "";
 }
