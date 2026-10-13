@@ -498,6 +498,39 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	return (["cmd": "oauthpopup", "uri": (string)uri]);
 }
 
+//If the returned mapping has an "error" key, something went wrong, otherwise it gives a basic summary.
+__async__ mapping makeship_lookup(string url) {
+	Protocols.HTTP.Promise.Result res = await(Protocols.HTTP.Promise.get_url(url,
+		Protocols.HTTP.Promise.Arguments((["headers": ([
+			"Accept": "text/html",
+			"Accept-Language": "en-US,en;q=0.9",
+			"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 MustardMine/2026.10",
+		])]))));
+	if (res->status != 200) return (["error": "Unable to fetch Makeship campaign - check the URL"]);
+	string data = res->get();
+	sscanf(data, "%*s<script id=\"__NEXT_DATA__\" type=\"application/json\">%s</script>", string json);
+	if (!json) return (["error": "Unable to read Makeship campaign - check the URL or contact Rosuav"]);
+	mapping info = Standards.JSON.decode(json);
+	mapping props = info->props->?pageProps;
+	mapping product = props->?product;
+	if (!product) return (["error": "Unable to read Makeship campaign - check the URL or contact Rosuav"]);
+	mapping meta = ([]);
+	foreach (product->metafields, mapping|Val.Null f) if (mappingp(f)) {
+		if (!meta[f->namespace]) meta[f->namespace] = ([]);
+		meta[f->namespace][f->key] = f->value;
+	}
+	int productid;
+	if (product->id) sscanf(product->id, "gid://shopify/Product/%d", productid);
+	return ([
+		"url": url,
+		"pledge_count": props->pledgeCount, //Might not be useful, actually
+		"productid": productid,
+		"metadata": meta,
+		"title": product->title,
+		"tags": product->tags,
+	]);
+}
+
 @"is_mod": @"demo_ok": __async__ mapping wscmd_makeship_lookup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!stringp(msg->url)) return (["error": "Bad message"]);
 	string url = msg->url;
@@ -507,35 +540,82 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	if (uri->host == "makeship.com") uri->host = "www.makeship.com"; //They redirect us anyway, so shortcut the process
 	url = (string)uri;
 	if (!has_prefix(url, "https://www.makeship.com/")) return (["cmd": "makeship_lookup", "error": "Invalid campaign URL, please try again"]);
-	Protocols.HTTP.Promise.Result res = await(Protocols.HTTP.Promise.get_url(url,
-		Protocols.HTTP.Promise.Arguments((["headers": ([
-			"Accept": "text/html",
-			"Accept-Language": "en-US,en;q=0.9",
-			"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 MustardMine/2026.10",
-		])]))));
-	if (res->status != 200) return (["cmd": "makeship_lookup", "error": "Unable to fetch Makeship campaign - check the URL"]);
-	string data = res->get();
-	sscanf(data, "%*s<script id=\"__NEXT_DATA__\" type=\"application/json\">%s</script>", string json);
-	if (!json) return (["cmd": "makeship_lookup", "error": "Unable to read Makeship campaign - check the URL or contact Rosuav"]);
-	mapping info = Standards.JSON.decode(json);
-	mapping props = info->props->?pageProps;
-	mapping product = props->?product;
-	if (!product) return (["cmd": "makeship_lookup", "error": "Unable to read Makeship campaign - check the URL or contact Rosuav"]);
-	mapping meta = ([]);
-	foreach (product->metafields, mapping|Val.Null f) if (mappingp(f)) {
-		if (!meta[f->namespace]) meta[f->namespace] = ([]);
-		meta[f->namespace][f->key] = f->value;
+	return await(makeship_lookup(url)) | (["cmd": "makeship_lookup"]);
+}
+
+__async__ void check_makeship() {
+	//Check all active Makeship campaigns to see if they've changed phase
+	//Scheduled for the next time one is expected to change phase, and also
+	//run any time this bot becomes active.
+	remove_call_out(G->G->check_makeship_call_out);
+	mapping cfg = await(G->G->DB->load_config(1, "makeship"));
+	if (!cfg->channels) return;
+	int now = time(), changed = 0;
+	foreach (cfg->channels; int chanid; mapping info) {
+		if (info->next_phase_time <= now) foreach (await(G->G->DB->load_config(chanid, "makeship"))->campaigns, mapping cp) {
+			//Any campaign that was scheduled to have changed phase by now, do a full re-check and re-query.
+			//Note that this will potentially update the master list multiple times; this will only happen
+			//if multiple campaigns have changed state, which shouldn't happen unless we've lagged out badly
+			//(or Makeship batches their campaign starts/ends). A bit of extra database load is no big deal.
+			await(makeship_track(chanid, cp->url));
+			changed = 1;
+		}
 	}
-	int productid;
-	if (product->id) sscanf(product->id, "gid://shopify/Product/%d", productid);
-	return (["cmd": "makeship_lookup",
-		"url": url,
-		"pledge_count": props->pledgeCount, //Might not be useful, actually
-		"productid": productid,
-		"metadata": meta,
-		"title": product->title,
-		"tags": product->tags,
-	]);
+	if (!changed) {
+		//If any campaign has changed, the call_out will have been retriggered inside makeship_track().
+		//Otherwise, retrigger it now, at the timestamp of the earliest next_phase_time.
+		int next_phase_time = min(@cfg->next_phase_time);
+		if (next_phase_time < 0xf0000000000000) G->G->check_makeship_call_out = call_out(check_makeship, next_phase_time - time());
+	}
+}
+
+__async__ void makeship_track(int chanid, string url) {
+	mapping data = await(makeship_lookup(url));
+	if (data->error) return; //Shouldn't happen - should have done a lookup before getting to this point
+	//Okay. Question: What phase are we in? Pre-petition, petition, interstage, campaign, post-campaign?
+	//(Note that "post-campaign" includes everything from manufacturing to delivery to arrival and forever after,
+	//even though these are very important distinctions to the humans.)
+	mapping dates = data->metadata->date;
+	int now = time();
+	foreach (({"petitionLaunchDate", "petitionEndDate", "launch", "enddate"}), string date) {
+		int tm = dates[date] && Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", dates[date])->unix_time();
+		if (tm) {
+			data->next_phase = date;
+			data->next_phase_time = tm;
+			break;
+		}
+	}
+	if (!data->next_phase) {data->next_phase = "done"; data->next_phase_time = 0xf0000000000000;}
+	array next_phases; int next_phase_time;
+	await(G->G->DB->mutate_config(chanid, "makeship") {mapping cfg = __ARGS__[0];
+		if (!cfg->campaigns) cfg->campaigns = ({ });
+		int idx = search(cfg->campaigns->productid, data->productid);
+		if (idx == -1) cfg->campaigns += ({data});
+		else cfg->campaigns[idx] |= data;
+		next_phases = cfg->next_phase - ({"done"});
+		next_phase_time = min(@cfg->next_phase_time);
+	});
+	await(G->G->DB->mutate_config(1, "makeship") {mapping cfg = __ARGS__[0];
+		if (!cfg->channels) cfg->channels = ([]);
+		if (!sizeof(next_phases)) m_delete(cfg->channels, chanid); //Once the last campaign finishes, the channel no longer needs to be tracked.
+		else cfg->channels[chanid] = ([
+			"next_phases": next_phases,
+			"next_phase_time": next_phase_time,
+		]);
+		next_phase_time = min(@values(cfg->channels)->next_phase_time);
+	});
+	send_updates_all("#" + chanid);
+	if (has_value(next_phases, "petitionEndDate") || has_value(next_phases, "enddate")) {
+		//TODO: Start the poll if it isn't already going
+	}
+	//Run a full check the next time something is expected to change phase
+	remove_call_out(G->G->check_makeship_call_out);
+	if (next_phase_time < 0xf0000000000000) G->G->check_makeship_call_out = call_out(check_makeship, next_phase_time - time());
+}
+
+@"is_mod": __async__ mapping wscmd_makeship_track(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!stringp(msg->url)) return (["error": "Bad message"]);
+	makeship_track(channel->userid, msg->url);
 }
 
 protected void create(string name) {::create(name);}
