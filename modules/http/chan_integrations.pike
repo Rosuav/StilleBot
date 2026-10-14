@@ -550,7 +550,7 @@ __async__ void check_makeship() {
 	remove_call_out(G->G->check_makeship_call_out);
 	mapping cfg = await(G->G->DB->load_config(1, "makeship"));
 	if (!cfg->channels) return;
-	int now = time(), changed = 0;
+	int now = time(), changed = 0, active = 0;
 	foreach (cfg->channels; int chanid; mapping info) {
 		if (info->next_phase_time <= now) foreach (await(G->G->DB->load_config(chanid, "makeship"))->campaigns, mapping cp) {
 			//Any campaign that was scheduled to have changed phase by now, do a full re-check and re-query.
@@ -560,12 +560,16 @@ __async__ void check_makeship() {
 			await(makeship_track(chanid, cp->url));
 			changed = 1;
 		}
+		if (has_value(info->next_phases, "petitionEndDate") || has_value(info->next_phases, "enddate")) active = 1;
 	}
 	if (!changed) {
 		//If any campaign has changed, the call_out will have been retriggered inside makeship_track().
 		//Otherwise, retrigger it now, at the timestamp of the earliest next_phase_time.
 		int next_phase_time = min(@cfg->next_phase_time);
 		if (next_phase_time < 0xf0000000000000) G->G->check_makeship_call_out = call_out(check_makeship, next_phase_time - time());
+		if (active) {
+			//TODO: Start the poll if it isn't already going
+		}
 	}
 }
 
