@@ -569,6 +569,12 @@ __async__ void check_makeship() {
 	}
 }
 
+@hook_database_settings: void check_makeship_when_active(mapping settings) {
+	//On startup, code reload, and any time the active bot changes, check to see if we need to start pinging.
+	//This has minor overhead of querying one config even if there are no campaigns of interest.
+	if (is_active_bot() && find_call_out(G->G->check_makeship_call_out) == -1) check_makeship();
+}
+
 __async__ void makeship_track(int chanid, string url) {
 	mapping data = await(makeship_lookup(url));
 	if (data->error) return; //Shouldn't happen - should have done a lookup before getting to this point
@@ -618,4 +624,4 @@ __async__ void makeship_track(int chanid, string url) {
 	makeship_track(channel->userid, msg->url);
 }
 
-protected void create(string name) {::create(name);}
+protected void create(string name) {::create(name); call_out(check_makeship_when_active, 2, ([]));}
