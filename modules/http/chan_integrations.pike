@@ -589,7 +589,7 @@ __async__ void makeship_track(int chanid, string url) {
 	int now = time();
 	foreach (({"petitionLaunchDate", "petitionEndDate", "launch", "enddate"}), string date) {
 		int tm = dates[date] && Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", dates[date])->unix_time();
-		if (tm) {
+		if (tm > now) {
 			data->next_phase = date;
 			data->next_phase_time = tm;
 			break;
