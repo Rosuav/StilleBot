@@ -602,13 +602,13 @@ __async__ void makeship_track(int chanid, string url) {
 		int idx = search(cfg->campaigns->productid, data->productid);
 		if (idx == -1) cfg->campaigns += ({data});
 		else cfg->campaigns[idx] |= data;
-		next_phases = cfg->next_phase - ({"done"});
-		next_phase_time = min(@cfg->next_phase_time);
+		next_phases = cfg->campaigns->next_phase - ({"done"});
+		next_phase_time = min(@cfg->campaigns->next_phase_time);
 	});
 	await(G->G->DB->mutate_config(1, "makeship") {mapping cfg = __ARGS__[0];
 		if (!cfg->channels) cfg->channels = ([]);
-		if (!sizeof(next_phases)) m_delete(cfg->channels, chanid); //Once the last campaign finishes, the channel no longer needs to be tracked.
-		else cfg->channels[chanid] = ([
+		if (!sizeof(next_phases)) m_delete(cfg->channels, (string)chanid); //Once the last campaign finishes, the channel no longer needs to be tracked.
+		else cfg->channels[(string)chanid] = ([
 			"next_phases": next_phases,
 			"next_phase_time": next_phase_time,
 		]);
