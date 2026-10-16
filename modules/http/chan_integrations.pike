@@ -502,14 +502,15 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	return (["cmd": "oauthpopup", "uri": (string)uri]);
 }
 
+object provide_user_agent = Protocols.HTTP.Promise.Arguments((["headers": ([
+	"Accept": "text/html",
+	"Accept-Language": "en-US,en;q=0.9",
+	"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 MustardMine/2026.10",
+])]));
+
 //If the returned mapping has an "error" key, something went wrong, otherwise it gives a basic summary.
 __async__ mapping makeship_lookup(string url) {
-	Protocols.HTTP.Promise.Result res = await(Protocols.HTTP.Promise.get_url(url,
-		Protocols.HTTP.Promise.Arguments((["headers": ([
-			"Accept": "text/html",
-			"Accept-Language": "en-US,en;q=0.9",
-			"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 MustardMine/2026.10",
-		])]))));
+	Protocols.HTTP.Promise.Result res = await(Protocols.HTTP.Promise.get_url(url, provide_user_agent));
 	if (res->status != 200) return (["error": "Unable to fetch Makeship campaign - check the URL"]);
 	string data = res->get();
 	sscanf(data, "%*s<script id=\"__NEXT_DATA__\" type=\"application/json\">%s</script>", string json);
@@ -527,7 +528,7 @@ __async__ mapping makeship_lookup(string url) {
 	if (product->id) sscanf(product->id, "gid://shopify/Product/%d", productid);
 	return ([
 		"url": url,
-		"pledge_count": props->pledgeCount, //Might not be useful, actually
+		"sales": props->pledgeCount || props->productSalesQuantity->?quantity, //Will be updated by the poll
 		"productid": productid,
 		"metadata": meta,
 		"title": product->title,
@@ -545,6 +546,51 @@ __async__ mapping makeship_lookup(string url) {
 	url = (string)uri;
 	if (!has_prefix(url, "https://www.makeship.com/")) return (["cmd": "makeship_lookup", "error": "Invalid campaign URL, please try again"]);
 	return await(makeship_lookup(url)) | (["cmd": "makeship_lookup"]);
+}
+
+//Largely similar to check_makeship() but not similar enough to fold the two together.
+__async__ void makeship_poll() {
+	remove_call_out(G->G->makeship_poll_call_out);
+	if (!is_active_bot()) return;
+	mapping cfg = await(G->G->DB->load_config(1, "makeship"));
+	if (!cfg->channels) return;
+	array(int) chanids = ({ });
+	foreach (cfg->channels; int chanid; mapping info)
+		if (has_value(info->next_phases, "petitionEndDate") || has_value(info->next_phases, "enddate")) chanids += ({chanid});
+	//In theory we could now query configs for all of these channel IDs; currently fetching one at a time.
+	int active = 0;
+	foreach (chanids, int chanid) {
+		mapping cfg = await(G->G->DB->load_config(chanid, "makeship"));
+		foreach (cfg->campaigns, mapping cp) {
+			int sales = cp->sales;
+			switch (cp->next_phase) {
+				case "petitionEndDate": {
+					//The petition is active! Query the number of pledges.
+					object res = await(Protocols.HTTP.Promise.get_url("https://storefront.makeship.com/orders/petitions/" + cp->productid + "/pledges/count", provide_user_agent));
+					sales = (int)String.trim(res->get());
+					active = 1;
+					break;
+				}
+				case "enddate": {
+					//The campaign is active! Query the number of sales.
+					object res = await(Protocols.HTTP.Promise.get_url("https://storefront.makeship.com/products/" + cp->productid + "/sales-quantity", provide_user_agent));
+					sales = (int)Standards.JSON.decode(res->get())->quantity;
+					active = 1;
+					break;
+				}
+				default: break; //Neither is active so we don't need to hammer it. Presales aren't very much of a thing as far as I can see.
+			}
+			if (sales != cp->sales) {
+				werror("MAKESHIP SALE NUMBER CHANGED %O %O %O\n", cp->productid, cp->sales, sales);
+				//In theory we might be overwriting some other change. Would be better to mutate_config
+				//and do a deep mutation inside the transaction, but I can't be bothered.
+				cp->sales = sales;
+				await(G->G->DB->save_config(chanid, "makeship", cfg));
+				send_updates_all("#" + chanid);
+			}
+		}
+	}
+	if (active) G->G->makeship_poll_call_out = call_out(makeship_poll, 60);
 }
 
 __async__ void check_makeship() {
@@ -571,9 +617,7 @@ __async__ void check_makeship() {
 		//Otherwise, retrigger it now, at the timestamp of the earliest next_phase_time.
 		int next_phase_time = min(@values(cfg->channels)->next_phase_time);
 		if (next_phase_time < 0xf0000000000000) G->G->check_makeship_call_out = call_out(check_makeship, next_phase_time - time());
-		if (active) {
-			//TODO: Start the poll if it isn't already going
-		}
+		if (active) makeship_poll();
 	}
 }
 
@@ -581,7 +625,7 @@ __async__ void check_makeship() {
 	//On startup, code reload, and any time we become active, check to see if we need to start pinging.
 	//This has minor overhead of querying one config even if there are no campaigns of interest.
 	if (!is_active_bot()) remove_call_out(G->G->check_makeship_call_out);
-	else if (find_call_out(G->G->check_makeship_call_out) == -1) check_makeship();
+	else check_makeship();
 }
 
 __async__ void makeship_track(int chanid, string url) {
@@ -629,9 +673,8 @@ __async__ void update_makeship_campaign(int chanid, int productid, mapping|zero 
 		next_phase_time = min(@values(cfg->channels)->next_phase_time);
 	});
 	send_updates_all("#" + chanid);
-	if (has_value(next_phases, "petitionEndDate") || has_value(next_phases, "enddate")) {
-		//TODO: Start the poll if it isn't already going
-	}
+	if (has_value(next_phases, "petitionEndDate") || has_value(next_phases, "enddate"))
+		makeship_poll();
 	//Run a full check the next time something is expected to change phase
 	remove_call_out(G->G->check_makeship_call_out);
 	if (next_phase_time < 0xf0000000000000) G->G->check_makeship_call_out = call_out(check_makeship, next_phase_time - time());

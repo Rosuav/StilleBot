@@ -37,7 +37,7 @@ export function render(data) {
 	]);
 	if (data.makeship_campaigns) set_content("#makeship_campaigns", data.makeship_campaigns.map(cp => LI({"data-productid": cp.productid}, [
 		A({href: cp.url, target: "_blank"}, cp.title), " by ", B(cp.metadata.name.creator),
-		" ",
+		" [" + cp.sales + "] ",
 		BUTTON({type: "button", class: "editcommand", title: "Add/edit actions"}, "\u2699"),
 		BUTTON({type: "button", class: "confirmdelete", title: "Stop tracking", style: "margin-left: 6px; width: 30px"}, "🗑"),
 	])));
@@ -122,7 +122,7 @@ export function sockmsg_makeship_lookup(msg) {
 	set_content("#campaigndetails", [
 		B(msg.title),
 		//P(["Tags:", msg.tags.map(t => [" ", CODE({style: "margin-left: 4px"}, t)])]),
-		//P("Pledges: " + (msg.pledge_count||0)),
+		P("Sales: " + (msg.sales||0)),
 		UL(Object.entries(date_labels).map(([id, lbl]) => {
 			const date = msg.metadata.date[id]; if (!date) return;
 			const d = new Date(date);
