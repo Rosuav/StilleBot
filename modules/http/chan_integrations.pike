@@ -77,9 +77,9 @@ $$loginprompt||$$
 Track [Makeship](https://www.makeship.com/) plushie campaigns here!
 
 * loading...
-{:#makeship}
+{:#makeship_campaigns}
 
-[Track a campaign](:.opendlg data-dlg=newmakeshipdlg)
+[Start tracking!](:.opendlg data-dlg=newmakeshipdlg)
 
 ## Kickstarter (coming soon™)
 
@@ -415,9 +415,12 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 
 bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
+	//This is a lot of configs. Would it be worth making a multi-load API that can do
+	//this in a single database query?
 	mapping kofi = await(G->G->DB->load_config(channel->userid, "kofi"));
 	mapping fw = await(G->G->DB->load_config(channel->userid, "fourthwall"));
 	mapping pat = await(G->G->DB->load_config(channel->userid, "patreon"));
+	mapping ms = await(G->G->DB->load_config(channel->userid, "makeship"));
 	return ([
 		"kofitoken": stringp(kofi->verification_token) && "..." + kofi->verification_token[<3..],
 		"kofitokens": map(kofi->additional_tokens || ({ })) {return (["label": __ARGS__[0]->label, "token": "..." + __ARGS__[0]->token[<3..]]);},
@@ -425,6 +428,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		"fwshopname": fw->refresh_token && fw->shopname, //This one's the flag - if absent, the front end assumes no FW config
 		"fwurl": fw->url, "fwusername": fw->username,
 		"paturl": pat->campaign_url, //May be null
+		"makeship_campaigns": ms->campaigns || ({ }),
 	]);
 }
 
@@ -565,7 +569,7 @@ __async__ void check_makeship() {
 	if (!changed) {
 		//If any campaign has changed, the call_out will have been retriggered inside makeship_track().
 		//Otherwise, retrigger it now, at the timestamp of the earliest next_phase_time.
-		int next_phase_time = min(@cfg->next_phase_time);
+		int next_phase_time = min(@values(cfg->channels)->next_phase_time);
 		if (next_phase_time < 0xf0000000000000) G->G->check_makeship_call_out = call_out(check_makeship, next_phase_time - time());
 		if (active) {
 			//TODO: Start the poll if it isn't already going
@@ -605,8 +609,13 @@ __async__ void update_makeship_campaign(int chanid, int productid, mapping|zero 
 	await(G->G->DB->mutate_config(chanid, "makeship") {mapping cfg = __ARGS__[0];
 		if (!cfg->campaigns) cfg->campaigns = ({ });
 		int idx = search(cfg->campaigns->productid, productid);
-		if (idx == -1) cfg->campaigns += ({data});
-		else cfg->campaigns[idx] |= data;
+		if (!data) {
+			//Delete (untrack) this campaign
+			if (idx > -1) cfg->campaigns[idx] = 0;
+			cfg->campaigns -= ({0});
+		}
+		else if (idx == -1) cfg->campaigns += ({data}); //New campaign, add to end of list (no reordering option, sorry)
+		else cfg->campaigns[idx] |= data; //Update campaign with new info
 		next_phases = cfg->campaigns->next_phase - ({"done"});
 		next_phase_time = min(@cfg->campaigns->next_phase_time);
 	});
@@ -631,6 +640,11 @@ __async__ void update_makeship_campaign(int chanid, int productid, mapping|zero 
 @"is_mod": __async__ mapping wscmd_makeship_track(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!stringp(msg->url)) return (["error": "Bad message"]);
 	makeship_track(channel->userid, msg->url);
+}
+
+@"is_mod": __async__ mapping wscmd_makeship_untrack(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (!intp(msg->productid) || !msg->productid) return (["error": "Bad message"]);
+	update_makeship_campaign(channel->userid, msg->productid, 0);
 }
 
 protected void create(string name) {::create(name); call_out(check_makeship_when_active, 2, ([]));}
