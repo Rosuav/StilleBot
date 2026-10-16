@@ -552,6 +552,7 @@ __async__ void check_makeship() {
 	if (!cfg->channels) return;
 	int now = time(), changed = 0, active = 0;
 	foreach (cfg->channels; int chanid; mapping info) {
+		werror("Next phase %O now %O\n", info->next_phase_time, now);
 		if (info->next_phase_time <= now) foreach (await(G->G->DB->load_config(chanid, "makeship"))->campaigns, mapping cp) {
 			//Any campaign that was scheduled to have changed phase by now, do a full re-check and re-query.
 			//Note that this will potentially update the master list multiple times; this will only happen
@@ -577,6 +578,7 @@ __async__ void check_makeship() {
 	//On startup, code reload, and any time the active bot changes, check to see if we need to start pinging.
 	//This has minor overhead of querying one config even if there are no campaigns of interest.
 	if (is_active_bot() && find_call_out(G->G->check_makeship_call_out) == -1) check_makeship();
+	if (!is_active_bot()) remove_call_out(G->G->check_makeship_call_out);
 }
 
 __async__ void makeship_track(int chanid, string url) {
