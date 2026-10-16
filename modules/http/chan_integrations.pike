@@ -597,10 +597,14 @@ __async__ void makeship_track(int chanid, string url) {
 		}
 	}
 	if (!data->next_phase) {data->next_phase = "done"; data->next_phase_time = 0xf0000000000000;}
+	await(update_makeship_campaign(chanid, data->productid, data));
+}
+
+__async__ void update_makeship_campaign(int chanid, int productid, mapping|zero data) {
 	array next_phases; int next_phase_time;
 	await(G->G->DB->mutate_config(chanid, "makeship") {mapping cfg = __ARGS__[0];
 		if (!cfg->campaigns) cfg->campaigns = ({ });
-		int idx = search(cfg->campaigns->productid, data->productid);
+		int idx = search(cfg->campaigns->productid, productid);
 		if (idx == -1) cfg->campaigns += ({data});
 		else cfg->campaigns[idx] |= data;
 		next_phases = cfg->campaigns->next_phase - ({"done"});
