@@ -2200,7 +2200,7 @@ function find_tab_completion(mle, descriptive) {
 			.map(c => c.slice(line.length - 1) + " ");
 	}
 	//TODO: Also support $varname$ which will require having a list of known variables
-	const m = /\{\S+$/.exec(line); let word = m && m[0];
+	const m = /\{[^\s{]+$/.exec(line); let word = m && m[0];
 	if (word) {
 		if (word[word.length - 1] === "}") return; //No available completions once you've finished the entire name.
 		const parts = word.split(".");
