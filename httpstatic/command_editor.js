@@ -218,7 +218,7 @@ on("click", "#save_advanced", async e => {
 
 on("click", "#delete_advanced", simpleconfirm("Delete this command?", e => {
 	const info = get_message_details();
-	ws_sync.send({cmd: "cmdedit_delete", cmdname: cmd_id});
+	config.save_command(cmd_id, null, "", "");
 	DOM("#advanced_view").close();
 	if (info.redemption) simpleconfirm("Also delete the corresponding channel point reward?",
 		e => ws_sync.send({cmd: "cmdedit_deletereward", redemption: info.redemption})
@@ -339,7 +339,7 @@ on("click", "#saveall", e => {
 	document.querySelectorAll("tr.dirty[data-id]").forEach(tr => {
 		const msg = tr.querySelector("input").value;
 		if (!msg.length) {
-			ws_sync.send({cmd: "cmdedit_delete", cmdname: tr.dataset.id});
+			config.save_command(tr.dataset.id, null, "", "");
 			return;
 		}
 		//Take a copy of the original command (we're going to JSON-encode it anyway, so this should
@@ -347,7 +347,7 @@ on("click", "#saveall", e => {
 		let response = JSON.parse(JSON.stringify(commands[tr.dataset.id] || ""));
 		if (typeof response === "string") response = msg;
 		else scan_message(response, {replacetext: msg});
-		ws_sync.send({cmd: "cmdedit_update", cmdname: tr.dataset.id, response});
+		config.save_command(tr.dataset.id, null, response, "");
 		//Note that the dirty flag is not reset. A successful update will trigger
 		//a broadcast message which, when it reaches us, will rerender the command
 		//completely, thus effectively resetting dirty.

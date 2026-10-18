@@ -118,7 +118,7 @@ void wscmd_cmdedit_update(object channel, mapping(string:mixed) conn, mapping(st
 		conn->sock->send_text(Standards.JSON.encode((["cmd": "newtrigger", "response": valid[1][-1]])));
 	}
 }
-void wscmd_cmdedit_delete(object c, mapping conn, mapping msg) {wscmd_cmdedit_update(c, conn, msg | (["response": ""]));}
+void wscmd_cmdedit_delete(object c, mapping conn, mapping msg) {wscmd_cmdedit_update(c, conn, msg | (["response": ""]));} //Deprecated - just call update with a blank response
 
 //This should probably go somewhere else, but really, we should just be as consistent as possible
 //with key names.
