@@ -162,6 +162,7 @@ void wscmd_cmdedit_deletereward(object channel, mapping(string:mixed) conn, mapp
 void websocket_cmd_cmdedit_validate(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	[object channel, string mode] = split_channel(conn->subscription_group);
 	if (!channel) return 0; //Fake-mod mode is okay here (this handles tab switching inside the editor)
+	if (mode == "-" && has_prefix(msg->cmdname, "changetab_")) mode = ""; //When saving to somewhere other than the normal collections, it's okay to validate for tab-changing purposes.
 	array valid = G->G->cmdmgr->validate_command(channel, mode, msg->cmdname || "validateme", msg->response, ([
 		"original": msg->original,
 		"language": msg->language == "mustard" ? "mustard" : "",
