@@ -584,6 +584,12 @@ __async__ void makeship_poll() {
 				werror("MAKESHIP SALE NUMBER CHANGED %O %O %O\n", cp->productid, cp->sales, sales);
 				//In theory we might be overwriting some other change. Would be better to mutate_config
 				//and do a deep mutation inside the transaction, but I can't be bothered.
+				if (cp->action) G->G->irc->id[chanid]->send(0, cp->action, ([
+					"{sales}": (string)sales,
+					"{prevsales}": (string)cp->sales,
+					"{productid}": (string)cp->productid,
+					"{title}": cp->title,
+				]));
 				cp->sales = sales;
 				await(G->G->DB->save_config(chanid, "makeship", cfg));
 				send_updates_all("#" + chanid);
