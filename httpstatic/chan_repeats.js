@@ -71,7 +71,7 @@ on("click", "#savechanges", e => {
 		if (inp) {
 			const msg = inp.value;
 			if (!msg) {
-				ws_sync.send({cmd: "cmdedit_delete", cmdname: tr.dataset.id});
+				ws_sync.send({cmd: "cmdedit_update", cmdname: tr.dataset.id, response: ""});
 				return;
 			}
 			if (typeof response === "string") response = msg;
@@ -83,7 +83,7 @@ on("click", "#savechanges", e => {
 			//remove the command. TODO: Prompt the user first?
 			//Ensure that this always gets other invocations added to it.
 			if (response.access === "none" && !response.redemption) {
-				ws_sync.send({cmd: "cmdedit_delete", cmdname: tr.dataset.id});
+				ws_sync.send({cmd: "cmdedit_update", cmdname: tr.dataset.id, response: ""});
 				return;
 			}
 		}
