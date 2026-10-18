@@ -21,7 +21,7 @@ cmd_configure({
 		};
 	},
 	save_command: (cmdname, original, response, language) => {
-		ws_sync.send({cmd: "set_action", campaign: original, response, language});
+		ws_sync.send({cmd: "set_action", campaign: cmdname, response, language});
 	},
 });
 
