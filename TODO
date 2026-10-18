@@ -308,6 +308,9 @@
   - Where appropriate, replace call_out with xfr_call_out. Ensure that the function
     being deferred belongs to a findable object, and that the args are JSON-safe.
 * Turn kickstarter.pike into a coherent feature, putting it under chan_integrations
+  - Most of this has already been implemented for makeship. Ideally, reuse rather
+    than copy/paste; this would require having a single master list that can refer
+    to both Makeship and Kickstarter campaigns.
   - Get streamer to copy/paste the page link
   - Strip off any junk, then add /stats.json?v=1
   - This should give a valid JSON blob for any campaign at all, notably including a
@@ -332,13 +335,6 @@
     from the master list.
   - If the master list is now empty, stop the poll.
   - Need to ping the poll whenever the list is added to, or when the bot becomes active.
-* Similarly for makeship.pike
-  - Given a page URL, fetch it, and find "gid://shopify/Product/%[0-9]". Save the ID.
-    There may be multiple. Take the first? Or maybe parse the JSON properly.
-  - Not sure how to get the status. Need to know whether to fetch pledge or sales qty.
-  - If any active status, poll every minute, otherwise don't poll at all (require a
-    mod to explicitly tell it to start).
-  - Again, allow any command to be edited in
 * Streamer groups
   - Example: Junk Fan Club (for StaticTides)
   - Let streamers create them maybe? For now only I create.
