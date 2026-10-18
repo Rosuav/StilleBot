@@ -267,7 +267,8 @@ export function scan_message(msg, msgstatus, parent, key) {
 	if (msg.dest === "/w") msgstatus.whisper = true;
 	else if (msg.dest === "/reply") msgstatus.thread = true;
 	else if (msg.dest) return null; //Anything with a special destination (eg Variable, Private Message) shouldn't be shown this way.
-	if (msg.mode) msgstatus.oneof = true; //Both rotate and random count as "one of these messages"
+	if (msg.mode === "random" || msg.mode === "rotate" || msg.mode === "switch") msgstatus.oneof = true;
+	//TODO maybe: Put some kind of adornment when msg.mode is "foreach"? Mode "wrap" doesn't need an adornment.
 	if (msg.conditional && msg.conditional !== "cooldown") {
 		//Combine both the branches of the conditional and, if there's only one thing
 		//to say, assume we say that. (A conditional that sometimes suppresses, or a
