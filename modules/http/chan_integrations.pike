@@ -554,12 +554,12 @@ __async__ void makeship_poll() {
 	if (!is_active_bot()) return;
 	mapping cfg = await(G->G->DB->load_config(1, "makeship"));
 	if (!cfg->channels) return;
-	array(int) chanids = ({ });
-	foreach (cfg->channels; int chanid; mapping info)
+	array(string) chanids = ({ });
+	foreach (cfg->channels; string chanid; mapping info)
 		if (has_value(info->next_phases, "petitionEndDate") || has_value(info->next_phases, "enddate")) chanids += ({chanid});
 	//In theory we could now query configs for all of these channel IDs; currently fetching one at a time.
 	int active = 0;
-	foreach (chanids, int chanid) {
+	foreach (chanids, string chanid) {
 		mapping cfg = await(G->G->DB->load_config(chanid, "makeship"));
 		foreach (cfg->campaigns, mapping cp) {
 			int sales = cp->sales;
@@ -584,7 +584,7 @@ __async__ void makeship_poll() {
 				werror("MAKESHIP SALE NUMBER CHANGED %O %O %O\n", cp->productid, cp->sales, sales);
 				//In theory we might be overwriting some other change. Would be better to mutate_config
 				//and do a deep mutation inside the transaction, but I can't be bothered.
-				if (cp->action) G->G->irc->id[chanid]->send(0, cp->action, ([
+				if (cp->action) G->G->irc->id[(int)chanid]->send(0, cp->action, ([
 					"{sales}": (string)sales,
 					"{prevsales}": (string)cp->sales,
 					"{productid}": (string)cp->productid,
