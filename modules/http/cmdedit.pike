@@ -11,7 +11,7 @@ string websocket_validate(mapping(string:mixed) conn, mapping(string:mixed) msg)
 	if (string err = ::websocket_validate(conn, msg)) return err;
 	if (msg->cmd == "init") return "Subscription only";
 	sscanf(msg->group, "%s#%s", string command, string chan);
-	if (command != "" && !has_prefix(command, "!")) return "Bad group name"; //TODO: Consider allowing "hello" to be an alias for "!hello"
+	if (command != "" && command != "-" && !has_prefix(command, "!")) return "Bad group name"; //TODO: Consider allowing "hello" to be an alias for "!hello"
 }
 
 mapping _get_command(object channel, string cmd) {
@@ -22,6 +22,7 @@ mapping _get_command(object channel, string cmd) {
 }
 //TODO: Support single-element updates?
 mapping get_chan_state(object channel, string group) {
+	if (group == "-") return (["commands": ({ })]); //For when the general concept of commands is needed, but no actual commands
 	if (group == "!!trigger") {
 		//For the front end, we pretend that there are multiple triggers with distinct IDs.
 		//But here on the back end, they're a single array inside one command.

@@ -90,7 +90,7 @@ ws_sync.prefs_notify("cmd_defaulttab", tab => {
 	if (tablist.some(t => t.toLowerCase() === tab)) defaulttab = tab;
 });
 
-export const commands = { }; //Deprecated. Need to try to not have this exported mapping.
+export const commands = { }; //Deprecated. Need to try to not have this exported mapping. Instead try to use publish_command().
 const config = {
 	load_command: cmd => { },
 	command_prefix: "",
@@ -108,6 +108,10 @@ const config = {
 		}
 		set_content("#advanced_view h3", ["Edit command ", INPUT({autocomplete: "off", id: "cmdname", value: "!" + cmd.id.split("#")[0]})]);
 		return {type: "anchor_command"};
+	},
+	//Replace this to save to somewhere other than the normal command collection
+	save_command: (cmdname, original, response, language) => {
+		ws_sync.send({cmd: "cmdedit_update", cmdname, original, response, language});
 	},
 };
 export function cmd_configure(cfg) {
@@ -209,7 +213,7 @@ on("click", "#save_advanced", async e => {
 	const info = get_message_details();
 	document.getElementById("advanced_view").close();
 	const el = DOM("#cmdname");
-	ws_sync.send({cmd: "cmdedit_update", cmdname: el ? el.value : cmd_id, original: cmd_id, response: info, language: mode === "mustard" ? "mustard" : ""});
+	config.save_command(el ? el.value : cmd_id, cmd_id, info, mode === "mustard" ? "mustard" : "");
 });
 
 on("click", "#delete_advanced", simpleconfirm("Delete this command?", e => {
@@ -277,14 +281,19 @@ export function scan_message(msg, msgstatus, parent, key) {
 	}
 	return scan_message(msg.message, msgstatus, msg, "message");
 }
-ws_sync.register_callback(function cmdedit_publish_commands(msg) {
-	for (let cmd of msg.commands) commands[cmd.id] = cmd;
+export function publish_command(id, cmd) {
+	if (!cmd) delete commands[id];
+	else if (typeof cmd === "object" && cmd.id === id) commands[id] = cmd;
+	else commands[id] = {id, message: cmd}; //If you pass just the executable part, wrap it up so we can reference it correctly.
 	if (pending_command) {
 		const id = config.command_prefix + pending_command[0];
 		//Let everything else finish loading before opening advanced view
 		setTimeout(open_advanced_view, 0.025, commands[id] || {id, message: ""}, pending_command[1]);
 		pending_command = null;
 	}
+}
+ws_sync.register_callback(function cmdedit_publish_commands(msg) {
+	for (let cmd of msg.commands) publish_command(cmd.id, cmd);
 });
 
 export function render_command(msg, prev, prefix) {

@@ -658,7 +658,13 @@ __async__ void update_makeship_campaign(int chanid, int productid, mapping|zero 
 			if (idx > -1) cfg->campaigns[idx] = 0;
 			cfg->campaigns -= ({0});
 		}
-		else if (idx == -1) cfg->campaigns += ({data}); //New campaign, add to end of list (no reordering option, sorry)
+		else if (idx == -1) {
+			//New campaign, add to end of list (no reordering option, sorry)
+			//If you were trying to do a partial update but the productid wasn't found,
+			//let the update fail. The bare minimum for a valid product is probably more
+			//than just the URL but this is a start.
+			if (data->url) cfg->campaigns += ({data});
+		}
 		else cfg->campaigns[idx] |= data; //Update campaign with new info
 		next_phases = cfg->campaigns->next_phase - ({"done"});
 		next_phase_time = min(@cfg->campaigns->next_phase_time);
@@ -688,6 +694,18 @@ __async__ void update_makeship_campaign(int chanid, int productid, mapping|zero 
 @"is_mod": __async__ mapping wscmd_makeship_untrack(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!intp(msg->productid) || !msg->productid) return (["error": "Bad message"]);
 	update_makeship_campaign(channel->userid, msg->productid, 0);
+}
+
+//NOTE: This will need to also handle Kickstarter at some point.
+@"is_mod": __async__ void wscmd_set_action(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	sscanf(msg->campaign, "%s-%s", string platform, string product);
+	if (!platform || !product) return;
+	if (platform != "makeship") return; //Currently only Makeship supported - need to add KS eventually, maybe others too
+	array valid = G->G->cmdmgr->validate_command(channel, "", product, msg->response, ([
+		"language": msg->language == "mustard" ? "mustard" : ""
+	]));
+	if (!valid) return;
+	update_makeship_campaign(channel->userid, (int)product, (["action": valid[2]]));
 }
 
 protected void create(string name) {::create(name); call_out(check_makeship_when_active, 2, ([]));}

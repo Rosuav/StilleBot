@@ -1,6 +1,29 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {A, B, BUTTON, CODE, FORM, IMG, INPUT, LI, P, STRONG, TD, TIME, TR, UL} = choc; //autoimport
+const {A, B, BUTTON, FORM, IMG, INPUT, LI, P, STRONG, TD, TIME, TR, UL} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
+import {cmd_configure, publish_command} from "$$static||command_editor.js$$";
+
+cmd_configure({
+	subscribe: "-",
+	get_command_basis: cmd => {
+		set_content("#advanced_view h3", ["Edit actions for pledge/sale"]);
+		return {
+			type: "anchor_special",
+			_provides: {
+				"{username}": "The broadcaster", "{uid}": "ID of that person",
+				"{sales}": "Current sale number",
+				"{prevsales}": "Sales count prior to this update",
+				"{productid}": "Unique ID of this product/campaign",
+				"{title}": "Product/campaign title",
+			},
+			_desc: "Happens when the sale count changes (up or down)",
+			_shortdesc: "Happens when the sale count changes (up or down)",
+		};
+	},
+	save_command: (cmdname, original, response, language) => {
+		ws_sync.send({cmd: "set_action", campaign: original, response, language});
+	},
+});
 
 export function render(data) {
 	//Note that the entire token will never be shown, only the last few characters
@@ -38,7 +61,8 @@ export function render(data) {
 	if (data.makeship_campaigns) set_content("#makeship_campaigns", data.makeship_campaigns.map(cp => LI({"data-productid": cp.productid}, [
 		A({href: cp.url, target: "_blank"}, cp.title), " by ", B(cp.metadata.name.creator),
 		" [" + cp.sales + "] ",
-		BUTTON({type: "button", class: "editcommand", title: "Add/edit actions"}, "\u2699"),
+		publish_command("makeship-" + cp.productid, cp.action), //returns nothing
+		BUTTON({type: "button", class: "advview", "data-id": "makeship-" + cp.productid, title: "Add/edit actions"}, "\u2699"),
 		BUTTON({type: "button", class: "confirmdelete", title: "Stop tracking", style: "margin-left: 6px; width: 30px"}, "🗑"),
 	])));
 }
