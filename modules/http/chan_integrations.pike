@@ -556,40 +556,32 @@ __async__ void makeship_poll() {
 	if (!cfg->channels) return;
 	array(string) chanids = ({ });
 	foreach (cfg->channels; string chanid; mapping info)
-		if (has_value(info->next_phases, "petitionEndDate") || has_value(info->next_phases, "enddate")) chanids += ({chanid});
+		if (info->phase_status == "active") chanids += ({chanid});
 	//In theory we could now query configs for all of these channel IDs; currently fetching one at a time.
 	int active = 0;
 	foreach (chanids, string chanid) {
 		mapping cfg = await(G->G->DB->load_config(chanid, "makeship"));
 		foreach (cfg->campaigns, mapping cp) {
+			if (cp->phase_status != "active") continue;
+			active = 1;
 			int sales = cp->sales;
-			switch (cp->next_phase) {
-				case "petitionEndDate": {
-					//The petition is active! Query the number of pledges.
-					object res = await(Protocols.HTTP.Promise.get_url("https://storefront.makeship.com/orders/petitions/" + cp->productid + "/pledges/count", provide_user_agent));
-					sales = (int)String.trim(res->get());
-					active = 1;
-					break;
-				}
-				case "enddate": {
-					//The campaign is active! Query the number of sales.
-					object res = await(Protocols.HTTP.Promise.get_url("https://storefront.makeship.com/products/" + cp->productid + "/sales-quantity", provide_user_agent));
-					sales = (int)Standards.JSON.decode(res->get())->quantity;
-					active = 1;
-					break;
-				}
-				default: break; //Neither is active so we don't need to hammer it. Presales aren't very much of a thing as far as I can see.
+			if (cp->phase == "petition") {
+				object res = await(Protocols.HTTP.Promise.get_url("https://storefront.makeship.com/orders/petitions/" + cp->productid + "/pledges/count", provide_user_agent));
+				sales = (int)String.trim(res->get());
+			} else { //phase is "campaign"
+				object res = await(Protocols.HTTP.Promise.get_url("https://storefront.makeship.com/products/" + cp->productid + "/sales-quantity", provide_user_agent));
+				sales = (int)Standards.JSON.decode(res->get())->quantity;
 			}
 			if (sales != cp->sales) {
 				werror("MAKESHIP SALE NUMBER CHANGED %O %O %O\n", cp->productid, cp->sales, sales);
-				//In theory we might be overwriting some other change. Would be better to mutate_config
-				//and do a deep mutation inside the transaction, but I can't be bothered.
 				if (cp->action) G->G->irc->id[(int)chanid]->send(0, cp->action, ([
 					"{sales}": (string)sales,
 					"{prevsales}": (string)cp->sales,
 					"{productid}": (string)cp->productid,
 					"{title}": cp->title,
 				]));
+				//In theory we might be overwriting some other change. Would be better to mutate_config
+				//and do a deep mutation inside the transaction, but I can't be bothered.
 				cp->sales = sales;
 				await(G->G->DB->save_config(chanid, "makeship", cfg));
 				send_updates_all("#" + chanid);
@@ -616,7 +608,7 @@ __async__ void check_makeship() {
 			await(makeship_track(chanid, cp->url));
 			changed = 1;
 		}
-		if (has_value(info->next_phases, "petitionEndDate") || has_value(info->next_phases, "enddate")) active = 1;
+		if (info->phase_status == "active") active = 1;
 	}
 	if (!changed) {
 		//If any campaign has changed, the call_out will have been retriggered inside makeship_track().
@@ -645,17 +637,18 @@ __async__ void makeship_track(int chanid, string url) {
 	foreach (({"petitionLaunchDate", "petitionEndDate", "launch", "enddate"}), string date) {
 		int tm = dates[date] && Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", dates[date])->unix_time();
 		if (tm > now) {
-			data->next_phase = date;
+			data->phase = (<"petitionLaunchDate", "petitionEndDate">)[date] ? "petition" : "campaign";
+			data->phase_status = (<"petitionEndDate", "enddate">)[date] ? "active" : "upcoming";
 			data->next_phase_time = tm;
 			break;
 		}
 	}
-	if (!data->next_phase) {data->next_phase = "done"; data->next_phase_time = 0xf0000000000000;}
+	if (!data->phase_status) {data->phase_status = "done"; data->next_phase_time = 0xf0000000000000;}
 	await(update_makeship_campaign(chanid, data->productid, data));
 }
 
 __async__ void update_makeship_campaign(int chanid, int productid, mapping|zero data) {
-	array next_phases; int next_phase_time;
+	string phase_status = "done"; int next_phase_time;
 	await(G->G->DB->mutate_config(chanid, "makeship") {mapping cfg = __ARGS__[0];
 		if (!cfg->campaigns) cfg->campaigns = ({ });
 		int idx = search(cfg->campaigns->productid, productid);
@@ -672,21 +665,23 @@ __async__ void update_makeship_campaign(int chanid, int productid, mapping|zero 
 			if (data->url) cfg->campaigns += ({data});
 		}
 		else cfg->campaigns[idx] |= data; //Update campaign with new info
-		next_phases = cfg->campaigns->next_phase - ({"done"});
+		array statuses = cfg->campaigns->phase_status;
+		if (has_value(statuses, "active")) phase_status = "active";
+		else if (has_value(statuses, "upcoming")) phase_status = "upcoming";
+		else phase_status = "done";
 		next_phase_time = min(@cfg->campaigns->next_phase_time);
 	});
 	await(G->G->DB->mutate_config(1, "makeship") {mapping cfg = __ARGS__[0];
 		if (!cfg->channels) cfg->channels = ([]);
-		if (!sizeof(next_phases)) m_delete(cfg->channels, (string)chanid); //Once the last campaign finishes, the channel no longer needs to be tracked.
+		if (phase_status == "done") m_delete(cfg->channels, (string)chanid); //Once the last campaign finishes, the channel no longer needs to be tracked.
 		else cfg->channels[(string)chanid] = ([
-			"next_phases": next_phases,
+			"phase_status": phase_status,
 			"next_phase_time": next_phase_time,
 		]);
 		next_phase_time = min(@values(cfg->channels)->next_phase_time);
 	});
 	send_updates_all("#" + chanid);
-	if (has_value(next_phases, "petitionEndDate") || has_value(next_phases, "enddate"))
-		makeship_poll();
+	if (phase_status == "active") makeship_poll();
 	//Run a full check the next time something is expected to change phase
 	remove_call_out(G->G->check_makeship_call_out);
 	if (next_phase_time < 0xf0000000000000) G->G->check_makeship_call_out = call_out(check_makeship, next_phase_time - time());
