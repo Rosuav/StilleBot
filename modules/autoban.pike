@@ -8,7 +8,7 @@ inherit builtin_command;
 //added to as necessary, and all users of this blacklist will automatically
 //start noticing the new ones. Anything that has (at least) one from column
 //A and one from column B will be flagged as a follower seller.
-constant buyfollows = ({"viewers", "cheap followers", "best followers", "become popular with", "streaming zero", "best promotion"});
+constant buyfollows = ({"viewers", "cheap followers", "best followers", "become popular with", "streaming zero", "promotion"});
 constant urls = ({".ru", "streamboo", ".online", "s t r e a m b o o", "Stream_Promotion_bot", "promotion. ru", "twitchmax .com", "streamerbeat com", "twitch .ad", "twitchstar .com"});
 
 @export: int(1bit) is_selling_followers(string msg) {
