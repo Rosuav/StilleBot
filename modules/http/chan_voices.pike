@@ -33,7 +33,22 @@ Name        | Mnemonic | Description/purpose | -
 .defaultvoice .makedefault {display: none;}
 .isdefault {display: none;}
 .defaultvoice .isdefault {display: unset;}
+#hellofail {
+	border: 1px solid blue;
+	background: aliceblue;
+}
 </style>
+
+> ### Unable to send chat messages
+>
+> The attempt to say hello in your channel failed. Twitch told us:
+>
+> <p id=hellofail></p>
+>
+> <p id=helloexplan></p>
+>
+> [Retry](:.testvoice) [Close](:.dialog_close)
+{: tag=dialog #hellofaildlg}
 ";
 //Note that, in theory, multiple voice support could be done without an HTTP interface.
 //It would be fiddly to set up, though, so I'm not going to try to support it.
@@ -131,7 +146,9 @@ void wscmd_delete(object channel, mapping(string:mixed) conn, mapping(string:mix
 void wscmd_testvoice(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	mapping vox = G->G->DB->load_cached_config(channel->userid, "voices")[msg->id];
 	if (!vox) return; //Voice has to have been authenticated to do a test
-	channel->send(0, (["voice": msg->id, "message": "Hello from " + vox->name + "!"]));
+	channel->send(0, (["voice": msg->id, "message": "Hello from " + vox->name + "!"]), 0) {
+		send_msg(conn, (["cmd": "testvoice", "voice": vox->name, "voiceid": vox->id, "result": __ARGS__[1]]));
+	};
 }
 
 void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) {

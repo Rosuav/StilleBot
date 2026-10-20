@@ -1,5 +1,5 @@
 import choc, {set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, DIV, IMG, INPUT, LABEL, LI, SPAN, TD, TEXTAREA, TR} = choc; //autoimport
+const {BR, BUTTON, CODE, DIV, IMG, INPUT, LABEL, LI, SPAN, TD, TEXTAREA, TR} = choc; //autoimport
 import {simpleconfirm} from "$$static||utils.js$$";
 
 export const render_parent = DOM("#voices tbody");
@@ -52,9 +52,20 @@ export function render(data) {
 
 export function sockmsg_login(data) {window.open(data.uri, "login", "width=525, height=900");}
 
-on("click", ".testvoice", e => {
-	ws_sync.send({cmd: "testvoice", id: e.match.closest("tr").dataset.id});
-});
+on("click", ".testvoice", e => ws_sync.send({cmd: "testvoice", id: e.match.closest_data("id")}));
+export function sockmsg_testvoice(data) {
+	if (data.result.is_sent) return; //TODO: Put up a little banner somewhere to report the success. Not a popup.
+	//On failure, pop up with an explanation.
+	set_content("#hellofail", data.result.drop_reason?.message || "(nothing useful)");
+	const code = data.result.drop_reason?.code;
+	set_content("#helloexplan", [
+		code === "msg_duplicate" && "This happens when a non-moderator tries to say Hello too quickly.",
+		code === "followers_only_mode" && "Chat restrictions keep a lot of legit people out, including your bot.",
+		BR(), "Making the bot a moderator will help here: ", CODE("/mod " + data.voice),
+	]);
+	DOM("#hellofaildlg .testvoice").dataset.id = data.voiceid;
+	DOM("#hellofaildlg").showModal();
+}
 
 on("click", ".makedefault", e => {
 	ws_sync.send({cmd: "update", id: e.match.closest("tr").dataset.id, makedefault: 1});
