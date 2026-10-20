@@ -315,10 +315,12 @@
   - Strip off any junk, then add /stats.json?v=1
   - This should give a valid JSON blob for any campaign at all, notably including a
     "state". Poll some projects to learn what states are possible.
-  - Map the state to a poll duration. If it's "successful" or whatever happens if it
-    fails to clear its target, poll duration is zero. If it's upcoming, poll every
-    ten minutes maybe? See if there's anything useful to report. If it's active, poll
-    every minute.
+    - Pre-launch, wasn't able to get stats
+    - "successful" might include the possibility of late pledges. Ignore those,
+      I don't think it's worth differentiating.
+    - "failed"
+  - Map the state to a poll duration. If it's "successful" or "failed", poll
+    duration is zero. If it's active, poll every minute.
   - Command editor. Save an echoable_message to be sent whenever the backer count is
     seen to go up. Acknowledge that this is polled and therefore not fast.
   - Save these in broadcaster-specific data.
