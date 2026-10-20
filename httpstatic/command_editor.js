@@ -286,15 +286,20 @@ export function publish_command(id, cmd) {
 	if (!cmd) delete commands[id];
 	else if (typeof cmd === "object" && cmd.id === id) commands[id] = cmd;
 	else commands[id] = {id, message: cmd}; //If you pass just the executable part, wrap it up so we can reference it correctly.
-	if (pending_command) {
-		const id = config.command_prefix + pending_command[0];
+	if (pending_command && id === config.command_prefix + pending_command[0]) {
+		//const id = config.command_prefix + pending_command[0];
 		//Let everything else finish loading before opening advanced view
-		setTimeout(open_advanced_view, 0.025, commands[id] || {id, message: ""}, pending_command[1]);
+		setTimeout(open_advanced_view, 0.025, commands[id], pending_command[1]);
 		pending_command = null;
 	}
 }
 ws_sync.register_callback(function cmdedit_publish_commands(msg) {
 	for (let cmd of msg.commands) publish_command(cmd.id, cmd);
+	if (pending_command) {
+		//For specials, it's possible for the pending_command to not actually be published,
+		//since empty specials aren't saved.
+		setTimeout(open_advanced_view, 0.025, {id: config.command_prefix + pending_command[0], message: ""}, pending_command[1]);
+	}
 });
 
 export function render_command(msg, prev, prefix) {
