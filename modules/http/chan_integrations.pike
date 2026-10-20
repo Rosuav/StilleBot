@@ -534,13 +534,31 @@ __async__ mapping makeship_lookup(string url) {
 		"platform": "makeship", "pfmid": "makeship-" + productid,
 		"productid": productid,
 		"metadata": meta,
+		"dates": meta->date || ([]),
 		"title": product->title,
 		"tags": product->tags,
 	]);
 }
 
 __async__ mapping kickstarter_lookup(string url) {
-	return (["error": "Unimplemented"]);
+	Protocols.HTTP.Promise.Result res = await(Protocols.HTTP.Promise.get_url(url));
+	if (res->status != 200) return (["error": "Unable to fetch Kickstarter campaign - check the URL"]);
+	string data = res->get();
+	sscanf(data, "%*shttps://api.kickstarter.com/v1/projects/%s&quot;", string apiurl);
+	if (!apiurl) return (["error": "Unable to read Kickstarter campaign - check the URL or contact Rosuav"]);
+	apiurl = "https://api.kickstarter.com/v1/projects/" + apiurl;
+	mapping info = Standards.JSON.decode(await(Protocols.HTTP.Promise.get_url(apiurl))->get());
+	if (!info) return (["error": "Unable to read Kickstarter details - check the URL or contact Rosuav"]);
+	return ([
+		"url": url,
+		"sales": info->backers_count, "amount": info->pledged, "goal": info->goal,
+		"platform": "kickstarter", "pfmid": "kickstarter-" + info->id,
+		"productid": info->id,
+		"state": info->state,
+		"title": info->name,
+		//Multiply Unix time by 1000 for the convenience of the front end
+		"dates": (["launched_at": info->launched_at * 1000, "deadline": info->deadline * 1000]),
+	]);
 }
 
 Concurrent.Future campaign_lookup(string url) {
@@ -555,6 +573,7 @@ Concurrent.Future campaign_lookup(string url) {
 	if (!has_value(url, "://")) url = "https://" + url;
 	Standards.URI uri = Standards.URI(msg->url, "https://www.makeship.com/"); //Use a base URL in case it's somehow still relative. Most likely that would result in a broken URL though.
 	if (uri->scheme == "http") {uri->scheme = "https"; uri->port = 443;}
+	uri->query = 0; //Any query parameters are just going to be statistical and tracking anyway
 	if (uri->host == "makeship.com") uri->host = "www.makeship.com"; //They redirect us anyway, so shortcut the process
 	if (uri->host == "kickstarter.com") uri->host = "www.kickstarter.com"; //It's easier to be consistent internally, too
 	return await(campaign_lookup((string)uri)) | (["cmd": "makeship_lookup"]);
@@ -577,7 +596,7 @@ __async__ void makeship_poll() {
 		foreach (cfg->campaigns, mapping cp) {
 			if (cp->phase_status != "active") continue;
 			active = 1;
-			int sales = cp->sales;
+			int sales = cp->sales, amount = cp->amount;
 			if (cp->platform == "kickstarter") {
 				//TODO
 				//cp->url + "/stats.json"
@@ -590,8 +609,8 @@ __async__ void makeship_poll() {
 				object res = await(Protocols.HTTP.Promise.get_url("https://storefront.makeship.com/products/" + cp->productid + "/sales-quantity", provide_user_agent));
 				sales = (int)Standards.JSON.decode(res->get())->quantity;
 			}
-			if (sales != cp->sales) {
-				werror("SALE NUMBER CHANGED %O %O %O\n", cp->pfmid, cp->sales, sales);
+			if (sales != cp->sales || amount != cp->amount) {
+				werror("SALES CHANGED %O %O %O\n", cp->pfmid, cp->sales, sales);
 				if (cp->action) G->G->irc->id[(int)chanid]->send(0, cp->action, ([
 					"{platform}": cp->platform, //Normally you'll know what you're attaching an action to, but this will allow you to chain to a generic handler
 					"{productid}": (string)cp->productid,
@@ -602,6 +621,7 @@ __async__ void makeship_poll() {
 				//In theory we might be overwriting some other change. Would be better to mutate_config
 				//and do a deep mutation inside the transaction, but I can't be bothered.
 				cp->sales = sales;
+				if (amount) cp->amount = amount;
 				await(G->G->DB->save_config(chanid, "makeship", cfg));
 				send_updates_all("#" + chanid);
 			}

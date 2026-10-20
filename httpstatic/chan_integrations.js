@@ -128,15 +128,17 @@ on("click", "#lookup", e => ws_sync.send({cmd: "makeship_lookup", url: DOM("#cam
 export function sockmsg_makeship_lookup(msg) {
 	if (msg.error) return set_content("#campaigndetails", msg.error).classList = "error";
 	if (msg.url && msg.url !== DOM("#campaignurl").value) DOM("#campaignurl").value = msg.url;
-	//All of the relevant dates are stored in meta.dates[], keyed by some relevant ID.
-	//Sort them by date, and show the campaign progress both past and future.
 	const date_labels = {
+		//Makeship-relevant dates
 		petitionLaunchDate: "Petition!",
 		petitionEndDate: "Petition ends",
 		paymentDue: "Pledges due", // ? Not sure exactly what payment is due on this date; it happens prior to the campaign's launch.
 		launch: "Campaign!",
 		enddate: "Campaign ends",
 		delivery: "Plushies are delivered!",
+		//Kickstarter-relevant dates
+		launched_at: "Campaign launched!",
+		deadline: "Campaign ends",
 	};
 	//For simplicity, not actually sorting the dates per se, just using the order given above.
 	//However, each date will individually be checked for "past" vs "future", so if they are
@@ -148,7 +150,7 @@ export function sockmsg_makeship_lookup(msg) {
 		//P(["Tags:", msg.tags.map(t => [" ", CODE({style: "margin-left: 4px"}, t)])]),
 		P("Sales: " + (msg.sales||0)),
 		UL(Object.entries(date_labels).map(([id, lbl]) => {
-			const date = msg.metadata.date[id]; if (!date) return;
+			const date = msg.dates[id]; if (!date) return;
 			const d = new Date(date);
 			return LI({class: +d > now ? "date upcoming" : "date past"}, [DATE(d), " ", lbl]);
 		})),
