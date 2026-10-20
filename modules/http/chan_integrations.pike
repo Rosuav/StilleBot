@@ -529,6 +529,7 @@ __async__ mapping makeship_lookup(string url) {
 	return ([
 		"url": url,
 		"sales": props->pledgeCount || props->productSalesQuantity->?quantity, //Will be updated by the poll
+		"platform": "makeship", "pfmid": "makeship-" + productid,
 		"productid": productid,
 		"metadata": meta,
 		"title": product->title,
@@ -573,11 +574,12 @@ __async__ void makeship_poll() {
 				sales = (int)Standards.JSON.decode(res->get())->quantity;
 			}
 			if (sales != cp->sales) {
-				werror("MAKESHIP SALE NUMBER CHANGED %O %O %O\n", cp->productid, cp->sales, sales);
+				werror("SALE NUMBER CHANGED %O %O %O\n", cp->pfmid, cp->sales, sales);
 				if (cp->action) G->G->irc->id[(int)chanid]->send(0, cp->action, ([
+					"{platform}": cp->platform, //Normally you'll know what you're attaching an action to, but this will allow you to chain to a generic handler
+					"{productid}": (string)cp->productid,
 					"{sales}": (string)sales,
 					"{prevsales}": (string)cp->sales,
-					"{productid}": (string)cp->productid,
 					"{title}": cp->title,
 				]));
 				//In theory we might be overwriting some other change. Would be better to mutate_config
@@ -644,14 +646,14 @@ __async__ void makeship_track(int chanid, string url) {
 		}
 	}
 	if (!data->phase_status) {data->phase_status = "done"; data->next_phase_time = 0xf0000000000000;}
-	await(update_makeship_campaign(chanid, data->productid, data));
+	await(update_makeship_campaign(chanid, data->pfmid, data));
 }
 
-__async__ void update_makeship_campaign(int chanid, int productid, mapping|zero data) {
+__async__ void update_makeship_campaign(int chanid, string pfmid, mapping|zero data) {
 	string phase_status = "done"; int next_phase_time;
 	await(G->G->DB->mutate_config(chanid, "makeship") {mapping cfg = __ARGS__[0];
 		if (!cfg->campaigns) cfg->campaigns = ({ });
-		int idx = search(cfg->campaigns->productid, productid);
+		int idx = search(cfg->campaigns->pfmid, pfmid);
 		if (!data) {
 			//Delete (untrack) this campaign
 			if (idx > -1) cfg->campaigns[idx] = 0;
@@ -659,7 +661,7 @@ __async__ void update_makeship_campaign(int chanid, int productid, mapping|zero 
 		}
 		else if (idx == -1) {
 			//New campaign, add to end of list (no reordering option, sorry)
-			//If you were trying to do a partial update but the productid wasn't found,
+			//If you were trying to do a partial update but the pfmid wasn't found,
 			//let the update fail. The bare minimum for a valid product is probably more
 			//than just the URL but this is a start.
 			if (data->url) cfg->campaigns += ({data});
@@ -693,20 +695,18 @@ __async__ void update_makeship_campaign(int chanid, int productid, mapping|zero 
 }
 
 @"is_mod": __async__ mapping wscmd_makeship_untrack(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (!intp(msg->productid) || !msg->productid) return (["error": "Bad message"]);
-	update_makeship_campaign(channel->userid, msg->productid, 0);
+	if (!msg->pfmid) return (["error": "Bad message"]);
+	update_makeship_campaign(channel->userid, msg->pfmid, 0);
 }
 
 //NOTE: This will need to also handle Kickstarter at some point.
 @"is_mod": __async__ void wscmd_set_action(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	sscanf(msg->campaign, "%s-%s", string platform, string product);
-	if (!platform || !product) return;
-	if (platform != "makeship") return; //Currently only Makeship supported - need to add KS eventually, maybe others too
-	array valid = G->G->cmdmgr->validate_command(channel, "", product, msg->response, ([
+	if (!stringp(msg->pfmid)) return;
+	array valid = G->G->cmdmgr->validate_command(channel, "", msg->pfmid, msg->response, ([
 		"language": msg->language == "mustard" ? "mustard" : ""
 	]));
 	if (!valid) return;
-	update_makeship_campaign(channel->userid, (int)product, (["action": valid[2]]));
+	update_makeship_campaign(channel->userid, msg->pfmid, (["action": valid[2]]));
 }
 
 protected void create(string name) {::create(name); call_out(check_makeship_when_active, 2, ([]));}

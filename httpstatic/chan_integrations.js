@@ -21,7 +21,7 @@ cmd_configure({
 		};
 	},
 	save_command: (cmdname, original, response, language) => {
-		ws_sync.send({cmd: "set_action", campaign: cmdname, response, language});
+		ws_sync.send({cmd: "set_action", pfmid: cmdname, response, language});
 	},
 });
 
@@ -61,8 +61,8 @@ export function render(data) {
 	if (data.makeship_campaigns) set_content("#makeship_campaigns", data.makeship_campaigns.map(cp => LI({"data-productid": cp.productid}, [
 		A({href: cp.url, target: "_blank"}, cp.title), " by ", B(cp.metadata.name.creator),
 		" [" + cp.sales + "] ",
-		publish_command("makeship-" + cp.productid, cp.action), //returns nothing
-		BUTTON({type: "button", class: "advview", "data-id": "makeship-" + cp.productid, title: "Add/edit actions"}, "\u2699"),
+		publish_command(cp.pfmid, cp.action), //returns nothing
+		BUTTON({type: "button", class: "advview", "data-id": cp.pfmid, title: "Add/edit actions"}, "\u2699"),
 		BUTTON({type: "button", class: "confirmdelete", title: "Stop tracking", style: "margin-left: 6px; width: 30px"}, "🗑"),
 	])));
 }
