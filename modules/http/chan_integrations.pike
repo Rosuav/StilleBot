@@ -16,6 +16,9 @@ Fourth Wall: hmac_key, clientid, secret
 Patreon: (eventually) clientid, secret
 */
 
+//NOTE: The name "makeship" is often used in contexts where both Makeship and Kickstarter are valid.
+//It would be nice to rename these things to "campaigns" or something, but it's not worth the breakage.
+
 //Used both in /c/integrations normal mode, and the mini mode for embeds
 constant fourthwall_integrations = #"
 Available integrations:
@@ -72,16 +75,14 @@ and [Goal Bars](monitors).
 
 $$loginprompt||$$
 
-## Makeship
+## Makeship and Kickstarter
 
-Track [Makeship](https://www.makeship.com/) plushie campaigns here!
+Track [Makeship](https://www.makeship.com/) plushies and [Kickstarter](https://www.kickstarter.com/) campaigns here!
 
 * loading...
 {:#makeship_campaigns}
 
 [Start tracking!](:.opendlg data-dlg=newmakeshipdlg)
-
-## Kickstarter (coming soon™)
 
 > ### Current Patrons
 >
@@ -101,13 +102,14 @@ Track [Makeship](https://www.makeship.com/) plushie campaigns here!
 .date.upcoming time {font-weight: bold;}
 </style>
 
-> ### Makeship Campaign
+> ### Makeship/Kickstarter Campaign
 >
-> To start tracking a Makeship petition or campaign, paste its URL here:
+> To start tracking a Makeship or Kickstarter petition/campaign, paste its URL here:
 >
 > <label>URL: <input type=url id=campaignurl size=60></label><br>
-> eg: `https://www.makeship.com/products/candicat-cozy` for a campaign<br>
-> or `https://www.makeship.com/petitions/kiko-bat-cat` for a petition<br>
+> eg: `https://www.makeship.com/products/candicat-cozy` for a Makeship campaign<br>
+> or `https://www.makeship.com/petitions/kiko-bat-cat` for a Makeship petition<br>
+> or `https://www.kickstarter.com/projects/buriedcandy/the-calling-1` for a Kickstarter campaign<br>
 > [Look up](:#lookup)
 > <div id=campaigndetails></div>
 >
@@ -428,7 +430,7 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 		"fwshopname": fw->refresh_token && fw->shopname, //This one's the flag - if absent, the front end assumes no FW config
 		"fwurl": fw->url, "fwusername": fw->username,
 		"paturl": pat->campaign_url, //May be null
-		"makeship_campaigns": ms->campaigns || ({ }),
+		"makeship_campaigns": ms->campaigns || ({ }), //Can also contain Kickstarter campaigns
 	]);
 }
 
@@ -537,6 +539,16 @@ __async__ mapping makeship_lookup(string url) {
 	]);
 }
 
+__async__ mapping kickstarter_lookup(string url) {
+	return (["error": "Unimplemented"]);
+}
+
+Concurrent.Future campaign_lookup(string url) {
+	if (has_prefix(url, "https://www.makeship.com/")) return makeship_lookup(url);
+	if (has_prefix(url, "https://www.kickstarter.com/")) return kickstarter_lookup(url);
+	return Concurrent.resolve((["error": "Unrecognized platform: " + url]));
+}
+
 @"is_mod": @"demo_ok": __async__ mapping wscmd_makeship_lookup(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!stringp(msg->url)) return (["error": "Bad message"]);
 	string url = msg->url;
@@ -544,12 +556,12 @@ __async__ mapping makeship_lookup(string url) {
 	Standards.URI uri = Standards.URI(msg->url, "https://www.makeship.com/"); //Use a base URL in case it's somehow still relative. Most likely that would result in a broken URL though.
 	if (uri->scheme == "http") {uri->scheme = "https"; uri->port = 443;}
 	if (uri->host == "makeship.com") uri->host = "www.makeship.com"; //They redirect us anyway, so shortcut the process
-	url = (string)uri;
-	if (!has_prefix(url, "https://www.makeship.com/")) return (["cmd": "makeship_lookup", "error": "Invalid campaign URL, please try again"]);
-	return await(makeship_lookup(url)) | (["cmd": "makeship_lookup"]);
+	if (uri->host == "kickstarter.com") uri->host = "www.kickstarter.com"; //It's easier to be consistent internally, too
+	return await(campaign_lookup((string)uri)) | (["cmd": "makeship_lookup"]);
 }
 
 //Largely similar to check_makeship() but not similar enough to fold the two together.
+//Handles both Makeship and Kickstarter.
 __async__ void makeship_poll() {
 	remove_call_out(G->G->makeship_poll_call_out);
 	if (!is_active_bot()) return;
@@ -566,7 +578,12 @@ __async__ void makeship_poll() {
 			if (cp->phase_status != "active") continue;
 			active = 1;
 			int sales = cp->sales;
-			if (cp->phase == "petition") {
+			if (cp->platform == "kickstarter") {
+				//TODO
+				//cp->url + "/stats.json"
+				//If status is no longer "live", call_out makeship_track(chanid, cp->url) after a few seconds.
+			}
+			else if (cp->phase == "petition") { //Else it'll be Makeship
 				object res = await(Protocols.HTTP.Promise.get_url("https://storefront.makeship.com/orders/petitions/" + cp->productid + "/pledges/count", provide_user_agent));
 				sales = (int)String.trim(res->get());
 			} else { //phase is "campaign"
@@ -606,7 +623,7 @@ __async__ void check_makeship() {
 			//Any campaign that was scheduled to have changed phase by now, do a full re-check and re-query.
 			//Note that this will potentially update the master list multiple times; this will only happen
 			//if multiple campaigns have changed state, which shouldn't happen unless we've lagged out badly
-			//(or Makeship batches their campaign starts/ends). A bit of extra database load is no big deal.
+			//(or the platform batches their campaign starts/ends). A bit of extra database load is no big deal.
 			await(makeship_track(chanid, cp->url));
 			changed = 1;
 		}
@@ -629,21 +646,27 @@ __async__ void check_makeship() {
 }
 
 __async__ void makeship_track(int chanid, string url) {
-	mapping data = await(makeship_lookup(url));
+	mapping data = await(campaign_lookup(url));
 	if (data->error) return; //Shouldn't happen - should have done a lookup before getting to this point
-	//Okay. Question: What phase are we in? Pre-petition, petition, interstage, campaign, post-campaign?
-	//(Note that "post-campaign" includes everything from manufacturing to delivery to arrival and forever after,
-	//even though these are very important distinctions to the humans.)
-	mapping dates = data->metadata->date;
-	int now = time();
-	foreach (({"petitionLaunchDate", "petitionEndDate", "launch", "enddate"}), string date) {
-		int tm = dates[date] && Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", dates[date])->unix_time();
-		if (tm > now) {
-			data->phase = (<"petitionLaunchDate", "petitionEndDate">)[date] ? "petition" : "campaign";
-			data->phase_status = (<"petitionEndDate", "enddate">)[date] ? "active" : "upcoming";
-			data->next_phase_time = tm;
-			break;
+	if (data->platform == "makeship") {
+		//Okay. Question: What phase are we in? Pre-petition, petition, interstage, campaign, post-campaign?
+		//(Note that "post-campaign" includes everything from manufacturing to delivery to arrival and forever after,
+		//even though these are very important distinctions to the humans.)
+		mapping dates = data->metadata->date;
+		int now = time();
+		foreach (({"petitionLaunchDate", "petitionEndDate", "launch", "enddate"}), string date) {
+			int tm = dates[date] && Calendar.ISO.parse("%Y-%M-%DT%h:%m:%s%z", dates[date])->unix_time();
+			if (tm > now) {
+				data->phase = (<"petitionLaunchDate", "petitionEndDate">)[date] ? "petition" : "campaign";
+				data->phase_status = (<"petitionEndDate", "enddate">)[date] ? "active" : "upcoming";
+				data->next_phase_time = tm;
+				break;
+			}
 		}
+	} else {
+		//For Kickstarter, all we can see is the current state, and there's no "upcoming" option.
+		//We also don't get told when the campaign will end. So check every hour.
+		if (data->state == "live") {data->phase_status = "active"; data->next_phase_time = time() + 3600;}
 	}
 	if (!data->phase_status) {data->phase_status = "done"; data->next_phase_time = 0xf0000000000000;}
 	await(update_makeship_campaign(chanid, data->pfmid, data));
@@ -699,7 +722,6 @@ __async__ void update_makeship_campaign(int chanid, string pfmid, mapping|zero d
 	update_makeship_campaign(channel->userid, msg->pfmid, 0);
 }
 
-//NOTE: This will need to also handle Kickstarter at some point.
 @"is_mod": __async__ void wscmd_set_action(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	if (!stringp(msg->pfmid)) return;
 	array valid = G->G->cmdmgr->validate_command(channel, "", msg->pfmid, msg->response, ([
