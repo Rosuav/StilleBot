@@ -602,7 +602,7 @@ __async__ void makeship_poll() {
 				//cp->url + "/stats.json"
 				//If status is no longer "live", call_out makeship_track(chanid, cp->url) after a few seconds.
 			}
-			else if (cp->phase == "petition") { //Else it'll be Makeship
+			else if (cp->phase == "petition") { //Else platform is Makeship, which has two different ping URLs depending on phase
 				object res = await(Protocols.HTTP.Promise.get_url("https://storefront.makeship.com/orders/petitions/" + cp->productid + "/pledges/count", provide_user_agent));
 				sales = (int)String.trim(res->get());
 			} else { //phase is "campaign"
