@@ -510,11 +510,21 @@ object provide_user_agent = Protocols.HTTP.Promise.Arguments((["headers": ([
 	"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 MustardMine/2026.10",
 ])]));
 
+__async__ string cloudflare_fetch(string url) {
+	object res = await(Protocols.HTTP.Promise.get_url(url, provide_user_agent));
+	string data = res->get();
+	if (sscanf(data, "%*s__cf_chl_tk=%[^\"]", string chltk) && chltk) {
+		werror("CLOUDFLARE TOKEN %O %O\n", res->status, chltk);
+		res = await(Protocols.HTTP.Promise.get_url(url + "?__cf_chl_tk=" + chltk, provide_user_agent));
+		data = res->get();
+		werror("NEW STATUS %O    \n", res->status);
+	}
+	return data;
+}
+
 //If the returned mapping has an "error" key, something went wrong, otherwise it gives a basic summary.
 __async__ mapping makeship_lookup(string url) {
-	Protocols.HTTP.Promise.Result res = await(Protocols.HTTP.Promise.get_url(url, provide_user_agent));
-	if (res->status != 200) return (["error": "Unable to fetch Makeship campaign - check the URL"]);
-	string data = res->get();
+	string data = await(cloudflare_fetch(url));
 	sscanf(data, "%*s<script id=\"__NEXT_DATA__\" type=\"application/json\">%s</script>", string json);
 	if (!json) return (["error": "Unable to read Makeship campaign - check the URL or contact Rosuav"]);
 	mapping info = Standards.JSON.decode(json);
@@ -603,11 +613,11 @@ __async__ void makeship_poll() {
 				//If status is no longer "live", call_out makeship_track(chanid, cp->url) after a few seconds.
 			}
 			else if (cp->phase == "petition") { //Else platform is Makeship, which has two different ping URLs depending on phase
-				object res = await(Protocols.HTTP.Promise.get_url("https://storefront.makeship.com/orders/petitions/" + cp->productid + "/pledges/count", provide_user_agent));
-				sales = (int)String.trim(res->get());
+				string raw = await(cloudflare_fetch("https://storefront.makeship.com/orders/petitions/" + cp->productid + "/pledges/count"));
+				sales = (int)String.trim(raw);
 			} else { //phase is "campaign"
-				object res = await(Protocols.HTTP.Promise.get_url("https://storefront.makeship.com/products/" + cp->productid + "/sales-quantity", provide_user_agent));
-				sales = (int)Standards.JSON.decode(res->get())->quantity;
+				string raw = await(cloudflare_fetch("https://storefront.makeship.com/products/" + cp->productid + "/sales-quantity"));
+				sales = (int)Standards.JSON.decode(raw)->quantity;
 			}
 			if (sales != cp->sales || amount != cp->amount) {
 				werror("SALES CHANGED %O %O %O\n", cp->pfmid, cp->sales, sales);
