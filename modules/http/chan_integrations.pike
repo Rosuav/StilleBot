@@ -613,6 +613,7 @@ Concurrent.Future campaign_lookup(string url) {
 __async__ void makeship_poll() {
 	remove_call_out(G->G->makeship_poll_call_out);
 	if (!is_active_bot()) return;
+	return; //hack
 	mapping cfg = await(G->G->DB->load_config(1, "makeship"));
 	if (!cfg->channels) return;
 	array(string) chanids = ({ });
@@ -691,7 +692,7 @@ __async__ void check_makeship() {
 	//On startup, code reload, and any time we become active, check to see if we need to start pinging.
 	//This has minor overhead of querying one config even if there are no campaigns of interest.
 	if (!is_active_bot()) remove_call_out(G->G->check_makeship_call_out);
-	else check_makeship();
+	//else check_makeship(); //Hack. Disabling. I cry.
 }
 
 __async__ void makeship_track(int chanid, string url) {
