@@ -510,9 +510,13 @@ object provide_user_agent = Protocols.HTTP.Promise.Arguments((["headers": ([
 	"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 MustardMine/2026.10",
 ])]));
 
+//I am crying here. This is stupid.
+#if 1
 __async__ string cloudflare_fetch(string url) {
 	object res = await(Protocols.HTTP.Promise.get_url(url, provide_user_agent));
 	string data = res->get();
+	return data;
+	//this doesn't work
 	if (sscanf(data, "%*s__cf_chl_tk=%[^\"]", string chltk) && chltk) {
 		werror("CLOUDFLARE TOKEN %O %O\n", res->status, chltk);
 		res = await(Protocols.HTTP.Promise.get_url(url + "?__cf_chl_tk=" + chltk, provide_user_agent));
@@ -521,6 +525,21 @@ __async__ string cloudflare_fetch(string url) {
 	}
 	return data;
 }
+#else
+@retain: mapping pending_stupidities = ([]);
+@"is_mod": void wscmd_stupid(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	if (conn->group != "#49497888") return;
+	object prom = m_delete(pending_stupidities, msg->stupid);
+	if (prom) prom->success(msg->text);
+}
+
+Concurrent.Future cloudflare_fetch(string url) {
+	int id = random(1000000);
+	object prom = pending_stupidities[id] = Concurrent.Promise();
+	send_updates_all("#49497888", (["stupid": id, "url": url]));
+	return prom->future();
+}
+#endif
 
 //If the returned mapping has an "error" key, something went wrong, otherwise it gives a basic summary.
 __async__ mapping makeship_lookup(string url) {
