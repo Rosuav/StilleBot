@@ -58,11 +58,11 @@ export function render(data) {
 		" ",
 		BUTTON({id: "resyncpatreon", type: "button"}, "Resync supporters"),
 	]);
-	if (data.makeship_campaigns) set_content("#makeship_campaigns", data.makeship_campaigns.map(cp => LI({"data-productid": cp.productid}, [
+	if (data.makeship_campaigns) set_content("#makeship_campaigns", data.makeship_campaigns.map(cp => LI({"data-id": cp.pfmid}, [
 		A({href: cp.url, target: "_blank"}, cp.title), " by ", B(cp.metadata.name.creator),
 		" [" + cp.sales + "] ",
 		publish_command(cp.pfmid, cp.action), //returns nothing
-		BUTTON({type: "button", class: "advview", "data-id": cp.pfmid, title: "Add/edit actions"}, "\u2699"),
+		BUTTON({type: "button", class: "advview", title: "Add/edit actions"}, "\u2699"),
 		BUTTON({type: "button", class: "confirmdelete", title: "Stop tracking", style: "margin-left: 6px; width: 30px"}, "🗑"),
 	])));
 }
@@ -161,4 +161,4 @@ export function sockmsg_makeship_lookup(msg) {
 on("click", "#makeship_track", e => ws_sync.send({cmd: "makeship_track", url: e.match.dataset.url}));
 
 on("click", "#makeship_campaigns .confirmdelete", simpleconfirm("Stop tracking this campaign? Its associated action (if any) will be deleted.",
-	e => ws_sync.send({cmd: "makeship_untrack", productid: +e.match.closest_data("productid")})));
+	e => ws_sync.send({cmd: "makeship_untrack", pfmid: e.match.closest_data("id")})));
