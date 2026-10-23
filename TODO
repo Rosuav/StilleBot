@@ -307,36 +307,6 @@
     implemented, that will see the benefit, and the package can be augmented after.
   - Where appropriate, replace call_out with xfr_call_out. Ensure that the function
     being deferred belongs to a findable object, and that the args are JSON-safe.
-* Turn kickstarter.pike into a coherent feature, putting it under chan_integrations
-  - Most of this has already been implemented for makeship. Ideally, reuse rather
-    than copy/paste; this would require having a single master list that can refer
-    to both Makeship and Kickstarter campaigns.
-  - Get streamer to copy/paste the page link
-  - Strip off any junk, then add /stats.json?v=1
-  - This should give a valid JSON blob for any campaign at all, notably including a
-    "state". Poll some projects to learn what states are possible.
-    - Pre-launch, wasn't able to get stats
-    - "successful" might include the possibility of late pledges. Ignore those,
-      I don't think it's worth differentiating.
-    - "failed"
-  - Map the state to a poll duration. If it's "successful" or "failed", poll
-    duration is zero. If it's active, poll every minute.
-  - Command editor. Save an echoable_message to be sent whenever the backer count is
-    seen to go up. Acknowledge that this is polled and therefore not fast.
-  - Save these in broadcaster-specific data.
-  - On uid 1, save a list of broadcasters with upcoming or active campaigns (two
-    separate lists).
-  - Fast poll and slow poll. Each works the same way, just a different delay time.
-  - Cancel the poll immediately if the bot is inactive (the other should pick up
-    and start polling shortly).
-  - On poll, fetch the relevant list, then go through each broadcaster and fetch
-    their data. Might need a custom query to fetch them all, rather than using the
-    normal convenience function.
-  - Query the JSON files of all applicable campaigns.
-  - If the state has changed, remove it from the list, and maybe remove the bcaster
-    from the master list.
-  - If the master list is now empty, stop the poll.
-  - Need to ping the poll whenever the list is added to, or when the bot becomes active.
 * Streamer groups
   - Example: Junk Fan Club (for StaticTides)
   - Let streamers create them maybe? For now only I create.
