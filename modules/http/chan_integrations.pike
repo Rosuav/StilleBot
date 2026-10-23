@@ -693,8 +693,8 @@ __async__ void makeship_poll() {
 				sales = stats->project->backers_count;
 				//Comes through as a float, but fractional dollars aren't usually relevant. TODO: Check other currencies.
 				amount = (int)stats->project->pledged;
-				//If the project seems no longer to be live, ping it. We don't have an easy schedule for when
-				//it's going to complete, so just check periodically.
+				//If the project seems no longer to be live, ping it. We MIGHT know when the deadline is,
+				//but it's also possible we won't, so check here too.
 				if (stats->project->state != "live") call_out(makeship_track, 3, chanid, cp->url);
 			}
 			else if (cp->phase == "petition") { //Else platform is Makeship, which has two different ping URLs depending on phase
@@ -774,8 +774,12 @@ __async__ void makeship_track(int chanid, string url) {
 		}
 	} else {
 		//For Kickstarter, all we can see is the current state, and there's no "upcoming" option.
-		//We also don't get told when the campaign will end. So check every hour.
-		if (data->state == "live") {data->phase_status = "active"; data->next_phase_time = time() + 3600;}
+		//We also might not get told when the campaign will end, in which case check every hour.
+		if (data->state == "live") {
+			data->phase_status = "active";
+			data->next_phase_time = data->dates->?deadline / 1000;
+			if (data->next_phase_time < time()) data->next_phase_time = time() + 3600;
+		}
 	}
 	if (!data->phase_status) {data->phase_status = "done"; data->next_phase_time = 0xf0000000000000;}
 	await(update_makeship_campaign(chanid, data->pfmid, data));
