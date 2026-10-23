@@ -504,18 +504,75 @@ __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	return (["cmd": "oauthpopup", "uri": (string)uri]);
 }
 
+//I am crying here. This is stupid.
+#if 1
+mapping host_to_ip = ([]);
+class cloudflare_fetcher(string url) {
+	inherit Concurrent.Promise;
+	string server;
+	object sock;
+	string writeme, result = "";
+
+	protected void create() {
+		Standards.URI uri = Standards.URI(url);
+		writeme = replace(sprintf(#"GET %s HTTP/1.0
+		Host: %s
+		User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0
+		Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+		Accept-Language: en-US,en;q=0.5
+		Dont-Accept-Encoding: gzip, deflate, br, zstd
+		Sec-GPC: 1
+		Connection: close
+		Upgrade-Insecure-Requests: 1
+		Sec-Fetch-Dest: document
+		Sec-Fetch-Mode: navigate
+		Sec-Fetch-Site: none
+		Sec-Fetch-User: ?1
+		Priority: u=0, i
+
+		", uri->path, server = uri->host), "\n", "\r\n") - "\t";
+		if (!host_to_ip[server]) {
+			array|zero ip = gethostbyname(server);
+			if (!ip || !sizeof(ip[1])) {failure(backtrace()); return;}
+			host_to_ip[server] = ip[1][0];
+		}
+		sock = Stdio.File();
+		sock->open_socket(-1, 0, host_to_ip[server]);
+		sock->set_nonblocking(sockread, connected, sockclosed);
+		sock->connect(host_to_ip[server], 443);
+	}
+
+	void sockread(mixed _, string data) {result += data;}
+	void sockclosed() {
+		//TODO: Properly parse HTTP
+		sscanf(result, "%s\r\n\r\n%s", string headers, string body);
+		success(body);
+	}
+
+	void sockwrite() {
+		if (writeme == "") return;
+		sock->write(writeme);
+		writeme = "";
+	}
+
+	void connected() {
+		sock = SSL.File(sock, SSL.Context());
+		sock->connect(server);
+		sock->set_nonblocking(sockread, sockwrite, sockclosed);
+	}
+}
+
+Concurrent.Future cloudflare_fetch(string url) {return cloudflare_fetcher(url)->future();}
+#else
 object provide_user_agent = Protocols.HTTP.Promise.Arguments((["headers": ([
 	"Accept": "text/html",
 	"Accept-Language": "en-US,en;q=0.9",
 	"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 MustardMine/2026.10",
 ])]));
 
-//I am crying here. This is stupid.
-#if 1
 __async__ string cloudflare_fetch(string url) {
 	object res = await(Protocols.HTTP.Promise.get_url(url, provide_user_agent));
 	string data = res->get();
-	return data;
 	//this doesn't work
 	if (sscanf(data, "%*s__cf_chl_tk=%[^\"]", string chltk) && chltk) {
 		werror("CLOUDFLARE TOKEN %O %O\n", res->status, chltk);
@@ -524,20 +581,6 @@ __async__ string cloudflare_fetch(string url) {
 		werror("NEW STATUS %O    \n", res->status);
 	}
 	return data;
-}
-#else
-@retain: mapping pending_stupidities = ([]);
-@"is_mod": void wscmd_stupid(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
-	if (conn->group != "#49497888") return;
-	object prom = m_delete(pending_stupidities, msg->stupid);
-	if (prom) prom->success(msg->text);
-}
-
-Concurrent.Future cloudflare_fetch(string url) {
-	int id = random(1000000);
-	object prom = pending_stupidities[id] = Concurrent.Promise();
-	send_updates_all("#49497888", (["stupid": id, "url": url]));
-	return prom->future();
 }
 #endif
 
@@ -613,7 +656,6 @@ Concurrent.Future campaign_lookup(string url) {
 __async__ void makeship_poll() {
 	remove_call_out(G->G->makeship_poll_call_out);
 	if (!is_active_bot()) return;
-	return; //hack
 	mapping cfg = await(G->G->DB->load_config(1, "makeship"));
 	if (!cfg->channels) return;
 	array(string) chanids = ({ });
@@ -692,7 +734,7 @@ __async__ void check_makeship() {
 	//On startup, code reload, and any time we become active, check to see if we need to start pinging.
 	//This has minor overhead of querying one config even if there are no campaigns of interest.
 	if (!is_active_bot()) remove_call_out(G->G->check_makeship_call_out);
-	//else check_makeship(); //Hack. Disabling. I cry.
+	else check_makeship();
 }
 
 __async__ void makeship_track(int chanid, string url) {

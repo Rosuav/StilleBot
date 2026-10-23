@@ -25,16 +25,6 @@ cmd_configure({
 	},
 });
 
-//crying
-async function stupid(data) {
-	console.log("STUPID URL", data);
-	const resp = await fetch(data.url, {credentials: "omit"});
-	console.log("STUPID RESP", resp);
-	const text = await resp.text();
-	console.log("STUPID TEXT", text);
-	ws_sync.send({cmd: "stupid", stupid: data.stupid, text});
-}
-
 export function render(data) {
 	//Note that the entire token will never be shown, only the last few characters
 	if (data.kofitoken) DOM("#kofitoken").value = data.kofitoken;
@@ -75,7 +65,6 @@ export function render(data) {
 		BUTTON({type: "button", class: "advview", title: "Add/edit actions"}, "\u2699"),
 		BUTTON({type: "button", class: "confirmdelete", title: "Stop tracking", style: "margin-left: 6px; width: 30px"}, "🗑"),
 	])));
-	if (data.stupid) stupid(data);
 }
 
 on("submit", ".token", e => {
