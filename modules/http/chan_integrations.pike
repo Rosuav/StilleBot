@@ -613,9 +613,7 @@ __async__ mapping makeship_lookup(string url) {
 }
 
 __async__ mapping kickstarter_lookup(string url) {
-	Protocols.HTTP.Promise.Result res = await(Protocols.HTTP.Promise.get_url(url));
-	if (res->status != 200) return (["error": "Unable to fetch Kickstarter campaign - check the URL"]);
-	string data = res->get();
+	string data = await(cloudflare_fetch(url));
 	sscanf(data, "%*shttps://api.kickstarter.com/v1/projects/%s&quot;", string apiurl);
 	if (!apiurl) return (["error": "Unable to read Kickstarter campaign - check the URL or contact Rosuav"]);
 	apiurl = "https://api.kickstarter.com/v1/projects/" + apiurl;
