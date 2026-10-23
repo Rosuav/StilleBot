@@ -154,7 +154,7 @@ export function sockmsg_makeship_lookup(msg) {
 			const d = new Date(date);
 			return LI({class: +d > now ? "date upcoming" : "date past"}, [DATE(d), " ", lbl]);
 		})),
-		BUTTON({id: "makeship_track", type: "button", "data-url": msg.url}, "Track this plushie!"),
+		BUTTON({id: "makeship_track", type: "button", "data-url": msg.url}, "Track this campaign!"),
 	]).classList = "";
 }
 
