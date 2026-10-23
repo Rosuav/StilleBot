@@ -147,6 +147,8 @@ __async__ void wscmd_cmdedit_execute(object channel, mapping(string:mixed) conn,
 		if (function f = core_handler->cmdedit_execute_provides) params = await(f(channel, conn, msg));
 		//TODO: If G->G->special_commands[valid[1]], call its placeholder generator to make the params
 		//Can this be merged into the cmdedit_execute_provides() handler??
+		//Ideally, this could even get *real* data where applicable, eg !!channelsetup, !!channelonline
+		//though this will be rare and probably not worth a lot of hassle.
 		params["{param}"] = ""; //Should there be a prompt for params? Probably not.
 		channel->send(user_to_person(conn->session->user), runme, params);
 	}
