@@ -13,6 +13,8 @@ cmd_configure({
 				"{username}": "The broadcaster", "{uid}": "ID of that person",
 				"{sales}": "Current sale number",
 				"{prevsales}": "Sales count prior to this update",
+				"{saleamount}": "Total currency pledged (if applicable)",
+				"{prevsaleamount}": "Currency pledged prior to this update",
 				"{productid}": "Unique ID of this product/campaign",
 				"{title}": "Product/campaign title",
 			},
@@ -59,7 +61,7 @@ export function render(data) {
 		BUTTON({id: "resyncpatreon", type: "button"}, "Resync supporters"),
 	]);
 	if (data.makeship_campaigns) set_content("#makeship_campaigns", data.makeship_campaigns.map(cp => LI({"data-id": cp.pfmid}, [
-		A({href: cp.url, target: "_blank"}, cp.title), " by ", B(cp.metadata.name.creator),
+		A({href: cp.url, target: "_blank"}, cp.title), " by ", B(cp.creator),
 		" [" + cp.sales + "] ",
 		publish_command(cp.pfmid, cp.action), //returns nothing
 		BUTTON({type: "button", class: "advview", title: "Add/edit actions"}, "\u2699"),

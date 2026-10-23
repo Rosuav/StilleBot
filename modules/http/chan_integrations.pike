@@ -605,7 +605,7 @@ __async__ mapping makeship_lookup(string url) {
 		"sales": props->pledgeCount || props->productSalesQuantity->?quantity, //Will be updated by the poll
 		"platform": "makeship", "pfmid": "makeship-" + productid,
 		"productid": productid,
-		"metadata": meta,
+		"metadata": meta, "creator": meta->name->creator,
 		"dates": meta->date || ([]),
 		"title": product->title,
 		"tags": product->tags,
@@ -620,9 +620,10 @@ __async__ mapping kickstarter_lookup(string url) {
 	mapping info = Standards.JSON.decode(await(Protocols.HTTP.Promise.get_url(apiurl))->get());
 	if (!info) return (["error": "Unable to read Kickstarter details - check the URL or contact Rosuav"]);
 	return ([
-		"url": url,
+		"url": url, "apiurl": apiurl,
 		"sales": info->backers_count, "amount": info->pledged, "goal": info->goal,
 		"platform": "kickstarter", "pfmid": "kickstarter-" + info->id,
+		"creator": info->creator->name,
 		"productid": info->id,
 		"state": info->state,
 		"title": info->name,
@@ -668,9 +669,13 @@ __async__ void makeship_poll() {
 			active = 1;
 			int sales = cp->sales, amount = cp->amount;
 			if (cp->platform == "kickstarter") {
-				//TODO
-				//cp->url + "/stats.json"
-				//If status is no longer "live", call_out makeship_track(chanid, cp->url) after a few seconds.
+				mapping stats = Standards.JSON.decode(await(cloudflare_fetch(cp->url + "/stats.json")));
+				sales = stats->project->backers_count;
+				//Comes through as a float, but fractional dollars aren't usually relevant. TODO: Check other currencies.
+				amount = (int)stats->project->pledged;
+				//If the project seems no longer to be live, ping it. We don't have an easy schedule for when
+				//it's going to complete, so just check periodically.
+				if (stats->project->state != "live") call_out(makeship_track, 3, chanid, cp->url);
 			}
 			else if (cp->phase == "petition") { //Else platform is Makeship, which has two different ping URLs depending on phase
 				string raw = await(cloudflare_fetch("https://storefront.makeship.com/orders/petitions/" + cp->productid + "/pledges/count"));
@@ -686,6 +691,8 @@ __async__ void makeship_poll() {
 					"{productid}": (string)cp->productid,
 					"{sales}": (string)sales,
 					"{prevsales}": (string)cp->sales,
+					"{saleamount}": (string)amount,
+					"{prevsaleamount}": (string)cp->amount,
 					"{title}": cp->title,
 				]));
 				//In theory we might be overwriting some other change. Would be better to mutate_config
