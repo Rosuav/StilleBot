@@ -130,7 +130,7 @@ mapping user_to_person(mapping user) {
 	]);
 }
 
-void wscmd_cmdedit_execute(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+__async__ void wscmd_cmdedit_execute(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	string cmdname = "validateme";
 	if (conn->subgroup == "!!" && stringp(msg->cmdname) && has_prefix(msg->cmdname, "!")) cmdname = msg->cmdname;
 	array valid = G->G->cmdmgr->validate_command(channel, conn->subgroup, cmdname, msg->response, ([
@@ -142,10 +142,12 @@ void wscmd_cmdedit_execute(object channel, mapping(string:mixed) conn, mapping(s
 		//If you explicitly say "run this", you likely want it to happen regardless of the condition, so
 		//dig into the message and grab the actual command.
 		if (mapping msg = valid[1] == "!trigger" && mappingp(runme) && runme->message) runme = msg;
+		object core_handler = G->G->websocket_types[conn->type];
+		mapping params = ([]);
+		if (function f = core_handler->cmdedit_execute_provides) params = await(f(channel, conn, msg));
 		//TODO: If G->G->special_commands[valid[1]], call its placeholder generator to make the params
-		mapping params = ([
-			"{param}": "", //Should there be a prompt for params? Probably not.
-		]);
+		//Can this be merged into the cmdedit_execute_provides() handler??
+		params["{param}"] = ""; //Should there be a prompt for params? Probably not.
 		channel->send(user_to_person(conn->session->user), runme, params);
 	}
 }

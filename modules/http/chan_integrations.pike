@@ -650,6 +650,26 @@ Concurrent.Future campaign_lookup(string url) {
 	return await(campaign_lookup((string)uri)) | (["cmd": "makeship_lookup"]);
 }
 
+mapping campaign_provides(mapping cp, string|void newsales, string|void newamount) {
+	return ([
+		"{platform}": cp->platform, //Normally you'll know what you're attaching an action to, but this will allow you to chain to a generic handler
+		"{productid}": (string)cp->productid,
+		"{sales}": newsales || (string)cp->sales,
+		"{prevsales}": (string)cp->sales,
+		"{saleamount}": newamount || (string)cp->amount,
+		"{prevsaleamount}": (string)cp->amount,
+		"{title}": cp->title,
+	]);
+}
+
+__async__ mapping cmdedit_execute_provides(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	mapping cfg = await(G->G->DB->load_config(channel->userid, "makeship"));
+	//The command name should match the platform-and-id.
+	foreach (cfg->campaigns || ({ }), mapping cp)
+		if (cp->pfmid == msg->cmdname) return campaign_provides(cp);
+	return ([]); //Not found, use stub/default data
+}
+
 //Largely similar to check_makeship() but not similar enough to fold the two together.
 //Handles both Makeship and Kickstarter.
 __async__ void makeship_poll() {
@@ -686,15 +706,7 @@ __async__ void makeship_poll() {
 			}
 			if (sales != cp->sales || amount != cp->amount) {
 				werror("SALES CHANGED %O %O %O\n", cp->pfmid, cp->sales, sales);
-				if (cp->action) G->G->irc->id[(int)chanid]->send(0, cp->action, ([
-					"{platform}": cp->platform, //Normally you'll know what you're attaching an action to, but this will allow you to chain to a generic handler
-					"{productid}": (string)cp->productid,
-					"{sales}": (string)sales,
-					"{prevsales}": (string)cp->sales,
-					"{saleamount}": (string)amount,
-					"{prevsaleamount}": (string)cp->amount,
-					"{title}": cp->title,
-				]));
+				if (cp->action) G->G->irc->id[(int)chanid]->send(0, cp->action, campaign_provides(cp, (string)sales, (string)amount));
 				//In theory we might be overwriting some other change. Would be better to mutate_config
 				//and do a deep mutation inside the transaction, but I can't be bothered.
 				cp->sales = sales;
