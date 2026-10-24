@@ -650,7 +650,7 @@ Concurrent.Future campaign_lookup(string url) {
 	return await(campaign_lookup((string)uri)) | (["cmd": "makeship_lookup"]);
 }
 
-mapping campaign_provides(mapping cp, string|void newsales, string|void newamount) {
+mapping campaign_provides(mapping cp, string|void newsales, string|void newamount, string|void newsupporter) {
 	return ([
 		"{platform}": cp->platform, //Normally you'll know what you're attaching an action to, but this will allow you to chain to a generic handler
 		"{productid}": (string)cp->productid,
@@ -658,6 +658,7 @@ mapping campaign_provides(mapping cp, string|void newsales, string|void newamoun
 		"{prevsales}": (string)cp->sales,
 		"{saleamount}": newamount || (string)cp->amount,
 		"{prevsaleamount}": (string)cp->amount,
+		"{supporter}": newsupporter || "",
 		"{title}": cp->title,
 	]);
 }
@@ -688,6 +689,7 @@ __async__ void makeship_poll() {
 			if (cp->phase_status != "active") continue;
 			active = 1;
 			int sales = cp->sales, amount = cp->amount;
+			string supporter = "";
 			if (cp->platform == "kickstarter") {
 				mapping stats = Standards.JSON.decode(await(cloudflare_fetch(cp->url + "/stats.json")));
 				sales = stats->project->backers_count;
@@ -700,13 +702,20 @@ __async__ void makeship_poll() {
 			else if (cp->phase == "petition") { //Else platform is Makeship, which has two different ping URLs depending on phase
 				string raw = await(cloudflare_fetch("https://storefront.makeship.com/orders/petitions/" + cp->productid + "/pledges/count"));
 				sales = (int)String.trim(raw);
+				array supp = Standards.JSON.decode(await(cloudflare_fetch("https://storefront.makeship.com/petitions/" + cp->productid + "/supporters?direction=DESC&limit=1")));
+				if (sizeof(supp) && supp[0]->id != cp->latest_supporter_id) {
+					//The latest supporter has changed. (This won't happen if the most recent
+					//supporter is anonymous.)
+					supporter = cp->latest_supporter = supp[0]->username;
+					cp->latest_supporter_id = supp[0]->id;
+				}
 			} else { //phase is "campaign"
 				string raw = await(cloudflare_fetch("https://storefront.makeship.com/products/" + cp->productid + "/sales-quantity"));
 				sales = (int)Standards.JSON.decode(raw)->quantity;
 			}
 			if (sales != cp->sales || amount != cp->amount) {
 				werror("SALES CHANGED %O %O %O\n", cp->pfmid, cp->sales, sales);
-				if (cp->action) G->G->irc->id[(int)chanid]->send(0, cp->action, campaign_provides(cp, (string)sales, (string)amount));
+				if (cp->action) G->G->irc->id[(int)chanid]->send(0, cp->action, campaign_provides(cp, (string)sales, (string)amount, supporter));
 				//In theory we might be overwriting some other change. Would be better to mutate_config
 				//and do a deep mutation inside the transaction, but I can't be bothered.
 				cp->sales = sales;

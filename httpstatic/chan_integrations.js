@@ -15,6 +15,7 @@ cmd_configure({
 				"{prevsales}": "Sales count prior to this update",
 				"{saleamount}": "Total currency pledged (if applicable)",
 				"{prevsaleamount}": "Currency pledged prior to this update",
+				"{supporter}": "Name of latest supporter, if available",
 				"{productid}": "Unique ID of this product/campaign",
 				"{title}": "Product/campaign title",
 			},
