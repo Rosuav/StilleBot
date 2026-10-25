@@ -101,9 +101,10 @@ on("click", ".perms", e => {
 	//it should continue to show up, but we'll more generally prefer to seek API access as that's
 	//the direction Twitch is moving.
 	additional_scopes["chat:edit"] = "Legacy access to chat";
+	const default_scopes = ["user:write:chat", "user:read:emotes"]; //Scopes to select by default - they can be unselected
 	set_content("#scopelist", [
 		Object.entries(additional_scopes).sort().map(([scope, desc]) => LI(LABEL([
-			scopes.includes(scope) ? "[Available] " : INPUT({type: "checkbox", name: scope, checked: scope === "user:write:chat"}),
+			scopes.includes(scope) ? "[Available] " : INPUT({type: "checkbox", name: scope, checked: default_scopes.includes(scope)}),
 			desc[0] === '*' && SPAN({class: "warningicon"}, "⚠️"),
 			" ", desc.replace("*", ""), //should really just be a prefix removal
 		]))),
