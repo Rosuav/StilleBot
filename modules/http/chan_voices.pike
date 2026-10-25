@@ -15,6 +15,24 @@ Name        | Mnemonic | Description/purpose | -
 -           | -        | Loading...
 {: #voices}
 
+Having trouble getting voices to work? The 'Say Hello' button can help. [More hints and tips](:.opendlg data-dlg=tipsdlg)
+
+> ### Hints and tips
+>
+> * Many things can go wrong with setting up a bot voice. The quickest and easiest way
+>   to test a voice is to click 'Say Hello', which should put a message in the channel's
+>   chat saying hello from that voice. If it does not, you may receive a helpful error
+>   message.
+> * If 'Say Hello' succeeds but the bot does not react to commands, it may be that general
+>   channel permissions need to be re-granted. This can happen if the broadcaster tells
+>   Twitch to disconnect the Mustard Mine app, or if other authentication-related issues
+>   occur. If you are the broadcaster, [click here to reauthenticate](:.twitchlogin data-scopes=@$$channel_scopes_required$$@).
+> * Intermittent failures can be caused by rate limits and timeouts.
+> * Having the voice be a moderator bypasses many of Twitch's restrictions.
+>
+> [Close](:.dialog_close)
+{: tag=dialog #tipsdlg}
+
 [Add $$selfname$$ as a voice](:.perms data-id=$$selfuid$$) [Add new voice](:.perms data-id=0)
 
 > ### Permissions
@@ -40,6 +58,8 @@ Name        | Mnemonic | Description/purpose | -
 	border: 1px solid blue;
 	background: aliceblue;
 }
+#tipsdlg {max-width: 900px}
+#tipsdlg li {margin-bottom: 8px;}
 </style>
 
 > ### Unable to send chat messages
@@ -70,6 +90,7 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 		]),
 		"selfname": req->misc->session->user->?display_name || "",
 		"selfuid": (string)req->misc->session->user->?id || "",
+		"channel_scopes_required": channel_scopes_required,
 	]) | req->misc->chaninfo);
 }
 
