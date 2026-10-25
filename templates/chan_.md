@@ -1,6 +1,6 @@
 # Channel info for $$channel$$
 
-Mustard Mine is a $$bot_or_mod$$ for this channel. You can find out more about what
+Mustard Mine is a bot for this channel. $$modstatus$$ You can find out more about what
 the Mustard Mine can do here.
 
 $$greeting||$$

@@ -53,8 +53,25 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			if (!channel->config->greeting_dismissed) greeting = bcaster_greeting;
 		}
 	}
+	string modstatus = "However, moderator access may not be available - check [voice authentication](voices) for more details.";
+	//Option 1: The bot's default voice is a mod.
+	string|zero defvoice = G->G->irc->id[0]->?config->?defvoice;
+	if (defvoice && channel->is_mod(defvoice)) {
+		//I don't wanna do an API call just to get the default voice's name. If it
+		//isn't in cache, just assume that it's MustardMine.
+		string username = G->G->user_info[(int)defvoice]->?display_name || "MustardMine";
+		modstatus = username + " is a mod for this channel.";
+	}
+	//Option 2: The bot's intrinsic voice is a mod.
+	else if (channel->is_mod((string)G->G->dbsettings->credentials->userid))
+		modstatus = G->G->dbsettings->credentials->display_name + " is a mod for this channel.";
+	//Option 3: The broadcaster is the default voice
+	else if (channel->config->defvoice == (string)channel->userid)
+		modstatus = "Messages will be posted as the broadcaster.";
+	//Option 4, unchecked: The default voice is a separate moderator. The is_mod check is unreliable if
+	//we don't have moderation:read scope for the broadcaster.
 	return render_template("chan_.md", ([
-		"bot_or_mod": channel->is_mod((string)G->G->dbsettings->credentials->userid) ? "mod" : "bot",
+		"modstatus": modstatus,
 		"uptime": uptime ? "Channel has been online for " + describe_time(uptime) : "Channel is currently offline.",
 		"user_is_mod": user_is_mod,
 		"extralinks": extralinks, "greeting": greeting,
