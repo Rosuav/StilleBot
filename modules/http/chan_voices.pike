@@ -15,7 +15,7 @@ Name        | Mnemonic | Description/purpose | -
 -           | -        | Loading...
 {: #voices}
 
-[Add new voice](:#addvoice .perms)
+[Add $$selfname||yourself$$ as a voice](:.perms data-id=$$selfuid||0$$) [Add new voice](:.perms data-id=0)
 
 > ### Permissions
 >
@@ -65,6 +65,8 @@ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
 			//code in websocket_cmd_activate that does the actual authentication checks.
 			"can_activate": req->misc->session->user->id == (string)G->G->bot_uid ? "any" : req->misc->session->user->id,
 		]),
+		"selfname": req->misc->session->user->?display_name || "",
+		"selfuid": (string)req->misc->session->user->?id || "",
 	]) | req->misc->chaninfo);
 }
 

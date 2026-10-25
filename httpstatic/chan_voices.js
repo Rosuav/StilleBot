@@ -3,9 +3,11 @@ const {BR, BUTTON, CODE, DIV, IMG, INPUT, LABEL, LI, SPAN, TD, TEXTAREA, TR} = c
 import {simpleconfirm} from "$$static||utils.js$$";
 
 export const render_parent = DOM("#voices tbody");
+const have_scopes = { };
 export function render_item(item, mode) {
 	const botvoice = DOM(`#voices thead [data-id="${item.id}"]`);
 	if (botvoice) botvoice.replaceWith();
+	have_scopes[item.id] = item.scopes;
 	return TR({"data-id": item.id}, [
 		TD([IMG({src: item.profile_image_url, className: "avatar"}), item.name]),
 		TD(INPUT({value: item.desc, className: "desc", size: 15})),
@@ -21,7 +23,7 @@ export function render_item(item, mode) {
 			DIV([
 				BUTTON({type: "button", className: "save"}, "Save"),
 				BUTTON({type: "button", className: "delete"}, "Delete"),
-				BUTTON({type: "button", class: "perms", "data-scopes": item.scopes.join("/")}, "Permissions"),
+				BUTTON({type: "button", class: "perms"}, "Permissions"),
 				BUTTON({type: "button", class: "makedefault"}, "Make default"),
 				BUTTON({type: "button", class: "testvoice"}, "Say Hello"),
 			]),
@@ -45,7 +47,7 @@ export function render(data) {
 	});
 	//If there are any bot voices that aren't already authenticated, list them too, with option to add them.
 	if (data.botvoices) data.botvoices.forEach(bv => {
-		if (DOM(`[data-id="${bv.id}"]`)) return; //Already got this voice, possibly from a previous render or from having it on the channel
+		if (DOM(`tr[data-id="${bv.id}"]`)) return; //Already got this voice, possibly from a previous render or from having it on the channel
 		DOM("#voices thead").appendChild(render_item(bv, "botvoice"));
 	});
 }
@@ -93,8 +95,8 @@ on("click", ".delete", simpleconfirm("Deactivate this voice? Reactivating will r
 
 let perms_voiceid = null;
 on("click", ".perms", e => {
-	perms_voiceid = e.match.id !== "addvoice" && e.match.closest("tr").dataset.id;
-	const scopes = (e.match.dataset.scopes || "").split("/");
+	perms_voiceid = e.match.closest_data("id");
+	const scopes = have_scopes[perms_voiceid] || [];
 	//Hack: Include chat login in "additional" scopes. If you've already granted this permission,
 	//it should continue to show up, but we'll more generally prefer to seek API access as that's
 	//the direction Twitch is moving.
@@ -110,7 +112,7 @@ on("click", ".perms", e => {
 });
 
 on("click", "#authenticate", e => {
-	const scopes = ["chat_login"];
+	const scopes = [];
 	document.querySelectorAll("#scopelist input:checked").forEach(cb => scopes.push(cb.name));
 	ws_sync.send({cmd: "login", voiceid: perms_voiceid, scopes});
 });
