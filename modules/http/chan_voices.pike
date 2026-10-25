@@ -15,7 +15,7 @@ Name        | Mnemonic | Description/purpose | -
 -           | -        | Loading...
 {: #voices}
 
-[Add $$selfname||yourself$$ as a voice](:.perms data-id=$$selfuid||0$$) [Add new voice](:.perms data-id=0)
+[Add $$selfname$$ as a voice](:.perms data-id=$$selfuid$$) [Add new voice](:.perms data-id=0)
 
 > ### Permissions
 >
@@ -24,6 +24,9 @@ Name        | Mnemonic | Description/purpose | -
 >
 > * loading...
 > {: #scopelist}
+>
+> Authenticating someone other than `$$selfname$$`? Copy/paste the login URL to another<br>
+> browser, or log in separately - it will work fine!
 >
 > [Authenticate](:#authenticate) [Close](:.dialog_close)
 {: tag=dialog #permsdlg}
@@ -158,11 +161,12 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 	[object channel, string grp] = split_channel(conn->group);
 	if (!channel) return;
 	multiset scopes = (multiset)(msg->scopes || ({ }));
-	//Grab the existing credentials. If authenticating new, guess that we're likely
-	//going to auth as the current user - it's slightly more likely than the opposite.
-	int existing_user = (int)msg->voiceid || (int)conn->session->user->id;
-	mapping cred = G->G->user_credentials[existing_user];
-	if (cred) scopes |= (multiset)cred->scopes;
+	//Grab the existing credentials. If voiceid is 0, "0", or absent, the intention is
+	//likely to copy/paste the auth link to another browser, or log in separately; give
+	//no additional scopes. Since it's possible that this copy/paste will be done for
+	//reauthentication too, we always set the force_verify flag.
+	mapping cred = G->G->user_credentials[(int)msg->voiceid];
+	if (cred->?scopes) scopes |= (multiset)cred->scopes;
 	string url = function_object(G->G->http_endpoints->twitchlogin)->get_redirect_url(
 		scopes, (["force_verify": "true"]), conn->hostname,
 	) {
@@ -177,7 +181,7 @@ void websocket_cmd_login(mapping(string:mixed) conn, mapping(string:mixed) msg) 
 		v->last_auth_time = time();
 		G->G->DB->save_config(channel->userid, "voices", vox);
 		update_one(conn->group, v->id);
-		return (["data": "<script>window.close()</script>", "type": "text/html"]);
+		return (["data": "<script>window.close()</script><h1>Authentication successful!</h1><p>You can close this window and return to the previous page.</p>", "type": "text/html"]);
 	};
 	conn->sock->send_text(Standards.JSON.encode((["cmd": "login", "uri": url])));
 }
