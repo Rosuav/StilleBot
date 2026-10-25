@@ -23,7 +23,7 @@ and is everything that isn't in the Favs/Trays/Specials.
   - The primary anchor point may belong in Actives or may belong in Specials. Uncertain.
 */
 import {set_content, choc, replace_content, lindt, DOM, on, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
-const {A, BR, BUTTON, CODE, DIALOG, DIV, FORM, H3, H5, HEADER, IMG, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SECTION, SELECT, TABLE, TD, TEXTAREA, TR, U, UL} = choc; //autoimport
+const {A, BR, BUTTON, CODE, DETAILS, DIALOG, DIV, FORM, H3, H5, HEADER, IMG, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SECTION, SELECT, SUMMARY, TABLE, TD, TEXTAREA, TR, U, UL} = choc; //autoimport
 
 const SNAP_RANGE = 100; //Distance-squared to permit snapping (eg 25 = 5px radius)
 const canvas = DOM("#command_gui");
@@ -42,7 +42,8 @@ const spritesheet = {"🔒":1,"🗡️":19,"💎":37,"👪":55,"🌞":73,"🌚":
 document.body.appendChild(DIALOG({id: "properties"}, SECTION([
 	HEADER([H3("Properties"), DIV([BUTTON({type: "button", className: "dialog_cancel"}, "x"), BR(), BUTTON({type: "button", id: "toggle_favourite"}, "fav")])]),
 	DIV(FORM({id: "setprops", method: "dialog"}, [
-		TABLE({id: "params"}), P({id: "typedesc"}), UL({id: "providesdesc"}),
+		TABLE({id: "params"}), P({id: "typedesc"}),
+		UL({id: "providesdesc"}), DETAILS({id: "moreprovides"}, [SUMMARY("- more -"), UL({id: "moreprovidesdesc"})]),
 		P({id: "templateinfo"}, [
 			"This is a template and cannot be edited directly. Drag it to create something in the", BR(),
 			"command, or ==> ", BUTTON({id: "clonetemplate", type: "button"}, "Add to command")
@@ -95,14 +96,16 @@ function provides(el, type_override, provisions) {
 	if (typeof prov === "function") return prov(el, provisions || { });
 	return prov;
 }
-//For display of the provision itself, show this.
+//For display of the provision itself, show this. If the label begins with "*", it's less-recommended and can be buried behind a twistie.
 function provision_label(prov) {
 	if (typeof prov === "string") return prov;
 	if (Array.isArray(prov)) {
 		if (prov.length === 2) return prov[0];
-		return "Collection of " + provision_label(prov[0]);
+		const lbl = provision_label(prov[0]);
+		if (lbl[0] === "*") return "*Collection of " + lbl.slice(1); //Carry the depreferred marker through
+		return "Collection of " + lbl;
 	}
-	//Else it's a record.
+	//Else it's a record. If it's depreferred, this MUST be marked using the ["\0"] notation.
 	return prov["\0"] || "Record of " + Object.keys(prov).join(", ");
 }
 //For downstream examination of the value provided, show this.
@@ -153,15 +156,22 @@ const text_message = {...default_handlers,
 		for (let par = el; par; par = par.parent && par.parent[0]) parents.unshift(par);
 		const allvars = { };
 		for (let el of parents) Object.assign(allvars, provides(el, null, allvars));
+		//Gather the provisions as buttons; those with asterisked labels are depreferred and buried behind a twistie.
+		const prov = [], moreprov = [];
+		Object.entries(allvars).forEach(([v, d]) => {
+			const t = provision_type(d);
+			//When the variable is an aggregate value (array/record), fill out the name
+			//followed by a dot, rather than closing the brace immediately. Keep the button
+			//label the same though. (Or should it say "{stuff...}" for a collection?)
+			const insertme = typeof t === "object" ? v.slice(0, -1) + "." : v;
+			const lbl = provision_label(d);
+			const depreferred = lbl[0] === "*";
+			const btn = BUTTON({type: "button", title: lbl.slice(depreferred), class: "insertvar", "data-insertme": insertme}, v);
+			(depreferred ? moreprov : prov).push(btn);
+		});
 		return DIV({className: "msgedit"}, [
-			DIV({className: "buttonbox attached"}, Object.entries(allvars).map(([v, d]) => {
-				const t = provision_type(d);
-				//When the variable is an aggregate value (array/record), fill out the name
-				//followed by a dot, rather than closing the brace immediately. Keep the button
-				//label the same though. (Or should it say "{stuff...}" for a collection?)
-				const insertme = typeof t === "object" ? v.slice(0, -1) + "." : v;
-				return BUTTON({type: "button", title: provision_label(d), class: "insertvar", "data-insertme": insertme}, v)
-			})),
+			DIV({className: "buttonbox attached"}, prov),
+			DETAILS([SUMMARY("- more -"), DIV({className: "buttonbox attached"}, moreprov)]),
 			TEXTAREA({...id, "data-editme": 1, ".provided_vars": allvars}, el.message || ""),
 			DIV({class: "emotepicker"}, "☺"),
 			DIV({class: "slashcommands short"}, slashcommands(el.message || "")),
@@ -537,7 +547,7 @@ function builtin_types() {
 		b.params.unshift({attr: "builtin", values: name});
 		for (let prov in blt) if (prov[0] === '{')
 			if (!provision_label(blt[prov]).includes("(deprecated)")) b.provides[prov] = blt[prov];
-			//TODO: else store it in an "extras" of some form, maybe inside provides but with a flag
+			else b.provides[prov] = "*" + blt[prov]; //The asterisk marks it as depreferred; the "(deprecated)" will be retained in the title text.
 	});
 	return ret;
 }
@@ -628,13 +638,13 @@ const main_types = {
 		provides: {
 			"{param}": "Anything typed after the command name",
 			"{username}": "Name of the user who entered the command",
-			"{uid}": "Twitch ID of the user who entered the command",
+			"{uid}": "*Twitch ID of the user who entered the command",
 			"{@mod}": "1 if entered by a mod/broadcaster, 0 if not (not applicable to timers or redemptions)",
 			"{@sub}": "As above, if entered by a subscriber",
 			"{@vip}": "As above, if entered by a VIP",
-			"{rewardid}": "UUID of the channel point reward that triggered this, or blank",
-			"{redemptionid}": "UUID of the precise channel point redemption (for confirm/cancel)",
-			"{msgid}": "ID of the message that caused this command (suitable for replies)",
+			"{rewardid}": "*UUID of the channel point reward that triggered this, or blank",
+			"{redemptionid}": "*UUID of the precise channel point redemption (for confirm/cancel)",
+			"{msgid}": "*ID of the message that caused this command (suitable for replies)",
 		},
 		width: 400,
 		actionlbl: "Edit",
@@ -658,9 +668,9 @@ const main_types = {
 		provides: {
 			"{param}": "The entire message",
 			"{username}": "Name of the user who entered the triggering message",
-			"{uid}": "Twitch ID of the user who entered the triggering message",
+			"{uid}": "*Twitch ID of the user who entered the triggering message",
 			"{@mod}": "1 if trigger came from a mod/broadcaster, 0 if not",
-			"{msgid}": "ID of the message that caused this command (suitable for replies)",
+			"{msgid}": "*ID of the message that caused this command (suitable for replies)",
 		},
 		width: 400,
 		actionlbl: "Edit",
@@ -1969,9 +1979,14 @@ function open_element_properties(el, type_override) {
 	const cfg = {focus: null};
 	set_content("#params", (type.params||[]).map(param => build_element(param, cfg)));
 	update_governed_params();
-	set_content("#providesdesc", Object.entries(provides(el, type_override) || {}).map(([v, d]) => LI([
-		CODE(v), ": " + provision_label(d),
-	])));
+
+	//Split the provides into regular and depreferred lists
+	const prov = Object.entries(provides(el, type_override) || {}).map(([v, d]) => [v, provision_label(d)]);
+	set_content("#providesdesc", prov.map(([v, d]) => d[0] !== "*" && LI([CODE(v), ": " + d])));
+	let havemore = 0;
+	set_content("#moreprovidesdesc", prov.map(([v, d]) => d[0] === "*" && (havemore = 1) && LI([CODE(v), ": " + d.slice(1)])));
+	DOM("#moreprovides").hidden = !havemore;
+
 	if (!type_override) set_content("#saveprops", "Close"); //On initial open, say that there are no changes. Type override means there are, in effect, changes.
 	DOM("#templateinfo").style.display = el.template && el.type !== "flag" ? "block" : "none";
 	const sel = DOM("#value-conditional");

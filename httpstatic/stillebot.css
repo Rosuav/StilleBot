@@ -139,6 +139,12 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 }
 .buttonbox.attached {margin-bottom: 1px;}
 .buttonbox.centered {justify-content: center;}
+
+/* The "provides" and its twistie for "more provides" should hang together compactly */
+#providesdesc {margin-bottom: 0;}
+#moreprovides {margin-left: 20px;}
+#moreprovidesdesc {margin: 0;}
+
 #cmdviewtabset label {
 	background: #a0f0c0;
 	padding-right: 0.25em;
