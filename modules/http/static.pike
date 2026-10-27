@@ -64,7 +64,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 
 //Handle /favicon.ico as if it were /static/favicon.ico
 mapping(string:mixed) favicon(Protocols.HTTP.Server.Request req) {return http_request(req, "favicon.ico");}
-mapping(string:mixed) favicon(Protocols.HTTP.Server.Request req) {return http_request(req, "robots.txt");}
+mapping(string:mixed) robotstxt(Protocols.HTTP.Server.Request req) {return http_request(req, "robots.txt");}
 
 string staticfile(string fn)
 {
