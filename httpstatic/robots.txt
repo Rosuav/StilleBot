@@ -1,0 +1,8 @@
+# Block robots from crawling some of the more ephemeral pages
+# eg the raid finder involves a large number of API calls, but its information
+# really isn't very useful after the moment. Maybe I should rework it so the
+# raid finder returns some sort of precomputed stub data whenever a robot is
+# looking at it, but that'd be a lot of complexity.
+User-agent: *
+Disallow: /raidfinder
+Disallow: /upload/

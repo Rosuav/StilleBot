@@ -64,6 +64,7 @@ mapping(string:mixed)|Concurrent.Future http_request(Protocols.HTTP.Server.Reque
 
 //Handle /favicon.ico as if it were /static/favicon.ico
 mapping(string:mixed) favicon(Protocols.HTTP.Server.Request req) {return http_request(req, "favicon.ico");}
+mapping(string:mixed) favicon(Protocols.HTTP.Server.Request req) {return http_request(req, "robots.txt");}
 
 string staticfile(string fn)
 {
@@ -77,5 +78,6 @@ string staticfile(string fn)
 protected void create(string name) {
 	::create(name);
 	G->G->http_endpoints["favicon.ico"] = favicon;
+	G->G->http_endpoints["robots.txt"] = robotstxt;
 	G->G->template_defaults["static"] = staticfile;
 }
