@@ -581,7 +581,7 @@ class channel(mapping identity) {
 				await(_send_with_catch(person, message->message, vars | params, cfg | cfg_changes));
 				return;
 			}
-			else message = (["message": sprintf("Bad builtin name %O", message->builtin)]); //FIXME: Log error instead?
+			else message = (["message": sprintf("Bad builtin name %O", message->builtin)]); //Log error instead?
 		}
 
 		echoable_message msg = message->message;
