@@ -586,8 +586,12 @@ class channel(mapping identity) {
 		}
 
 		echoable_message msg = message->message;
-		string expr(string input) {
+		string|array expr(string input, int|void array_ok) { //Will only return an array if array_ok
 			if (!input) return "";
+			if (array_ok && arrayp(vars[input])) {
+				if (message->casefold) return command_casefold(vars[input][*]);
+				return vars[input];
+			}
 			string ret = _substitute_vars(input, vars, person, cfg->users);
 			if (message->casefold) return command_casefold(ret); //Use the same case-folding algorithm as !command lookups use
 			return ret;
@@ -599,9 +603,9 @@ class channel(mapping identity) {
 				msg = message->otherwise;
 				break;
 			}
-			case "contains": //String containment. Similar.
+			case "contains": //String/array containment. Similar.
 			{
-				if (has_value(expr(message->expr2), expr(message->expr1))) break; //The condition passes!
+				if (has_value(expr(message->expr2, 1), expr(message->expr1))) break; //The condition passes!
 				msg = message->otherwise;
 				break;
 			}

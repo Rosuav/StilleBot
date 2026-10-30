@@ -829,14 +829,14 @@ const main_types = {
 	conditional_string: {
 		color: "#7777ee", children: ["message", "otherwise"], label: el => [
 			el.conditional === "string" ? (el.expr1 && el.expr2 ? "If " + el.expr1 + " == " + el.expr2 : el.expr1 ? "If " + el.expr1 + " is blank" : "String comparison")
-				: el.conditional === "contains" ? "String includes"
+				: el.conditional === "contains" ? "Includes string"
 				: el.conditional === "regexp" ? "Regular expression"
 				: "?? unknown condition ??",
 			"Otherwise:",
 		],
 		params: [
 			{attr: "conditional", label: "Condition type", values: ["string", "contains", "regexp"],
-				selections: {string: "String equals", contains: "String includes", regexp: "Regular expression"}},
+				selections: {string: "String equals", contains: "Includes string", regexp: "Regular expression"}},
 			{attr: "casefold", label: "Case insensitive", values: bool_attr},
 			{attr: "expr1", label: "Expression 1"}, {attr: "expr2", label: "Expression 2"},
 		],

@@ -292,8 +292,7 @@
   - If so, deprecate and de-document the leaders/lowleaders limit in setvar
 * ACE tab completion for MustardScript??
   - https://github.com/ajaxorg/ace/wiki/Configuring-Ace/
-* Allow a containment check to be done on an array. If it is, it is member containment
-  and will not find a partial match. Use this for tags in !!streamsetup. Can it be
+* Use an array for tags in !!streamsetup. Can it be
   made backward compatible? If not, make a separate tags-as-array and deprecate current.
 * When the bot hops under stable circumstances (if done in advance of an outage, rather
   than in response to an outage), package up a set of transients and transfer them

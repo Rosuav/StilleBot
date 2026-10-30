@@ -172,7 +172,7 @@ function render_command(cmd, toplevel) {
 		const conditions = [SELECT({"data-flag": "conditional"}, [
 			OPTION({value: "choose"}, "Unconditional"),
 			OPTION({value: "string"}, "String comparison"),
-			OPTION({value: "contains"}, "Substring search"),
+			OPTION({value: "contains"}, "Containment check"),
 			OPTION({value: "regexp"}, "Regular expression"),
 			OPTION({value: "number"}, "Numeric calculation"),
 			OPTION({value: "spend"}, "Spend channel points"),
