@@ -1,7 +1,7 @@
 //FIXME: Merge this code into chan_commands.js and have the two pages be the same
 import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {BR, BUTTON, CODE, EM, INPUT, TD, TR} = choc; //autoimport
-import {scan_message, commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
+import {scan_message, publish_command, commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
 cmd_configure({
 	load_command: cmd => check_save(),
@@ -22,7 +22,7 @@ export function render_item(msg) {
 	if (typeof simpletext === "string") response.push(INPUT({value: simpletext, class: "text widetext"}));
 	else if (!simpletext) response.push(CODE("(Special command, unable to summarize)")); //Not going to be common. Get some examples before rewording this.
 	else simpletext.forEach(m => response.push(CODE(m), BR()));
-	commands[msg.id] = msg;
+	publish_command(msg.id, msg);
 	const mate = typeof msg.automate === "number" ? [msg.automate, msg.automate, 0] : msg.automate; //Ancient legacy
 	const target = mate[2] ? ("0" + mate[0]).slice(-2) + ":" + ("0" + mate[1]).slice(-2)
 		: mate[0] === mate[1] ? ""+mate[0]
