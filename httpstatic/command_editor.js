@@ -93,7 +93,6 @@ ws_sync.prefs_notify("cmd_defaulttab", tab => {
 export const commands = { }; //Deprecated. Need to try to not have this exported mapping. Instead try to use publish_command().
 const config = {
 	load_command: cmd => { },
-	command_prefix: "",
 	//Default basis generation handles specials (if in the registered collections) and commands. Can be overridden.
 	get_command_basis: cmd => {
 		const spec = window.cmdedit_collections.specials[cmd.id];
@@ -286,7 +285,7 @@ export function publish_command(id, cmd) {
 	if (!cmd) delete commands[id];
 	else if (typeof cmd === "object" && cmd.id === id) commands[id] = cmd;
 	else commands[id] = {id, message: cmd}; //If you pass just the executable part, wrap it up so we can reference it correctly.
-	if (pending_command && id === config.command_prefix + pending_command[0]) {
+	if (pending_command && id === pending_command[0]) {
 		//const id = config.command_prefix + pending_command[0];
 		//Let everything else finish loading before opening advanced view
 		setTimeout(open_advanced_view, 0.025, commands[id], pending_command[1]);
@@ -294,11 +293,14 @@ export function publish_command(id, cmd) {
 	}
 }
 ws_sync.register_callback(function cmdedit_publish_commands(msg) {
+	if (msg.command_prefix && pending_command) pending_command[0] = msg.command_prefix + pending_command[0];
 	for (let cmd of msg.commands) publish_command(cmd.id, cmd);
-	if (pending_command) {
+	if (pending_command && msg.command_prefix) {
 		//For specials, it's possible for the pending_command to not actually be published,
-		//since empty specials aren't saved.
-		setTimeout(open_advanced_view, 0.025, {id: config.command_prefix + pending_command[0], message: ""}, pending_command[1]);
+		//since empty specials aren't saved. If the command prefix is blank, we're working
+		//with regular commands (or their history, identified by UUID), and commands have
+		//to exist to be popped up.
+		setTimeout(open_advanced_view, 0.025, {id: pending_command[0], message: ""}, pending_command[1]);
 	}
 });
 

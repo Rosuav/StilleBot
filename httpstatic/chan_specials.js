@@ -90,7 +90,6 @@ DOM("#advanced_view").addEventListener("close", () => {
 
 cmd_configure({
 	subscribe: "!!",
-	command_prefix: "!",
 	load_command: command => {
 		//Select the appropriate tab for this command
 		const cmd = window.cmdedit_collections.specials[command.id];

@@ -65,7 +65,10 @@ mapping get_chan_state(object channel, string group) {
 		"slash_commands": G->G->slash_commands,
 		"specials": specials,
 	]));
-	send_msg(conn, get_state(conn->subscription_group) | (["cmd": "cmdedit_publish_commands"])); //NOTE: Will break if get_chan_state is asynchronous
+	mapping pub = get_state(conn->subscription_group) | (["cmd": "cmdedit_publish_commands"]); //NOTE: Will break if get_chan_state is asynchronous
+	//Special case (literally): Special triggers have a command prefix. (Triggers don't.)
+	if (conn->subscription_group != "!!trigger" && has_prefix(conn->subscription_group, "!")) pub->command_prefix = "!";
+	send_msg(conn, pub);
 }
 
 void update_collection(string coll, array|mapping data) {
