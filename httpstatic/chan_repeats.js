@@ -5,7 +5,6 @@ import {scan_message, publish_command, commands, cmd_configure, open_advanced_vi
 
 cmd_configure({
 	load_command: cmd => check_save(),
-	location_format: (cmd_id, tab) => null, //Disable insertion of command IDs into the location hash
 });
 ws_sync.initmsg({cmd: "subscribe", type: "cmdedit", group: ""});
 
