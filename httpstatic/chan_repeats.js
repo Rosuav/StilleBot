@@ -50,7 +50,7 @@ function addcmd(mode) {
 	let cmdname;
 	for (let i = 1; get_command(cmdname = "auto" + i); ++i) ;
 	if (automate !== "" && response !== "") {
-		ws_sync.send({cmd: "update", cmdname, response: {automate, access: "none", message: response}});
+		ws_sync.send({cmd: "cmdedit_update", cmdname, response: {automate, access: "none", message: response}});
 		DOM("#newcmd_automate").closest("tr").classList.remove("dirty");
 	}
 	else if (mode !== "saveall" || automate || response)
