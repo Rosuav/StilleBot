@@ -1,7 +1,7 @@
-//FIXME: Merge this code into chan_commands.js and have the two pages be the same
+//TODO: Merge this code into chan_commands.js and have the two pages be the same
 import choc, {set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {BR, BUTTON, CODE, EM, INPUT, TD, TR} = choc; //autoimport
-import {scan_message, publish_command, commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
+import {scan_message, publish_command, get_command, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
 cmd_configure({
 	load_command: cmd => check_save(),
@@ -48,7 +48,7 @@ function addcmd(mode) {
 	DOM("#newcmd_automate").value = DOM("#newcmd_resp").value = "";
 	//Generate a command name: "!autoNN" where NN increments till it isn't found
 	let cmdname;
-	for (let i = 1; commands[(cmdname = "auto" + i) + ws_group]; ++i) ;
+	for (let i = 1; get_command(cmdname = "auto" + i); ++i) ;
 	if (automate !== "" && response !== "") {
 		ws_sync.send({cmd: "update", cmdname, response: {automate, access: "none", message: response}});
 		DOM("#newcmd_automate").closest("tr").classList.remove("dirty");
@@ -65,7 +65,7 @@ on("click", "#savechanges", e => {
 	document.querySelectorAll("tr.dirty[data-id]").forEach(tr => {
 		//Take a copy of the original command (we're going to JSON-encode it anyway, so this should
 		//be safe) and inject the new message text into it.
-		let response = JSON.parse(JSON.stringify(commands[tr.dataset.id]));
+		let response = JSON.parse(JSON.stringify(get_command(tr.dataset.id)));
 		const inp = tr.querySelector("input.text");
 		if (inp) {
 			const msg = inp.value;

@@ -1,6 +1,6 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {BR, BUTTON, IMG, INPUT, LABEL, LI, OPTION, SELECT, SPAN, TBODY, TD, TEXTAREA, TR, UL} = choc; //autoimport
-import {commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
+import {get_command, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 import {simpleconfirm} from "$$static||utils.js$$";
 
 function reward_edit_button(rew) {
@@ -26,9 +26,6 @@ export function render_item(rew) {
 		TD(rew.prompt),
 		reward_edit_button(rew),
 		TD(UL([
-			//NOTE: The invocations are simple names eg "coinflip", but the command editor
-			//expects them to match the commands array, which shows eg "coinflip#rosuav".
-			//We assume that ws_group is always just the channel, no actual group.
 			rew.invocations.map(c => LI({"data-id": c}, BUTTON({class: "advview"}, "!" + c))),
 			rew.can_manage && LI(BUTTON({class: "addcmd", "data-title": rew.title, "data-reward": rew.id, "data-skipqueue": rew.should_redemptions_skip_request_queue ? "yes" : "no"}, "New")),
 		])),
@@ -49,7 +46,7 @@ export function render(data) {
 
 on("click", ".addcmd", e => {
 	let i = 1;
-	while (commands["untitled" + i + ws_group]) ++i;
+	while (get_command("untitled" + i)) ++i;
 	open_advanced_view({
 		id: "untitled" + i, template: true, access: "none", visibility: "hidden",
 		message: [

@@ -2,7 +2,7 @@ import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.
 const {A, B, BR, BUTTON, CAPTION, CODE, DIV, FIELDSET, FIGCAPTION, FIGURE, IFRAME, IMG, INPUT, LABEL, LEGEND, LI, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TBODY, TD, TEXTAREA, TFOOT, TH, THEAD, TR, UL} = choc; //autoimport
 import {update_display, formatters} from "$$static||monitor.js$$";
 import {simpleconfirm, TEXTFORMATTING, upload_to_library} from "$$static||utils.js$$";
-import {commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
+import {all_commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
 //TODO: Make cmd_configure know about some standard types of configuration
 //Even better, have the command basis figured out from something inherent in the command
@@ -28,7 +28,7 @@ function search_command(node, id, action) {
 }
 
 function update_activations(elem, id, action) {
-	elem = set_content(elem, Object.values(commands)
+	elem = set_content(elem, Object.values(all_commands())
 		.filter(cmd => search_command(cmd, id, action))
 		.map(cmd => BUTTON({type: "button", class: "advview", "data-id": cmd.id}, "!" + cmd.id))
 	);
@@ -914,7 +914,7 @@ ws_sync.connect(ws_group, {
 		if (data.id) {
 			//FIXME: Partial updates to the SELECT() are broken. Replace it with an activation list for
 			//better functionality anyway, and get rid of the drop-down altogether.
-			commands[data.id] = data.data;
+			all_commands()[data.id] = data.data; //FIXME FIXME
 			update_activation_lists();
 			return;
 		}
@@ -924,7 +924,8 @@ ws_sync.connect(ws_group, {
 			OPTGROUP({label: "Other"}),
 		]);
 		const blocks = [[], []];
-		data.items.forEach(cmd => blocks[this.is_recommended(cmd) ? 0 : 1].push(this.make_option(commands[cmd.id] = cmd)));
+		//FIXME: Publish
+		data.items.forEach(cmd => blocks[this.is_recommended(cmd) ? 0 : 1].push(this.make_option(all_commands()[cmd.id] = cmd)));
 		set_content(this.groups[1], blocks[0]);
 		set_content(this.groups[2], blocks[1]);
 		const want = this.select.dataset.wantvalue;

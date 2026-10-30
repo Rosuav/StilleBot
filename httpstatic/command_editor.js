@@ -90,7 +90,9 @@ ws_sync.prefs_notify("cmd_defaulttab", tab => {
 	if (tablist.some(t => t.toLowerCase() === tab)) defaulttab = tab;
 });
 
-export const commands = { }; //Deprecated. Need to try to not have this exported mapping. Instead try to use publish_command().
+const commands = { }; //Used to be exported. If anything is using this now, consider get_command() or all_commands() as a stop-gap but try to rework to avoid this.
+export function get_command(id) {return commands[id];}
+export function all_commands() {return commands;}
 const config = {
 	load_command: cmd => { },
 	//Default basis generation handles specials (if in the registered collections) and commands. Can be overridden.

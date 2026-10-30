@@ -1,6 +1,6 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {BR, BUTTON, CODE, DIV, EM, INPUT, OPTION, TD, TR} = choc; //autoimport
-import {scan_message, publish_command, commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
+import {scan_message, publish_command, get_command, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
 cmd_configure({
 	subscribe: "-",
@@ -61,7 +61,7 @@ export function render(data) {
 
 function update_visibility() {
 	render_parent.querySelectorAll("tr").forEach(tr =>
-		tr.hidden = is_hidden(commands[tr.dataset.id]));
+		tr.hidden = is_hidden(get_command(tr.dataset.id)));
 }
 
 on("change", "#pickcommand", e => {selected_command = e.match.value; update_visibility();});
