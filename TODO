@@ -303,6 +303,7 @@
     being deferred belongs to a findable object, and that the args are JSON-safe.
 * Streamer groups
   - Example: Junk Fan Club (for StaticTides)
+  - Example: Maru's Minions (for Linvalin)
   - Let streamers create them maybe? For now only I create.
   - Creator of the group can edit its heading (but not its keyword which will be fixed)
     and description, and maybe add and remove people manually
