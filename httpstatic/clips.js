@@ -75,7 +75,7 @@ function render_clips() {
 			state.clips.length && filterable.map(([id, name]) => FIELDSET([
 				LEGEND("Filter by " + name),
 				SELECT({name: id, class: "filter", value: filters[id]}, [
-					OPTION({value: ""}, "All (" + allcounts[id] + ")"), //FIXME: Get the count (all that would be visible if this filter were removed)
+					OPTION({value: ""}, "All (" + allcounts[id] + ")"),
 					Object.entries(counts[id])
 						.sort((a, b) => b[1][1] - a[1][1]) //Sort the most common ones to the top. TODO: Should this be skipped for Year?
 						.map(([key, [countvis, counttot, lbl]]) => OPTION({value: key, disabled: countvis === 0}, `${lbl} (${countvis}/${counttot})`))
