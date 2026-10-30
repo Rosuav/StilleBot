@@ -513,8 +513,17 @@ class channel(mapping identity) {
 			//(in case the bot hops during the half hour delay).
 			if (delay < 0) {
 				//A delay of -1 (shouldn't be other negative values) means "at stream reset".
-				stream_reset_messages[userid] += ({({person, message | (["delay": 0, "_changevars": 1]), vars, cfg})});
-				//FIXME: Disallow if stream is offline.
+				if (G->G->stream_online_since[userid])
+					stream_reset_messages[userid] += ({({person, message | (["delay": 0, "_changevars": 1]), vars, cfg})});
+				else {
+					//TODO: What should happen if stream is currently offline? Right now, we
+					//simply don't do the reset; would it be better to do the reset action
+					//immediately? Should there be a dedicated node type that has a "message
+					//now" and a "message later" (eg "/vip {param}" and "/unvip {param}") and
+					//does NEITHER action if the stream is offline?
+					//And if the stream has just gone offline (with a pending call_out for the
+					//reset), should reset messages be permitted?
+				}
 			}
 			else xfr_call_out(_send_with_catch, delay, person, message | (["delay": 0, "_changevars": 1]), vars, cfg);
 			return;
