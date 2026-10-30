@@ -1,13 +1,10 @@
 import {choc, set_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {BR, BUTTON, CODE, DIV, EM, INPUT, OPTION, TD, TR} = choc; //autoimport
-import {scan_message, commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
+import {scan_message, publish_command, commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
 
 cmd_configure({
-	subscribe: "",
+	subscribe: "-",
 	load_command: cmd => {
-		//FIXME: On load, this is getting broken/incomplete data and crashing.
-		//If the autoshow of a command based on URL fragment isn't working, it
-		//should be disabled.
 		if (cmd.cmdname[0] === "!") ; //TODO: Show specials differently
 		set_content("#advanced_view h3", [
 			"Command: ", INPUT({readonly: "true", autocomplete: "off", id: "cmdname", value: "!" + cmd.cmdname}),
@@ -30,7 +27,7 @@ function is_hidden(msg) {
 export const render_parent = DOM("#commandview tbody");
 export function render_item(msg) {
 	cmdnames[msg.cmdname] = 1;
-	commands[msg.id] = msg; //Register the versioned command with the deprecated mapping
+	publish_command(msg.id, msg);
 	msg.searchme = JSON.stringify(msg.message).toLowerCase(); //TODO maybe: Represent this in some more human-readable way
 	const response = [];
 	const msgstatus = { };
