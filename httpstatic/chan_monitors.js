@@ -2,7 +2,7 @@ import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.
 const {A, B, BR, BUTTON, CAPTION, CODE, DIV, FIELDSET, FIGCAPTION, FIGURE, IFRAME, IMG, INPUT, LABEL, LEGEND, LI, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TBODY, TD, TEXTAREA, TFOOT, TH, THEAD, TR, UL} = choc; //autoimport
 import {update_display, formatters} from "$$static||monitor.js$$";
 import {simpleconfirm, TEXTFORMATTING, upload_to_library} from "$$static||utils.js$$";
-import {all_commands, cmd_configure, open_advanced_view} from "$$static||command_editor.js$$";
+import {all_commands, cmd_configure, publish_command, open_advanced_view} from "$$static||command_editor.js$$";
 
 //TODO: Make cmd_configure know about some standard types of configuration
 //Even better, have the command basis figured out from something inherent in the command
@@ -914,7 +914,7 @@ ws_sync.connect(ws_group, {
 		if (data.id) {
 			//FIXME: Partial updates to the SELECT() are broken. Replace it with an activation list for
 			//better functionality anyway, and get rid of the drop-down altogether.
-			all_commands()[data.id] = data.data; //FIXME FIXME
+			publish_command(data.id, data.data); //NOTE: The given message ought to include the ID as well, ie data.data.id === data.id
 			update_activation_lists();
 			return;
 		}
@@ -924,8 +924,10 @@ ws_sync.connect(ws_group, {
 			OPTGROUP({label: "Other"}),
 		]);
 		const blocks = [[], []];
-		//FIXME: Publish
-		data.items.forEach(cmd => blocks[this.is_recommended(cmd) ? 0 : 1].push(this.make_option(all_commands()[cmd.id] = cmd)));
+		for (let cmd of data.items) {
+			publish_command(cmd.id, cmd);
+			blocks[this.is_recommended(cmd) ? 0 : 1].push(this.make_option(cmd));
+		}
 		set_content(this.groups[1], blocks[0]);
 		set_content(this.groups[2], blocks[1]);
 		const want = this.select.dataset.wantvalue;
