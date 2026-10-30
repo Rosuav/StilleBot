@@ -495,7 +495,7 @@ export function render(data) {
 				]),
 			]),
 			TEXTFORMATTING({
-				textname: nondef ? "textformat" : "-", //FIXME: Hide this when in alertset mode
+				textname: nondef ? "textformat" : "-",
 				textclass: "not-alertset",
 				textdesc: SPAN({className: "placeholders"}, placeholder_description),
 				blank_opts: nondef, //Add a blank option to selects, but not on the Defaults tab
@@ -594,7 +594,7 @@ on("change", ".condbox", e => {
 		else if (el.value !== "==") return; //Condition not applicable
 		//Special case: "tier 2" instead of "2 tier"
 		if (el.name === "condoper-tier") desc = "tier " + desc;
-		//Another special case: "text" gets described differently. FIXME: Don't say "text is incl X"
+		//Another special case: "text" gets described differently. TODO: Don't say "text is incl X"
 		else if (el.name === "condoper-text") desc = "text is " + desc;
 		else desc += " " + el.name.split("-")[1].replace("is_", ""); //Transform "is/not is_raid" to just "is/not raid"
 		conds.push(desc);
