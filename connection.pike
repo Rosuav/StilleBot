@@ -466,6 +466,7 @@ class channel(mapping identity) {
 				else value = 0; //If for any reason the subscripting fails, it will continue to be null.
 			}
 			if (!value || value == "") return dflt;
+			if (arrayp(value)) value *= " "; //If you use an array in a string context, treat it as a set of words.
 			if (function f = filter != "" && text_filters[filter]) value = f(value, dflt, this);
 			return prefix + value + suffix;
 		};
