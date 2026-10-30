@@ -175,8 +175,10 @@ constant channelreset = special_trigger("!channelreset", "The channel has fully 
 constant channelsetup = special_trigger("!channelsetup", "The channel has changed its category/title/CCLs", "The broadcaster", ([
 	"{category}": "English name of the game or category being streamed in",
 	"{title}": "Title of the stream",
-	"{tag_names}": "Stream tags eg '[English], [FamilyFriendly]' - should be searched case insensitively",
-	"{ccls}": "Content classification labels eg '[ProfanityVulgarity], [ViolentGraphic]'",
+	"{tags}": "Array of stream tags eg 'English', 'FamilyFriendly' - should be searched case insensitively",
+	"{classifications}": "Array of content classification labels eg 'ProfanityVulgarity', 'ViolentGraphic'",
+	"{tag_names}": "*(deprecated) Stream tags joined into a single string eg '[English], [FamilyFriendly]'",
+	"{ccls}": "*(deprecated) Classifications joined into a string eg '[ProfanityVulgarity], [ViolentGraphic]'",
 ]), "Status");
 
 class channel(mapping identity) {
@@ -1462,6 +1464,8 @@ void delete_single_message(object channel, mapping data) {channel->delete_single
 		"{title}": info->title,
 		"{tag_names}": sprintf("[%s]", chaninfo->tags[*]) * ", ",
 		"{ccls}": sprintf("[%s]", info->content_classification_labels[*]) * ", ",
+		"{tags}": chaninfo->tags,
+		"{classifications}": info->content_classification_labels,
 	]));
 }
 

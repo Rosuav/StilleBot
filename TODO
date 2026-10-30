@@ -151,7 +151,7 @@
 * Running into weird problems with app auth. Maybe the cached G->G->app_access_token
   needs to be purged at some point?? Possibly on reauth???
 * Current limitation: Changing stream tags without changing anything else won't trigger
-  a !!streamsetup special. No easy way to fix this without some kind of reliable poll,
+  a !!channelsetup special. No easy way to fix this without some kind of reliable poll,
   and there are lots of weird corner cases. Probably should be documented in a user-facing
   location though. Best fix: Have Twitch provide tags in the channel.update notif, and
   have that notif also sent when tags are changed.
@@ -292,8 +292,6 @@
   - If so, deprecate and de-document the leaders/lowleaders limit in setvar
 * ACE tab completion for MustardScript??
   - https://github.com/ajaxorg/ace/wiki/Configuring-Ace/
-* Use an array for tags in !!streamsetup. Can it be
-  made backward compatible? If not, make a separate tags-as-array and deprecate current.
 * When the bot hops under stable circumstances (if done in advance of an outage, rather
   than in response to an outage), package up a set of transients and transfer them
   destructively. Add more to the xfr package:
