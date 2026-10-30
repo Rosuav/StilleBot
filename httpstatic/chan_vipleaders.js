@@ -223,6 +223,7 @@ on("click", ".detailsbtn", e => {
 	DOM("#user_profile").src = TRANSPARENT;
 	if (+user_id) ws_sync.send({cmd: "get_user_profile", id: user.user_id})
 	DOM("#user_name").value = user.user_name;
+	DOM("#user_link").href = "https://twitch.tv/" + user.user_login;
 	set_content("#score", cents_formatter(user.score));
 	set_content("#lookup_status", user.changelog && UL(user.changelog.map(c => LI(c))));
 	DOM("#userdetailsdlg").showModal();

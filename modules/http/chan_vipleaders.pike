@@ -49,7 +49,7 @@ $$buttons$$
 > &nbsp;  | &nbsp;
 > --------|-------
 > Name    | <input id=user_name> [Lookup](:#lookup_user)
-> User ID | <input id=user_id readonly size=16> <img id=user_profile class=avatar> [Anon](:#anonymous)
+> User ID | <input id=user_id readonly size=16> <a href=. id=user_link target=_blank><img id=user_profile class=avatar></a> [Anon](:#anonymous)
 > Amount  | <span id=score></span>
 >
 > <input type=hidden id=orig_user_id><input type=hidden id=month>
