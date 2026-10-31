@@ -734,7 +734,7 @@ __async__ void check_makeship() {
 	//run any time this bot becomes active.
 	remove_call_out(G->G->check_makeship_call_out);
 	mapping cfg = await(G->G->DB->load_config(1, "makeship"));
-	if (!cfg->channels) return;
+	if (!cfg->channels || !sizeof(cfg->channels)) return;
 	int now = time(), changed = 0, active = 0;
 	foreach (cfg->channels; int chanid; mapping info) {
 		if (info->next_phase_time <= now) foreach (await(G->G->DB->load_config(chanid, "makeship"))->campaigns, mapping cp) {
