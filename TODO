@@ -306,7 +306,4 @@
   - Example: Maru's Minions (for Linvalin)
   - Let streamers create them maybe? For now only I create.
   - Creator of the group can edit its heading (but not its keyword which will be fixed)
-    and description, and maybe add and remove people manually
-  - Anyone can add themselves to the group
-  - If not logged in, invite login with button saying "Join group" and autojoin on login
-    (imitate /activate)
+    and description, and kick people
