@@ -1,6 +1,6 @@
 import {lindt, replace_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {BUTTON, FIGCAPTION, FIGURE, IMG} = lindt; //autoimport
-import {upload_to_library, simpleconfirm} from "$$static||utils.js$$";
+import {upload_to_library, simpleconfirm, form_values} from "$$static||utils.js$$";
 
 export function render(data) {
 	if (data.files) replace_content("#files", data.files.map(f => FIGURE({"data-fileid": f.id, "data-filename": f.metadata.name}, [
@@ -25,10 +25,7 @@ on("click", ".renamefile", e => {
 
 on("submit", "#renameform", e => {
 	e.preventDefault();
-	const msg = {cmd: "renamefile"};
-	for (let el of e.match.elements)
-		if (el.name) msg[el.name] = el.type === "checkbox" ? el.checked : el.value;
-	ws_sync.send(msg);
+	ws_sync.send(form_values(e.match, {cmd: "renamefile"}));
 	DOM("#renamefiledlg").close();
 });
 

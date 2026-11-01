@@ -1,7 +1,7 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, B, BR, BUTTON, CAPTION, CODE, DIV, FIELDSET, FIGCAPTION, FIGURE, IFRAME, IMG, INPUT, LABEL, LEGEND, LI, OPTGROUP, OPTION, P, SELECT, SPAN, TABLE, TBODY, TD, TEXTAREA, TFOOT, TH, THEAD, TR, UL} = choc; //autoimport
 import {update_display, formatters} from "$$static||monitor.js$$";
-import {simpleconfirm, TEXTFORMATTING, upload_to_library} from "$$static||utils.js$$";
+import {simpleconfirm, TEXTFORMATTING, upload_to_library, form_values} from "$$static||utils.js$$";
 import {all_commands, cmd_configure, publish_command, open_advanced_view} from "$$static||command_editor.js$$";
 
 //TODO: Make cmd_configure know about some standard types of configuration
@@ -655,9 +655,7 @@ on("submit", "dialog form", async e => {
 		});
 	}
 	if (slots.length) body.slots = slots;
-	for (let el of e.match.elements)
-		if (el.name) body[el.name] = el.type === "checkbox" ? el.checked : el.value;
-	ws_sync.send(body);
+	ws_sync.send(form_values(e.match, body));
 });
 
 on("click", ".add_monitor", e => ws_sync.send({cmd: "addmonitor", type: e.match.dataset.type}));
@@ -700,10 +698,7 @@ on("click", ".renamefile", e => {
 
 on("submit", "#renameform", e => {
 	e.preventDefault();
-	const msg = {cmd: "renamefile"};
-	for (let el of e.match.elements)
-		if (el.name) msg[el.name] = el.type === "checkbox" ? el.checked : el.value;
-	ws_sync.send(msg);
+	ws_sync.send(form_values(e.match, {cmd: "renamefile"}));
 	DOM("#renamefiledlg").close();
 });
 

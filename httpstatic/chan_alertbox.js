@@ -1,6 +1,6 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {A, ABBR, AUDIO, B, BR, BUTTON, CODE, DETAILS, DIV, FIGCAPTION, FIGURE, FORM, H3, HR, IMG, INPUT, LABEL, LI, OPTGROUP, OPTION, P, SELECT, SPAN, SUMMARY, TABLE, TD, TR, VIDEO} = choc; //autoimport
-import {simpleconfirm, TEXTFORMATTING, upload_to_library} from "$$static||utils.js$$";
+import {simpleconfirm, TEXTFORMATTING, upload_to_library, form_values} from "$$static||utils.js$$";
 
 function THUMB(file, noautoplay) {
 	if (!file.url) return DIV({className: "thumbnail"}, "uploading...");
@@ -1021,10 +1021,7 @@ on("click", ".editpersonaldesc", e => {
 //When it's clicked, it triggers a delayed event upon form submission.
 on("submit", "#editpersonal", e => {
 	e.preventDefault(); //Can't depend on method=dialog :(
-	const msg = {cmd: "makepersonal"}; //Atwix's Legacy?
-	for (let el of e.match.elements)
-		if (el.name) msg[el.name] = el.type === "checkbox" ? el.checked : el.value;
-	ws_sync.send(msg);
+	ws_sync.send(form_values(e.match, {cmd: "makepersonal"})); //Atwix's Legacy?
 	DOM("#personaldlg").close();
 });
 
@@ -1051,10 +1048,7 @@ on("click", ".renamefile", e => {
 
 on("submit", "#renameform", e => {
 	e.preventDefault();
-	const msg = {cmd: "renamefile"};
-	for (let el of e.match.elements)
-		if (el.name) msg[el.name] = el.type === "checkbox" ? el.checked : el.value;
-	ws_sync.send(msg);
+	ws_sync.send(form_values(e.match, {cmd: "renamefile"}));
 	DOM("#renamefiledlg").close();
 });
 

@@ -366,3 +366,12 @@ export function upload_to_library(cfg) {
 		}
 	});
 }
+
+//In a submit event, form_values(e.match) will give back an object mapping names to values.
+//Pass an initial object to populate it, or omit for a new empty object; either way, it is returned.
+export function form_values(frm, initial) {
+	const ret = initial || { };
+	for (let el of frm.elements)
+		if (el.name) ret[el.name] = el.type === "checkbox" ? el.checked : el.value;
+	return ret;
+}

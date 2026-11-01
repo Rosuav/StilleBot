@@ -1,6 +1,6 @@
 import {choc, set_content, DOM, on} from "https://rosuav.github.io/choc/factory.js";
 const {LI, SPAN, UL} = choc; //autoimport
-import {TEXTFORMATTING, ensure_font, simpleconfirm} from "$$static||utils.js$$";
+import {TEXTFORMATTING, ensure_font, simpleconfirm, form_values} from "$$static||utils.js$$";
 
 let countdown = null;
 let csstext = "";
@@ -57,11 +57,8 @@ export function render(data) {
 }
 
 on("submit", "form", e => {
-	e.preventDefault();
-	const msg = {cmd: "update"};
-	for (let el of e.match.elements)
-		if (el.name) msg[el.name] = el.value;
-	ws_sync.send(msg);
+	e.preventDefault(); //This doesn't close the dialog, is that correct behaviour?
+	ws_sync.send(form_values(e.match, {cmd: "update"}));
 });
 
 on("dragstart", "#displaylink", e => {

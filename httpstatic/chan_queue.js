@@ -1,6 +1,6 @@
 import {lindt, replace_content, set_content, on} from "https://rosuav.github.io/choc/factory.js";
 const {BR, BUTTON, CAPTION, DETAILS, DIV, FORM, H1, H2, IMG, INPUT, LABEL, LI, P, SPAN, SUMMARY, TABLE, TBODY, TD, TEXTAREA, TH, THEAD, TR, UL} = lindt; //autoimport
-import {simpleconfirm, simplemessage, TEXTFORMATTING, ensure_font} from "$$static||utils.js$$";
+import {simpleconfirm, simplemessage, TEXTFORMATTING, ensure_font, form_values} from "$$static||utils.js$$";
 
 export function render(data) {
 	if (minimode === 2) {
@@ -155,9 +155,4 @@ on("click", "#editselections", simpleconfirm("Replace the available selections?"
 //NOTE: Limit can be set as a string or a number, but to set it to zero, must use "0".
 on("change", "#queuelimit", e => ws_sync.send({cmd: "configure", queuelimit: e.match.value}));
 
-on("click", "#panelcfgsave", e => {
-	const sty = { };
-	for (let el of DOM("#panelcfgdlg form").elements)
-		if (el.name) sty[el.name] = el.value;
-	ws_sync.send({cmd: "configure", panelstyle: sty});
-});
+on("click", "#panelcfgsave", e => ws_sync.send({cmd: "configure", panelstyle: form_values(DOM("#panelcfgdlg form")})));

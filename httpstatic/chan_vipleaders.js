@@ -1,6 +1,6 @@
 import choc, {set_content, DOM, fix_dialogs} from "https://rosuav.github.io/choc/factory.js";
 const {A, BR, BUTTON, DETAILS, DIV, FORM, H3, INPUT, LABEL, LI, OL, P, SPAN, STYLE, SUMMARY, TABLE, TD, TH, TR, UL} = choc; //autoimport
-import {simpleconfirm, TEXTFORMATTING} from "$$static||utils.js$$";
+import {simpleconfirm, TEXTFORMATTING, form_values} from "$$static||utils.js$$";
 
 //TODO: Exclude anyone who's been banned, just in case
 
@@ -194,10 +194,7 @@ on("click", ".remvip", simpleconfirm(
 on("click", "#activate,#deactivate", e => ws_sync.send({cmd: "configure", "active": e.match.id === "activate"}));
 on("submit", "#configform", e => {
 	e.preventDefault();
-	const msg = {cmd: "configure"};
-	for (let el of e.match.elements)
-		if (el.name) msg[el.name] = el.type === "checkbox" ? el.checked : el.value;
-	ws_sync.send(msg);
+	ws_sync.send(form_values(e.match, {cmd: "configure"}));
 });
 
 on("click", "#formatsave", e => {
