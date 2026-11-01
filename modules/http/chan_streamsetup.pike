@@ -324,4 +324,5 @@ protected void create(string name) {
 		};
 	}
 	::create(name);
+	G->G->builtins->streamsetup = builtin_redirect(this);
 }
