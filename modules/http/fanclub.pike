@@ -1,5 +1,4 @@
 inherit http_websocket;
-inherit hook;
 
 constant markdown = #"# $$clubtitle||Fan Club$$
 {:#clubtitle}
