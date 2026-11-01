@@ -599,6 +599,22 @@ __async__ void session_jsonify() {
 	}
 }
 
+__async__ void create_fanclub() {
+	if (sizeof(G->G->args[Arg.REST]) != 3) {werror("Pass keyword, owner, and title to create a new fan club.\n"); return;}
+	[string kwd, string ownername, string title] = G->G->args[Arg.REST];
+	mapping owner = await(get_user_info(ownername, "login"));
+	if (!owner) {werror("Owner not found (provide Twitch user name)\n"); return;}
+	await(G->G->DB->mutate_config(0, "fanclubs") {
+		mapping clubs = __ARGS__[0];
+		if (clubs[kwd]) {werror("Club already exists: %O\n", clubs[kwd]); return;}
+		clubs[kwd] = ([
+			"title": title,
+			"owner": owner->id,
+			"members": ({ }),
+		]);
+	});
+}
+
 __async__ void test() {
 	//Recode this to whatever's needed, and use "pike stillebot --test" to run it.
 	werror("Nothing to see here, move along.\n");
