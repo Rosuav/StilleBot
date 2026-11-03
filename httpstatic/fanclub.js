@@ -2,10 +2,26 @@ import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory
 const {BUTTON, DIV, H3, IMG, P} = lindt; //autoimport
 import {simpleconfirm, form_values, form_populate} from "$$static||utils.js$$";
 
+const rtf = new Intl.RelativeTimeFormat("en");
+const timeunits = {
+	minute: 60, hour: 3600, day: 86400,
+	week: 604800, month: 30*86400, year: 365*86400, //bit of a cheat
+};
+function tenure(tm) {
+	if (tm < 1) return "just now";
+	let curunit = "seconds", divisor = 1;
+	for (let unit in timeunits) {
+		if (tm < timeunits[unit]) break;
+		curunit = unit; divisor = timeunits[unit];
+	}
+	return rtf.format(-Math.floor(tm / divisor), curunit);
+}
+
 export function render(data) {
 	form_populate("#managedlg form", data);
 	replace_content("#clubtitle", data.title);
 	const uid = ws_sync.get_userid();
+	const now = +new Date / 1000; //Ensure consistent display of relative timess
 	replace_content("#members", [
 		//The button can be one of three.
 		P([
@@ -17,7 +33,7 @@ export function render(data) {
 		H3("Current members:"),
 		DIV({class: "members"}, Object.values(data.members)
 			.sort((a, b) => b.joined - a.joined)
-			.map(u => DIV({class: "member"}, [
+			.map(u => DIV({class: "member", title: "Member since " + tenure(now - u.joined)}, [
 				IMG({class: "avatar", src: u.profile_image_url}),
 				u.display_name,
 			]))
