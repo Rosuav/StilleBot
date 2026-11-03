@@ -610,7 +610,7 @@ __async__ void create_fanclub() {
 		clubs[kwd] = ([
 			"title": title,
 			"owner": owner->id,
-			"members": ({ }),
+			"members": ([]),
 		]);
 	});
 }
