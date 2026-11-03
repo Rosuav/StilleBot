@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {B, BR, BUTTON, DIV, H3, I, IMG, P} = lindt; //autoimport
+const {B, BR, BUTTON, DIV, H2, I, IMG, P} = lindt; //autoimport
 import {simpleconfirm, form_values, form_populate} from "$$static||utils.js$$";
 
 const rtf = new Intl.RelativeTimeFormat("en");
@@ -30,7 +30,7 @@ export function render(data) {
 			: BUTTON({id: "leaveclub"}, "Leave the club."), //But you can then leave if you so desire.
 		]),
 
-		H3("Current members:"),
+		H2("Current members:"),
 		DIV({class: "members"}, Object.values(data.members)
 			.sort((a, b) => b.joined - a.joined)
 			.map(u => DIV({class: "member", title: "Member since " + tenure(now - u.joined)}, [
