@@ -40,6 +40,7 @@ export function render(data) {
 				BR(),
 				u.status, " ",
 				+u.uid === uid && BUTTON({type: "button", class: "editstatus", "data-status": u.status||""}, "\u{1F589}"),
+				is_owner && u.status && BUTTON({type: "button", class: "confirmdelete", "data-uid": u.uid, title: "Delete status"}, "🗑"),
 			]))
 		),
 	]);
@@ -54,3 +55,4 @@ on("click", ".editstatus", e => {
 	DOM("#statusdlg").showModal();
 });
 on("submit", "#statusdlg form", e => ws_sync.send(form_values(e.match, {cmd: "set_status"})));
+on("click", ".confirmdelete", simpleconfirm("Remove this user's status?", e => ws_sync.send({cmd: "set_status", removeuser: e.match.dataset.uid})));

@@ -53,7 +53,7 @@ __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Reques
 		//QUIRK: If the title contains Markdown metacharacters, they will be initially parsed, then replaced when the socket connects.
 		"clubtitle": cfg->title, "clubdesc": cfg->description || "",
 		"managebtn": is_owner ? "[Manage fan club](:.opendlg data-dlg=managedlg)" : "",
-		"vars": (["ws_group": club, "logged_in_as": (int)uid]),
+		"vars": (["ws_group": club, "logged_in_as": (int)uid, "is_owner": is_owner]),
 	]));
 }
 
