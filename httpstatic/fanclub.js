@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BUTTON, DIV, H3, IMG, P} = lindt; //autoimport
+const {BR, BUTTON, DIV, H3, IMG, P} = lindt; //autoimport
 import {simpleconfirm, form_values, form_populate} from "$$static||utils.js$$";
 
 const rtf = new Intl.RelativeTimeFormat("en");
@@ -34,8 +34,12 @@ export function render(data) {
 		DIV({class: "members"}, Object.values(data.members)
 			.sort((a, b) => b.joined - a.joined)
 			.map(u => DIV({class: "member", title: "Member since " + tenure(now - u.joined)}, [
+				//FIXME: Style this up nicely
 				IMG({class: "avatar", src: u.profile_image_url}),
 				u.display_name,
+				BR(),
+				u.status, " ",
+				+u.uid === uid && BUTTON({type: "button", class: "editstatus", "data-status": u.status||""}, "\u{1F589}"),
 			]))
 		),
 	]);
@@ -44,3 +48,9 @@ export function render(data) {
 on("submit", "#managedlg form", e => ws_sync.send(form_values(e.match, {cmd: "configure"})));
 on("click", "#joinclub", e => ws_sync.send({cmd: "join"}));
 on("click", "#leaveclub", simpleconfirm("Do you definitely want to leave this club?", e => ws_sync.send({cmd: "remove"})));
+
+on("click", ".editstatus", e => {
+	DOM("#statusdlg [name=status]").value = e.match.dataset.status;
+	DOM("#statusdlg").showModal();
+});
+on("submit", "#statusdlg form", e => ws_sync.send(form_values(e.match, {cmd: "set_status"})));

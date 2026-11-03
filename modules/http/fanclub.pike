@@ -9,6 +9,13 @@ $$managebtn||$$
 
 <div id=members></div>
 
+> ### Update your status
+>
+> <label>Status: <input name=status size=30></label>
+>
+> [Save](:type=submit) [Close](:.dialog_close)
+{: tag=formdialog #statusdlg}
+
 <style>
 img.avatar {vertical-align: middle; margin-right: 4px;}
 .members {
@@ -119,6 +126,27 @@ __async__ void websocket_cmd_remove(mapping(string:mixed) conn, mapping(string:m
 			//Owner override - may remove other users.
 			uid = (string)msg->removeuser;
 		m_delete(cfg->members, uid);
+	});
+	send_updates_all(conn->group);
+}
+
+__async__ void websocket_cmd_set_status(mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	//Ditto, also handles the owner removing a user's status
+	mapping user = conn->session->?user;
+	if (!user) return;
+	await(G->G->DB->mutate_config(0, "fanclubs") {
+		mapping cfg = __ARGS__[0][conn->group];
+		if (!cfg) return; //Shouldn't happen
+		string uid = user->id;
+		if (msg->removeuser && (user->id == cfg->owner || is_localhost_mod(user->login, conn->remote_ip))) {
+			//Owner override - may remove other users.
+			uid = (string)msg->removeuser;
+			msg->status = ""; //Owner may only clear a status, not set one
+		}
+		mapping memb = cfg->members[uid];
+		if (!memb) return; //May have been kicked
+		if (msg->status == "") m_delete(memb, "status");
+		else memb->status = msg->status[..80]; //Limit it to a reasonable length
 	});
 	send_updates_all(conn->group);
 }
