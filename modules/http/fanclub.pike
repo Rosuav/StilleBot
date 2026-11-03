@@ -3,6 +3,8 @@ inherit http_websocket;
 constant markdown = #"# $$clubtitle||Fan Club$$
 {:#clubtitle}
 
+$$clubdesc$$
+
 $$managebtn||$$
 
 <div id=members></div>
@@ -22,7 +24,8 @@ img.avatar {vertical-align: middle; margin-right: 4px;}
 
 > ### Manage fan club
 >
-> <label>Club title: <input name=title size=30 value=\"$$clubtitle||$$\"></label>
+> <label>Club title: <input name=title size=30></label>
+> <p><label>Description (Markdown allowed)<br><textarea name=description rows=8 cols=50></textarea></label></p>
 >
 > [Save](:type=submit) [Close](:.dialog_close)
 {: tag=formdialog #managedlg}
@@ -42,7 +45,7 @@ __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Reques
 	}
 	return render(req, ([
 		//QUIRK: If the title contains Markdown metacharacters, they will be initially parsed, then replaced when the socket connects.
-		"clubtitle": cfg->title,
+		"clubtitle": cfg->title, "clubdesc": cfg->description || "",
 		"managebtn": is_owner ? "[Manage fan club](:.opendlg data-dlg=managedlg)" : "",
 		"vars": (["ws_group": club, "logged_in_as": (int)uid]),
 	]));
@@ -52,7 +55,7 @@ __async__ mapping get_state(string|int group) {
 	mapping cfg = await(G->G->DB->load_config(0, "fanclubs"))[group];
 	if (!cfg) return ([]);
 	return ([
-		"title": cfg->title,
+		"title": cfg->title, "description": cfg->description,
 		"members": await(get_users_info(cfg->members)),
 		"owner": await(get_user_info(cfg->owner)),
 	]);
@@ -67,6 +70,7 @@ __async__ void websocket_cmd_configure(mapping(string:mixed) conn, mapping(strin
 		//CHECK: Are you the owner? Normally a non-owner won't even send this request, so I don't mind a bit of unnecessary DB traffic in that situation.
 		if (user->id != cfg->owner && !is_localhost_mod(user->login, conn->remote_ip)) return;
 		if (msg->title) cfg->title = msg->title;
+		if (msg->description) cfg->description = msg->description;
 	});
 	send_updates_all(conn->group);
 }

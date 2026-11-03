@@ -1,8 +1,9 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
 const {BUTTON, DIV, H3, IMG, P} = lindt; //autoimport
-import {simpleconfirm, form_values} from "$$static||utils.js$$";
+import {simpleconfirm, form_values, form_populate} from "$$static||utils.js$$";
 
 export function render(data) {
+	form_populate("#managedlg form", data);
 	replace_content("#clubtitle", data.title);
 	const uid = ws_sync.get_userid();
 	replace_content("#members", [
