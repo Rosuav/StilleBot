@@ -375,3 +375,10 @@ export function form_values(frm, initial) {
 		if (el.name) ret[el.name] = el.type === "checkbox" ? el.checked : el.value;
 	return ret;
 }
+
+//Inverse of form_values - set the form elements to what's in the given data object.
+export function form_populate(frm, data) {
+	if (typeof frm === "string") frm = DOM(frm);
+	for (let el of frm.elements)
+		if (el.name && data[el.name]) el[el.type === "checkbox" ? "checked" : "value"] = data[el.name];
+}
