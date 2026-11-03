@@ -17,7 +17,11 @@ $$managebtn||$$
 {: tag=formdialog #statusdlg}
 
 <style>
-img.avatar {vertical-align: middle; margin-right: 4px;}
+img.avatar {
+	vertical-align: middle;
+	margin-right: 4px;
+	height: 40px;
+}
 .members {
 	display: flex;
 	flex-wrap: wrap;
@@ -25,7 +29,7 @@ img.avatar {vertical-align: middle; margin-right: 4px;}
 	row-gap: 10px;
 }
 .member {
-	width: 220px;
+	width: 230px;
 	display: flex;
 }
 .member .text {

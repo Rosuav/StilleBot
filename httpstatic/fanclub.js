@@ -37,6 +37,7 @@ export function render(data) {
 				IMG({class: "avatar", src: u.profile_image_url}),
 				DIV({class: "text"}, [
 					B(u.display_name),
+					is_owner && [" ", BUTTON({type: "button", class: "kick_user", "data-uid": u.uid, title: "Kick user"}, "🚫")],
 					BR(),
 					I(u.status), " ",
 					+u.uid === uid && BUTTON({type: "button", class: "editstatus", "data-status": u.status||""}, "\u{1F589}"),
@@ -57,3 +58,5 @@ on("click", ".editstatus", e => {
 });
 on("submit", "#statusdlg form", e => ws_sync.send(form_values(e.match, {cmd: "set_status"})));
 on("click", ".confirmdelete", simpleconfirm("Remove this user's status?", e => ws_sync.send({cmd: "set_status", removeuser: e.match.dataset.uid})));
+on("click", ".kick_user", simpleconfirm("Kick this user from the club? They will have to rejoin manually.",
+	e => ws_sync.send({cmd: "remove", removeuser: e.match.dataset.uid})));
