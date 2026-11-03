@@ -1,5 +1,5 @@
 import {lindt, replace_content, DOM} from "https://rosuav.github.io/choc/factory.js";
-const {BR, BUTTON, DIV, H3, IMG, P} = lindt; //autoimport
+const {B, BR, BUTTON, DIV, H3, I, IMG, P} = lindt; //autoimport
 import {simpleconfirm, form_values, form_populate} from "$$static||utils.js$$";
 
 const rtf = new Intl.RelativeTimeFormat("en");
@@ -34,13 +34,14 @@ export function render(data) {
 		DIV({class: "members"}, Object.values(data.members)
 			.sort((a, b) => b.joined - a.joined)
 			.map(u => DIV({class: "member", title: "Member since " + tenure(now - u.joined)}, [
-				//FIXME: Style this up nicely
 				IMG({class: "avatar", src: u.profile_image_url}),
-				u.display_name,
-				BR(),
-				u.status, " ",
-				+u.uid === uid && BUTTON({type: "button", class: "editstatus", "data-status": u.status||""}, "\u{1F589}"),
-				is_owner && u.status && BUTTON({type: "button", class: "confirmdelete", "data-uid": u.uid, title: "Delete status"}, "🗑"),
+				DIV({class: "text"}, [
+					B(u.display_name),
+					BR(),
+					I(u.status), " ",
+					+u.uid === uid && BUTTON({type: "button", class: "editstatus", "data-status": u.status||""}, "\u{1F589}"),
+					is_owner && u.status && BUTTON({type: "button", class: "confirmdelete", "data-uid": u.uid, title: "Delete status"}, "🗑"),
+				]),
 			]))
 		),
 	]);

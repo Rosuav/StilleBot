@@ -26,6 +26,10 @@ img.avatar {vertical-align: middle; margin-right: 4px;}
 }
 .member {
 	width: 220px;
+	display: flex;
+}
+.member .text {
+	margin: auto 0;
 }
 </style>
 
