@@ -10,15 +10,18 @@ export function render(data) {
 		//The button can be one of three.
 		P([
 			!uid ? BUTTON({class: "twitchlogin"}, "Log in to add yourself!") //Start by logging in.
-			: !data.members.find(u => +u.id === uid) ? BUTTON({id: "joinclub"}, "Join the club!") //Then you can join!
+			: !data.members[uid] ? BUTTON({id: "joinclub"}, "Join the club!") //Then you can join!
 			: BUTTON({id: "leaveclub"}, "Leave the club."), //But you can then leave if you so desire.
 		]),
 
 		H3("Current members:"),
-		DIV({class: "members"}, data.members.map(u => DIV({class: "member"}, [
-			IMG({class: "avatar", src: u.profile_image_url}),
-			u.display_name,
-		]))),
+		DIV({class: "members"}, Object.values(data.members)
+			.sort((a, b) => b.joined - a.joined)
+			.map(u => DIV({class: "member"}, [
+				IMG({class: "avatar", src: u.profile_image_url}),
+				u.display_name,
+			]))
+		),
 	]);
 }
 

@@ -3,7 +3,7 @@ inherit http_websocket;
 constant markdown = #"# $$clubtitle||Fan Club$$
 {:#clubtitle}
 
-$$clubdesc$$
+$$clubdesc||$$
 
 $$managebtn||$$
 
@@ -36,7 +36,6 @@ __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Reques
 	if (!club) return render(req, ([]));
 	mapping cfg = await(G->G->DB->load_config(0, "fanclubs"))[club];
 	if (!cfg) return render(req, (["club": club]));
-	get_users_info(cfg->members + ({cfg->owner})); //Fire off a query so they're more likely to be loaded by the time the websocket asks for them
 	int(1bit) is_owner = 0;
 	string uid = "0";
 	if (mapping user = req->misc->session->?user) {
@@ -51,13 +50,35 @@ __async__ string|mapping(string:mixed) http_request(Protocols.HTTP.Server.Reques
 	]));
 }
 
+__async__ void check_users(string group, array uids) {
+	array users = await(get_users_info(uids, "id"));
+	int changed = 0;
+	await(G->G->DB->mutate_config(0, "fanclubs") {mapping memb = __ARGS__[0][group]->members;
+		foreach (users, mapping user) {
+			mapping cur = memb[user->id];
+			if (!cur) continue; //User no longer a member
+			cur->_fetch_time = user->_fetch_time;
+			foreach (({"login", "display_name", "profile_image_url"}), string key)
+				if (cur[key] != user[key]) {changed = 1; cur[key] = user[key];}
+		}
+	});
+	if (changed) send_updates_all(group);
+}
+
 __async__ mapping get_state(string|int group) {
 	mapping cfg = await(G->G->DB->load_config(0, "fanclubs"))[group];
 	if (!cfg) return ([]);
+	//If any of the data is stale, requery; don't wait for it though, just give what we already have.
+	//Note that we'll often consider the data stale but not get any actual changes, which will update
+	//the fetch times but not push anything out to the end user.
+	int cutoff = time() - 3600;
+	array checkme = ({ });
+	foreach (cfg->members; string id; mapping m) if (m->_fetch_time < cutoff) checkme += ({id});
+	if (sizeof(checkme)) check_users(group, checkme);
 	return ([
 		"title": cfg->title, "description": cfg->description,
-		"members": await(get_users_info(cfg->members)),
-		"owner": await(get_user_info(cfg->owner)),
+		"members": cfg->members,
+		"owner": cfg->owner,
 	]);
 }
 
@@ -81,7 +102,7 @@ __async__ void websocket_cmd_join(mapping(string:mixed) conn, mapping(string:mix
 	await(G->G->DB->mutate_config(0, "fanclubs") {
 		mapping cfg = __ARGS__[0][conn->group];
 		if (!cfg) return; //Shouldn't happen
-		if (!has_value(cfg->members, (int)user->id)) cfg->members += ({(int)user->id});
+		cfg->members[user->id] = (["joined": time(), "uid": user->id]);
 	});
 	send_updates_all(conn->group);
 }
@@ -93,11 +114,11 @@ __async__ void websocket_cmd_remove(mapping(string:mixed) conn, mapping(string:m
 	await(G->G->DB->mutate_config(0, "fanclubs") {
 		mapping cfg = __ARGS__[0][conn->group];
 		if (!cfg) return; //Shouldn't happen
-		int uid = (int)user->id;
+		string uid = user->id;
 		if (msg->removeuser && (user->id == cfg->owner || is_localhost_mod(user->login, conn->remote_ip)))
 			//Owner override - may remove other users.
-			uid = msg->removeuser;
-		cfg->members -= ({uid});
+			uid = (string)msg->removeuser;
+		m_delete(cfg->members, uid);
 	});
 	send_updates_all(conn->group);
 }
