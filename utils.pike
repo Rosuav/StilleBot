@@ -153,17 +153,19 @@ __async__ void lookup() {
 	}
 }
 
-@"Watch a channel for setup changes (currently just cat/title)":
+@"Watch a channel for setup changes (currently just cat/title) or going online/offline":
 __async__ void watch() {
 	array(string) names = G->G->args[Arg.REST];
 	if (!sizeof(names)) {werror("Need a username\n"); return;}
 	array ids = await(Concurrent.all(get_user_id(names[*])));
 	array prev = allocate(sizeof(ids));
 	while (1) {
+		array data = await(get_helix_paginated("https://api.twitch.tv/helix/streams", (["user_id": (array(string))ids])));
+		multiset online = (multiset)data->user_id;
 		foreach (ids; int i; int id) {
 			mapping data = await(twitch_api_request("https://api.twitch.tv/helix/channels?broadcaster_id=" + id));
 			mapping setup = data->data[0];
-			string cur = setup->game_name + ": " + setup->title;
+			string cur = (online[setup->broadcaster_id] ? "[online] " : "[offline] ") + setup->game_name + ": " + setup->title;
 			if (cur != prev[i]) {
 				write(names[i] + ": " + string_to_utf8(cur) + "\n");
 				if (prev[i]) Process.create_process(({"vlc", "/home/rosuav/Music/The Kick-Q3Kvu6Kgp88.webm"}));
