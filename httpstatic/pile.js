@@ -24,12 +24,18 @@ let autorps = ws_group === "aIW6gTZ0GcACC17ENWMRYmc2QVKiSkKR80DN#0" ? 1 : 0;
 //Conflict category definitions. If two objects have an assigned category, and A_B is in this
 //list, then A wins. If B_A is in this list, then B wins. If neither, they bounce off each other.
 const conflict_resolution = {
+	//Default (and Cute)
 	rock_scissors: "Rock smashes Scissors",
 	scissors_paper: "Scissors cut Paper",
 	paper_rock: "Paper covers Rock",
+	//Halloween
 	knife_pumpkin: "Knife carves Pumpkin",
 	pumpkin_ghost: "Pumpkin scares Ghost",
 	ghost_knife: "Ghost possesses Knife",
+	//Proposed: Cat/Laser Pointer/Box
+	laser_cat: "Laser distracts Cat",
+	cat_box: "Cat possesses Box",
+	box_laser: "Box covers Laser",
 };
 const default_thing_image = {url: "/static/MustardMineAvatar.png", xsize: 844, ysize: 562};
 let merge_mode = "normal";
