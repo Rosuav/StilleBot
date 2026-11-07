@@ -3,10 +3,10 @@ inherit http_endpoint;
 __async__ void confirm_conduit_active() {
 	//Wait a bit, then see if the conduit's active. If it isn't, scream.
 	//If that doesn't work? Maybe we need to activate ourselves.
-	mapping resp = await(twitch_api_request("https://api.twitch.tv/helix/eventsub/conduits/shards?conduit_id=" + G->G->condid));
+	mapping resp = await(twitch_api_request("https://api.twitch.tv/helix/eventsub/conduits/shards?conduit_id=" + G->G->condid, ([]), (["authtype": "app"])));
 	werror("Pre-check, conduit status %O\n", resp->data);
 	sleep(5);
-	resp = await(twitch_api_request("https://api.twitch.tv/helix/eventsub/conduits/shards?conduit_id=" + G->G->condid));
+	resp = await(twitch_api_request("https://api.twitch.tv/helix/eventsub/conduits/shards?conduit_id=" + G->G->condid, ([]), (["authtype": "app"])));
 	werror("Post-check, conduit status %O\n", resp->data);
 }
 
