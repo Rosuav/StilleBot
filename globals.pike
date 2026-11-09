@@ -1795,3 +1795,10 @@ array xfr_call_out(function f, float|int delay, mixed ... args) {
 	array cur = G->G->xco[xco_id] = ({f, args, call_out(_xco_done, delay, xco_id)});
 	return cur[2];
 }
+
+//In PCRE2, the "Widestring" alias seems to be deprecated, so alias across
+#if constant(Regexp.PCRE2)
+program StudiedPCRE = Regexp.PCRE2.Studied;
+#else
+program StudiedPCRE = Regexp.PCRE.StudiedWidestring;
+#endif
