@@ -127,12 +127,13 @@ bool need_mod(string grp) {return 1;}
 __async__ mapping get_chan_state(object channel, string grp, string|void id) {
 	return ([]); //Do we even need a websocket here? Maybe it'll be useful for the final import stage.
 }
-object special_command_variable = Regexp.PCRE2.Studied("@([A-Za-z0-9]+)@(\\[.+?\\])?");
+
 __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	array commands = Array.arrayify(msg->commands); //Generally we expect an array (even if of just one), but allow the outer brackets to be omitted.
 	mapping unknowns = ([]);
 	mapping commands_by_name = ([]);
 	mapping(string:array) warnings = ([]);
+	object special_command_variable = Regexp.PCRE2.Studied("@([A-Za-z0-9]+)@(\\[.+?\\])?");
 	foreach (commands, mapping cmd) {
 		//Attempt to interpret the command into native. Anything we don't understand,
 		//put a comment at the top of the script. We'll turn this into MustardScript for the
