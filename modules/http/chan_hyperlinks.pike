@@ -97,7 +97,7 @@ int(1bit) contains_link(string msg) {
 	}
 }
 
-object twitchlink = Regexp.PCRE2.Studied("(https://)*(www.)*twitch.tv/");
+Regexp.PCRE2 twitchlink = Regexp.PCRE2("(https://)*(www.)*twitch.tv/");
 
 //Helper for the allmsgs hook - returns a reason for permitting the message, or null if it may need to be blocked
 string evaluate_message(object channel, mapping person, string msg) {

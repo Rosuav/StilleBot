@@ -133,7 +133,7 @@ __async__ mapping wscmd_deepbot_translate(object channel, mapping(string:mixed) 
 	mapping unknowns = ([]);
 	mapping commands_by_name = ([]);
 	mapping(string:array) warnings = ([]);
-	object special_command_variable = Regexp.PCRE2.Studied("@([A-Za-z0-9]+)@(\\[.+?\\])?");
+	Regexp.PCRE2 special_command_variable = Regexp.PCRE2("@([A-Za-z0-9]+)@(\\[.+?\\])?");
 	foreach (commands, mapping cmd) {
 		//Attempt to interpret the command into native. Anything we don't understand,
 		//put a comment at the top of the script. We'll turn this into MustardScript for the
