@@ -104,6 +104,7 @@ __async__ void get_credentials() {
 	#if !constant(HEADLESS)
 	if (limit) write("Rate limit: %d/%d   \r", limit - left, limit); //Will usually get overwritten
 	#endif
+	if (left < 20) Stdio.append_file("rate-limit.log", sprintf("%sRate limit: %d/%d HTTP status %O\n%s\n", ctime(time()), limit - left, limit, res->status, url));
 	if (options->return_status) return res->status; //For requests not expected to have a body, but might have multiple success returns
 	if (res->status == 204 && res->get() == "") return ([]); //Otherwise, pretend that a 204 response is an empty mapping.
 	mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
