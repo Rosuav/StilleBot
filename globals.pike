@@ -1743,7 +1743,7 @@ string deduce_host(mapping request_headers) {
 //Note that this is probably a bit too restrictive. Feel free to add more, just as
 //long as nothing abusable can be recognized by this. It's also okay if it doesn't
 //match every possible link, as this is meant as a courtesy, not a validator.
-object hyperlink = Regexp.PCRE("^http(s|)://[A-Za-z0-9.]+(/[-A-Za-z0-9/.+]*|)(\\?[A-Za-z0-9=&+]*|)(#[A-Za-z0-9]*|)$");
+object hyperlink = Regexp.PCRE2("^http(s|)://[A-Za-z0-9.]+(/[-A-Za-z0-9/.+]*|)(\\?[A-Za-z0-9=&+]*|)(#[A-Za-z0-9]*|)$");
 
 //True if the bot is definitely active, or false if uncertain or not active.
 int(1bit) is_active_bot() {

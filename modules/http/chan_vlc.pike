@@ -199,7 +199,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req)
 			array blocks = await(G->G->DB->load_config(channel->userid, "vlcblocks", ({ })));
 			string blockdesc;
 			foreach (blocks, [string regex, string desc]) {
-				array match = Regexp.PCRE(regex, Regexp.PCRE.OPTION.ANCHORED)->split2(block);
+				array match = Regexp.PCRE2(regex, Regexp.PCRE.OPTION.ANCHORED)->split2(block);
 				if (!match) continue;
 				//Undocumented feature: The description can use regex replacement
 				//markers "\1" etc to incorporate matched substrings from the regex.
@@ -376,7 +376,7 @@ __async__ void websocket_cmd_update(mapping(string:mixed) conn, mapping(string:m
 	//It's entirely possible that this will match some of the unknowns. If so, clear 'em out.
 	mapping status = vlc_status[channel->name];
 	if (status->?unknowns) {
-		object re = Regexp.PCRE(msg->path, Regexp.PCRE.OPTION.ANCHORED);
+		object re = Regexp.PCRE2(msg->path, Regexp.PCRE2.OPTION.ANCHORED);
 		status->unknowns = filter(status->unknowns) {return !re->split2(__ARGS__[0]);};
 	}
 	send_updates_all(channel, "blocks");

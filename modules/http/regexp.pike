@@ -13,7 +13,7 @@ mapping get_state(string group, string|void id) {return ([]);}
 mapping websocket_cmd_test(mapping(string:mixed) conn, mapping(string:mixed) msg) {
 	object re = regex_cache[msg->regexp];
 	mapping ret = (["cmd": "testresult", "regexp": msg->regexp, "text": msg->text]);
-	if (mixed ex = !re && catch (re = regex_cache[msg->regexp] = Regexp.PCRE(msg->regexp))) {
+	if (mixed ex = !re && catch (re = regex_cache[msg->regexp] = Regexp.PCRE2(msg->regexp))) {
 		ret->error = ex[0]; ret->errorloc = -1;
 		//If sscanf fails, just leave the full text in ret->error.
 		sscanf(ret->error, "error calling pcre_compile [%d]: %s", ret->errorloc, ret->error);

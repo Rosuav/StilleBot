@@ -298,7 +298,7 @@ constant emoteids = ([
 	"EyeSeeYou": "emotesv2_7291c0f62b6441e8a2a9aa7d0b2e5eb5",
 ]);
 
-Regexp.PCRE.Studied words = Regexp.PCRE.Studied("\\w+");
+Regexp.PCRE words = Regexp.PCRE2("\\w+");
 
 @retain: mapping(string:multiset(string)) user_emotes = ([]); //Cached but easily purged
 

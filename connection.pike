@@ -4,7 +4,7 @@ inherit annotated;
 inherit transferrable;
 
 mapping simple_regex_cache = ([]); //Emptied on code reload.
-object substitutions = Regexp.PCRE("(\\$ *[*?A-Za-z0-9|:.]* *\\$)|({ *[A-Za-z0-9_@|.]+ *})");
+object substitutions = Regexp.PCRE2("(\\$ *[*?A-Za-z0-9|:.]* *\\$)|({ *[A-Za-z0-9_@|.]+ *})");
 //object trailing_digits = Regexp.SimpleRegexp("^(.*[^0-9])([0-9]+)$"); //Match any base name followed by digits. Not currently used.
 constant messagetypes = ({"PRIVMSG", "NOTICE", "WHISPER", "USERNOTICE", "CLEARMSG", "CLEARCHAT", "USERSTATE"});
 mapping irc_connections = ([]); //Not persisted across code reloads, but will be repopulated (after checks) from the connection_cache.
@@ -627,7 +627,7 @@ class channel(mapping identity) {
 				//notation for variables would potentially conflict with the
 				//regexp's own syntax.
 				object re = simple_regex_cache[message->expr1];
-				if (!re) re = simple_regex_cache[message->expr1] = Regexp.PCRE(message->expr1);
+				if (!re) re = simple_regex_cache[message->expr1] = Regexp.PCRE2(message->expr1);
 				string matchtext = expr(message->expr2);
 				int|array result = re->exec(matchtext);
 				if (arrayp(result)) { //The regexp passes!
