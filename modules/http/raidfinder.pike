@@ -122,7 +122,8 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		}
 		if (chan == "!demo") return redirect("raidfinder?categories=mustardmine");
 		if (chan == (string)(int)chan) userid = (int)chan;
-		else userid = await(get_user_id(chan));
+		else if (mixed ex = catch {userid = await(get_user_id(chan));})
+			return "Invalid user name " + chan;
 	}
 	else if (logged_in) userid = (int)logged_in->id; //Raidfind for self if logged in.
 	//TODO: Based on the for= or the logged in user, determine whether raids are tracked.
