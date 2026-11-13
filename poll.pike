@@ -105,7 +105,10 @@ __async__ void get_credentials() {
 		#if !constant(HEADLESS)
 		write("Rate limit: %d/%d   \r", limit - left, limit); //Will usually get overwritten
 		#endif
-		if (left < 20 || res->status == 429) Stdio.append_file("rate-limit.log", sprintf(
+		//Report if there's fewer than 20 in the rate limit AND the available is less than 10% of the
+		//limit. For regular requests, the limit is 800, but some requests have lower limits eg 10,
+		//and it's not worth reporting those until they're much closer to cutoff.
+		if ((left < 20 && limit / left > 10) || res->status == 429) Stdio.append_file("rate-limit.log", sprintf(
 			"%sRate limit: %d/%d [%d sec left] HTTP status %O\n%s %s\n%s",
 			ctime(time()), limit - left, limit, (int)res->headers["ratelimit-reset"] - time(), res->status,
 			method, url,
