@@ -146,6 +146,11 @@
   - Remove req->misc->session->token. Instead, have req->misc->token which is
     taken from the user ID, and always store the token against that user (not the
     session).
+    - Might not work in 100% of situations. What happens if (1) you have already
+      granted scope X, (2) you are logged out, (3) a page requires scope Y, (4)
+      you log in, granting only scope Y? We will attempt to request scopes X and Y
+      together, but if that is denied, what then? The session token would include
+      scope Y, the user token would continue to grant scope X.
   - NOTE: Degenerate sessions, containing just the cookie and nothing else, are getting
     saved periodically. Why? They should be nulls.
 * Failed auth when attempting to send a voiced message should be logged to the
