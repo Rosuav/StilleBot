@@ -223,6 +223,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 		}
 		else if (req->variables->highlights) {
 			//Restrict your follow list to those you have highlighted.
+			if (!sizeof(highlightids)) return redirect("/raidfinder"); //If you haven't highlighted any, going back to the default raidfinder is probably the most useful
 			args->user_id = (array(string))highlightids;
 			title = "Highlighted channels";
 		}
@@ -234,7 +235,12 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			//options of "raiders currently online" and "all raiders".
 			args->user_login = req->variables->login;
 			//Specify ?login=X&login=Y or ?login=X,Y for multiples
+			if (args->user_login == "") return "Need at least one stream name to look up";
 			if (stringp(args->user_login) && has_value(args->user_login, ",")) args->user_login /= ",";
+			if (arrayp(args->user_login)) { //(possibly if it just became an array on the previous line)
+				args->user_login -= ({""});
+				if (!sizeof(args->user_login)) return "Need at least one stream name to look up";
+			}
 			title = "Detailed stream info";
 		}
 		else if (req->variables->train) {
@@ -245,14 +251,16 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			if (!(int)owner) owner = (string)await(get_user_id(owner));
 			mapping trncfg = await(G->G->DB->load_config(owner, "raidtrain"))->cfg;
 			array casters = trncfg->?all_casters;
-			if (!casters) return "No such raid train - check the link and try again";
+			if (!casters || !sizeof(casters)) return "No such raid train - check the link and try again";
 			args->user_id = (array(string))casters;
 			title = "Raid Train: " + (trncfg->title || "(untitled)");
 		}
 		else if (string|array team = req->variables->team) {
 			//Team may be an array (team=X&team=Y), a comma-separated list (team=X,Y - also
 			//the obvious form team=X counts as this), or blank (team=) meaning "my teams".
-			if (team == "") {
+			//For convenience, team=team or just ?team will give you your own too. (There
+			//actually is a team called "team". It's probably not what you were after.)
+			if (team == "" || team == "team") {
 				if (mapping resp = ensure_login(req)) return resp;
 				team = await(twitch_api_request("https://api.twitch.tv/helix/teams/channel?broadcaster_id=" + userid))->data->team_name || ({ });
 			}
@@ -266,7 +274,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 				team_display_names += ({data[0]->team_display_name});
 				args->user_id += data[0]->users->user_id;
 			};
-			if (!sizeof(args->user_id)) title = "Stream Team not found"; //Most likely this is because you misspelled the team name
+			if (!sizeof(args->user_id)) return "Stream Team not found"; //Most likely this is because you misspelled the team name
 			else if (sizeof(team_display_names) > 1) title = "Stream Teams: " + team_display_names * ", ";
 			else title = "Stream Team: " + team_display_names[0];
 		}
@@ -274,10 +282,12 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			//categories=Canadian to see who's live from the Canadian Streamers collection of trading cards
 			title = "Active " + tradingcards->label + " streamers";
 			args->user_id = tradingcards->streamers;
+			if (!sizeof(args->user_id)) return "Bad trading card category"; //Shouldn't happen - the categories only exist once there are at least 5 cards
 		}
 		else switch (req->variables->categories) {
 			case "mustardmine":
 				args->user_id = (array(string))(indices(G->G->irc->id) - ({0}));
+				if (!sizeof(args->user_id)) return "Do I track nobody???";
 				title = "Mustard Mine users";
 				auxtitle = " <img src=/static/MustardMineAvatar.png style=\"height: 1.25em\">";
 				break;
@@ -294,6 +304,7 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 					foreach (annotations; string uid; array anno)
 						annotations[uid] = Array.uniq(anno);
 					args->user_id = indices(annotations);
+					if (!sizeof(args->user_id)) return "No Pixel Plush streams live";
 				}
 				break;
 			}
@@ -320,11 +331,22 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			case "": case "categories": { //For ?categories and ?categories= modes, show those you follow
 				if (mapping resp = ensure_login(req)) return resp;
 				args->game_id = await(G->G->DB->load_config(req->misc->session->user->?id, "followed_categories", ({ })));
+				if (!sizeof(args->game_id)) return "In order to use followed-categories mode, follow one or more categories in the raid finder. Note that following them on Twitch directly does not count (unfortunately).";
 				title = "Followed categories";
 				catfollow = "<button id=followcategory data-action=show data-cats=\"" + args->game_id * "," + "\">💜 All followed categories</button><br>";
 				break;
 			}
 		}
+		//Due to the way HTTP parameters work, an empty array will have no effect, and an empty
+		//arg mapping will mean "every live stream on the platform", which is not very helpful.
+		//Purge any empty arrays, and then ensure that we have at least one filter. Note that
+		//this check should never trip; everything above should give an error if it would result
+		//in an empty filter. So the message here is basically a sort of 500.
+		array purge = ({ });
+		foreach (args; string key; mixed val) if (arrayp(val) && !sizeof(val)) purge += ({key});
+		m_delete(args, purge[*]);
+		if (!sizeof(args)) return "!! Something went wrong - no filters found !!";
+		//Okay. We now have some filters, so we can go ask Twitch for data.
 		[array streams, mapping self] = await(Concurrent.all(
 			get_helix_paginated("https://api.twitch.tv/helix/streams", args),
 			twitch_api_request("https://api.twitch.tv/helix/streams?user_id=" + userid),
