@@ -107,7 +107,7 @@ __async__ void get_credentials() {
 		#endif
 		if (left < 20 || res->status == 429) Stdio.append_file("rate-limit.log", sprintf(
 			"%sRate limit: %d/%d [%d sec left] HTTP status %O\n%s\n",
-			ctime(time()), limit - left, limit, time() - (int)res->headers["ratelimit-reset"], res->status, url,
+			ctime(time()), limit - left, limit, (int)res->headers["ratelimit-reset"] - time(), res->status, url,
 		));
 	}
 	if (options->return_status) return res->status; //For requests not expected to have a body, but might have multiple success returns
