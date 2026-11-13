@@ -384,7 +384,7 @@ __async__ void open_close(int broadcaster_id, int want_open) {
 	if (mixed id = m_delete(autoclose, broadcaster_id)) remove_call_out(id);
 	if (int d = want_open && givcfg->duration) {
 		givcfg->end_time = time() + d;
-		autoclose[broadcaster_id] = call_out(open_close, d, broadcaster_id, 0);
+		autoclose[broadcaster_id] = xfr_call_out(open_close, d, broadcaster_id, 0);
 	}
 	else m_delete(givcfg, "end_time");
 	//Note: Updates reward status in fire and forget mode.
@@ -564,4 +564,5 @@ __async__ mapping message_params(object channel, mapping person, array params, m
 	]);
 }
 
-protected void create(string name) {::create(name);}
+array(string) xco_path() {return ({"chan_giveaway"});}
+protected void create(string name) {::create(name); G->G->chan_giveaway = this;}
