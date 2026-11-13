@@ -83,8 +83,24 @@ constant markdown_menu = #"# Raid finder modes
 //Modes train and tradingcards are omitted as they are more usefully accessed from
 //their corresponding pages. Also login=user,user,user omitted as not useful.
 
-__async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req)
-{
+//Kinda cheating by reusing #uploaderror but I don't care, it looks fine
+constant errorpage = #"# Raid finder
+
+<div id=uploaderror>$$error$$</div>
+
+[Try the regular raid finder](/raidfinder)
+
+[Browse other raid finder modes](/raidfinder?menu)
+";
+
+__async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Request req) {
+	//Internally, it's convenient to return a simple string when there's an error.
+	//Wrap those up into nicer message pages.
+	mapping|string ret = await(low_http_request(req));
+	if (!stringp(ret)) return ret;
+	return render(req, errorpage, (["error": ret]));
+}
+__async__ mapping(string:mixed)|string low_http_request(Protocols.HTTP.Server.Request req) {
 	System.Timer tm = System.Timer();
 	//Try to find all creative categories and get their IDs. Is there a better way to do this?
 	if (sizeof(creatives) < sizeof(creative_names)) {
