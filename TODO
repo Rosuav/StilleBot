@@ -304,5 +304,3 @@
   destructively. Add more to the xfr package:
   - Anything that sleeps may need to be checked (compare twitch_apis::shoutout which
     now uses xfr_call_out instead of sleeping)
-  - Where appropriate, replace call_out with xfr_call_out. Ensure that the function
-    being deferred belongs to a findable object, and that the args are JSON-safe.
