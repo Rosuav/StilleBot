@@ -106,8 +106,10 @@ __async__ void get_credentials() {
 		write("Rate limit: %d/%d   \r", limit - left, limit); //Will usually get overwritten
 		#endif
 		if (left < 20 || res->status == 429) Stdio.append_file("rate-limit.log", sprintf(
-			"%sRate limit: %d/%d [%d sec left] HTTP status %O\n%s\n",
-			ctime(time()), limit - left, limit, (int)res->headers["ratelimit-reset"] - time(), res->status, url,
+			"%sRate limit: %d/%d [%d sec left] HTTP status %O\n%s %s\n%s",
+			ctime(time()), limit - left, limit, (int)res->headers["ratelimit-reset"] - time(), res->status,
+			method, url,
+			res->status == 429 ? sprintf("Body: %O\n", res->get()) : "",
 		));
 	}
 	if (options->return_status) return res->status; //For requests not expected to have a body, but might have multiple success returns
