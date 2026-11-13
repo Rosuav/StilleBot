@@ -50,6 +50,8 @@
     - Any others?
 * Special trigger when any goal bar tiers up?? Would be better than the weird system
   where it triggers an actual command. Could deep link straight to the editor now.
+  - Or even better, attach functionality directly to the tier-up of a specific goal
+    bar, the way that Makeship integrations are done.
 * Should ALL specials function as implicit arrays, the way triggers do?
   - Alternatively: should invocations and executions be separated? Aliases would then
     be just another way to have more than one invocation for a single command.
