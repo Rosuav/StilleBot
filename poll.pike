@@ -101,13 +101,15 @@ __async__ void get_credentials() {
 			Protocols.HTTP.Promise.Arguments((["headers": headers, "data": body]))));
 	int limit = (int)res->headers["ratelimit-limit"],
 		left = (int)res->headers["ratelimit-remaining"];
-	#if !constant(HEADLESS)
-	if (limit) write("Rate limit: %d/%d   \r", limit - left, limit); //Will usually get overwritten
-	#endif
-	if (left < 20 || res->status == 429) Stdio.append_file("rate-limit.log", sprintf(
-		"%sRate limit: %d/%d [%d sec left] HTTP status %O\n%s\n",
-		ctime(time()), limit - left, limit, time() - (int)res->headers["ratelimit-reset"], res->status, url,
-	));
+	if (limit) {
+		#if !constant(HEADLESS)
+		write("Rate limit: %d/%d   \r", limit - left, limit); //Will usually get overwritten
+		#endif
+		if (left < 20 || res->status == 429) Stdio.append_file("rate-limit.log", sprintf(
+			"%sRate limit: %d/%d [%d sec left] HTTP status %O\n%s\n",
+			ctime(time()), limit - left, limit, time() - (int)res->headers["ratelimit-reset"], res->status, url,
+		));
+	}
 	if (options->return_status) return res->status; //For requests not expected to have a body, but might have multiple success returns
 	if (res->status == 204 && res->get() == "") return ([]); //Otherwise, pretend that a 204 response is an empty mapping.
 	mixed data; catch {data = Standards.JSON.decode_utf8(res->get());};
