@@ -203,11 +203,20 @@ __async__ mapping(string:mixed)|string http_request(Protocols.HTTP.Server.Reques
 			//The result is that raiders will contain one entry for each
 			//unique user ID that has ever raided in, and raidtimes will
 			//have the corresponding timestamps.
+			if (!userid) { //You HAVE to provide a user, else it doesn't make sense.
+				//If not logged in, guess that they want to log in and use themselves (a &for= parameter would also be valid).
+				//I'm not sure if it's possible to set for= such that userid comes out zero, but it shouldn't be allowed.
+				return ensure_login(req) || "Invalid user name provided";
+			}
 			array raids = await(G->G->DB->load_raids(0, userid));
 			array raiders = ({ }), raidtimes = ({ });
 			foreach (raids, mapping r) {
 				raiders += ({(string)r->fromid});
 				raidtimes += ({r->data[-1]->timestamp});
+			}
+			if (!sizeof(raiders)) {
+				if (req->variables["for"]) return "No raids seen for that user - possibly this bot is not tracking them";
+				else return "No raids seen for your channel - possibly this bot is not tracking them";
 			}
 			sort(raidtimes, raiders);
 			args->user_id = raiders[<99..]; //Is it worth trying to support more than 100 raiders? Would need to paginate.
