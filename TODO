@@ -304,3 +304,4 @@
   destructively. Add more to the xfr package:
   - Anything that sleeps may need to be checked (compare twitch_apis::shoutout which
     now uses xfr_call_out instead of sleeping)
+* Loading clips doesn't update with new game titles - they update only on refresh
