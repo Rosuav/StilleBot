@@ -45,16 +45,23 @@ __async__ void push_clips(string broadcaster_id, array clips, int|void force) {
 	array gameids = indices(mkmapping(clips->game_id, clips->game_id)); //Distinct game IDs
 	array needed = gameids - indices(games_cache);
 	if (sizeof(needed)) {
-		werror("Need gameids %{%O %}\n", needed);
 		//Prevent looping reloads of broken game IDs (probably categories that no longer exist, eg "Creative")
 		foreach (needed, string gameid) games_cache[gameid] = (["name": "Game #" + gameid]);
+		//If there are a lot of games to load, this could take a while, and the clips could finish loading
+		//before we have the games. In that case, we don't want to kick the socket, even though "loading"
+		//is done; so flag this channel as still loading games. Technically, we should also set this for
+		//any channel that loads any of the stubs we're looking at, but that's not worth the hassle; if
+		//multiple clips pages are loading at once, it's possible that one will lose track of the fact
+		//that games are loading. Most of the time, this should behave sanely.
+		cache->loading_games++;
 		array games = await(get_helix_paginated("https://api.twitch.tv/helix/games", (["id": gameids])));
 		foreach (games, mapping g) games_cache[g->id] = g;
+		cache->loading_games--;
 	}
 	cache->games = mkmapping(gameids, games_cache[gameids[*]]);
 	send_updates_all(broadcaster_id);
 	//Once we're done loading, kick all the sockets so they don't suddenly refresh when someone else loads this page
-	if (!cache->loading) kick_socket_group(broadcaster_id);
+	if (!cache->loading && !cache->loading_games) kick_socket_group(broadcaster_id);
 }
 
 void partial_clips(string url, mapping query, mapping options, array clips) {push_clips(query->broadcaster_id, clips);}
