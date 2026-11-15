@@ -127,7 +127,8 @@ void find_builtins() {
 		builtins[name] = ([
 			"desc": handler->builtin_description, "name": handler->builtin_name,
 			"param": expand_array_keys(handler->builtin_param),
-		]) | handler->vars_provided;
+			"vars_provided": handler->vars_provided || ([]),
+		]) | handler->vars_provided; //DEPRECATED and will fail when vars_provided can be an array
 		if (builtins[name]->desc == "") builtins[name]->desc = handler->command_description;
 	}
 	commands_templates = templates * "\n";
