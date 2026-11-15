@@ -545,8 +545,8 @@ function builtin_types() {
 			typedesc: blt.desc, provides: { },
 		};
 		b.params.unshift({attr: "builtin", values: name});
-		for (let prov in blt) if (prov[0] === '{')
-			if (!provision_label(blt[prov]).includes("(deprecated)")) b.provides[prov] = blt[prov];
+		for (let prov in blt.vars_provided) if (prov[0] === '{')
+			if (!provision_label(blt.vars_provided[prov]).includes("(deprecated)")) b.provides[prov] = blt.vars_provided[prov];
 			else b.provides[prov] = "*" + blt[prov]; //The asterisk marks it as depreferred; the "(deprecated)" will be retained in the title text.
 	});
 	return ret;

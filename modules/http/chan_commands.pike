@@ -128,7 +128,10 @@ void find_builtins() {
 			"desc": handler->builtin_description, "name": handler->builtin_name,
 			"param": expand_array_keys(handler->builtin_param),
 			"vars_provided": handler->vars_provided || ([]),
-		]) | handler->vars_provided; //DEPRECATED and will fail when vars_provided can be an array
+		]);
+		//DEPRECATED. Front end should no longer require this. If vars_provided is an array and something
+		//requires the individual elements loose in the builtin, it will simply see none of them.
+		if (mappingp(handler->vars_provided)) builtins[name] |= handler->vars_provided;
 		if (builtins[name]->desc == "") builtins[name]->desc = handler->command_description;
 	}
 	commands_templates = templates * "\n";

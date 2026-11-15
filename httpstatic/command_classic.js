@@ -154,7 +154,8 @@ const conditional_types = {
 function describe_builtin_vars(name) {
 	const builtin = window.cmdedit_collections.builtins[name]; if (!builtin) return [];
 	const rows = [];
-	for (let v in builtin)
+	for (let v in builtin.vars_provided)
+		//NOTE: Cannot handle array provisions and will simply ignore them.
 		if (v[0] === '{') rows.push(TR([TD(CODE(v)), TD(builtin[v])]));
 	return rows;
 }
