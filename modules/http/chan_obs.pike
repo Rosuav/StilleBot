@@ -36,6 +36,20 @@ constant vars_provided = ([
 	"{streaming}": "1 if streaming, 0 if not (status)",
 	"{recording}": "1 if recording, 0 if not (status)",
 ]);
+constant POC_vars_provided = ({
+	([
+		"Status": ([
+			"{streaming}": "1 if streaming, 0 if not",
+			"{recording}": "1 if recording, 0 if not",
+		]),
+		"Get scene": ([
+			"{scenename}": "Current scene name (get/switch scene)",
+		]),
+		"Switch scene": ([
+			"{scenename}": "Current scene name (get/switch scene)",
+		]),
+	]),
+});
 
 @retain: mapping obsstudio_inflight_messages = ([]);
 __async__ mapping send_obs_signal(object channel, mapping msg) {

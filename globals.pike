@@ -132,7 +132,7 @@ class builtin_redirect(object canonical) {
 	string builtin_description;
 	string builtin_name;
 	mixed builtin_param;
-	mapping vars_provided;
+	mapping|array vars_provided;
 	string scope_required;
 	function message_params;
 	protected void create() {
@@ -162,6 +162,9 @@ class builtin_command {
 	//label that's different from the keyword itself.
 	//TODO: Allow data type indications, which can be used in the front end to switch to a numeric input or a checkbox
 
+	//vars_provided is either an array of parameter matches, or a mapping, which may include an empty string entry
+	//with such an array. Step through the array; ignore any null, and any mapping should contain a key for the
+	//corresponding parameter. Use the value at that key to continue loading vars_provided.
 	//Each provided variable name maps to one of four possibilities:
 	//1) A string represents an atomic value, labelled with that string (type is "string")
 	//2) An array of two values gives both a label and a data type
