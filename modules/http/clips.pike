@@ -37,7 +37,7 @@ __async__ void push_clips(string broadcaster_id, array clips, int|void force) {
 	//time range needs to be fractured, we will definitely see many of the same clips again
 	int have_clips = !force && sizeof(cache->clips_by_id);
 	cache->clips_by_id |= mkmapping(clips->id, clips);
-	if (have_clips == sizeof(cache->clips_by_id)) return; //No new clips, no need to push anything out
+	if (have_clips && have_clips == sizeof(cache->clips_by_id)) return; //No new clips, no need to push anything out
 	clips = values(cache->clips_by_id);
 	sort(clips->id, clips); //Sort by slug (id) for complete consistency
 	sort(-clips->view_count[*], clips); //Sort by view count to be similar to Twitch's usual view
