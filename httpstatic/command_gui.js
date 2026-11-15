@@ -542,12 +542,9 @@ function builtin_types() {
 		const b = ret["builtin_" + name] = {...stubtypes.builtin,
 			label: builtin_label_funcs[name] || (el => blt.name),
 			params: blt.param.filter(p => p !== "").map(reformat_param), //Blank entries get excluded as there's nothing to input
-			typedesc: blt.desc, provides: { },
+			typedesc: blt.desc, provides: blt.vars_provided,
 		};
 		b.params.unshift({attr: "builtin", values: name});
-		for (let prov in blt.vars_provided) if (prov[0] === '{')
-			if (!provision_label(blt.vars_provided[prov]).includes("(deprecated)")) b.provides[prov] = blt.vars_provided[prov];
-			else b.provides[prov] = "*" + blt[prov]; //The asterisk marks it as depreferred; the "(deprecated)" will be retained in the title text.
 	});
 	return ret;
 }

@@ -387,8 +387,8 @@ Concurrent.Future get_helix_bifurcated(string url, mapping|void query, mapping|v
 
 constant channelonline = special_trigger("!channelonline", "The channel has recently gone online (started streaming)", "The broadcaster", ([
 	"{uptime}": "Stream broadcast duration - use {uptime|time_hms} or {uptime|time_english} for readable form",
-	"{uptime_hms}": "(deprecated) Equivalent to {uptime|time_hms}",
-	"{uptime_english}": "(deprecated) Equivalent to {uptime|time_english}",
+	"{uptime_hms}": "*(deprecated) Equivalent to {uptime|time_hms}",
+	"{uptime_english}": "*(deprecated) Equivalent to {uptime|time_english}",
 	"{initial}": "1 if the stream has reset since the last stream, 0 if it has not (ie resuming after a hiccup)",
 ]), "Status");
 constant channeloffline = special_trigger("!channeloffline", "The channel has stopped streaming (possibly briefly)", "The broadcaster", "uptime, uptime_hms, uptime_english", "Status");
