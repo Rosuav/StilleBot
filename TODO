@@ -304,3 +304,6 @@
   destructively. Add more to the xfr package:
   - Anything that sleeps may need to be checked (compare twitch_apis::shoutout which
     now uses xfr_call_out instead of sleeping)
+* Builtins have vars_provided, specials have params, which are the same thing. Builtin
+  params are very different. Synchronize specials on having provisions, to simplify the
+  wording and avoid confusion.
