@@ -7,7 +7,10 @@ export function sockmsg_get_status(msg) {
 	obsstudio.getStatus(status => ws_sync.send({cmd: "response", key: msg.key, ...status}));
 }
 export function sockmsg_get_scene(msg) {
-	obsstudio.getCurrentScene(scene => ws_sync.send({cmd: "response", key: msg.key, scenename: scene.name}));
+	obsstudio.getCurrentScene(scene => {
+		if (scene) ws_sync.send({cmd: "response", key: msg.key, scenename: scene.name})
+		else ws_sync.send({cmd: "response", key: msg.key, error: "insufficient permissions"})
+	});
 }
 export function sockmsg_set_scene(msg) {
 	obsstudio.setCurrentScene(msg.scenename);

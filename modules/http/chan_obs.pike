@@ -46,8 +46,13 @@ __async__ mapping send_obs_signal(object channel, mapping msg) {
 	msg->key = String.string2hex(random_string(6));
 	object prom = obsstudio_inflight_messages[msg->key] = Concurrent.Promise();
 	socks->send_text(Standards.JSON.encode(msg, 4));
-	return await(prom->future()->timeout(5)); //Five seconds should be enough for a response. Otherwise assume the other end is gone.
-	//TODO: If anything goes wrong, m_delete the promise from inflight_messages
+	mapping resp;
+	mixed ex = catch {resp = await(prom->future()->timeout(5));}; //Five seconds should be enough for a response. Otherwise assume the other end is gone.
+	m_delete(obsstudio_inflight_messages, msg->key); //Ensure that we never both fail and succeed
+	if (ex) throw(ex);
+	if (!mappingp(resp)) error("Bad response from OBS");
+	if (resp->error) error("Unable to signal OBS: " + resp->error);
+	return resp;
 }
 
 __async__ mapping message_params(object channel, mapping person, array param, mapping cfg) {
