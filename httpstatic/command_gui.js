@@ -92,8 +92,26 @@ function automation_to_string(val) {
 
 //Return null if there aren't any, or an object mapping "{someplaceholder}" to a description of it.
 function provides(el, type_override, provisions) {
-	const prov = types[type_override || el.type].provides || el.provides;
+	let prov = types[type_override || el.type].provides || el.provides;
 	if (typeof prov === "function") return prov(el, provisions || { });
+	if (Array.isArray(prov)) {
+		//Ignoring any null entries in the array (which represent non-selecting params),
+		//find a mapping of parameter values to additional provisions.
+		const params = el.builtin_param || [], ret = { };
+		let idx = 0; //Step through the params sequentially
+		let nextprov;
+		while (prov) {
+			for (let i = 0; i < prov.length; ++i) {
+				if (!prov[i]) continue;
+				const next = prov[i][params[idx++]] || { };
+				Object.assign(ret, next); delete ret[""];
+				nextprov = next[""];
+				break; //There shouldn't be anything after a non-null entry anyway
+			}
+			prov = nextprov; nextprov = null;
+		}
+		return ret;
+	}
 	return prov;
 }
 //For display of the provision itself, show this. If the label begins with "*", it's less-recommended and can be buried behind a twistie.
