@@ -31,12 +31,12 @@ constant builtin_param = ({
 		"Switch scene": ({"Scene"}),
 	]),
 });
-constant vars_provided = ([
+constant OLD_vars_provided = ([
 	"{scenename}": "Current scene name (get/switch scene)",
 	"{streaming}": "1 if streaming, 0 if not (status)",
 	"{recording}": "1 if recording, 0 if not (status)",
 ]);
-constant POC_vars_provided = ({
+constant vars_provided = ({
 	([
 		"Status": ([
 			"{streaming}": "1 if streaming, 0 if not",
