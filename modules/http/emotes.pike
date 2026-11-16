@@ -143,11 +143,11 @@ figcaption.size3 {max-width: 112px;}
 
 //Consistent display order for the well-known groups. Any group not listed here will
 //be included at the top of the page where it's easy to spot.
-constant order = ({
+constant DISPLAY_ORDER = ({
 	"Follower",
 	"Tier 1", "Tier 2", "Tier 3",
 	"Bits",
-	"Subscriber badges", "Bits badges",
+	"Subscriber badges", "Bits badges", "Limited-time badges",
 });
 
 __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) {
@@ -243,6 +243,7 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 		//Also fetch the badges. They're intrinsically at a different size, but they'll be stretched to the same size.
 		//If that's a problem, it'll need to be solved in CSS (probably with a classname on the figure here).
 		array badges = await(twitch_api_request("https://api.twitch.tv/helix/chat/badges?broadcaster_id=" + id))->data;
+		mapping campaign_badges = ([]);
 		foreach (badges, mapping set) {
 			mapping cur = ([]);
 			if (set->set_id == "subscriber") cur[1999] = cur[2999] = "<br>";
@@ -263,10 +264,37 @@ __async__ mapping(string:mixed) http_request(Protocols.HTTP.Server.Request req) 
 			array b = values(cur); sort(indices(cur), b);
 			if (set->set_id == "subscriber") sets[-1] = ({"Subscriber badges", b});
 			if (set->set_id == "bits") sets[-2] = ({"Bits badges", b});
+			if (has_prefix(set->set_id, "campaign-") && sizeof(set->versions)) {
+				//Campaign badges are started by a broadcaster. Each one is identified by the broadcaster's
+				//user ID (should be the same as the channel, unless you can do shared campaigns??), a UUID,
+				//and a tag at the end - I've seen "sub" for subscription badges, "mw" for watch hours, and
+				//"ranking" for being in the top ten for sub gifting. The UUID applies to the campaign as a
+				//whole, so if there's a single event with all three badges, they differ only in their tags.
+				//For our purposes, all we need to do is group them, so we sort by the set ID, and describe
+				//by checking the suffixes.
+				//Note that these generally have exactly one badge version. I don't know what'd happen if a
+				//campaign can have unlockable tiers or something.
+				string desc = "Unlockable";
+				if (has_suffix(set->set_id, "-sub")) desc = "Subscribe";
+				else if (has_suffix(set->set_id, "-mw")) desc = "Watch";
+				else if (has_suffix(set->set_id, "-ranking")) desc = "Top Gifter";
+				campaign_badges[set->set_id] = sprintf("<figure>![%s](%s)"
+						"<figcaption>%[0]s</figcaption></figure>",
+						desc, set->versions[0]->image_url_4x,
+				);
+				array parts = set->set_id / "-";
+				parts[-1] = "";
+				campaign_badges[parts * "-"] = "<br>";
+			}
+		}
+		if (sizeof(campaign_badges)) {
+			array b = values(campaign_badges); sort(indices(campaign_badges), b);
+			sets[-3] = ({"Limited-time badges", b});
+			setids["Limited-time badges"] = -3;
 		}
 		array sorted = ({ });
 		array emoteset_order = ({ });
-		foreach (order, string lbl) {
+		foreach (DISPLAY_ORDER, string lbl) {
 			mixed id = setids[lbl] || setids[lbl + " Animated"];
 			if (array s = m_delete(sets, id)) sorted += ({s});
 			//Exclude any null entries (for sections that are absent), and the -1/-2 for badges
