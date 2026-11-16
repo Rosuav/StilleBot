@@ -91,18 +91,18 @@ function automation_to_string(val) {
 }
 
 //Return null if there aren't any, or an object mapping "{someplaceholder}" to a description of it.
-function provides(el, type_override, provisions) {
+function provides(el, type_override, params, provisions) {
 	let prov = types[type_override || el.type].provides || el.provides;
 	if (typeof prov === "function") return prov(el, provisions || { });
 	if (Array.isArray(prov)) {
 		//Ignoring any null entries in the array (which represent non-selecting params),
 		//find a mapping of parameter values to additional provisions.
-		const params = el.builtin_param || [], ret = { };
+		const ret = { };
 		let idx = 0; //Step through the params sequentially
 		let nextprov;
 		while (prov) {
 			for (let i = 0; i < prov.length; ++i) {
-				if (!prov[i]) continue;
+				if (!prov[i]) {++idx; continue;}
 				const next = prov[i][params[idx++]] || { };
 				Object.assign(ret, next); delete ret[""];
 				nextprov = next[""];
@@ -173,7 +173,7 @@ const text_message = {...default_handlers,
 		const parents = [];
 		for (let par = el; par; par = par.parent && par.parent[0]) parents.unshift(par);
 		const allvars = { };
-		for (let el of parents) Object.assign(allvars, provides(el, null, allvars));
+		for (let el of parents) Object.assign(allvars, provides(el, null, el.builtin_param || [], allvars));
 		//Gather the provisions as buttons; those with asterisked labels are depreferred and buried behind a twistie.
 		const prov = [], moreprov = [];
 		Object.entries(allvars).forEach(([v, d]) => {
@@ -386,6 +386,10 @@ function build_element(param, cfg) {
 		} else if (values.length === 0) {
 			control = SELECT(id, OPTION({disabled: true}, param.if_empty || "(none)"));
 		} else {
+			//If this could affect provisions, it needs to be flagged.
+			//HACK: Flagging *every* drop-down for now. This causes unnecessary refreshes,
+			//but ensures that provisions are correct.
+			id.className = "builtin-governor";
 			control = SELECT({...id, value}, values.map(v => OPTION({value: v}, (param.selections||{})[v] || v)));
 		}
 	}
@@ -398,6 +402,7 @@ function build_element(param, cfg) {
 
 function update_governed_params() {
 	const children = [...DOM("#params").children];
+	const params = [];
 	//NOTE: Don't for-of this as we will be mutating the array and need to continue
 	//from where we left off
 	for (let i = 0; i < children.length; ++i) {
@@ -408,11 +413,12 @@ function update_governed_params() {
 		let idx = gov.id.slice("value-builtin_param".length);
 		children.length = i + 1; //Truncate all subsequent from our array (but leave them in the DOM)
 		let governor = gov.value;
+		params[idx||0] = governor;
 		//Drop-downs can customize their handling by giving the options a
 		//data-selector attribute. Currently this is only done for monitors.
 		const opt = gov.querySelector(":checked");
 		if (opt && opt.dataset.selector) governor = opt.dataset.selector;
-		const buildme = gov.subsequent_params[governor];
+		const buildme = gov.subsequent_params?.[governor];
 		if (buildme) for (let param of buildme) {
 			++idx;
 			const curelem = DOM("#value-builtin_param" + idx);
@@ -421,6 +427,13 @@ function update_governed_params() {
 		}
 	}
 	set_content("#params", children);
+
+	//Also update the displayed provisions, splitting them into regular and depreferred lists
+	const prov = Object.entries(provides(propedit, propedit_type_override, params) || {}).map(([v, d]) => [v, provision_label(d)]);
+	set_content("#providesdesc", prov.map(([v, d]) => d[0] !== "*" && LI([CODE(v), ": " + d])));
+	let havemore = 0;
+	set_content("#moreprovidesdesc", prov.map(([v, d]) => d[0] === "*" && (havemore = 1) && LI([CODE(v), ": " + d.slice(1)])));
+	DOM("#moreprovides").hidden = !havemore;
 }
 on("change", ".builtin-governor", update_governed_params);
 
@@ -1979,14 +1992,14 @@ on("change", "#setprops select", e => {
 	if (typeof desc === "function") set_content("#typedesc", desc(state));
 });
 
-let propedit = null;
+let propedit = null, propedit_type_override = null;
 canvas.addEventListener("dblclick", e => {
 	e.stopPropagation();
 	const el = element_at_position(e.offsetX, e.offsetY);
 	if (el) open_element_properties(el);
 });
 function open_element_properties(el, type_override) {
-	propedit = el;
+	propedit = el; propedit_type_override = type_override;
 	const type = types[type_override || el.type];
 	set_content("#toggle_favourite", FAV_BUTTON_TEXT[is_favourite(el) ? 1 : 0]).disabled = type.fixed;
 	const desc = type.typedesc || el.desc;
@@ -1994,13 +2007,6 @@ function open_element_properties(el, type_override) {
 	const cfg = {focus: null};
 	set_content("#params", (type.params||[]).map(param => build_element(param, cfg)));
 	update_governed_params();
-
-	//Split the provides into regular and depreferred lists
-	const prov = Object.entries(provides(el, type_override) || {}).map(([v, d]) => [v, provision_label(d)]);
-	set_content("#providesdesc", prov.map(([v, d]) => d[0] !== "*" && LI([CODE(v), ": " + d])));
-	let havemore = 0;
-	set_content("#moreprovidesdesc", prov.map(([v, d]) => d[0] === "*" && (havemore = 1) && LI([CODE(v), ": " + d.slice(1)])));
-	DOM("#moreprovides").hidden = !havemore;
 
 	if (!type_override) set_content("#saveprops", "Close"); //On initial open, say that there are no changes. Type override means there are, in effect, changes.
 	DOM("#templateinfo").style.display = el.template && el.type !== "flag" ? "block" : "none";
@@ -2040,7 +2046,7 @@ on("click", "#clonetemplate", e => {
 		(childset[conn.index] = clone_template(propedit)).parent = [parent, conn.name, conn.index];
 		if (conn.index === childset.length - 1) childset.push(""); //Ensure there's always an empty slot at the end
 	}
-	propedit = null;
+	propedit = propedit_type_override = null;
 	e.match.closest("dialog").close();
 	repaint();
 });
@@ -2316,7 +2322,7 @@ on("submit", "#setprops", e => {
 	const type = types[propedit.type];
 	if (!propedit.template && type.params) retrieve_attrs(propedit, type.params);
 	if (propedit._onsave) propedit._onsave(); //Pseudo-elements from the classic editor need to push data elsewhere
-	propedit = null;
+	propedit = propedit_type_override = null;
 	e.match.closest("dialog").close();
 	repaint();
 });

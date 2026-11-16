@@ -307,3 +307,5 @@
 * Builtins have vars_provided, specials have params, which are the same thing. Builtin
   params are very different. Synchronize specials on having provisions, to simplify the
   wording and avoid confusion.
+* Check command_gui.js and see if uses of propedit.type need to check propedit_type_override
+  first. Also, see if we no longer need to carry this as a parameter.
