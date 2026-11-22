@@ -234,6 +234,11 @@ __async__ void synchronize(int userid, int(-1..1)|void force) {
 		string|zero rr = recurrence_rule[ev->recurringEventId];
 		//Note that we assume that an event starts and ends in the same timezone (eg Australia/Melbourne).
 		//Twitch only allows one timezone per event anyway.
+		if (!ev->start->dateTime) {
+			//All-day events have ev->start->date instead. They also aren't very useful for this synchronization.
+			//TODO: Report them in the front end maybe?
+			continue;
+		}
 		int start = Calendar.parse("%Y-%M-%DT%h:%m:%s%z", ev->start->dateTime)->unix_time(); //Can't shortcut by comparing the text strings as these ones are in local time
 		if (start < now) continue; //Twitch doesn't give us schedule segments for currently-running streams, so skip the Google equivalents.
 		ev->time_t = start;
