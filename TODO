@@ -314,3 +314,6 @@
   - A set of tips and tricks
   - Bugs? Issues? Contact Rosuav
   - Maybe a direct issue reporting form?? People like those, but how should it notify?
+* Integration with ArtistStore
+  - Am in contact with their support in the hopes of getting a webhook or websocket
+  - Reserved my name on their platform
