@@ -389,7 +389,9 @@ function build_element(param, cfg) {
 			//If this could affect provisions, it needs to be flagged.
 			//HACK: Flagging *every* drop-down for now. This causes unnecessary refreshes,
 			//but ensures that provisions are correct.
-			id.className = "builtin-governor";
+			//CJA 20261125: Only flagging those that are in builtin_param. Were there others
+			//that needed this behaviour??
+			if (param.attr.startsWith("builtin_param")) id.className = "builtin-governor";
 			control = SELECT({...id, value}, values.map(v => OPTION({value: v}, (param.selections||{})[v] || v)));
 		}
 	}
