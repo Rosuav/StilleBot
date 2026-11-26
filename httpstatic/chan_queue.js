@@ -155,4 +155,4 @@ on("click", "#editselections", simpleconfirm("Replace the available selections?"
 //NOTE: Limit can be set as a string or a number, but to set it to zero, must use "0".
 on("change", "#queuelimit", e => ws_sync.send({cmd: "configure", queuelimit: e.match.value}));
 
-on("click", "#panelcfgsave", e => ws_sync.send({cmd: "configure", panelstyle: form_values(DOM("#panelcfgdlg form")})));
+on("click", "#panelcfgsave", e => ws_sync.send({cmd: "configure", panelstyle: form_values(DOM("#panelcfgdlg form"))}));
