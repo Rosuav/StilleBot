@@ -2,6 +2,7 @@
   - Where the bot is a mod, the limit is three per sec. In other channels, must respect slow mode.
   - Is there a way to detect channel slow mode on connection? If it changes, there's a NOTICE.
     - Possibly ROOMSTATE, but I'm not receiving those.
+  - Is this even a thing still? What are the limits when using API chat?
 * Variables.
   - NOTE: As of 2024-02-29, all variables are stored in precached config named "$var$",
     and any that aren't dollar-bracketed are buggy. This may change in the future, with
