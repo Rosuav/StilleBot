@@ -71,13 +71,9 @@ mapping get_chan_state(object channel, string group) {
 	send_msg(conn, pub);
 }
 
+//Broadcast a message across all groups, giving the new collection
 void update_collection(string coll, array|mapping data) {
-	//Broadcast a message across all groups, giving the new collection
-	mapping msg = (["cmd": "cmdedit_update_collections", coll: data]);
-	string text = Standards.JSON.encode(msg, 4);
-	foreach (websocket_groups;; array socks)
-		foreach (socks, object sock)
-			if (sock && sock->state == 1) sock->send_text(text);
+	broadcast((["cmd": "cmdedit_update_collections", coll: data]));
 }
 
 void update_channel_collection(object channel, string coll, array|mapping data) {

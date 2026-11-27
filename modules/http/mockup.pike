@@ -724,10 +724,7 @@ __async__ void websocket_cmd_save_image(mapping(string:mixed) conn, mapping(stri
 void update_meta() {
 	//This is a relatively rare thing to change, so we send it out with a dedicated message
 	//to all connected clients (regardless of group).
-	string text = Standards.JSON.encode((["cmd": "update_meta"]) | meta_cache, 4);
-	foreach (values(websocket_groups), array group)
-		foreach (group, object sock)
-			if (sock && sock->state == 1) sock->send_text(text);
+	broadcast((["cmd": "update_meta"]) | meta_cache);
 }
 
 __async__ void websocket_cmd_delete_image(mapping(string:mixed) conn, mapping(string:mixed) msg) {
