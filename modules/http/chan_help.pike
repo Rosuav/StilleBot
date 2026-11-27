@@ -11,6 +11,9 @@ the bot's creator and maintainer.
 > Rosuav can be reached on Discord or Twitch using that same user name. To avoid spam, be<br>
 > sure to include in your opening message that you use Mustard Mine and what your issue is.
 >
+> You can also [join the Discord](https://discord.gg/dbw4KYE :target=_blank) for general questions,
+> updates, and other information.
+>
 > Rosuav is currently live! The quickest and easiest way to get help will be to<br>
 > [jump into chat](https://twitch.tv/rosuav :target=_blank) and ask there. He's always happy to help!
 > {:#is_live hidden}
