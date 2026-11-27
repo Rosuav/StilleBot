@@ -100,6 +100,7 @@ constant sidebar_menu = ({
 	({"*integrations", "Integrations"}),
 	({"*snoozeads", "Ads and snoozes"}),
 	({"*errors", "Error log <span id=errcnt></span>"}),
+	({"*", ""}), //A gap before Help. Technically this makes an empty link to nowhere but it's fine.
 	({"*help", "Help"}),
 	//TODO: Hype train, raid finder, emote showcase
 });

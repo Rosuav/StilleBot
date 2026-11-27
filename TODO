@@ -311,7 +311,6 @@
 * Check command_gui.js and see if uses of propedit.type need to check propedit_type_override
   first. Also, see if we no longer need to carry this as a parameter.
 * Expand the "Help" tab
-  - Put a gap before it in the left panel, for better visibility
   - A set of tips and tricks
   - Bugs? Issues? Contact Rosuav
   - Maybe a direct issue reporting form?? People like those, but how should it notify?
