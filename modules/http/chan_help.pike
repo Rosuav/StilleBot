@@ -112,6 +112,7 @@ mapping get_state(string group) {
 	return (["online": G->G->stream_online_since[G->G->bot_uid]->?unix_time()]);
 }
 
+//FIXME: Didn't see these get triggered
 @hook_channel_online: int online(string chan, int uptime, int chanid) {
 	if (chanid == G->G->bot_uid) broadcast((["cmd": "update", "online": time() - uptime])); //This time_t might be off by a second or two, so there may be slight discrepancies in the display.
 }
