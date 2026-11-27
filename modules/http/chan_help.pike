@@ -87,5 +87,29 @@ mapping get_state(string group) {
 //When the intrinsic user goes online or offline, notify.
 @hook_channel_online: @hook_channel_offline:
 int recheck(string chan, int uptime, int chanid) {
-	if (chanid == G->G->bot_uid) send_updates_all("");
+	if (chanid == G->G->bot_uid) send_updates_all(""); //FIXME: Send to every connected socket, regardless of group (group will be eg "#49497888")
+}
+
+@"is_mod": mapping wscmd_whisper(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
+	string from = "channel https://twitch.tv/" + channel->login;
+	string user = conn->session->user->login;
+	if (user != channel->login) from += " mod " + user;
+	string message = "Site message from " + from + ": " + msg->message;
+	if (G->G->stream_online_since[G->G->bot_uid]) {
+		//If I'm currently live, send the message in chat rather than as a whisper.
+		//It's more reliable, and probably will be noticed quicker.
+		G->G->irc->id[G->G->bot_uid]->send(0, "maayaKey " + message);
+	} else {
+		//Send a whisper from MustardMine to Rosuav. If you're running your own copy of the
+		//bot, figure out two users that you can use for this, since you can't whisper yourself.
+		int voiceid = 279141671;
+		twitch_api_request(sprintf(
+			"https://api.twitch.tv/helix/whispers?from_user_id=%d&to_user_id=%d",
+				voiceid, G->G->bot_uid),
+			(["Authorization": voiceid]), ([
+				"method": "POST",
+				"json": (["message": message]),
+			]),
+		);
+	}
 }

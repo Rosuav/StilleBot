@@ -7,6 +7,7 @@ export function render(data) {
 
 on("submit", "#whisperform", e => {
 	e.preventDefault();
-	ws_sync.send({cmd: "whisper", message: DOM("#whisper").value});
+	const message = DOM("#whisper").value;
+	if (message) ws_sync.send({cmd: "whisper", message});
 	DOM("#whisper").value = "";
 });
