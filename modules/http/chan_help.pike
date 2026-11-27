@@ -84,10 +84,11 @@ mapping get_state(string group) {
 	return (["online": G->G->stream_online_since[G->G->bot_uid]->?unix_time()]);
 }
 
-//When the intrinsic user goes online or offline, notify.
-@hook_channel_online: @hook_channel_offline:
-int recheck(string chan, int uptime, int chanid) {
-	if (chanid == G->G->bot_uid) send_updates_all(""); //FIXME: Send to every connected socket, regardless of group (group will be eg "#49497888")
+@hook_channel_online: int online(string chan, int uptime, int chanid) {
+	if (chanid == G->G->bot_uid) broadcast((["cmd": "update", "online": time() - uptime])); //This time_t might be off by a second or two, so there may be slight discrepancies in the display.
+}
+@hook_channel_offline: int offline(string chan, int uptime, int chanid) {
+	if (chanid == G->G->bot_uid) broadcast((["cmd": "update", "online": 0]));
 }
 
 @"is_mod": mapping wscmd_whisper(object channel, mapping(string:mixed) conn, mapping(string:mixed) msg) {
