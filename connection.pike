@@ -1424,9 +1424,6 @@ void irc_closed(mapping options) {
 	};
 }
 
-//CJA 20260420: Don't hook streams going online any more - delete when not needed
-@hook_channel_online: int connected(string chan, int uptime, int chanid) { }
-
 @hook_stream_reset: int stream_reset(object channel) {channel->stream_reset();}
 
 @EventNotify("channel.channel_points_automatic_reward_redemption.add=1",
