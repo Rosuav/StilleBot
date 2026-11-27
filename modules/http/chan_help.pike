@@ -18,7 +18,7 @@ the bot's creator and maintainer.
 > [jump into chat](https://twitch.tv/rosuav :target=_blank) and ask there. He's always happy to help!
 > {:#is_live hidden}
 >
-> <form id=whisperform>
+> <form id=whisperform hidden>
 > Need to send a quick message right now?<br>
 > <input id=whisper size=60> [Whisper](:type=submit)
 > </form>

@@ -35,3 +35,6 @@ function newtip() {
 }
 on("click", "#newtip", newtip);
 newtip(); //Select a tip on startup
+
+//Enable the whisper form only when we're not on the demo channel
+if (ws_group != "#0") DOM("#whisperform").hidden = false;
