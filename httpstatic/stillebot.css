@@ -309,6 +309,7 @@ table[data-dest]:not([data-dest="/set"]):not([data-dest="/web"]) > tr.destcfgrow
 
 nav#sidebar {
 	display: none;
+	text-indent: 1em hanging;
 }
 
 nav#topbar {height: 40px;}
