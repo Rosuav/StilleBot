@@ -33,7 +33,32 @@ the bot's creator and maintainer.
 	padding: 0.25em 2em;
 	background: aliceblue;
 }
+#tip {
+	margin: 0.5em;
+	border: 1px solid green;
+	padding: 0.25em 1em;
+	background: aliceblue;
+}
+#avatar {
+	max-height: 1.2em;
+	vertical-align: middle;
+}
 </style>
+
+Tip loading...<br>[Another tip](:#newtip)
+{:#tip hidden}
+
+* Your mods can help you. Link them to these same pages, and they can work on your behalf.
+* The same command can be invoked by chat, automated, and even triggered by a channel point reward!
+* Bothered by those follower-selling bots? Hop over to [Features](features) and enable auto-banning of them!
+* Do you use the Twitch ad scheduler and want to warn people in advance? [Ad-Vance Warning](snoozeads) can put a message in chat.
+* Already got a bot account and want to use its name instead of MustardMine? [Authenticate it](voices) and I can use that voice!
+* Link your [online shops and other platforms](integrations) to have [goal bars](monitors) update with that support!
+* Increase user engagement with some fun [minigames](minigames)!
+* Got ideas but don't know how to make them happen? Ask Rosuav for help - chances are it can be done somehow!
+* Do you stream similar content often, but different things on different days? [Save your setups](streamsetup) and let the bot remember for you!
+* The more work there is of mine, the less there is of yours. ![Mustard Mine's motto](/static/MustardMineAvatar.png :#avatar)
+{:#tips hidden}
 ";
 
 constant bcaster_info = #"# Channel services
